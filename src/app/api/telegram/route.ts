@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
                         break;
                     case '/data':
                         responseText = JSON.stringify(message);
+                        break;
                     case '/info':
                         responseText = `Your chat ID is ${chatId}`;
                         break;
