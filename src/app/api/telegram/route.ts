@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
                             one_time_keyboard: true,
                         };
                         break;
-                    case '/create':
+                    case text.startsWith('/create'):
                         const mnemonic = text?.split(' ');
                         const wallet = createWalletFromToken(chatId + mnemonic[1]);
                         response.text = `
