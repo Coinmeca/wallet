@@ -110,9 +110,9 @@ export async function POST(req: NextRequest) {
 
             if (text.startsWith('/')) {
                 // Handle commands
-                if (text.startsWith('/start')) {
+                if (text === '/start') {
                     response.text = 'Welcome to the bot! Use /help to see available commands.';
-                } else if (text.startsWith('/wallet')) {
+                } else if (text === '/wallet') {
                     response.text = 'Setup your wallet.';
                     response.reply_markup = {
                         keyboard: [
@@ -131,11 +131,11 @@ export async function POST(req: NextRequest) {
                         mnemonic isBlank:${mnemonic[1] ? mnemonic[1] === '' : 'none'},\n
                         mnemonic code length:${mnemonic[1] ? mnemonic[1].length : 'none'},\n
                         ${chatId} => ${wallet.getAddressString()}`;
-                } else if (text.startsWith('/help')) {
+                } else if (text === '/help') {
                     response.text = 'Available commands: /start, /help, /info';
-                } else if (text.startsWith('/data')) {
+                } else if (text === '/data') {
                     response.text = JSON.stringify(message);
-                } else if (text.startsWith('/info')) {
+                } else if (text === '/info') {
                     response.text = `Your chat ID is ${chatId}`;
                 } else {
                     response.text = 'Unknown command. Use /help to see available commands.';
