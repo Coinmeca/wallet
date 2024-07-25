@@ -24,6 +24,7 @@ export const TelegramProvider: React.FC<{ src?: string; children: React.ReactNod
   const onLoad = () => {
     const telegram = (typeof window !== 'undefined' ? window as any : global)?.Telegram?.WebApp;
     telegram?.ready();
+    telegram?.BiometricManager?.init();
     console.log('telegram',telegram);
     setTelegram(telegram);
     setUser(telegram?.initDataUnsafe?.user || null);

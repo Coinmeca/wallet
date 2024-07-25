@@ -22,7 +22,7 @@ export default function Home() {
   }
 
   const handleAuthenticate = () => {
-    telegram?.authenticate();
+    telegram?.BiometricManager?.authenticate();
   }
 
   return (<div>
