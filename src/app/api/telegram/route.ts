@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
                         break;
                     case '/create':
                         const wallet = createWalletFromToken(chatId);
-                        response.text = `${chatId} => ${JSON.stringify(wallet)} / ${JSON.stringify(wallet.getAddressString())}`;
+                        response.text = `${chatId} => ${wallet.getAddressString()}, ${wallet.getPublicKeyString()}`;
                         break;
                     case '/help':
                         response.text = 'Available commands: /start, /help, /info';
