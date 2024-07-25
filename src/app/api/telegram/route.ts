@@ -48,8 +48,8 @@ export interface ReplyKeyboardRemove {
 }
 
 export interface TelegramResponse {
-    chat_id?: number;
-    text?: string;
+    chat_id: number;
+    text: string;
     business_connection_id?: string;
     message_thread_id?: number;
     parse_mode?: string;
@@ -78,7 +78,10 @@ export async function POST(req: NextRequest) {
             const chatId = message.chat.id;
             const text = message.text;
 
-            let response: TelegramResponse = {};
+            let response: TelegramResponse = {
+                chat_id: chatId,
+                text: '',
+            };
 
             if (text.startsWith('/')) {
                 // Handle commands
@@ -125,10 +128,7 @@ export async function POST(req: NextRequest) {
             await fetch(telegramApiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    chat_id: chatId,
-                    ...response,
-                }),
+                body: JSON.stringify(response),
             });
 
             return NextResponse.json({ message: 'OK' });
