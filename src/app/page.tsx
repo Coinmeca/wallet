@@ -18,7 +18,7 @@ export default function Home() {
   }
 
   const handleShowPopup = () => {
-    telegram?.showPopup('showPopup');
+    telegram?.showPopup({ title: 'showPopup', message: 'do something', buttons:[[{type:"close"}]]} );
   }
 
   const handleAuthenticate = () => {
