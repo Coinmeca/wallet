@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
                         break;
                     case '/wallet':
                         response.reply_markup = {
-                            inline_keyboard: [
+                            keyboard: [
                                 [{ text: 'Enter', web_app: { url: 'https://wallet.coinmeca.net/' } }, { text: 'Button 2' }],
                                 [{ text: 'Button 3' }, { text: 'Button 4' }],
                             ],
