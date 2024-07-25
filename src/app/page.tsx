@@ -2,7 +2,11 @@
 import { useTelegram } from "contexts/telegram";
 
 export default function Home() {
-  const { telegram} = useTelegram();
+  const { telegram } = useTelegram();
 
-  return (<div>{telegram ? 'success':'fail'}</div>);
+  const handleClose = () => {
+    telegram?.close();
+  }
+
+  return (<div>{telegram ? 'success':'fail'}<button onClick={handleClose}>close</button></div>);
 }
