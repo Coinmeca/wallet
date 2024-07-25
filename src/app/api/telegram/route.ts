@@ -110,44 +110,35 @@ export async function POST(req: NextRequest) {
 
             if (text.startsWith('/')) {
                 // Handle commands
-                switch (text) {
-                    case '/start':
-                        response.text = 'Welcome to the bot! Use /help to see available commands.';
-                        break;
-                    case '/wallet':
-                        response.text = 'Setup your wallet.';
-                        response.reply_markup = {
-                            keyboard: [
-                                [{ text: 'Enter', web_app: { url: 'https://wallet.coinmeca.net/' } }, { text: 'Button 2' }],
-                                [{ text: 'Button 3' }, { text: 'Button 4' }],
-                            ],
-                            resize_keyboard: true,
-                            one_time_keyboard: true,
-                        };
-                        break;
-                    case text.startsWith('/create'):
-                        const mnemonic = text?.split(' ');
-                        const wallet = createWalletFromToken(chatId + mnemonic[1]);
-                        response.text = `
-mnemonic: ${mnemonic.toString()},\n
-mnemonic length:${mnemonic?.length},\n
-mnemonic isBlank:${mnemonic[1] ? mnemonic[1] === '' : 'none'},\n
-mnemonic code length:${mnemonic[1] ? mnemonic[1].length : 'none'},\n
-${chatId} => ${wallet.getAddressString()}`;
-                        break;
-                    case '/help':
-                        response.text = 'Available commands: /start, /help, /info';
-                        break;
-                    case '/passcode':
-                        break;
-                    case '/data':
-                        response.text = JSON.stringify(message);
-                        break;
-                    case '/info':
-                        response.text = `Your chat ID is ${chatId}`;
-                        break;
-                    default:
-                        response.text = 'Unknown command. Use /help to see available commands.';
+                if (text.startsWith('/start')) {
+                    response.text = 'Welcome to the bot! Use /help to see available commands.';
+                } else if (text.startsWith('/wallet')) {
+                    response.text = 'Setup your wallet.';
+                    response.reply_markup = {
+                        keyboard: [
+                            [{ text: 'Enter', web_app: { url: 'https://wallet.coinmeca.net/' } }, { text: 'Button 2' }],
+                            [{ text: 'Button 3' }, { text: 'Button 4' }],
+                        ],
+                        resize_keyboard: true,
+                        one_time_keyboard: true,
+                    };
+                } else if (text.startsWith('/create')) {
+                    const mnemonic = text?.split(' ');
+                    const wallet = createWalletFromToken(chatId + mnemonic[1]);
+                    response.text = `
+                        mnemonic: ${mnemonic.toString()},\n
+                        mnemonic length:${mnemonic?.length},\n
+                        mnemonic isBlank:${mnemonic[1] ? mnemonic[1] === '' : 'none'},\n
+                        mnemonic code length:${mnemonic[1] ? mnemonic[1].length : 'none'},\n
+                        ${chatId} => ${wallet.getAddressString()}`;
+                } else if (text.startsWith('/help')) {
+                    response.text = 'Available commands: /start, /help, /info';
+                } else if (text.startsWith('/data')) {
+                    response.text = JSON.stringify(message);
+                } else if (text.startsWith('/info')) {
+                    response.text = `Your chat ID is ${chatId}`;
+                } else {
+                    response.text = 'Unknown command. Use /help to see available commands.';
                 }
             } else {
                 // Handle other messages
