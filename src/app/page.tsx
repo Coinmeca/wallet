@@ -1,12 +1,8 @@
 'use client';
-import { useEffect, useState } from "react";
+import { useTelegram } from "contexts/telegram";
 
 export default function Home() {
-  const [data, setData] = useState<any>(typeof window !== 'undefined' && (window as any)?.Telegram?.WebApp);
-  
-  useEffect(() => {
-    if (typeof window !== 'undefined') setData((window as any)?.Telegram?.WebApp)
-  }, [])
+  const { telegram} = useTelegram();
 
-  return (<div>{data || 'not setup'}</div>);
+  return (<div>{telegram}</div>);
 }

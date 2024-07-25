@@ -13,6 +13,30 @@ export interface KeyboardButton {
     web_app?: { url: string };
 }
 
+// {
+//     "message_id": 53,
+//     "from": {
+//         "id": 2007997487,
+//         "is_bot": false,
+//         "first_name": "Pepe",
+//         "language_code": "en"
+//     },
+//     "chat": {
+//         "id": 2007997487,
+//         "first_name": "Pepe",
+//         "type": "private"
+//     },
+//     "date": 1721873701,
+//     "text": "/data",
+//     "entities": [
+//         {
+//             "offset": 0,
+//             "length": 5,
+//             "type": "bot_command"
+//         }
+//     ]
+// }
+
 export interface InlineKeyboardButton {
     text: string;
     url?: string;
