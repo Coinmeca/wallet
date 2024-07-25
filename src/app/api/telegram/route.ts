@@ -3,6 +3,31 @@ import fetch from 'node-fetch';
 import Wallet from 'ethereumjs-wallet';
 import CryptoJS from 'crypto-js';
 
+// message of body
+// {
+//     "message_id": 53,
+//     "from": {
+//         "id": 2007997487,
+//         "is_bot": false,
+//         "first_name": "Pepe",
+//         "language_code": "en"
+//     },
+//     "chat": {
+//         "id": 2007997487,
+//         "first_name": "Pepe",
+//         "type": "private"
+//     },
+//     "date": 1721873701,
+//     "text": "/data",
+//     "entities": [
+//         {
+//             "offset": 0,
+//             "length": 5,
+//             "type": "bot_command"
+//         }
+//     ]
+// }
+
 export interface KeyboardButton {
     text: string;
     // request_users?: KeyboardButtonRequestUsers;
@@ -48,8 +73,8 @@ export interface ReplyKeyboardRemove {
 }
 
 export interface TelegramResponse {
-    chat_id?: number;
-    text?: string;
+    chat_id: number;
+    text: string;
     business_connection_id?: string;
     message_thread_id?: number;
     parse_mode?: string;
@@ -78,41 +103,42 @@ export async function POST(req: NextRequest) {
             const chatId = message.chat.id;
             const text = message.text;
 
-            let response: TelegramResponse = {};
+            let response: TelegramResponse = {
+                chat_id: chatId,
+                text: '',
+            };
 
             if (text.startsWith('/')) {
                 // Handle commands
-                switch (text) {
-                    case '/start':
-                        response.text = 'Welcome to the bot! Use /help to see available commands.';
-                        break;
-                    case '/wallet':
-                        response.reply_markup = {
-                            keyboard: [
-                                [{ text: 'Enter', web_app: { url: 'https://wallet.coinmeca.net/' } }, { text: 'Button 2' }],
-                                [{ text: 'Button 3' }, { text: 'Button 4' }],
-                            ],
-                            resize_keyboard: true,
-                            one_time_keyboard: true,
-                        };
-                        break;
-                    case '/create':
-                        const wallet = createWalletFromToken(chatId);
-                        response.text = `${chatId} => ${wallet.getAddressString()}`;
-                        break;
-                    case '/help':
-                        response.text = 'Available commands: /start, /help, /info';
-                        break;
-                    case '/passcode':
-
-                    case '/data':
-                        response.text = JSON.stringify(message);
-                        break;
-                    case '/info':
-                        response.text = `Your chat ID is ${chatId}`;
-                        break;
-                    default:
-                        response.text = 'Unknown command. Use /help to see available commands.';
+                if (text === '/start') {
+                    response.text = 'Welcome to the bot! Use /help to see available commands.';
+                } else if (text === '/wallet') {
+                    response.text = 'Setup your wallet.';
+                    response.reply_markup = {
+                        keyboard: [
+                            [{ text: 'Enter', web_app: { url: 'https://wallet.coinmeca.net/' } }, { text: 'Button 2' }],
+                            [{ text: 'Button 3' }, { text: 'Button 4' }],
+                        ],
+                        resize_keyboard: true,
+                        one_time_keyboard: true,
+                    };
+                } else if (text.startsWith('/create')) {
+                    const mnemonic = text?.split(' ');
+                    const wallet = createWalletFromToken(chatId + mnemonic[1]);
+                    response.text = `
+                        mnemonic: ${mnemonic.toString()},\n
+                        mnemonic length:${mnemonic?.length},\n
+                        mnemonic isBlank:${mnemonic[1] ? mnemonic[1] === '' : 'none'},\n
+                        mnemonic code length:${mnemonic[1] ? mnemonic[1].length : 'none'},\n
+                        ${chatId} => ${wallet.getAddressString()}`;
+                } else if (text === '/help') {
+                    response.text = 'Available commands: /start, /help, /info';
+                } else if (text === '/data') {
+                    response.text = JSON.stringify(message);
+                } else if (text === '/info') {
+                    response.text = `Your chat ID is ${chatId}`;
+                } else {
+                    response.text = 'Unknown command. Use /help to see available commands.';
                 }
             } else {
                 // Handle other messages
@@ -124,10 +150,7 @@ export async function POST(req: NextRequest) {
             await fetch(telegramApiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    chat_id: chatId,
-                    ...response,
-                }),
+                body: JSON.stringify(response),
             });
 
             return NextResponse.json({ message: 'OK' });
