@@ -1,6 +1,15 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import fetch from 'node-fetch';
 
+export interface TelegramResponse {
+    text?: string;
+    reply_markup?: {
+        keyboard?: any[];
+        resize_keyboard?: boolean;
+        one_time_keyboard?: boolean;
+    };
+}
+
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
@@ -10,29 +19,37 @@ export async function POST(req: NextRequest) {
             const chatId = message.chat.id;
             const text = message.text;
 
-            let responseText = '';
+            let response: TelegramResponse = {};
 
             if (text.startsWith('/')) {
                 // Handle commands
                 switch (text) {
                     case '/start':
-                        responseText = 'Welcome to the bot! Use /help to see available commands.';
+                        response.text = 'Welcome to the bot! Use /help to see available commands.';
                         break;
                     case '/help':
-                        responseText = 'Available commands: /start, /help, /info';
+                        response.text = 'Available commands: /start, /help, /info';
+                        response.reply_markup = {
+                            keyboard: [
+                                [{ text: 'Button 1' }, { text: 'Button 2' }],
+                                [{ text: 'Button 3' }, { text: 'Button 4' }],
+                            ],
+                            resize_keyboard: true,
+                            one_time_keyboard: true,
+                        };
                         break;
                     case '/data':
-                        responseText = JSON.stringify(message);
+                        response.text = JSON.stringify(message);
                         break;
                     case '/info':
-                        responseText = `Your chat ID is ${chatId}`;
+                        response.text = `Your chat ID is ${chatId}`;
                         break;
                     default:
-                        responseText = 'Unknown command. Use /help to see available commands.';
+                        response.text = 'Unknown command. Use /help to see available commands.';
                 }
             } else {
                 // Handle other messages
-                responseText = `You said: ${text}`;
+                response.text = `You said: ${text}`;
             }
 
             // Send a response back to the Telegram chat
@@ -42,7 +59,7 @@ export async function POST(req: NextRequest) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     chat_id: chatId,
-                    text: responseText,
+                    ...response,
                 }),
             });
 
