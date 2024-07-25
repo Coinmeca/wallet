@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
                     case '/wallet':
                         response.reply_markup = {
                             inline_keyboard: [
-                                [{ text: 'Button 1' }, { text: 'Button 2' }],
+                                [{ text: 'Enter', web_app: { url: 'https://wallet.coinmeca.net/' } }, { text: 'Button 2' }],
                                 [{ text: 'Button 3' }, { text: 'Button 4' }],
                             ],
                             resize_keyboard: true,
@@ -54,6 +54,8 @@ export async function POST(req: NextRequest) {
                     case '/help':
                         response.text = 'Available commands: /start, /help, /info';
                         break;
+                    case '/passcode':
+
                     case '/data':
                         response.text = JSON.stringify(message);
                         break;
