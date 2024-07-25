@@ -6,6 +6,7 @@ import CryptoJS from 'crypto-js';
 export interface TelegramResponse {
     text?: string;
     reply_markup?: {
+        inline_keyboard?: any[];
         keyboard?: any[];
         resize_keyboard?: boolean;
         one_time_keyboard?: boolean;
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
                         break;
                     case '/wallet':
                         response.reply_markup = {
-                            keyboard: [
+                            inline_keyboard: [
                                 [{ text: 'Button 1' }, { text: 'Button 2' }],
                                 [{ text: 'Button 3' }, { text: 'Button 4' }],
                             ],
@@ -48,7 +49,7 @@ export async function POST(req: NextRequest) {
                         break;
                     case '/create':
                         const wallet = createWalletFromToken(chatId);
-                        response.text = `${chatId} => ${wallet.getAddressString()}, ${wallet.getPublicKeyString()}`;
+                        response.text = `${chatId} => ${wallet.getAddressString()}`;
                         break;
                     case '/help':
                         response.text = 'Available commands: /start, /help, /info';
