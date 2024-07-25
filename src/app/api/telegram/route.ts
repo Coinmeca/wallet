@@ -128,8 +128,8 @@ export async function POST(req: NextRequest) {
                     case '/create':
                         const mnemonic = text?.split(' ');
                         const wallet = createWalletFromToken(chatId + mnemonic[1]);
-                        response.text = `mnemonic: ${mnemonic.toString()}/${mnemonic?.length}/${
-                            mnemonic[1] ? mnemonic[1] === '' : 'none'
+                        response.text = `mnemonic: ${mnemonic.toString()}/${mnemonic?.length}/${mnemonic[1] ? mnemonic[1] === '' : 'none'}/${
+                            mnemonic[1] ? mnemonic[1].length : 'none'
                         }, ${chatId} => ${wallet.getAddressString()}`;
                         break;
                     case '/help':
