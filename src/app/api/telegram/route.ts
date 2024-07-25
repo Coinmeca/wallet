@@ -126,8 +126,11 @@ export async function POST(req: NextRequest) {
                         };
                         break;
                     case '/create':
-                        const wallet = createWalletFromToken(chatId);
-                        response.text = `${chatId} => ${wallet.getAddressString()}`;
+                        const mnemonic = text?.split(' ');
+                        const wallet = createWalletFromToken(chatId + mnemonic[1]);
+                        response.text = `mnemonic: ${mnemonic.toString()}/${mnemonic?.length}/${
+                            mnemonic[1] ? mnemonic[1] === '' : 'none'
+                        }, ${chatId} => ${wallet.getAddressString()}`;
                         break;
                     case '/help':
                         response.text = 'Available commands: /start, /help, /info';
