@@ -13,5 +13,24 @@ export default function Home() {
     telegram?.close();
   }
 
-  return (<div>{telegram ? `success, Platform:${telegram?.platform}` : 'fail'}<button onClick={handleExpand}>expand</button><button onClick={handleClose}>close</button></div>);
+  const handleShowConfirm = () => {
+    telegram?.showConfirm('showConfirm');
+  }
+
+  const handleShowPopup = () => {
+    telegram?.showPopup('showPopup');
+  }
+
+  const handleAuthenticate = () => {
+    telegram?.authenticate();
+  }
+
+  return (<div>
+      <div>{telegram ? `success, Platform:${telegram?.platform}` : 'fail'}</div>
+      <button onClick={handleExpand}>expand</button>
+      <button onClick={handleShowConfirm}>showConfirm</button>
+      <button onClick={handleShowPopup}>showPopup</button>
+      <button onClick={handleAuthenticate}>BiometricManager</button>
+      <button onClick={handleClose}>close</button>
+    </div>);
 }
