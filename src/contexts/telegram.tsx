@@ -21,19 +21,20 @@ export const TelegramProvider: React.FC<{ src?: string; children: React.ReactNod
   const [telegram, setTelegram] = useState<any>(null);
   const [user, setUser] = useState<any>(null);
 
-  useEffect(() => {
-    const telegram = (typeof window !== 'undefined' ? window as any: global)?.Telegram.WebApp;
-    telegram.ready();
+  const onLoad = () => {
+    const telegram = (typeof window !== 'undefined' ? window as any : global)?.Telegram?.WebApp;
+    telegram?.ready();
+    console.log('telegram',telegram);
     setTelegram(telegram);
-    setUser(telegram.initDataUnsafe?.user || null);
+    setUser(telegram?.initDataUnsafe?.user || null);
+  }
 
-    return () => {
-        telegram.MainButton.offClick();
-    };
+  useEffect(() => {
+    return () => telegram && telegram?.MainButton?.offClick();
   }, []);
 
   return (<>
-    <Script src={src} />
+    <Script {...{src, onLoad}} />
     <TelegramContext.Provider value={{ telegram, user }}>
       {children}
     </TelegramContext.Provider>
