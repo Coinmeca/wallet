@@ -94,17 +94,26 @@ const createWalletFromToken = (token: string) => {
     return wallet;
 };
 
+const send = async (response: TelegramResponse) => {
+    const telegramApiUrl = `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_API_TOKEN}/sendMessage`;
+    await fetch(telegramApiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(response),
+    });
+};
+
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
         const { message } = body;
 
         if (message && message.text) {
-            const chatId = message.chat.id;
+            const chat_id = message.chat.id;
             const text = message.text;
 
             let response: TelegramResponse = {
-                chat_id: chatId,
+                chat_id,
                 text: '',
             };
 
@@ -124,19 +133,19 @@ export async function POST(req: NextRequest) {
                     };
                 } else if (text.startsWith('/create')) {
                     const mnemonic = text?.split(' ');
-                    const wallet = createWalletFromToken(chatId + mnemonic[1]);
+                    const wallet = createWalletFromToken(chat_id + mnemonic[1]);
                     response.text = `
                         mnemonic: ${mnemonic.toString()},\n
                         mnemonic length:${mnemonic?.length},\n
                         mnemonic isBlank:${mnemonic[1] ? mnemonic[1] === '' : 'none'},\n
                         mnemonic code length:${mnemonic[1] ? mnemonic[1].length : 'none'},\n
-                        ${chatId} => ${wallet.getAddressString()}`;
+                        ${chat_id} => ${wallet.getAddressString()}`;
                 } else if (text === '/help') {
                     response.text = 'Available commands: /start, /help, /info';
                 } else if (text === '/data') {
                     response.text = JSON.stringify(message);
                 } else if (text === '/info') {
-                    response.text = `Your chat ID is ${chatId}`;
+                    response.text = `Your chat ID is ${chat_id}`;
                 } else {
                     response.text = 'Unknown command. Use /help to see available commands.';
                 }
@@ -146,12 +155,7 @@ export async function POST(req: NextRequest) {
             }
 
             // Send a response back to the Telegram chat
-            const telegramApiUrl = `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_API_TOKEN}/sendMessage`;
-            await fetch(telegramApiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(response),
-            });
+            await send(response);
 
             return NextResponse.json({ message: 'OK' });
         } else {
