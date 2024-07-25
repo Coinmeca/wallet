@@ -1,5 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import fetch from 'node-fetch';
+import Wallet from 'ethereumjs-wallet';
+import CryptoJS from 'crypto-js';
 
 export interface TelegramResponse {
     text?: string;
@@ -9,6 +11,13 @@ export interface TelegramResponse {
         one_time_keyboard?: boolean;
     };
 }
+
+const createWalletFromToken = (token: string) => {
+    const hash = CryptoJS.SHA256(token).toString();
+    const privateKeyBuffer = Buffer.from(hash.substring(0, 64), 'hex');
+    const wallet = Wallet.fromPrivateKey(privateKeyBuffer);
+    return wallet;
+};
 
 export async function POST(req: NextRequest) {
     try {
@@ -27,8 +36,7 @@ export async function POST(req: NextRequest) {
                     case '/start':
                         response.text = 'Welcome to the bot! Use /help to see available commands.';
                         break;
-                    case '/help':
-                        response.text = 'Available commands: /start, /help, /info';
+                    case '/wallet':
                         response.reply_markup = {
                             keyboard: [
                                 [{ text: 'Button 1' }, { text: 'Button 2' }],
@@ -37,6 +45,13 @@ export async function POST(req: NextRequest) {
                             resize_keyboard: true,
                             one_time_keyboard: true,
                         };
+                        break;
+                    case '/create':
+                        const wallet = createWalletFromToken(chatId);
+                        response.text = `${chatId} => ${JSON.stringify(wallet)}`;
+                        break;
+                    case '/help':
+                        response.text = 'Available commands: /start, /help, /info';
                         break;
                     case '/data':
                         response.text = JSON.stringify(message);
