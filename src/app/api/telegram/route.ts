@@ -1,6 +1,4 @@
-﻿// app/api/telegram/route.js
-
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import fetch from 'node-fetch';
 
 export async function POST(req: NextRequest) {
@@ -23,6 +21,8 @@ export async function POST(req: NextRequest) {
                     case '/help':
                         responseText = 'Available commands: /start, /help, /info';
                         break;
+                    case '/data':
+                        responseText = JSON.stringify(message);
                     case '/info':
                         responseText = `Your chat ID is ${chatId}`;
                         break;
