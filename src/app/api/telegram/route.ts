@@ -3,14 +3,63 @@ import fetch from 'node-fetch';
 import Wallet from 'ethereumjs-wallet';
 import CryptoJS from 'crypto-js';
 
-export interface TelegramResponse {
-    text?: string;
-    reply_markup?: {
-        inline_keyboard?: any[];
-        keyboard?: any[];
-        resize_keyboard?: boolean;
-        one_time_keyboard?: boolean;
+export interface KeyboardButton {
+    text: string;
+    // request_users?: KeyboardButtonRequestUsers;
+    // request_chat?: KeyboardButtonRequestChat;
+    request_contact?: boolean;
+    request_location?: boolean;
+    // request_poll?: KeyboardButtonPollType;
+    web_app?: { url: string };
+}
+
+export interface InlineKeyboardButton {
+    text: string;
+    url?: string;
+    callback_data?: string;
+    web_app?: { url: string };
+    login_url?: {
+        url: string;
+        forward_text?: string;
+        bot_username?: string;
+        request_write_access?: boolean;
     };
+    switch_inline_query?: string;
+    switch_inline_query_current_chat?: string;
+    pay?: boolean;
+}
+
+export interface InlineKeyboardMarkup {
+    inline_keyboard?: InlineKeyboardButton[][];
+}
+
+export interface ReplyKeyboardMarkup {
+    keyboard: KeyboardButton[][];
+    is_persistent?: boolean;
+    resize_keyboard?: boolean;
+    one_time_keyboard?: boolean;
+    input_field_placeholder?: string;
+    selective?: boolean;
+}
+
+export interface ReplyKeyboardRemove {
+    remove_keyboard: boolean;
+    selective?: boolean;
+}
+
+export interface TelegramResponse {
+    chat_id?: number;
+    text?: string;
+    business_connection_id?: string;
+    message_thread_id?: number;
+    parse_mode?: string;
+    entities?: any[];
+    // link_preview_options?: LinkPreviewOptions;
+    disable_notification?: boolean;
+    protect_content?: boolean;
+    message_effect_id?: string;
+    // reply_parameters?: ReplyParameters;
+    reply_markup?: InlineKeyboardMarkup | ReplyKeyboardMarkup;
 }
 
 const createWalletFromToken = (token: string) => {
@@ -38,8 +87,9 @@ export async function POST(req: NextRequest) {
                         response.text = 'Welcome to the bot! Use /help to see available commands.';
                         break;
                     case '/wallet':
+                        response.text = 'Setup your wallet.';
                         response.reply_markup = {
-                            keyboard: [
+                            inline_keyboard: [
                                 [{ text: 'Enter', web_app: { url: 'https://wallet.coinmeca.net/' } }, { text: 'Button 2' }],
                                 [{ text: 'Button 3' }, { text: 'Button 4' }],
                             ],
