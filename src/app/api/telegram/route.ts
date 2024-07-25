@@ -3,16 +3,7 @@ import fetch from 'node-fetch';
 import Wallet from 'ethereumjs-wallet';
 import CryptoJS from 'crypto-js';
 
-export interface KeyboardButton {
-    text: string;
-    // request_users?: KeyboardButtonRequestUsers;
-    // request_chat?: KeyboardButtonRequestChat;
-    request_contact?: boolean;
-    request_location?: boolean;
-    // request_poll?: KeyboardButtonPollType;
-    web_app?: { url: string };
-}
-
+// message of body
 // {
 //     "message_id": 53,
 //     "from": {
@@ -36,6 +27,16 @@ export interface KeyboardButton {
 //         }
 //     ]
 // }
+
+export interface KeyboardButton {
+    text: string;
+    // request_users?: KeyboardButtonRequestUsers;
+    // request_chat?: KeyboardButtonRequestChat;
+    request_contact?: boolean;
+    request_location?: boolean;
+    // request_poll?: KeyboardButtonPollType;
+    web_app?: { url: string };
+}
 
 export interface InlineKeyboardButton {
     text: string;
@@ -116,7 +117,7 @@ export async function POST(req: NextRequest) {
                     case '/wallet':
                         response.text = 'Setup your wallet.';
                         response.reply_markup = {
-                            keyboard: [
+                            inline_keyboard: [
                                 [{ text: 'Enter', web_app: { url: 'https://wallet.coinmeca.net/' } }, { text: 'Button 2' }],
                                 [{ text: 'Button 3' }, { text: 'Button 4' }],
                             ],
