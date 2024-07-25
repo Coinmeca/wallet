@@ -1,5 +1,11 @@
-import Image from "next/image";
+import { useEffect, useState } from "react";
 
 export default function Home() {
-  return (<div>{typeof window !== 'undefined' && ((window as any)?.Telegram?.WebApp) ? JSON.stringify((window as any)?.Telegram?.WebApp): 'not setup'}</div>);
+  const [data, setData] = useState<any>(typeof window !== 'undefined' && (window as any)?.Telegram?.WebApp);
+  
+  useEffect(() => {
+    if (typeof window !== 'undefined') setData((window as any)?.Telegram?.WebApp)
+  }, [])
+
+  return (<div>{data || 'not setup'}</div>);
 }
