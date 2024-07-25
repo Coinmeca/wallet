@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
                         response.text = 'Available commands: /start, /help, /info';
                         break;
                     case '/passcode':
-
+                        break;
                     case '/data':
                         response.text = JSON.stringify(message);
                         break;
