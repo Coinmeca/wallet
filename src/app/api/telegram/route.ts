@@ -1,7 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import fetch from 'node-fetch';
-import Wallet from 'ethereumjs-wallet';
-import CryptoJS from 'crypto-js';
+import { wallet } from 'wallet';
 
 // message of body
 // {
@@ -87,15 +86,8 @@ export interface TelegramResponse {
     reply_markup?: InlineKeyboardMarkup | ReplyKeyboardMarkup;
 }
 
-const createWalletFromToken = (token: string) => {
-    const hash = CryptoJS.SHA256(token).toString();
-    const privateKeyBuffer = Buffer.from(hash.substring(0, 64), 'hex');
-    const wallet = Wallet.fromPrivateKey(privateKeyBuffer);
-    return wallet;
-};
-
 const send = async (response: TelegramResponse) => {
-    const telegramApiUrl = `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_API_TOKEN}/sendMessage`;
+    const telegramApiUrl = `https://api.telegram.org/bot${process.env.TELEGRAM_TOKEN}/sendMessage`;
     await fetch(telegramApiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -133,13 +125,16 @@ export async function POST(req: NextRequest) {
                     };
                 } else if (text.startsWith('/create')) {
                     const mnemonic = text?.split(' ');
-                    const wallet = createWalletFromToken(chat_id + mnemonic[1]);
+                    const seed = chat_id + mnemonic[1];
+                    const { address } = wallet(seed);
+
                     response.text = `
                         mnemonic: ${mnemonic.toString()},\n
                         mnemonic length:${mnemonic?.length},\n
                         mnemonic isBlank:${mnemonic[1] ? mnemonic[1] === '' : 'none'},\n
                         mnemonic code length:${mnemonic[1] ? mnemonic[1].length : 'none'},\n
-                        ${chat_id} => ${wallet.getAddressString()}`;
+                        ${chat_id} => ${address}`;
+
                 } else if (text === '/help') {
                     response.text = 'Available commands: /start, /help, /info';
                 } else if (text === '/data') {
