@@ -38,5 +38,6 @@
     "eslint-config-next": "14.2.5",
     "ethereumjs-wallet": "^1.0.2",
     "typescript": "^5"
-  }
+  },
+  "packageManager": "yarn@4.3.1"
 }
