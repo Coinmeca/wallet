@@ -20,7 +20,7 @@
     "clean": "rimraf ./dist ./build ./.next ./tsconfig.tsbuildinfo ./node_modules/.cache"
   },
   "dependencies": {
-    "@coinmeca/ui": "^0.0.9885",
+    "@coinmeca/ui": "^0.1.0",
     "@vercel/analytics": "^1.3.1",
     "next": "14.2.5",
     "node-fetch": "^3.3.2",
