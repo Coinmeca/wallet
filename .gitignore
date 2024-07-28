@@ -2,9 +2,7 @@
 
 # dependencies
 /node_modules
-/.pnp
-.pnp.js
-**/trading-view/**/
+/**/trading-view
 
 # testing
 /coverage
@@ -16,6 +14,7 @@
 # production
 /build
 /dist
+/.turbo
 
 # misc
 .DS_Store
@@ -28,18 +27,14 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
-.env
 .env*.local
 
 # vercel
 .vercel
 
-# typescript
-*.tsbuildinfo
-
 # yarn
+.pnp*
 .yarn/*
-.pnp.*
 !.yarn/cache
 !.yarn/patches
 !.yarn/plugins
@@ -47,24 +42,6 @@ yarn-error.log*
 !.yarn/sdks
 !.yarn/versions
 
-#amplify-do-not-edit-begin
-amplify/\#current-cloud-backend
-amplify/.config/local-*
-amplify/logs
-amplify/mock-data
-amplify/mock-api-resources
-amplify/backend/amplify-meta.json
-amplify/backend/.temp
-build/
-dist/
-node_modules/
-aws-exports.js
-awsconfiguration.json
-amplifyconfiguration.json
-amplifyconfiguration.dart
-amplify-build-config.json
-amplify-gradle-config.json
-amplifytools.xcconfig
-.secret-*
-**.sample
-#amplify-do-not-edit-end
+# typescript
+*.tsbuildinfo
+
