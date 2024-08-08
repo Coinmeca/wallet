@@ -1,5 +1,4 @@
-﻿import "dotenv/config";
-import { InteractionType, InteractionResponseType, verifyKey } from "discord-interactions";
+﻿import { InteractionType, InteractionResponseType, verifyKey } from "discord-interactions";
 import { getRandomEmoji } from "./utils";
 import { NextRequest, NextResponse } from "next/server";
 
