@@ -1,6 +1,6 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
-import fetch from 'node-fetch';
-import { wallet } from 'wallet';
+﻿import { NextRequest, NextResponse } from "next/server";
+import fetch from "node-fetch";
+import { wallet } from "wallet";
 
 // message of body
 // {
@@ -89,8 +89,8 @@ export interface TelegramResponse {
 const send = async (response: TelegramResponse) => {
     const telegramApiUrl = `https://api.telegram.org/bot${process.env.TELEGRAM_TOKEN}/sendMessage`;
     await fetch(telegramApiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(response),
     });
 };
@@ -106,43 +106,56 @@ export async function POST(req: NextRequest) {
 
             let response: TelegramResponse = {
                 chat_id,
-                text: '',
+                text: "",
             };
 
-            if (text.startsWith('/')) {
+            if (text.startsWith("/")) {
                 // Handle commands
-                if (text === '/start') {
-                    response.text = 'Welcome to the bot! Use /help to see available commands.';
-                } else if (text === '/wallet') {
-                    response.text = 'Setup your wallet.';
+                if (text === "/start") {
+                    response.text = "Welcome to the bot! Use /help to see available commands.";
+                } else if (text === "/wallet") {
+                    response.text = "Setup your wallet.";
                     response.reply_markup = {
                         keyboard: [
-                            [{ text: 'Enter', web_app: { url: 'https://wallet.coinmeca.net/' } }, { text: 'Button 2' }],
-                            [{ text: 'Button 3' }, { text: 'Button 4' }],
+                            [{ text: "Enter", web_app: { url: "https://wallet.coinmeca.net/" } }, { text: "Button 2" }],
+                            [{ text: "Button 3" }, { text: "Button 4" }],
                         ],
                         resize_keyboard: true,
                         one_time_keyboard: true,
                     };
-                } else if (text.startsWith('/create')) {
-                    const mnemonic = text?.split(' ');
+                } else if (text.startsWith("/create")) {
+                    const mnemonic = text?.split(" ");
                     const seed = chat_id + mnemonic[1];
                     const { address } = wallet(seed);
 
                     response.text = `
                         mnemonic: ${mnemonic.toString()},\n
                         mnemonic length:${mnemonic?.length},\n
-                        mnemonic isBlank:${mnemonic[1] ? mnemonic[1] === '' : 'none'},\n
-                        mnemonic code length:${mnemonic[1] ? mnemonic[1].length : 'none'},\n
+                        mnemonic isBlank:${mnemonic[1] ? mnemonic[1] === "" : "none"},\n
+                        mnemonic code length:${mnemonic[1] ? mnemonic[1].length : "none"},\n
                         ${chat_id} => ${address}`;
-
-                } else if (text === '/help') {
-                    response.text = 'Available commands: /start, /help, /info';
-                } else if (text === '/data') {
+                } else if (text === "/help") {
+                    response.text = "Available commands: /start, /help, /info";
+                } else if (text === "/data") {
                     response.text = JSON.stringify(message);
-                } else if (text === '/info') {
+                } else if (text === "/test") {
+                    (response.text = "Click the button below to open the web app"),
+                        (response.reply_markup = {
+                            inline_keyboard: [
+                                [
+                                    {
+                                        text: "Open Web App",
+                                        web_app: {
+                                            url: "https://coinmeca.net",
+                                        },
+                                    },
+                                ],
+                            ],
+                        });
+                } else if (text === "/info") {
                     response.text = `Your chat ID is ${chat_id}`;
                 } else {
-                    response.text = 'Unknown command. Use /help to see available commands.';
+                    response.text = "Unknown command. Use /help to see available commands.";
                 }
             } else {
                 // Handle other messages
@@ -152,16 +165,16 @@ export async function POST(req: NextRequest) {
             // Send a response back to the Telegram chat
             await send(response);
 
-            return NextResponse.json({ message: 'OK' });
+            return NextResponse.json({ message: "OK" });
         } else {
-            return NextResponse.json({ error: 'Bad Request: No message data found' }, { status: 400 });
+            return NextResponse.json({ error: "Bad Request: No message data found" }, { status: 400 });
         }
     } catch (error) {
-        console.error('Error handling the request:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        console.error("Error handling the request:", error);
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }
 
 export async function GET() {
-    return NextResponse.json({ message: 'GET request not supported' }, { status: 405 });
+    return NextResponse.json({ message: "GET request not supported" }, { status: 405 });
 }
