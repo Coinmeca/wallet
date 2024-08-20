@@ -1,9 +1,13 @@
 'use client';
 import { useTelegram } from "contexts/telegram";
 import { platform } from "os";
+import { useState } from "react";
 
 export default function Home() {
   const { telegram } = useTelegram();
+  const [authenticate, setAuthenticate] = useState<any>();
+  const [requestAccess, setRequestAccess] = useState<any>();
+  const [error, setError] = useState<any>('');
 
   const handleExpand = () => {
     telegram?.expand();
@@ -21,9 +25,17 @@ export default function Home() {
     telegram?.showPopup({ title: 'showPopup', message: 'do something', buttons:[[{type:"close"}]]} );
   }
 
-  const handleAuthenticate = () => {
-    telegram?.BiometricManager?.authenticate();
-    telegram?.BiometricManager?.requestAccess();
+  const handleAuthenticate = async () => {
+    try {
+      const requestAccess = await telegram?.BiometricManager?.requestAccess();
+      if(requestAccess)setRequestAccess(JSON.stringify(requestAccess));
+
+      const authenticate = await telegram?.BiometricManager?.authenticate();
+      if (authenticate) setAuthenticate(JSON.stringify(authenticate));
+
+    } catch (error) {
+      setError(error?.toString())
+    }
   }
 
   return (<div>
@@ -32,6 +44,9 @@ export default function Home() {
       <button onClick={handleShowConfirm}>showConfirm</button>
       <button onClick={handleShowPopup}>showPopup</button>
       <button onClick={handleAuthenticate}>BiometricManager</button>
-      <button onClick={handleClose}>close</button>
+    <button onClick={handleClose}>close</button>
+    {authenticate !== "" && `authenticate: ${authenticate}`}
+    {requestAccess !== "" && `requestAccess: ${requestAccess}`}
+    {error !== "" && `Error: ${error}`}
     </div>);
 }
