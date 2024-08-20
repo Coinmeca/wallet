@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
                 } else if (text === "/test") {
                     (response.text = "Click the button below to open the web app"),
                         (response.reply_markup = {
-                            inline_keyboard: [
+                            keyboard: [
                                 [
                                     {
                                         text: "Open Web App",
@@ -151,6 +151,8 @@ export async function POST(req: NextRequest) {
                                     },
                                 ],
                             ],
+                            resize_keyboard: true,
+                            one_time_keyboard: true,
                         });
                 } else if (text === "/info") {
                     response.text = `Your chat ID is ${chat_id}`;
