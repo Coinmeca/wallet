@@ -12,6 +12,10 @@ export default function Home() {
     expand();
   };
 
+
+  const handleSendData = () => {
+  };
+  
   const handleClose = () => {
     exit();
   };
@@ -61,6 +65,7 @@ export default function Home() {
   return (
     <div>
       <div>{telegram ? `Success, Platform: ${telegram.platform}` : 'Fail'}</div>
+      <button onClick={handleSendData}>Send Data</button>
       <button onClick={handleExpand}>Expand</button>
       <button onClick={handleShowConfirm}>Show Confirm</button>
       <button onClick={handleShowPopup}>Show Popup</button>

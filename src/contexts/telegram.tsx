@@ -10,11 +10,17 @@ interface TelegramContextProps {
       auth: (reason?: string) => BiometricManager | undefined;
   };
   show: {
-      confirm: (title: string, callback?: Function) => void;
-      popup: (popup: PopupParams, callback?: Function) => void;
+      alert: (message: string, callback?: () => void) => void | undefined;
+      confirm: (title: string, callback?: (ok: boolean) => void) => void | undefined;
+      popup: (popup: PopupParams, callback?: ((button_id: string) => void) | undefined) => void | undefined;
+  };
+  open: {
+    internal: (url: string, callback?: Function) => void;
+    external: (url: string, try_instant_view?: boolean, callback?: Function) => void;
   };
   expand: (callback?: Function) => void;
-  exit: (callback?: Function) => void;
+  exit: (callback?: () => void) => void;
+
 }
 
 const TelegramContext = createContext<TelegramContextProps | undefined>(undefined);
@@ -47,35 +53,46 @@ export const TelegramProvider: React.FC<{ src?: string; children: React.ReactNod
 
   const actions = useMemo(() => ({
     bio: {
-      request: (reason?: string) => {
-        if(telegram) return telegram.BiometricManager.requestAccess({ reason });
-      },
-      
-      auth: (reason?: string) => {
-        if(telegram) return telegram.BiometricManager.authenticate({ reason });
-      },
+      request: (reason?: string) => telegram && telegram.BiometricManager.requestAccess({ reason }),
+      auth: (reason?: string) => telegram && telegram.BiometricManager.authenticate({ reason }),
     },
 
     show: {
-      confirm: (title: string, callback?: Function) => {
-        if (telegram) telegram?.showConfirm(title);
-        callback?.();
+      alert: (message: string, callback?: () => void) => telegram && telegram?.showAlert(message, callback),
+      confirm: (title: string, callback?: (ok: boolean) => void) => telegram && telegram?.showConfirm(title, callback),
+      popup: (popup: PopupParams, callback?: ((button_id: string) => void) | undefined) => telegram && telegram?.showPopup(popup, callback),
+    },
+
+    open: {
+      internal: (url: string, callback?:Function) => {
+        if (telegram) {
+          telegram?.openTelegramLink(url);
+          callback?.();
+        }
+    
+    telegram?.showScanQrPopup
+    
       },
-      popup: (popup: PopupParams, callback?: Function) => {
-        if (telegram) telegram?.showPopup(popup)
-        callback?.();
-      }
+      external: (url: string, try_instant_view?:boolean, callback?:Function) => {
+        if (telegram) {
+          telegram?.openLink(url, { try_instant_view });
+          callback?.();
+        }
+      },
     },
   
     expand: (callback?: Function) => {
-      if (telegram) telegram?.expand();
-      callback?.();
+      if (telegram) {
+        telegram?.expand();
+        callback?.();
+      }
     },
 
-    exit: (callback?:Function) => {
-      telegram?.close();
-      if (telegram?.MainButton) telegram?.MainButton?.offClick(() => setUser(undefined));
-      callback?.();
+    exit: (callback?: () => void) => {
+      if (telegram) {
+        telegram?.close();
+        telegram?.MainButton?.offClick(() => { setUser(undefined);  callback?.()});
+      }
     },
   }), [telegram])
 
