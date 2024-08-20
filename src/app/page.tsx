@@ -28,14 +28,16 @@ export default function Home() {
   const handleAuthenticate = async () => {
     try {
       const requestAccess = await telegram?.BiometricManager?.requestAccess();
-      if(requestAccess)setRequestAccess(JSON.stringify(requestAccess));
-
-      const authenticate = await telegram?.BiometricManager?.authenticate();
-      if (authenticate) setAuthenticate(JSON.stringify(authenticate));
-
+      if (requestAccess) setRequestAccess(JSON.stringify(requestAccess));
     } catch (error) {
-      setError(error?.toString())
+      setError(error?.toString());
     }
+      try {
+        const authenticate = await telegram?.BiometricManager?.authenticate();
+        if (authenticate) setAuthenticate(JSON.stringify(authenticate));
+      } catch (error) {
+        setError(error?.toString());
+      }
   }
 
   return (<div>
@@ -44,9 +46,9 @@ export default function Home() {
       <button onClick={handleShowConfirm}>showConfirm</button>
       <button onClick={handleShowPopup}>showPopup</button>
       <button onClick={handleAuthenticate}>BiometricManager</button>
-    <button onClick={handleClose}>close</button>
-    {authenticate !== "" && `authenticate: ${authenticate}`}
-    {requestAccess !== "" && `requestAccess: ${requestAccess}`}
-    {error !== "" && `Error: ${error}`}
+      <button onClick={handleClose}>close</button>
+      {authenticate !== "" && `authenticate: ${authenticate}`}<br/>
+      {requestAccess !== "" && `requestAccess: ${requestAccess}`}<br/>
+      {error !== "" && `Error: ${error}`}<br/>
     </div>);
 }
