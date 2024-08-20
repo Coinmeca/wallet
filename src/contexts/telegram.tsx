@@ -1,10 +1,20 @@
 ﻿'use client';
 import Script from 'next/script';
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 interface TelegramContextProps {
   telegram?: Telegram["WebApp"];
   user?: Telegram["WebApp"]['initDataUnsafe']['user'];
+  bio: {
+      request: (reason?: string) => BiometricManager | undefined;
+      auth: (reason?: string) => BiometricManager | undefined;
+  };
+  show: {
+      confirm: (title: string, callback?: Function) => void;
+      popup: (popup: PopupParams, callback?: Function) => void;
+  };
+  expand: (callback?: Function) => void;
+  exit: (callback?: Function) => void;
 }
 
 const TelegramContext = createContext<TelegramContextProps | undefined>(undefined);
@@ -35,6 +45,42 @@ export const TelegramProvider: React.FC<{ src?: string; children: React.ReactNod
     }
   };
 
+  const actions = useMemo(() => ({
+    bio: {
+      request: (reason?: string) => {
+        if(telegram) return telegram.BiometricManager.requestAccess({ reason });
+      },
+      
+      auth: (reason?: string) => {
+        if(telegram) return telegram.BiometricManager.authenticate({ reason });
+      },
+    },
+
+    show: {
+      confirm: (title: string, callback?: Function) => {
+        if (telegram) telegram?.showConfirm(title);
+        callback?.();
+      },
+      popup: (popup: PopupParams, callback?: Function) => {
+        if (telegram) telegram?.showPopup(popup)
+        callback?.();
+      }
+    },
+  
+    expand: (callback?: Function) => {
+      if (telegram) telegram?.expand();
+      callback?.();
+    },
+
+    exit: (callback?:Function) => {
+      telegram?.close();
+      if (telegram?.MainButton) telegram?.MainButton?.offClick(() => setUser(undefined));
+      callback?.();
+    },
+  }), [telegram])
+
+
+
   useEffect(() => {
     if (telegram) {
       // Define a cleanup function that does not return a value
@@ -47,7 +93,7 @@ export const TelegramProvider: React.FC<{ src?: string; children: React.ReactNod
   return (
     <>
       <Script src={src} onLoad={onLoad} />
-      <TelegramContext.Provider value={{ telegram, user }}>
+      <TelegramContext.Provider value={{ telegram, user, ...actions }}>
         {children}
       </TelegramContext.Provider>
     </>

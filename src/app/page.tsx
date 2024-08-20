@@ -3,45 +3,51 @@ import { useTelegram } from "contexts/telegram";
 import { useState } from "react";
 
 export default function Home() {
-  const { telegram } = useTelegram();
+  const { telegram, show, expand, exit, bio } = useTelegram();
   const [authenticate, setAuthenticate] = useState<string | null>(null);
   const [requestAccess, setRequestAccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleExpand = () => {
-    telegram?.expand();
+    expand();
   };
 
   const handleClose = () => {
-    telegram?.close();
+    exit();
   };
 
   const handleShowConfirm = () => {
-    telegram?.showConfirm('showConfirm');
+    show.confirm('showConfirm');
   };
 
   const handleShowPopup = () => {
-    telegram?.showPopup({
+    show.popup({
       title: 'showPopup',
       message: 'do something',
       buttons: [{ type: "close", text: "Close" }]
     });
   };
 
-  const handleAuthenticate = async () => {
+  const handleRequest = () => {
     if (telegram?.BiometricManager) {
-      try {
-        // Initialize BiometricManager
-        await telegram.BiometricManager.init();
-        
+      try {        
         // Request access with required params
-        const accessParams: BiometricRequestAccessParams = {reason:'sign'};
-        const accessResponse = await telegram.BiometricManager.requestAccess(accessParams);
+        const accessResponse = bio.request('sign');
         setRequestAccess(JSON.stringify(accessResponse));
         
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      }
+    } else {
+      setError("BiometricManager is not available.");
+    }
+  };
+
+  const handleAuthenticate = () => {
+    if (telegram?.BiometricManager) {
+      try {        
         // Authenticate user with required params
-        const authParams: BiometricAuthenticateParams = {reason:'sign'};
-        const authResponse = await telegram.BiometricManager.authenticate(authParams);
+        const authResponse = bio.auth('sign');
         setAuthenticate(JSON.stringify(authResponse));
         
       } catch (err) {
@@ -58,7 +64,8 @@ export default function Home() {
       <button onClick={handleExpand}>Expand</button>
       <button onClick={handleShowConfirm}>Show Confirm</button>
       <button onClick={handleShowPopup}>Show Popup</button>
-      <button onClick={handleAuthenticate}>Biometric Manager</button>
+      <button onClick={handleRequest}>Biometric Request</button>
+      <button onClick={handleAuthenticate}>Biometric Auth</button>
       <button onClick={handleClose}>Close</button>
       {authenticate && `Authenticate: ${authenticate}`}<br />
       {requestAccess && `Request Access: ${requestAccess}`}<br />
