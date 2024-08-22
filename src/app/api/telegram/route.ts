@@ -114,11 +114,12 @@ export async function POST(req: NextRequest) {
                 if (command === "/start") {
                     response.text = "Welcome to the bot! Use /help to see available commands.";
                 } else if (command === "/wallet") {
+                    response.text = "Open Coinmeca Wallet";
                     response.reply_markup = {
                         keyboard: [
                             [
                                 {
-                                    text: "Open Coinmeca Wallet",
+                                    text: "Wallet",
                                     web_app: {
                                         url: "https://wallet.coinmeca.net",
                                     },
