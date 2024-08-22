@@ -127,7 +127,6 @@ export async function POST(req: NextRequest) {
                             ],
                         ],
                         resize_keyboard: true,
-                        one_time_keyboard: true,
                     };
                 } else if (command.startsWith("/create")) {
                     const mnemonic = command?.split(" ");
