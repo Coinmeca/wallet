@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import fetch from "node-fetch";
 import { wallet } from "wallet";
+import getTelegram from "./module";
 
 // message of body
 // {
@@ -97,23 +98,25 @@ const send = async (response: TelegramResponse) => {
 
 export async function POST(req: NextRequest) {
     try {
+        const { open } = getTelegram();
+
         const body = await req.json();
         const { message } = body;
 
         if (message && message.text) {
             const chat_id = message.chat.id;
-            const text = message.text;
+            const command = message.text;
 
             let response: TelegramResponse = {
                 chat_id,
                 text: "",
             };
 
-            if (text.startsWith("/")) {
+            if (command.startsWith("/")) {
                 // Handle commands
-                if (text === "/start") {
+                if (command === "/start") {
                     response.text = "Welcome to the bot! Use /help to see available commands.";
-                } else if (text === "/wallet") {
+                } else if (command === "/wallet") {
                     response.text = "Setup your wallet.";
                     response.reply_markup = {
                         keyboard: [
@@ -123,8 +126,8 @@ export async function POST(req: NextRequest) {
                         resize_keyboard: true,
                         one_time_keyboard: true,
                     };
-                } else if (text.startsWith("/create")) {
-                    const mnemonic = text?.split(" ");
+                } else if (command.startsWith("/create")) {
+                    const mnemonic = command?.split(" ");
                     const seed = chat_id + mnemonic[1];
                     const { address } = wallet(seed);
 
@@ -134,11 +137,11 @@ export async function POST(req: NextRequest) {
                         mnemonic isBlank:${mnemonic[1] ? mnemonic[1] === "" : "none"},\n
                         mnemonic code length:${mnemonic[1] ? mnemonic[1].length : "none"},\n
                         ${chat_id} => ${address}`;
-                } else if (text === "/help") {
+                } else if (command === "/help") {
                     response.text = "Available commands: /start, /help, /info";
-                } else if (text === "/data") {
+                } else if (command === "/data") {
                     response.text = JSON.stringify(message);
-                } else if (text === "/test") {
+                } else if (command === "/test") {
                     (response.text = "Click the button below to open the web app"),
                         (response.reply_markup = {
                             keyboard: [
@@ -154,14 +157,16 @@ export async function POST(req: NextRequest) {
                             resize_keyboard: true,
                             one_time_keyboard: true,
                         });
-                } else if (text === "/info") {
+                } else if (command === "/info") {
                     response.text = `Your chat ID is ${chat_id}`;
+                } else if (command === "/expand") {
+                    open.internal("https://wallet.coinmeca.net");
                 } else {
                     response.text = "Unknown command. Use /help to see available commands.";
                 }
             } else {
                 // Handle other messages
-                response.text = `You said: ${text}`;
+                response.text = `You said: ${command}`;
             }
 
             // Send a response back to the Telegram chat

@@ -3,7 +3,7 @@ import Script from 'next/script';
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 interface TelegramContextProps {
-  telegram?: Telegram["WebApp"];
+  telegram?: Telegram["WebApp"]
   user?: Telegram["WebApp"]['initDataUnsafe']['user'];
   bio: {
       request: (reason?: string) => BiometricManager | undefined;
@@ -45,7 +45,6 @@ export const TelegramProvider: React.FC<{ src?: string; children: React.ReactNod
       if (telegram.BiometricManager) {
         telegram.BiometricManager.init();
       }
-      console.log('telegram', telegram);
       setTelegram(telegram);
       setUser(telegram.initDataUnsafe?.user || null);
     }
@@ -57,10 +56,13 @@ export const TelegramProvider: React.FC<{ src?: string; children: React.ReactNod
       auth: (reason?: string) => telegram && telegram.BiometricManager.authenticate({ reason }),
     },
 
+    storage: telegram && telegram?.CloudStorage,
+
     show: {
       alert: (message: string, callback?: () => void) => telegram && telegram?.showAlert(message, callback),
       confirm: (title: string, callback?: (ok: boolean) => void) => telegram && telegram?.showConfirm(title, callback),
       popup: (popup: PopupParams, callback?: ((button_id: string) => void) | undefined) => telegram && telegram?.showPopup(popup, callback),
+      scanQR: (text: string, callback?: (data: string) => void) => telegram && telegram?.showScanQrPopup({text},callback),
     },
 
     open: {
@@ -68,10 +70,7 @@ export const TelegramProvider: React.FC<{ src?: string; children: React.ReactNod
         if (telegram) {
           telegram?.openTelegramLink(url);
           callback?.();
-        }
-    
-    telegram?.showScanQrPopup
-    
+        }    
       },
       external: (url: string, try_instant_view?:boolean, callback?:Function) => {
         if (telegram) {
