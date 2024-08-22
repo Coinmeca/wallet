@@ -1,7 +1,6 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import fetch from "node-fetch";
 import { wallet } from "wallet";
-import getTelegram from "./module";
 
 // message of body
 // {
