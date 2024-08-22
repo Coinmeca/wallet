@@ -3,7 +3,7 @@ import { useTelegram } from "contexts/telegram";
 import { useState } from "react";
 
 export default function Home() {
-  const { telegram, show, expand, exit, bio } = useTelegram();
+  const { telegram, send, show, expand, exit, bio } = useTelegram();
   const [authenticate, setAuthenticate] = useState<string | null>(null);
   const [requestAccess, setRequestAccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -14,6 +14,7 @@ export default function Home() {
 
 
   const handleSendData = () => {
+    send("webapp message");
   };
   
   const handleClose = () => {

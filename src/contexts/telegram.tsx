@@ -4,7 +4,20 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from '
 
 interface TelegramContextProps {
   telegram?: Telegram["WebApp"]
-  user?: Telegram["WebApp"]['initDataUnsafe']['user'];
+  user: Telegram["WebApp"]['initDataUnsafe']['user'];
+  isInApp?: boolean;
+  isVerticalSwipe?: boolean;
+  isCloseConfirm?: boolean;
+  storage?: CloudStorage;
+  send: (text: string) => void | undefined
+  enable: {
+    vertical: () => void | undefined;
+    closeConfirm: () => void | undefined;
+}
+  disable: {
+    vertical: () => void | undefined;
+    closeConfirm: () => void | undefined;
+}
   bio: {
       request: (reason?: string) => BiometricManager | undefined;
       auth: (reason?: string) => BiometricManager | undefined;
@@ -12,7 +25,8 @@ interface TelegramContextProps {
   show: {
       alert: (message: string, callback?: () => void) => void | undefined;
       confirm: (title: string, callback?: (ok: boolean) => void) => void | undefined;
-      popup: (popup: PopupParams, callback?: ((button_id: string) => void) | undefined) => void | undefined;
+    popup: (popup: PopupParams, callback?: ((button_id: string) => void) | undefined) => void | undefined;
+    scanQR: (text: string, callback?: (data: string) => void) => void | undefined;
   };
   open: {
     internal: (url: string, callback?: Function) => void;
@@ -50,13 +64,30 @@ export const TelegramProvider: React.FC<{ src?: string; children: React.ReactNod
     }
   };
 
-  const actions = useMemo(() => ({
+  const modules = useMemo(() => ({
+    isInApp: telegram && telegram?.platform !== 'unknown',
+    isExpanded: telegram?.isExpanded || false,
+    isVerticalSwipe: telegram?.isVerticalSwipesEnabled,
+    isCloseConfirm: telegram?.isClosingConfirmationEnabled,
+
+    storage: telegram?.CloudStorage,
+
+    send: (text:string) => telegram && telegram?.sendData(text),
+
+    enable: {
+      vertical: () => telegram?.enableVerticalSwipes?.(),
+      closeConfirm: () => telegram?.enableClosingConfirmation?.(),
+    },
+
+    disable: {
+      vertical: () => telegram?.disableVerticalSwipes?.(),
+      closeConfirm: () => telegram?.disableClosingConfirmation?.(),
+    },
+
     bio: {
       request: (reason?: string) => telegram && telegram.BiometricManager.requestAccess({ reason }),
       auth: (reason?: string) => telegram && telegram.BiometricManager.authenticate({ reason }),
     },
-
-    storage: telegram && telegram?.CloudStorage,
 
     show: {
       alert: (message: string, callback?: () => void) => telegram && telegram?.showAlert(message, callback),
@@ -109,7 +140,7 @@ export const TelegramProvider: React.FC<{ src?: string; children: React.ReactNod
   return (
     <>
       <Script src={src} onLoad={onLoad} />
-      <TelegramContext.Provider value={{ telegram, user, ...actions }}>
+      <TelegramContext.Provider value={{ telegram, user, ...modules }}>
         {children}
       </TelegramContext.Provider>
     </>
