@@ -117,11 +117,16 @@ export async function POST(req: NextRequest) {
                 if (command === "/start") {
                     response.text = "Welcome to the bot! Use /help to see available commands.";
                 } else if (command === "/wallet") {
-                    response.text = "Setup your wallet.";
                     response.reply_markup = {
                         keyboard: [
-                            [{ text: "Enter", web_app: { url: "https://wallet.coinmeca.net/" } }, { text: "Button 2" }],
-                            [{ text: "Button 3" }, { text: "Button 4" }],
+                            [
+                                {
+                                    text: "Open Coinmeca Wallet",
+                                    web_app: {
+                                        url: "https://wallet.coinmeca.net",
+                                    },
+                                },
+                            ],
                         ],
                         resize_keyboard: true,
                         one_time_keyboard: true,
@@ -142,21 +147,21 @@ export async function POST(req: NextRequest) {
                 } else if (command === "/data") {
                     response.text = JSON.stringify(message);
                 } else if (command === "/test") {
-                    (response.text = "Click the button below to open the web app"),
-                        (response.reply_markup = {
-                            keyboard: [
-                                [
-                                    {
-                                        text: "Open Web App",
-                                        web_app: {
-                                            url: "https://coinmeca.net",
-                                        },
+                    response.text = "Click the button below to open the web app";
+                    response.reply_markup = {
+                        keyboard: [
+                            [
+                                {
+                                    text: "Open Web App",
+                                    web_app: {
+                                        url: "https://coinmeca.net",
                                     },
-                                ],
+                                },
                             ],
-                            resize_keyboard: true,
-                            one_time_keyboard: true,
-                        });
+                        ],
+                        resize_keyboard: true,
+                        one_time_keyboard: true,
+                    };
                 } else if (command === "/info") {
                     response.text = `Your chat ID is ${chat_id}`;
                 } else {
