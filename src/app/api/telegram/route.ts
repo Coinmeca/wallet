@@ -97,8 +97,6 @@ const send = async (response: TelegramResponse) => {
 
 export async function POST(req: NextRequest) {
     try {
-        const { open } = getTelegram();
-
         const body = await req.json();
         const { message } = body;
 
