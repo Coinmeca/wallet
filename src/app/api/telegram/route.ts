@@ -159,8 +159,6 @@ export async function POST(req: NextRequest) {
                         });
                 } else if (command === "/info") {
                     response.text = `Your chat ID is ${chat_id}`;
-                } else if (command === "/expand") {
-                    open.internal("https://wallet.coinmeca.net");
                 } else {
                     response.text = "Unknown command. Use /help to see available commands.";
                 }
