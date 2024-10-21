@@ -3,6 +3,7 @@
 # dependencies
 /node_modules
 /**/trading-view
+ui-kit
 
 # testing
 /coverage
@@ -32,7 +33,6 @@ yarn-error.log*
 
 # vercel
 .vercel
-
 
 # yarn
 .pnp*

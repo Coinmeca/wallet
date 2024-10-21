@@ -26,7 +26,7 @@
     "discord": "tsx ./src/app/api/discord/register"
   },
   "dependencies": {
-    "@coinmeca/ui": "0.1.461",
+    "@coinmeca/ui": "0.1.462",
     "@vercel/analytics": "^1.3.1",
     "discord-api-types": "^0.37.102",
     "discord-interactions": "^4.1.0",
