@@ -1,56 +1,56 @@
 {
-  "name": "@coinmeca/wallet",
-  "version": "0.0.1",
-  "keywords": [
-    "coinmeca",
-    "interface",
-    "ui"
-  ],
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/coinmeca/interface"
-  },
-  "author": "Coinmeca Team <dev@coinmeca.net>",
-  "workspaces": [
-    "ui-kit"
-  ],
-  "scripts": {
-    "lint": "next lint",
-    "dev": "next dev",
-    "start": "next start",
-    "build": "next build",
-    "deploy": "next build && npx vercel --prod",
-    "dist": "npx vercel --prod",
-    "clean": "rm -rf ./dist ./build ./.next ./tsconfig.tsbuildinfo ./node_modules/.cache",
-    "discord": "tsx ./src/app/api/discord/register"
-  },
-  "dependencies": {
-    "@coinmeca/ui": "0.1.463",
-    "@vercel/analytics": "^1.3.1",
-    "discord-api-types": "^0.37.102",
-    "discord-interactions": "^4.1.0",
-    "next": "14.2.15",
-    "node-fetch": "^3.3.2",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "sass": "^1.80.3",
-    "vercel": "^35.2.4"
-  },
-  "devDependencies": {
-    "@svgr/webpack": "^8.1.0",
-    "@types/crypto-js": "^4.2.2",
-    "@types/node": "^20",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
-    "@types/telegram-web-app": "^7.8.0",
-    "crypto-js": "^4.2.0",
-    "eslint": "^8",
-    "eslint-config-next": "14.2.15",
-    "ethereumjs-wallet": "^1.0.2",
-    "tsx": "^4.19.1",
-    "typescript": "^5.6.3",
-    "zustand": "^5.0.0"
-  },
-  "packageManager": "yarn@4.5.1"
+    "name": "@coinmeca/wallet",
+    "version": "0.0.1",
+    "keywords": [
+        "coinmeca",
+        "interface",
+        "ui"
+    ],
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/coinmeca/interface"
+    },
+    "author": "Coinmeca Team <dev@coinmeca.net>",
+    "workspaces": [
+        "ui-kit"
+    ],
+    "scripts": {
+        "lint": "next lint",
+        "dev": "next dev",
+        "start": "next start",
+        "build": "next build",
+        "deploy": "next build && npx vercel --prod",
+        "dist": "npx vercel --prod",
+        "clean": "rm -rf ./dist ./build ./.next ./tsconfig.tsbuildinfo ./node_modules/.cache",
+        "discord": "tsx ./src/app/api/discord/register"
+    },
+    "dependencies": {
+        "@coinmeca/ui": "0.1.464",
+        "@vercel/analytics": "^1.3.1",
+        "discord-api-types": "^0.37.102",
+        "discord-interactions": "^4.1.0",
+        "next": "14.2.15",
+        "node-fetch": "^3.3.2",
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1",
+        "sass": "^1.80.3",
+        "vercel": "^35.2.4"
+    },
+    "devDependencies": {
+        "@svgr/webpack": "^8.1.0",
+        "@types/crypto-js": "^4.2.2",
+        "@types/node": "^20",
+        "@types/react": "^18",
+        "@types/react-dom": "^18",
+        "@types/telegram-web-app": "^7.8.0",
+        "crypto-js": "^4.2.0",
+        "eslint": "^8",
+        "eslint-config-next": "14.2.15",
+        "ethereumjs-wallet": "^1.0.2",
+        "tsx": "^4.19.1",
+        "typescript": "^5.6.3",
+        "zustand": "^5.0.0"
+    },
+    "packageManager": "yarn@4.5.1"
 }
