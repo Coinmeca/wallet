@@ -31,7 +31,7 @@ export default function Lock() {
                             <Elements.Passcode index={passcode.length} length={length} error={error} gap={'5%'} />
                         </Layouts.Col>
                     </Layouts.Contents.InnerContent>
-                    <Parts.Numberpad type="code" value={passcode} onChange={(e:any,v:any)=>handlePasscodeClick(v)}/>
+                    <Parts.Numberpad type="code" value={passcode} onChange={(e: any, v: any) => handlePasscodeClick(v)} style={{background:'rgba(var(--black),.45)'}} />
                 </Layouts.Col>,
             }
         ]}

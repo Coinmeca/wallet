@@ -1,7 +1,18 @@
-﻿import { Frames } from "@coinmeca/ui/containers";
+﻿"use client";
+import { Frames } from "@coinmeca/ui/containers";
+import Data from "./data";
 
-export default function Template({ children }: { children: any }) {
-    return <Frames.Frame>
-        {children}
-    </Frames.Frame>
+export default function RootTemplate({ children }: { children: any }) {
+    const { header } = Data();
+
+    return (
+        <Frames.Frame
+            // header={header}
+            // align={"right"}
+            background={{ img: { src: 2 } }}
+            // side={56}
+        >
+            {children}
+        </Frames.Frame>
+    );
 }
