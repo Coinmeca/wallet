@@ -16,22 +16,17 @@
     "ui-kit"
   ],
   "scripts": {
-    "setup": "git submodule update --init --recursive && cd ui-kit && git fetch origin && git checkout main && git pull origin main && cd .. && git submodule update --init --recursive",
     "lint": "next lint",
-    "install:ui": "yarn workspace @coinmeca/ui install",
     "dev": "next dev",
-    "dev:ui": "yarn workspace @coinmeca/ui dev",
     "start": "next start",
     "build": "next build",
-    "build:ui": "yarn workspace @coinmeca/ui build",
     "deploy": "next build && npx vercel --prod",
-    "deploy:ui": "yarn workspace @coinmeca/ui deploy",
     "dist": "npx vercel --prod",
     "clean": "rm -rf ./dist ./build ./.next ./tsconfig.tsbuildinfo ./node_modules/.cache",
-    "clean:ui": "yarn workspace @coinmeca/ui clean",
     "discord": "tsx ./src/app/api/discord/register"
   },
   "dependencies": {
+    "@coinmeca/ui": "0.1.46",
     "@vercel/analytics": "^1.3.1",
     "discord-api-types": "^0.37.102",
     "discord-interactions": "^4.1.0",
