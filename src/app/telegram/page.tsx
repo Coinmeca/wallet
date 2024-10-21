@@ -2,19 +2,26 @@
 
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { Parts } from "@coinmeca/ui/index";
+import { useTelegram } from "contexts/telegram";
 import { useState } from "react";
+import { wallet } from "wallet";
+import { useId } from "react";
 
 export default function Lock() {
+    const userId = useId();
     const length = 6;
-    const [pass, setPass] = useState<{ code: string; confirm?: string }>({ code: "", confirm: "" });
+    const { telegram, user } = useTelegram();
+
+    const [level, setLevel] = useState({ name: "", stage: 0 });
+    const [pass, setPass] = useState<{ code: string; confirm?: string }>({ code: "" });
     const [error, setError] = useState({ state: false, message: "" });
 
     const handleNumberClick = (v: string) => {
         if (v?.length > length) return;
 
-        setPass((state) => (level.name === "create" && level.stage === 1 ? { ...state, confirm: v } : { code: v }));
+        setPass((state) => (level.name === "setup" && level.stage === 1 ? { ...state, confirm: v } : { code: v }));
         if (v?.length === length) {
-            if (level.name === "create") {
+            if (level.name === "setup") {
                 if (level.stage === 0) setLevel((state) => ({ ...state, stage: 1 }));
                 else if (level.stage === 1)
                     if (pass.code !== v)
@@ -22,14 +29,89 @@ export default function Lock() {
                             state: true,
                             message: "The passcode you entered does not match the passcode initially entered.",
                         });
-                    else console.log("confirm");
+                    else {
+                        if (telegram && user?.id) {
+                            const key = wallet(`${user.id}:${pass.code}`).privateKey;
+                            telegram.CloudStorage.setItem(`${user.id}:${pass.code}`, key);
+                            telegram.CloudStorage.setItem("key", key);
+                            telegram.CloudStorage.setItem(`${key}:nonce`, "0");
+                            setLevel({ name: "create", stage: 0 });
+                        } else {
+                            localStorage.setItem(`userId`, userId);
+                            const key = wallet(`${userId}:${pass.code}`).privateKey;
+                            localStorage.setItem(`${userId}:${pass.code}`, key);
+                            localStorage.setItem(`${key}:nonce`, "0");
+                            sessionStorage.setItem("key", key);
+                            setLevel({ name: "create", stage: 0 });
+                        }
+                        setPass({ code: "" });
+                    }
             }
         } else {
             setError({ state: false, message: "" });
         }
     };
 
-    const [level, setLevel] = useState({ name: "", stage: 0 });
+    const handleCreateWallet = () => {
+        const key = sessionStorage.getItem("key");
+        if (!key || key === "") return;
+        if (telegram && user?.id) {
+            let nonce: any = telegram.CloudStorage.getItem(`${key}:nonce`);
+            if (!nonce)
+                setError({
+                    state: true,
+                    message: "Couldn't find telegram user data. Please try again after terminating this session.",
+                });
+            nonce = parseInt(nonce.toString()) as number;
+            const { privateKey, address } = wallet(`${key}:${nonce}`);
+            telegram.CloudStorage.setItem(`${key}:${nonce}`, privateKey);
+            telegram.CloudStorage.setItem(`${key}:nonce`, `${nonce + 1}`);
+            console.log(address);
+        } else {
+            let nonce: any = localStorage.getItem(`${key}:nonce`);
+            if (!nonce)
+                setError({
+                    state: true,
+                    message: "Couldn't find telegram user data. Please try again after terminating this session.",
+                });
+            nonce = parseInt(nonce.toString()) as number;
+            const { privateKey, address } = wallet(`${key}:${nonce}`);
+            localStorage.setItem(`${key}:${nonce}`, privateKey);
+            localStorage.setItem(`${key}:nonce`, `${nonce + 1}`);
+            console.log(address);
+        }
+    };
+
+    const handleImportWallet = (seed: string) => {
+        const key = sessionStorage.getItem("key");
+        if (!key || key === "") return;
+        if (telegram && user?.id) {
+            let nonce: any = telegram.CloudStorage.getItem(`${key}:nonce`);
+            if (!nonce)
+                setError({
+                    state: true,
+                    message: "Couldn't find telegram user data. Please try again after terminating this session.",
+                });
+            nonce = parseInt(nonce.toString()) as number;
+            telegram.CloudStorage.setItem(`${key}:${nonce}`, seed);
+            telegram.CloudStorage.setItem(`${key}:nonce`, `${nonce + 1}`);
+            const address = wallet(seed).address;
+            console.log(address);
+            setLevel({ name: "create", stage: 0 });
+        } else {
+            let nonce: any = localStorage.getItem(`${key}:nonce`);
+            if (!nonce)
+                setError({
+                    state: true,
+                    message: "Couldn't find telegram user data. Please try again after terminating this session.",
+                });
+            nonce = parseInt(nonce.toString()) as number;
+            localStorage.setItem(`${key}:${nonce}`, seed);
+            localStorage.setItem(`${key}:nonce`, `${nonce + 1}`);
+            const address = wallet(seed).address;
+            console.log(address);
+        }
+    };
 
     return (
         <Layouts.Contents.SlideContainer
@@ -37,45 +119,28 @@ export default function Lock() {
                 {
                     active: level.name === "",
                     children: (
-                        <Layouts.Contents.SlideContainer
-                            contents={[
-                                {
-                                    active: true,
-                                    children: (
-                                        <Layouts.Contents.InnerContent scroll={false}>
-                                            <Layouts.Col align={"center"} style={{ padding: "4em" }} fill>
-                                                <Layouts.Col gap={4} align={"center"} fit>
-                                                    <Elements.Text type={"h2"}>Welcome</Elements.Text>
-                                                    <Elements.Text weight={"bold"} opacity={0.6}>
-                                                        Please create a new wallet or import an exist your other wallet via private key.
-                                                    </Elements.Text>
-                                                </Layouts.Col>
-                                            </Layouts.Col>
-                                            <Layouts.Col gap={2} align={"center"} style={{ padding: "4em" }} fill>
-                                                <Layouts.Col align={"center"} fill>
-                                                    <Layouts.Col gap={4} align={"center"} fit>
-                                                        <Elements.Text type={"h2"}>Welcome</Elements.Text>
-                                                        <Elements.Text weight={"bold"} opacity={0.6}>
-                                                            Please create a new wallet or import an exist your other wallet via private key.
-                                                        </Elements.Text>
-                                                    </Layouts.Col>
-                                                </Layouts.Col>
-                                                <Controls.Button type={"line"} onClick={() => setLevel({ name: "create", stage: 0 })}>
-                                                    Create a new wallet
-                                                </Controls.Button>
-                                                <Controls.Button type={"line"} onClick={() => setLevel({ name: "create", stage: 0 })}>
-                                                    Import an exist wallet
-                                                </Controls.Button>
-                                            </Layouts.Col>
-                                        </Layouts.Contents.InnerContent>
-                                    ),
-                                },
-                            ]}
-                        />
+                        <Layouts.Contents.InnerContent scroll={false}>
+                            <Layouts.Col gap={2} align={"center"} style={{ padding: "4em" }} fill>
+                                <Layouts.Col align={"center"} fill>
+                                    <Layouts.Col gap={4} align={"center"} fit>
+                                        <Elements.Text type={"h2"}>Welcome</Elements.Text>
+                                        <Elements.Text>
+                                            For smooth use, please set a password first. If it has been lost, it is impossible to use or recover all created
+                                            wallets on this passcode, so please enter it carefully.
+                                        </Elements.Text>
+                                    </Layouts.Col>
+                                </Layouts.Col>
+                                <Layouts.Col gap={4} align={"center"} style={{ margin: 0 }}>
+                                    <Controls.Button type={"line"} onClick={() => setLevel({ name: "setup", stage: 0 })}>
+                                        Get Started
+                                    </Controls.Button>
+                                </Layouts.Col>
+                            </Layouts.Col>
+                        </Layouts.Contents.InnerContent>
                     ),
                 },
                 {
-                    active: level.name === "create",
+                    active: level.name === "setup",
                     children: (
                         <Layouts.Contents.SlideContainer
                             contents={[
@@ -88,66 +153,69 @@ export default function Lock() {
                                                 {
                                                     active: true,
                                                     children: (
-                                                        <Layouts.Contents.SlideContainer
-                                                            contents={[
-                                                                {
-                                                                    active: level.stage === 0,
-                                                                    children: (
-                                                                        <Layouts.Contents.InnerContent scroll={false}>
-                                                                            <Layouts.Col gap={4} align={"center"} fill>
-                                                                                <Layouts.Col gap={4} align={"center"} fit>
-                                                                                    <Elements.Text weight={"bold"} size={2}>
-                                                                                        PASSCODE
-                                                                                    </Elements.Text>
-                                                                                    <Elements.Passcode
-                                                                                        index={pass.code.length}
-                                                                                        length={length}
-                                                                                        error={error.state}
-                                                                                        gap={"5%"}
-                                                                                        effect
-                                                                                    />
-                                                                                    <Elements.Text weight={"bold"} opacity={0.6} style={{ marginTop: "2em" }}>
-                                                                                        Please enter your passcode. If it has been lost, it is impossible to use
-                                                                                        or recover all created wallets on this passcode, so please enter it
-                                                                                        carefully.
-                                                                                    </Elements.Text>
-                                                                                </Layouts.Col>
-                                                                            </Layouts.Col>
-                                                                        </Layouts.Contents.InnerContent>
-                                                                    ),
-                                                                },
-                                                                {
-                                                                    active: level.stage === 1,
-                                                                    children: (
-                                                                        <Layouts.Contents.InnerContent scroll={false}>
-                                                                            <Layouts.Col gap={4} align={"center"} fill>
-                                                                                <Layouts.Col gap={4} align={"center"} fit>
-                                                                                    <Elements.Text weight={"bold"} size={2}>
-                                                                                        PASSCODE CHECK
-                                                                                    </Elements.Text>
-                                                                                    <Elements.Passcode
-                                                                                        index={pass.confirm?.length || 0}
-                                                                                        length={length}
-                                                                                        error={error.state}
-                                                                                        gap={"5%"}
-                                                                                        effect
-                                                                                    />
-                                                                                    {error.message !== "" && (
+                                                        <Layouts.Contents.InnerContent style={{ padding: "2em" }} scroll={false}>
+                                                            <Layouts.Contents.SlideContainer
+                                                                contents={[
+                                                                    {
+                                                                        active: level.stage === 0,
+                                                                        children: (
+                                                                            <Layouts.Contents.InnerContent scroll={false}>
+                                                                                <Layouts.Col gap={4} align={"center"} fill>
+                                                                                    <Layouts.Col gap={4} align={"center"} fit>
+                                                                                        <Elements.Text weight={"bold"} size={2}>
+                                                                                            PASSCODE
+                                                                                        </Elements.Text>
+                                                                                        <Elements.Passcode
+                                                                                            index={pass.code.length}
+                                                                                            length={length}
+                                                                                            error={error.state}
+                                                                                            gap={"5%"}
+                                                                                            effect
+                                                                                        />
                                                                                         <Elements.Text
                                                                                             weight={"bold"}
                                                                                             opacity={0.6}
-                                                                                            color={"red"}
                                                                                             style={{ marginTop: "2em" }}>
-                                                                                            {error.message}
+                                                                                            Please enter your passcode.
                                                                                         </Elements.Text>
-                                                                                    )}
+                                                                                    </Layouts.Col>
                                                                                 </Layouts.Col>
-                                                                            </Layouts.Col>
-                                                                        </Layouts.Contents.InnerContent>
-                                                                    ),
-                                                                },
-                                                            ]}
-                                                        />
+                                                                            </Layouts.Contents.InnerContent>
+                                                                        ),
+                                                                    },
+                                                                    {
+                                                                        active: level.stage === 1,
+                                                                        children: (
+                                                                            <Layouts.Contents.InnerContent scroll={false}>
+                                                                                <Layouts.Col gap={4} align={"center"} fill>
+                                                                                    <Layouts.Col gap={4} align={"center"} fit>
+                                                                                        <Elements.Text weight={"bold"} size={2}>
+                                                                                            PASSCODE CHECK
+                                                                                        </Elements.Text>
+                                                                                        <Elements.Passcode
+                                                                                            index={pass.confirm?.length || 0}
+                                                                                            length={length}
+                                                                                            error={error.state}
+                                                                                            gap={"5%"}
+                                                                                            effect
+                                                                                        />
+                                                                                        {error.message !== "" && (
+                                                                                            <Elements.Text
+                                                                                                weight={"bold"}
+                                                                                                opacity={0.6}
+                                                                                                color={"red"}
+                                                                                                style={{ marginTop: "2em" }}>
+                                                                                                {error.message}
+                                                                                            </Elements.Text>
+                                                                                        )}
+                                                                                    </Layouts.Col>
+                                                                                </Layouts.Col>
+                                                                            </Layouts.Contents.InnerContent>
+                                                                        ),
+                                                                    },
+                                                                ]}
+                                                            />
+                                                        </Layouts.Contents.InnerContent>
                                                     ),
                                                 },
                                                 {
@@ -158,11 +226,11 @@ export default function Lock() {
                                                             vertical
                                                             contents={[
                                                                 {
-                                                                    active: level.name !== "create",
+                                                                    active: level.name !== "setup",
                                                                     children: <></>,
                                                                 },
                                                                 {
-                                                                    active: level.name === "create",
+                                                                    active: level.name === "setup",
                                                                     children: (
                                                                         <Layouts.Contents.InnerContent scroll={false}>
                                                                             <Layouts.Col
@@ -210,52 +278,42 @@ export default function Lock() {
                     ),
                 },
                 {
-                    active: level.name === "verify",
+                    active: level.name === "create",
                     children: (
                         <Layouts.Contents.SlideContainer
                             contents={[
                                 {
                                     active: true,
                                     children: (
-                                        <Layouts.Col gap={4} align={"center"} fill>
-                                            <Layouts.Col gap={4} align={"center"} fit>
-                                                <Elements.Text weight={"bold"} size={2}>
-                                                    PIN
-                                                </Elements.Text>
-                                                <Elements.Passcode index={pass.code.length} length={length} error={error.state} gap={"5%"} effect />
-                                                {error.state && error.message !== "" && (
-                                                    <Elements.Text weight={"bold"} size={2}>
-                                                        {error.message}
+                                        <Layouts.Contents.InnerContent scroll={false}>
+                                            <Layouts.Col align={"center"} style={{ padding: "4em" }} fill>
+                                                <Layouts.Col gap={4} align={"center"} fit>
+                                                    <Elements.Text type={"h2"}>Create</Elements.Text>
+                                                    <Elements.Text weight={"bold"} opacity={0.6}>
+                                                        Please create a new wallet or import an exist your other wallet via private key.
                                                     </Elements.Text>
-                                                )}
+                                                </Layouts.Col>
                                             </Layouts.Col>
-                                        </Layouts.Col>
-                                    ),
-                                },
-                                {
-                                    active: true,
-                                    children: (
-                                        <Layouts.Contents.SlideContainer
-                                            contents={[
-                                                {
-                                                    active: true,
-                                                    children: (
-                                                        <Layouts.Col fill>
-                                                            <Parts.Numberpad
-                                                                type="code"
-                                                                value={pass.code}
-                                                                onChange={(e: any, v: any) => handleNumberClick(v)}
-                                                                style={{ background: "rgba(var(--black),.45)" }}
-                                                            />
-                                                        </Layouts.Col>
-                                                    ),
-                                                },
-                                            ]}
-                                        />
+                                            <Layouts.Col gap={2} align={"center"} style={{ padding: "4em" }} fill>
+                                                <Layouts.Col align={"center"} fill>
+                                                    <Layouts.Col gap={4} align={"center"} fit>
+                                                        <Elements.Text type={"h2"}>Welcome</Elements.Text>
+                                                        <Elements.Text weight={"bold"} opacity={0.6}>
+                                                            Please create a new wallet or import an exist your other wallet via private key.
+                                                        </Elements.Text>
+                                                    </Layouts.Col>
+                                                </Layouts.Col>
+                                                <Controls.Button type={"line"} onClick={() => handleCreateWallet()}>
+                                                    Create a new wallet
+                                                </Controls.Button>
+                                                <Controls.Button type={"line"} onClick={() => {}}>
+                                                    Import an exist wallet
+                                                </Controls.Button>
+                                            </Layouts.Col>
+                                        </Layouts.Contents.InnerContent>
                                     ),
                                 },
                             ]}
-                            vertical
                         />
                     ),
                 },
