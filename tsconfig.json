@@ -1,39 +1,39 @@
 {
-  "compilerOptions": {
-      "baseUrl": "src",
-      "outDir": ".next",
-      "target": "esnext",
-      "module": "esnext",
-      "lib": ["dom", "dom.iterable", "esnext"],
-      "allowJs": true,
-      "skipLibCheck": true,
-      "strict": true,
-      "forceConsistentCasingInFileNames": true,
-      "allowSyntheticDefaultImports": true,
-      "noEmit": true,
-      "esModuleInterop": true,
-      "moduleResolution": "node",
-      "resolveJsonModule": true,
-      "isolatedModules": true,
-      "jsx": "preserve",
-      "incremental": true,
-      "plugins": [
-          {
-              "name": "next",
-              "presets": ["next/babel"],
-              "styled-components": {
-                  "ssr": true
-              }
-          }
-      ],
-      "paths": {
-          "": ["./src/*"],
-          "~/*": ["./src/*"],
-          "@/*": ["./src/*"],
-      },
-      "downlevelIteration": false,
-      "typeRoots": ["src/types", "node_modules/@types"]
-  },
-  "include": ["src", "next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "next.config.js"],
-  "exclude": ["node_modules", "packages"]
+    "compilerOptions": {
+        "baseUrl": "src",
+        "outDir": ".next",
+        "target": "esnext",
+        "module": "esnext",
+        "lib": ["dom", "dom.iterable", "esnext"],
+        "allowJs": true,
+        "skipLibCheck": true,
+        "strict": true,
+        "forceConsistentCasingInFileNames": true,
+        "allowSyntheticDefaultImports": true,
+        "noEmit": true,
+        "esModuleInterop": true,
+        "moduleResolution": "node",
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "jsx": "preserve",
+        "incremental": true,
+        "plugins": [
+            {
+                "name": "next",
+                "presets": ["next/babel"],
+                "styled-components": {
+                    "ssr": true
+                }
+            }
+        ],
+        "paths": {
+            "": ["./src/*"],
+            "~/*": ["./src/*"],
+            "@coinmeca/ui/*": ["../ui-kit/dist/*"],
+        },
+        "downlevelIteration": false,
+        "typeRoots": ["src/types", "node_modules/@types"]
+    },
+    "include": ["src", "next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+    "exclude": ["node_modules", "packages", "ui-kit"]
 }
