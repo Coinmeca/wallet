@@ -1,20 +1,37 @@
-﻿import { Layouts } from "@coinmeca/ui/components";
-import { Numberpad } from "@coinmeca/ui/containers/bottomsheets";
+﻿'use client';
+
+import { Elements, Layouts } from "@coinmeca/ui/components";
 import { Parts } from "@coinmeca/ui/index";
-import { Numberpads } from "@coinmeca/ui/parts";
+import { useState } from "react";
 
 export default function Lock() {
-    return <>
-        <Parts.Numberpad />
-        test
-    </>
+    const length = 6;
+    const [passcode, setPasscode] = useState('');
+    const [error, setError] = useState(false);
+    const handlePasscodeClick = (v: string) => {
+        if (v?.length > length) return;
+        else if (v?.length === length) {
+            setError(true);
+            console.log('verify');
+        } else {
+            setError(false);
+            console.log('remove');
+        }
+        console.log(v);
+        setPasscode(v);
+    }
+
     return <Layouts.Contents.SlideContainer
         contents={[
             {
                 active: true,
                 children: <Layouts.Col fill>
-                    test
-                    <Numberpad active={true} />
+                    <Layouts.Contents.InnerContent scroll={false}>
+                        <Layouts.Col align={'center'} fill>
+                            <Elements.Passcode index={passcode.length} length={length} error={error} gap={'5%'} />
+                        </Layouts.Col>
+                    </Layouts.Contents.InnerContent>
+                    <Parts.Numberpad type="code" value={passcode} onChange={(e:any,v:any)=>handlePasscodeClick(v)}/>
                 </Layouts.Col>,
             }
         ]}
