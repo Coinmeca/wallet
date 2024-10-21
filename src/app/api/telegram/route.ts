@@ -1,5 +1,4 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
-import fetch from "node-fetch";
 import { wallet } from "wallet";
 
 // message of body
