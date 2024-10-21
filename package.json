@@ -15,17 +15,17 @@
   "scripts": {
     "setup": "git submodule update --init --recursive && cd ui-kit && git fetch origin && git checkout main && git pull origin main && cd .. && git submodule update --init --recursive",
     "lint": "next lint",
-    "install:ui": "yarn workspace @coinmeca/ui install",
+    "install:ui": "yarn workspace @coinmeca/ui-kit install",
     "dev": "next dev",
-    "dev:ui": "yarn workspace @coinmeca/ui dev",
+    "dev:ui": "yarn workspace @coinmeca/ui-kit dev",
     "start": "next start",
     "build": "next build",
-    "build:ui": "yarn workspace @coinmeca/ui build",
+    "build:ui": "yarn workspace @coinmeca/ui-kit build",
     "deploy": "next build && npx vercel --prod",
     "deploy:ui": "yarn workspace @coinmeca/ui deploy",
     "dist": "npx vercel --prod",
     "clean": "rm -rf ./dist ./build ./.next ./tsconfig.tsbuildinfo ./node_modules/.cache",
-    "clean:ui": "yarn workspace @coinmeca/ui clean",
+    "clean:ui": "yarn workspace @coinmeca/ui-kit clean",
     "discord": "tsx ./src/app/api/discord/register"
   },
   "dependencies": {
@@ -37,9 +37,11 @@
     "node-fetch": "^3.3.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "sass": "^1.80.3",
     "vercel": "^35.2.4"
   },
   "devDependencies": {
+    "@svgr/webpack": "^8.1.0",
     "@types/crypto-js": "^4.2.2",
     "@types/node": "^20",
     "@types/react": "^18",

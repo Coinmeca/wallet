@@ -1,0 +1,76 @@
+﻿@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100;200;300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100;200;300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@100;200;300;400;500;600;700;800;900&display=swap');
+
+:root {
+    body,
+    input,
+    button,
+    textarea {
+        font-family: 'Montserrat', 'Noto Sans JP', 'Noto Sans KR', 'Noto Sans SC';
+    }
+}
+
+html[lang='cn'] {
+    body,
+    input,
+    button,
+    textarea {
+        font-family: 'Montserrat', 'Noto Sans SC';
+    }
+}
+
+html[lang='jp'] {
+    body,
+    input,
+    button,
+    textarea {
+        font-family: 'Montserrat', 'Noto Sans JP';
+    }
+}
+
+html[lang='ko'] {
+    body,
+    input,
+    button,
+    textarea {
+        font-family: 'Montserrat', 'Noto Sans KR';
+    }
+}
+
+@media all and (min-width: 2560px) {
+    html {
+        // --unit: 0.5rem;
+    }
+}
+
+@media all and (min-width: 3072px) {
+    html {
+        --unit: 0.625rem;
+    }
+}
+
+@media all and (min-width: 3840px) {
+    html {
+        --unit: 0.75rem;
+    }
+}
+
+@media all and (min-width: 5120px) {
+    html {
+        --unit: 1rem;
+    }
+}
+
+@media all and (min-width: 6144px) {
+    html {
+        --unit: 1.25rem;
+    }
+}
+
+@media all and (min-width: 7680px) {
+    html {
+        --unit: 1.5rem;
+    }
+}

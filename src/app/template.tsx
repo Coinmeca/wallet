@@ -1,7 +1,7 @@
-﻿import Providers from "./providers";
+﻿import { Frames } from "@coinmeca/ui/containers";
 
 export default function Template({ children }: { children: any }) {
-    return <Providers>
+    return <Frames.Frame>
         {children}
-    </Providers>
+    </Frames.Frame>
 }

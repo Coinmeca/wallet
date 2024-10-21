@@ -1,4 +1,5 @@
 'use client';
+import { Controls, Layouts } from "@coinmeca/ui/components";
 import { useTelegram } from "contexts/telegram";
 import { useState } from "react";
 
@@ -64,18 +65,18 @@ export default function Home() {
   };
 
   return (
-    <div>
+    <Layouts.Col>
       <div>{telegram ? `Success, Platform: ${telegram.platform}` : 'Fail'}</div>
-      <button onClick={handleSendData}>Send Data</button>
-      <button onClick={handleExpand}>Expand</button>
-      <button onClick={handleShowConfirm}>Show Confirm</button>
-      <button onClick={handleShowPopup}>Show Popup</button>
-      <button onClick={handleRequest}>Biometric Request</button>
-      <button onClick={handleAuthenticate}>Biometric Auth</button>
-      <button onClick={handleClose}>Close</button>
+      <Controls.Button onClick={handleSendData}>Send Data</Controls.Button>
+      <Controls.Button onClick={handleExpand}>Expand</Controls.Button>
+      <Controls.Button onClick={handleShowConfirm}>Show Confirm</Controls.Button>
+      <Controls.Button onClick={handleShowPopup}>Show Popup</Controls.Button>
+      <Controls.Button onClick={handleRequest}>Biometric Request</Controls.Button>
+      <Controls.Button onClick={handleAuthenticate}>Biometric Auth</Controls.Button>
+      <Controls.Button onClick={handleClose}>Close</Controls.Button>
       {authenticate && `Authenticate: ${authenticate}`}<br />
       {requestAccess && `Request Access: ${requestAccess}`}<br />
       {error && `Error: ${error}`}<br />
-    </div>
+    </Layouts.Col>
   );
 }
