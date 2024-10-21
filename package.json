@@ -13,12 +13,20 @@
   },
   "author": "Coinmeca Team <dev@coinmeca.net>",
   "scripts": {
-    "dev": "next dev",
-    "discord": "tsx ./src/app/api/discord/register",
-    "build": "next build",
-    "start": "next start",
+    "setup": "git submodule update --init --recursive && cd ui-kit && git fetch origin && git checkout main && git pull origin main && cd .. && git submodule update --init --recursive",
     "lint": "next lint",
-    "clean": "rimraf ./dist ./build ./.next ./tsconfig.tsbuildinfo ./node_modules/.cache"
+    "install:ui": "yarn workspace @coinmeca/ui install",
+    "dev": "next dev",
+    "dev:ui": "yarn workspace @coinmeca/ui dev",
+    "start": "next start",
+    "build": "next build",
+    "build:ui": "yarn workspace @coinmeca/ui build",
+    "deploy": "next build && npx vercel --prod",
+    "deploy:ui": "yarn workspace @coinmeca/ui deploy",
+    "dist": "npx vercel --prod",
+    "clean": "rm -rf ./dist ./build ./.next ./tsconfig.tsbuildinfo ./node_modules/.cache",
+    "clean:ui": "yarn workspace @coinmeca/ui clean",
+    "discord": "tsx ./src/app/api/discord/register"
   },
   "dependencies": {
     "@coinmeca/ui": "0.1.45",
