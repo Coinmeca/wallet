@@ -25,15 +25,17 @@ export default function Lock() {
         contents={[
             {
                 active: true,
+                children: <Layouts.Col align={'center'} fill>
+                    <Elements.Passcode index={passcode.length} length={length} error={error} gap={'5%'} />
+                </Layouts.Col>,
+            },
+            {
+                active: true,
                 children: <Layouts.Col fill>
-                    <Layouts.Contents.InnerContent scroll={false}>
-                        <Layouts.Col align={'center'} fill>
-                            <Elements.Passcode index={passcode.length} length={length} error={error} gap={'5%'} />
-                        </Layouts.Col>
-                    </Layouts.Contents.InnerContent>
                     <Parts.Numberpad type="code" value={passcode} onChange={(e: any, v: any) => handlePasscodeClick(v)} style={{background:'rgba(var(--black),.45)'}} />
                 </Layouts.Col>,
             }
         ]}
+        vertical={true}
     />
 }
