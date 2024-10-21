@@ -26,7 +26,10 @@ export default function Lock() {
             {
                 active: true,
                 children: <Layouts.Col align={'center'} fill>
+                    <Layouts.Col gap={8}>
                     <Elements.Passcode index={passcode.length} length={length} error={error} gap={'5%'} />
+                    <Elements.Text>Please type your PIN code.</Elements.Text>
+                    </Layouts.Col>
                 </Layouts.Col>,
             },
             {
