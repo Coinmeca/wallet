@@ -16,6 +16,8 @@ export default function Lock() {
     const [pass, setPass] = useState<{ code: string; confirm?: string }>({ code: "" });
     const [error, setError] = useState({ state: false, message: "" });
 
+    const [address, setAddress] = useState();
+
     const handleNumberClick = (v: string) => {
         if (v?.length > length) return;
 
@@ -23,7 +25,8 @@ export default function Lock() {
         if (v?.length === length) {
             if (level.name === "init") {
                 if (level.stage === 0) setLevel((state) => ({ ...state, stage: 1 }));
-                else if (level.stage === 1)
+                else if (level.stage === 1) {
+                    let key;
                     if (pass.code !== v)
                         setError({
                             state: true,
@@ -31,21 +34,27 @@ export default function Lock() {
                         });
                     else {
                         if (telegram && user?.id) {
-                            const key = wallet().create(`${user.id}:${pass.code}`).privateKey;
+                            key = wallet().create(`${user.id}:${pass.code}`).privateKey;
                             telegram.CloudStorage.setItem(`${user.id}:${pass.code}`, key);
-                            telegram.CloudStorage.setItem("key", key);
-                            telegram.CloudStorage.setItem(`${key}:nonce`, "0");
+
+                            // telegram.CloudStorage.setItem("key", key);
+                            // telegram.CloudStorage.setItem(`${key}:nonce`, "0");
+                            
                             setLevel({ name: "create", stage: 0 });
                         } else {
+                            key = wallet().create(`${userId}:${pass.code}`).privateKey;
                             localStorage.setItem(`userId`, userId);
-                            const key = wallet().create(`${userId}:${pass.code}`).privateKey;
                             localStorage.setItem(`${userId}:${pass.code}`, key);
-                            localStorage.setItem(`${key}:nonce`, "0");
-                            sessionStorage.setItem("key", key);
+                            
+                            // localStorage.setItem("key", key);
+                            // localStorage.setItem(`${key}:nonce`, "0");
+
                             setLevel({ name: "create", stage: 0 });
                         }
+                        sessionStorage.setItem("key", key);
                         setPass({ code: "" });
                     }
+                }
             }
         } else {
             setError({ state: false, message: "" });
@@ -55,31 +64,33 @@ export default function Lock() {
     const handleCreateWallet = () => {
         const key = sessionStorage.getItem("key");
         if (!key || key === "") return;
+
+        let wallets;
+        let pbKey;
         if (telegram && user?.id) {
-            let nonce: any = telegram.CloudStorage.getItem(`${key}:nonce`);
-            if (!nonce)
-                setError({
-                    state: true,
-                    message: "Couldn't find telegram user data. Please try again after terminating this session.",
-                });
-            nonce = parseInt(nonce.toString()) as number;
-            const { privateKey, address } = wallet().create(`${key}:${nonce}`);
-            telegram.CloudStorage.setItem(`${key}:${nonce}`, privateKey);
-            telegram.CloudStorage.setItem(`${key}:nonce`, `${nonce + 1}`);
+            wallets = telegram.CloudStorage.getItem(`${key}:wallets`);
+
+            if (!wallets) wallets = [];
+            else wallets = JSON.parse(wallets?.toString());
+            
+            const { privateKey, address } = wallet().create(`${key}:${wallets.length}`);
+            pbKey = privateKey;
+
+            telegram.CloudStorage.setItem(`${key}:wallets`, JSON.stringify(wallets));
             console.log(address);
         } else {
-            let nonce: any = localStorage.getItem(`${key}:nonce`);
-            if (!nonce)
-                setError({
-                    state: true,
-                    message: "Couldn't find telegram user data. Please try again after terminating this session.",
-                });
-            nonce = parseInt(nonce.toString()) as number;
-            const { privateKey, address } = wallet().create(`${key}:${nonce}`);
-            localStorage.setItem(`${key}:${nonce}`, privateKey);
-            localStorage.setItem(`${key}:nonce`, `${nonce + 1}`);
+            wallets = localStorage.getItem(`${key}:wallets`);
+
+            if (!wallets) wallets = [];
+            else wallets = JSON.parse(wallets?.toString());
+            
+            const { privateKey, address } = wallet().create(`${key}:${wallets.length}`);
+            pbKey = privateKey;
+
+            localStorage.setItem(`${key}:wallets`, JSON.stringify(wallets));
             console.log(address);
         }
+        wallets.map((w:string) => w !== pbKey).push(pbKey);
     };
 
     const handleImportWallet = (seed: string) => {
@@ -309,6 +320,45 @@ export default function Lock() {
                                                 </Controls.Button>
                                                 <Controls.Button type={"line"} onClick={() => setLevel({name:'import', stage:0})}>
                                                     Import an exist wallet
+                                                </Controls.Button>
+                                            </Layouts.Col>
+                                        </Layouts.Contents.InnerContent>
+                                    ),
+                                },
+                            ]}
+                        />
+                    ),
+                },
+                {
+                    active: level.name === "import",
+                    children: (
+                        <Layouts.Contents.SlideContainer
+                            contents={[
+                                {
+                                    active: true,
+                                    children: (
+                                        <Layouts.Contents.InnerContent scroll={false}>
+                                            <Layouts.Col align={"center"} style={{ padding: "4em" }} fill>
+                                                <Layouts.Col gap={4} align={"center"} fit>
+                                                </Layouts.Col>
+                                            </Layouts.Col>
+                                            <Layouts.Col gap={0} align={"center"} fill>
+                                                <Layouts.Col align={"center"} style={{padding:'4em'}} fill>
+                                                    <Layouts.Col gap={4} align={"center"} fit>
+                                                        <Elements.Text type={"h2"}>Setup</Elements.Text>
+                                                        <Elements.Text weight={"bold"} opacity={0.6}>
+                                                            Please create a new wallet or import an exist your other wallet via private key.
+                                                        </Elements.Text>
+                                                    </Layouts.Col>
+                                                </Layouts.Col>
+                                                <Controls.Input
+                                                    type={'password'}
+                                                    placeholder={'Please enter the private key of the wallet to be imported here.'}
+                                                    left={{ children: <Elements.Icon icon={'wallet'} /> }} style={{ padding: '2em' }}
+                                                    onChange={(e:any, v:string) => handleImportWallet(v)}
+                                                />
+                                                <Controls.Button style={{margin:'4em', marginTop:'2em'}}>
+                                                    Cancel
                                                 </Controls.Button>
                                             </Layouts.Col>
                                         </Layouts.Contents.InnerContent>
