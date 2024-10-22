@@ -48,96 +48,6 @@ export default function Init({ stage, setStage }: Stage) {
         }
     };
 
-    const passcode = useMemo(
-        () => [
-            {
-                active: stage.level === 0,
-                children: (
-                    <Layouts.Contents.InnerContent scroll={false}>
-                        <Layouts.Col gap={4} align={"center"} fill>
-                            <Layouts.Col gap={4} align={"center"} fit>
-                                <Elements.Text weight={"bold"} size={2}>
-                                    PASSCODE
-                                </Elements.Text>
-                                <Elements.Passcode index={pass.code.length} length={length} error={error.state} gap={"5%"} effect />
-                                <Elements.Text weight={"bold"} opacity={0.6} style={{ marginTop: "2em" }}>
-                                    Please enter your passcode.
-                                </Elements.Text>
-                            </Layouts.Col>
-                        </Layouts.Col>
-                    </Layouts.Contents.InnerContent>
-                ),
-            },
-            {
-                active: stage.level === 1,
-                children: (
-                    <Layouts.Contents.InnerContent scroll={false}>
-                        <Layouts.Col gap={4} align={"center"} fill>
-                            <Layouts.Col gap={4} align={"center"} fit>
-                                <Elements.Text weight={"bold"} size={2}>
-                                    PASSCODE CHECK
-                                </Elements.Text>
-                                <Elements.Passcode index={pass.confirm?.length || 0} length={length} error={error.state} gap={"5%"} effect />
-                                {error.message !== "" && (
-                                    <Elements.Text weight={"bold"} opacity={0.6} color={"red"} style={{ marginTop: "2em" }}>
-                                        {error.message}
-                                    </Elements.Text>
-                                )}
-                            </Layouts.Col>
-                        </Layouts.Col>
-                    </Layouts.Contents.InnerContent>
-                ),
-            },
-        ],
-        [stage.level],
-    );
-
-    const numberpad = useMemo(
-        () => [
-            {
-                active: stage.name !== "init",
-                children: <></>,
-            },
-            {
-                active: stage.name === "init",
-                children: (
-                    <Layouts.Contents.InnerContent scroll={false}>
-                        <Layouts.Col gap={0} style={{ background: "rgba(var(--black),.45)", padding: "2em" }} fill>
-                            <Layouts.Col fill>
-                                <Parts.Numberpad
-                                    type="code"
-                                    value={stage.level === 0 ? pass.code : pass.confirm}
-                                    onChange={(e: any, v: any) => handleNumberClick(v)}
-                                />
-                            </Layouts.Col>
-                            {stage.level === 0 ? (
-                                <Controls.Button
-                                    onClick={() => {
-                                        setStage({ name: "", level: 0 });
-                                        setPass({ code: "" });
-                                    }}
-                                    style={{ margin: "2em", marginTop: 0 }}>
-                                    Cancel
-                                </Controls.Button>
-                            ) : (
-                                <Controls.Button
-                                    onClick={() => {
-                                        setStage((state: any) => ({ ...state, level: 0 }));
-                                        setPass({ code: "" });
-                                        setError({ state: false, message: "" });
-                                    }}
-                                    style={{ margin: "2em", marginTop: 0 }}>
-                                    Back
-                                </Controls.Button>
-                            )}
-                        </Layouts.Col>
-                    </Layouts.Contents.InnerContent>
-                ),
-            },
-        ],
-        [stage],
-    );
-
     return (
         <Layouts.Contents.SlideContainer
             vertical
@@ -145,14 +55,108 @@ export default function Init({ stage, setStage }: Stage) {
                 {
                     active: true,
                     children: (
-                        <Layouts.Contents.InnerContent style={{ padding: "2em" }} scroll={false}>
-                            <Layouts.Contents.SlideContainer contents={passcode} />
+                        <Layouts.Contents.InnerContent scroll={false}>
+                            <Layouts.Contents.SlideContainer
+                                contents={[
+                                    {
+                                        active: stage.level === 0,
+                                        children: (
+                                            <Layouts.Contents.InnerContent scroll={false}>
+                                                <Layouts.Col gap={4} align={"center"} fill>
+                                                    <Layouts.Col gap={4} align={"center"} fit>
+                                                        <Elements.Text weight={"bold"} size={2}>
+                                                            PASSCODE
+                                                        </Elements.Text>
+                                                        <Elements.Passcode index={pass.code.length} length={length} error={error.state} gap={"5%"} effect />
+                                                        <Elements.Text weight={"bold"} opacity={0.6} style={{ marginTop: "2em" }}>
+                                                            Please enter your passcode.
+                                                        </Elements.Text>
+                                                    </Layouts.Col>
+                                                </Layouts.Col>
+                                            </Layouts.Contents.InnerContent>
+                                        ),
+                                    },
+                                    {
+                                        active: stage.level === 1,
+                                        children: (
+                                            <Layouts.Contents.InnerContent scroll={false}>
+                                                <Layouts.Col gap={4} align={"center"} fill>
+                                                    <Layouts.Col gap={4} align={"center"} fit>
+                                                        <Elements.Text weight={"bold"} size={2}>
+                                                            PASSCODE CHECK
+                                                        </Elements.Text>
+                                                        <Elements.Passcode
+                                                            index={pass.confirm?.length || 0}
+                                                            length={length}
+                                                            error={error.state}
+                                                            gap={"5%"}
+                                                            effect
+                                                        />
+                                                        {error.message !== "" && (
+                                                            <Elements.Text weight={"bold"} opacity={0.6} color={"red"} style={{ marginTop: "2em" }}>
+                                                                {error.message}
+                                                            </Elements.Text>
+                                                        )}
+                                                    </Layouts.Col>
+                                                </Layouts.Col>
+                                            </Layouts.Contents.InnerContent>
+                                        ),
+                                    },
+                                ]}
+                            />
                         </Layouts.Contents.InnerContent>
                     ),
                 },
                 {
                     active: true,
-                    children: <Layouts.Contents.SlideContainer offset={100} vertical contents={numberpad} />,
+                    children: (
+                        <Layouts.Contents.SlideContainer
+                            offset={100}
+                            vertical
+                            contents={[
+                                {
+                                    active: stage.name !== "init",
+                                    children: <></>,
+                                },
+                                {
+                                    active: stage.name === "init",
+                                    children: (
+                                        <Layouts.Contents.InnerContent scroll={false}>
+                                            <Layouts.Col gap={0} style={{ background: "rgba(var(--black),.45)", padding: "2em" }} fill>
+                                                <Layouts.Col fill>
+                                                    <Parts.Numberpad
+                                                        type="code"
+                                                        value={stage.level === 0 ? pass.code : pass.confirm}
+                                                        onChange={(e: any, v: any) => handleNumberClick(v)}
+                                                    />
+                                                </Layouts.Col>
+                                                {stage.level === 0 ? (
+                                                    <Controls.Button
+                                                        onClick={() => {
+                                                            setStage({ name: "", level: 0 });
+                                                            setPass({ code: "" });
+                                                        }}
+                                                        style={{ margin: "2em", marginTop: 0 }}>
+                                                        Cancel
+                                                    </Controls.Button>
+                                                ) : (
+                                                    <Controls.Button
+                                                        onClick={() => {
+                                                            setStage((state: any) => ({ ...state, level: 0 }));
+                                                            setPass({ code: "" });
+                                                            setError({ state: false, message: "" });
+                                                        }}
+                                                        style={{ margin: "2em", marginTop: 0 }}>
+                                                        Back
+                                                    </Controls.Button>
+                                                )}
+                                            </Layouts.Col>
+                                        </Layouts.Contents.InnerContent>
+                                    ),
+                                },
+                            ]}
+                        />
+                    ),
                 },
             ]}
         />
