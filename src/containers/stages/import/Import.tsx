@@ -1,16 +1,12 @@
 ﻿"use client";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useTelegram } from "hooks";
+import { useAccount, useTelegram } from "hooks";
 import { wallet } from "wallet";
+import { Stage } from "..";
 
-interface Stage {
-    stage: { name: string; level: number };
-    setStage: Function;
-    setAccount: Function;
-}
-
-export default function Import({ setStage, setAccount }: Stage) {
+export default function Import({ setStage }: Stage) {
     const { telegram, user } = useTelegram();
+    const { setAccount } = useAccount();
 
     const handleImportWallet = (seed: string) => {
         // error
@@ -46,7 +42,7 @@ export default function Import({ setStage, setAccount }: Stage) {
         });
 
         storage.setItem("init", "complete");
-        setStage({ stage: "wallet", level: 0 });
+        setStage({ name: "wallet", level: 0 });
     };
 
     return (
@@ -77,7 +73,7 @@ export default function Import({ setStage, setAccount }: Stage) {
                                     style={{ padding: "2em" }}
                                     onChange={(e: any, v: string) => handleImportWallet(v)}
                                 />
-                                <Controls.Button style={{ margin: "4em", marginTop: "2em" }} onClick={() => setStage("setup")}>
+                                <Controls.Button style={{ margin: "4em", marginTop: "2em" }} onClick={() => setStage({ name: "setup", level: 0 })}>
                                     Cancel
                                 </Controls.Button>
                             </Layouts.Col>

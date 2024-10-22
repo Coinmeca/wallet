@@ -1,16 +1,12 @@
 ﻿"use client";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useTelegram } from "hooks";
+import { useAccount, useTelegram } from "hooks";
 import { wallet } from "wallet";
+import { Stage } from "..";
 
-interface Stage {
-    stage: { name: string; level: number };
-    setStage: Function;
-    setAccount: Function;
-}
-
-export default function Create({ setStage, setAccount }: Stage) {
+export default function Create({ setStage }: Stage) {
     const { telegram, user } = useTelegram();
+    const { setAccount } = useAccount();
 
     const handleCreateWallet = () => {
         const key = sessionStorage.getItem("key");
@@ -66,7 +62,7 @@ export default function Create({ setStage, setAccount }: Stage) {
                                 <Controls.Button type={"line"} onClick={() => handleCreateWallet()}>
                                     Create a new wallet
                                 </Controls.Button>
-                                <Controls.Button type={"line"} onClick={() => setStage({ stage: "import", level: 0 })}>
+                                <Controls.Button type={"line"} onClick={() => setStage({ name: "import", level: 0 })}>
                                     Import an exist wallet
                                 </Controls.Button>
                             </Layouts.Col>

@@ -1,10 +1,6 @@
 ﻿"use client";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-
-interface Stage {
-    stage: { name: string; level: number };
-    setStage: Function;
-}
+import { Stage } from "..";
 
 export default function Welcome({ setStage }: Stage) {
     return (
@@ -20,7 +16,7 @@ export default function Welcome({ setStage }: Stage) {
                     </Layouts.Col>
                 </Layouts.Col>
                 <Layouts.Col gap={4} align={"center"} style={{ margin: 0 }}>
-                    <Controls.Button type={"line"} onClick={() => setStage({ stage: "init", level: 0 })}>
+                    <Controls.Button type={"line"} onClick={() => setStage({ name: "init", level: 0 })}>
                         Get Started
                     </Controls.Button>
                 </Layouts.Col>
