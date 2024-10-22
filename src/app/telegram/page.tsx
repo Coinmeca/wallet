@@ -6,7 +6,6 @@ import { useTelegram } from "contexts/telegram";
 import { useState } from "react";
 import { wallet } from "wallet";
 import { useId } from "react";
-import Wallet from "ethereumjs-wallet";
 
 export default function Lock() {
     const userId = useId();
