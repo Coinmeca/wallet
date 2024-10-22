@@ -1,6 +1,6 @@
 "use client";
 import { Controls, Layouts } from "@coinmeca/ui/components";
-import { useTelegram } from "contexts/telegram";
+import { useTelegram } from "hooks";
 import { useState } from "react";
 
 export default function Home() {

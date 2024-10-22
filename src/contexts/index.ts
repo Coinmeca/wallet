@@ -1,2 +1,4 @@
-﻿import { TelegramProvider } from './telegram';
-export { TelegramProvider };
+﻿import { AccountProvider } from './account';
+import { TelegramProvider } from './telegram';
+
+export { AccountProvider, TelegramProvider };

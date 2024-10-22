@@ -33,16 +33,14 @@ interface TelegramContextProps {
         external: (url: string, try_instant_view?: boolean, callback?: Function) => void;
     };
     expand: (callback?: Function) => void;
-    exit: (callback?: () => void) => void;
+    exit: (callback?: Function) => void;
 }
 
 const TelegramContext = createContext<TelegramContextProps | undefined>(undefined);
 
 export const useTelegram = () => {
     const context = useContext(TelegramContext);
-    if (!context) {
-        throw new Error("useTelegram must be used within a TelegramProvider");
-    }
+    if (!context) throw new Error("useTelegram must be used within a TelegramProvider");
     return context;
 };
 
@@ -55,9 +53,7 @@ export const TelegramProvider: React.FC<{ src?: string; children: React.ReactNod
         if (telegram) {
             telegram.ready();
             // Assuming BiometricManager exists and has an init method
-            if (telegram.BiometricManager) {
-                telegram.BiometricManager.init();
-            }
+            if (telegram.BiometricManager) telegram.BiometricManager.init();
             setTelegram(telegram);
             setUser(telegram.initDataUnsafe?.user || null);
         }
@@ -118,7 +114,7 @@ export const TelegramProvider: React.FC<{ src?: string; children: React.ReactNod
                 }
             },
 
-            exit: (callback?: () => void) => {
+            exit: (callback?: Function) => {
                 if (telegram) {
                     telegram?.close();
                     telegram?.MainButton?.offClick(() => {
@@ -143,9 +139,7 @@ export const TelegramProvider: React.FC<{ src?: string; children: React.ReactNod
     return (
         <>
             <Script src={src} onLoad={onLoad} />
-            <TelegramContext.Provider value={{ telegram, user, ...modules }}>
-                {children}
-            </TelegramContext.Provider>
+            <TelegramContext.Provider value={{ telegram, user, ...modules }}>{children}</TelegramContext.Provider>
         </>
     );
 };
