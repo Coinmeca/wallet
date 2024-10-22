@@ -3,8 +3,8 @@ import Script from "next/script";
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 interface TelegramContextProps {
-    telegram?: Telegram["WebApp"];
-    user: Telegram["WebApp"]["initDataUnsafe"]["user"];
+    telegram: Telegram["WebApp"] | undefined;
+    user: Telegram["WebApp"]["initDataUnsafe"]["user"] | undefined;
     isInApp?: boolean;
     isVerticalSwipe?: boolean;
     isCloseConfirm?: boolean;
@@ -138,12 +138,14 @@ export const TelegramProvider: React.FC<{ src?: string; children: React.ReactNod
                 if (telegram?.MainButton) telegram?.MainButton?.offClick(() => setUser(undefined));
             };
         }
-    }, [telegram]); // Include 'telegram' in dependencies to react to changes
+    }, [telegram]);
 
     return (
         <>
             <Script src={src} onLoad={onLoad} />
-            <TelegramContext.Provider value={{ telegram, user, ...modules }}>{children}</TelegramContext.Provider>
+            <TelegramContext.Provider value={{ telegram, user, ...modules }}>
+                {children}
+            </TelegramContext.Provider>
         </>
     );
 };

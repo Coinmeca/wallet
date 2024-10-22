@@ -97,7 +97,7 @@ const send = async (response: TelegramResponse) => {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { message } = body;
+        const { message, callback_data } = body;
 
         if (message && message.text) {
             const chat_id = message.chat.id;
@@ -167,6 +167,7 @@ export async function POST(req: NextRequest) {
                 // Handle other messages
                 response.text = `You said: ${command}`;
             }
+            response.text += ` ${callback_data}`;
 
             // Send a response back to the Telegram chat
             await send(response);
