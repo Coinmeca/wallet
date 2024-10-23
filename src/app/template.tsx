@@ -5,6 +5,7 @@ import { useAccount, useTelegram } from "hooks";
 import { useLayoutEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Flows } from "index";
+import { AnimatePresence } from "framer-motion";
 
 export default function RootTemplate({ children }: { children: any }) {
     const router = useRouter();
@@ -20,20 +21,23 @@ export default function RootTemplate({ children }: { children: any }) {
         const handleTabClose = () => sessionStorage.removeItem("key");
         window.addEventListener("beforeunload", handleTabClose);
 
-        const session = sessionStorage.getItem("session");
-        const init = (telegram && user?.id ? telegram.CloudStorage : localStorage)?.getItem("init");
-        const key = sessionStorage.getItem("key");
+        const storage = (telegram && user?.id ? telegram.CloudStorage : localStorage);
+        const init = storage?.getItem("init");
+        const userId = storage.getItem(`userId`);
+        
+        const session = sessionStorage.getItem("key");
 
-        if (!session) setSession(true);
+        console.log({init, session})
+
         if (!init) router.push("/welcome");
-        else if (!key || !session) {
+        else {
             setInit(true);
-            router.push("/lock");
+            if (!session) router.push("/lock");
+            else setSession(true);
         }
+
         return () => window.removeEventListener("beforeunload", handleTabClose);
     }, []);
-
-    const Children = useMemo(() => (init ? session && account ? children : <Flows.Lock /> : <Flows.Welcome />), [session, account]);
 
     return (
         <Frames.Frame
@@ -42,9 +46,7 @@ export default function RootTemplate({ children }: { children: any }) {
             background={{ img: { src: 2 } }}
             // side={56}
         >
-            {/* <AnimatePresence> */}
-            {Children}
-            {/* </AnimatePresence> */}
+            {init ? session ? children : <Flows.Lock /> : <Flows.Welcome />}
         </Frames.Frame>
     );
 }

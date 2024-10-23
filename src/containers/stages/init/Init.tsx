@@ -33,6 +33,8 @@ export default function Init({ stage, setStage }: Stage) {
                             key = wallet().create(`${user.id}:${pass.code}`).privateKey;
                             telegram.CloudStorage.setItem(`${user.id}:${pass.code}`, key);
                         } else {
+                            console.log(userId)
+                            console.log(pass.code)
                             key = wallet().create(`${userId}:${pass.code}`).privateKey;
                             localStorage.setItem(`userId`, userId);
                             localStorage.setItem(`${userId}:${pass.code}`, key);

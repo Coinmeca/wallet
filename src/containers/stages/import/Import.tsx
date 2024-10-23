@@ -3,8 +3,10 @@ import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useAccount, useTelegram } from "hooks";
 import { wallet } from "wallet";
 import { Stage } from "..";
+import { useRouter } from "next/navigation";
 
 export default function Import({ setStage }: Stage) {
+    const router = useRouter();
     const { telegram, user } = useTelegram();
     const { setAccount } = useAccount();
 
@@ -42,7 +44,8 @@ export default function Import({ setStage }: Stage) {
         });
 
         storage.setItem("init", "complete");
-        setStage({ name: "wallet", level: 0 });
+        router.push("/");
+        // setStage({ name: "wallet", level: 0 });
     };
 
     return (
@@ -73,7 +76,7 @@ export default function Import({ setStage }: Stage) {
                                     style={{ padding: "2em" }}
                                     onChange={(e: any, v: string) => handleImportWallet(v)}
                                 />
-                                <Controls.Button style={{ margin: "4em", marginTop: "2em" }} onClick={() => setStage({ name: "setup", level: 0 })}>
+                                <Controls.Button style={{ margin: "4em", marginTop: "2em" }} onClick={() => setStage({ name: "create", level: 0 })}>
                                     Cancel
                                 </Controls.Button>
                             </Layouts.Col>
