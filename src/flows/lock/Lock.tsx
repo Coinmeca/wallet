@@ -5,6 +5,9 @@ import { Parts } from "@coinmeca/ui/index";
 import { useTelegram, useAccount } from "hooks";
 import { useLayoutEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { usePortal } from "@coinmeca/ui/hooks";
+import { Modal } from "@coinmeca/ui/containers";
+import { wallet } from "wallet";
 
 export default function Lock() {
     const length = 6;
@@ -24,23 +27,40 @@ export default function Lock() {
         setCode(code);
         if (code?.length === length) {
             let key: any;
-            if (telegram && user?.id) key = telegram.CloudStorage.getItem(`${user.id}:${code}`);
+            const storage = (telegram && user?.id) ? telegram.CloudStorage : localStorage;
+            if (telegram && user?.id) key = storage.getItem(`${user.id}:${code}`);
             else {
-                const userId = localStorage.getItem(`userId`);
+                const userId = storage.getItem(`userId`);
                 console.log('userId', userId);
-                if (userId) key = localStorage.getItem(`${userId}:${code}`);
+                if (userId) key = storage.getItem(`${userId}:${code}`);
             }
 
             console.log('key', key);
             if (key) {
                 sessionStorage.setItem("key", key);
+                let last:any = storage.getItem(`last`);
+                let wallets:any = storage.getItem(`${key}:wallets`);
+                if (wallets) wallets = JSON.parse(wallets) as string[];
+
+                const info:any = storage.getItem(`${wallet(wallets[last ? parseInt(last) : 0]).address}`);
+                if (info) setAccount(JSON.parse(info));
+
                 setCode("");
                 router.push("/");
-            } else setError({state:true, message:'The passcode entered was wrong.'})
-        } else {
-            setError({ state: false, message: "" });
-        }
+            } else setError({ state: true, message: 'The passcode entered was wrong.' })
+        } else setError({ state: false, message: "" });
     };
+
+    const ResetModal = () => {
+        return <Modal title={'Reset Confirmation'} message={'Setup the all configuration from the first. Are you sure?'} buttonArea={
+            <>
+                <Controls.Button onClick={closeResetConfirm}>NO</Controls.Button>
+                <Controls.Button onClick={() => router.push('/reset')}>YES</Controls.Button>
+            </>
+        } onClose={closeResetConfirm} close />
+    }
+    const [showResetConfirm, closeResetConfirm] = usePortal(<ResetModal/>);
+
 
     return (
         <Layouts.Contents.SlideContainer
@@ -86,8 +106,9 @@ export default function Lock() {
                                                     <Parts.Numberpad type="code" value={code} onChange={(e: any, v: any) => handleNumberClick(v)} />
                                                 </Layouts.Col>
                                                     <Controls.Button
-                                                        onClick={() => router.push("/reset")}
-                                                        style={{ margin: "2em", marginTop: 0 }}>
+                                                        onClick={showResetConfirm}
+                                                        style={{ margin: "2em", marginTop: 0 }}
+                                                    >
                                                         Reset
                                                     </Controls.Button>
                                                     <Controls.Button

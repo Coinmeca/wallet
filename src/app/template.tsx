@@ -41,7 +41,7 @@ export default function RootTemplate({ children }: { children: any }) {
 
     return (
         <Frames.Frame
-            // header={header}
+            header={header}
             // align={"right"}
             background={{ img: { src: 2 } }}
             // side={56}
