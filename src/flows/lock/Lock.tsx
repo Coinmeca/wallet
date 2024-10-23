@@ -36,9 +36,7 @@ export default function Lock() {
                 sessionStorage.setItem("key", key);
                 setCode("");
                 router.push("/");
-            } else {
-                // error
-            }
+            } else setError({state:true, message:'The passcode entered was wrong.'})
         } else {
             setError({ state: false, message: "" });
         }
