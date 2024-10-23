@@ -1,82 +1,48 @@
 "use client";
-import { Controls, Layouts } from "@coinmeca/ui/components";
-import { useTelegram } from "hooks";
-import { useState } from "react";
+import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
+import { format } from "@coinmeca/ui/lib/utils";
 
 export default function Home() {
-    const { telegram, send, show, expand, exit, bio } = useTelegram();
-    const [authenticate, setAuthenticate] = useState<string | null>(null);
-    const [requestAccess, setRequestAccess] = useState<string | null>(null);
-    const [error, setError] = useState<string | null>(null);
-
-    const handleExpand = () => {
-        expand();
-    };
-
-    const handleSendData = () => {
-        send("webapp message");
-    };
-
-    const handleClose = () => {
-        exit();
-    };
-
-    const handleShowConfirm = () => {
-        show.confirm("showConfirm");
-    };
-
-    const handleShowPopup = () => {
-        show.popup({
-            title: "showPopup",
-            message: "do something",
-            buttons: [{ type: "close", text: "Close" }],
-        });
-    };
-
-    const handleRequest = () => {
-        if (telegram?.BiometricManager) {
-            try {
-                // Request access with required params
-                const accessResponse = bio.request("sign");
-                setRequestAccess(JSON.stringify(accessResponse));
-            } catch (err) {
-                setError(err instanceof Error ? err.message : "Unknown error");
-            }
-        } else {
-            setError("BiometricManager is not available.");
-        }
-    };
-
-    const handleAuthenticate = () => {
-        if (telegram?.BiometricManager) {
-            try {
-                // Authenticate user with required params
-                const authResponse = bio.auth("sign");
-                setAuthenticate(JSON.stringify(authResponse));
-            } catch (err) {
-                setError(err instanceof Error ? err.message : "Unknown error");
-            }
-        } else {
-            setError("BiometricManager is not available.");
-        }
-    };
-
     return (
-        <Layouts.Col>
-            <div>{telegram ? `Success, Platform: ${telegram.platform}` : "Fail"}</div>
-            <Controls.Button onClick={handleSendData}>Send Data</Controls.Button>
-            <Controls.Button onClick={handleExpand}>Expand</Controls.Button>
-            <Controls.Button onClick={handleShowConfirm}>Show Confirm</Controls.Button>
-            <Controls.Button onClick={handleShowPopup}>Show Popup</Controls.Button>
-            <Controls.Button onClick={handleRequest}>Biometric Request</Controls.Button>
-            <Controls.Button onClick={handleAuthenticate}>Biometric Auth</Controls.Button>
-            <Controls.Button onClick={handleClose}>Close</Controls.Button>
-            {authenticate && `Authenticate: ${authenticate}`}
-            <br />
-            {requestAccess && `Request Access: ${requestAccess}`}
-            <br />
-            {error && `Error: ${error}`}
-            <br />
-        </Layouts.Col>
+        <Layouts.Contents.InnerContent>
+            <Layouts.Col align="center" style={{maxHeight:'32em'}} fill>
+                <Layouts.Col gap={2}>
+                    <Elements.Text type={'h2'}>
+                        {format(0.123,'currency', {
+                            limit: 10,
+                            unit: 12,
+                            fix: 3,
+                        })}
+                    </Elements.Text>
+                    <Elements.Text type={'h6'}>
+                        ETH
+                    </Elements.Text>
+                </Layouts.Col>
+            </Layouts.Col>
+            <Layouts.Col fill>
+                <Layouts.Box>
+                    <Layouts.Col gap={0}>
+                        <Layouts.Menu menu={[[
+                            <>
+                                <Controls.Tab>Token</Controls.Tab>
+                            </>,
+                            <>
+                                <Controls.Tab>NFT</Controls.Tab>
+                            </>,
+                            <>
+                                <Controls.Tab>Activity</Controls.Tab>
+                            </>,
+                        ]]} />
+                    </Layouts.Col>
+                
+                    <div style={{ position: "fixed", width:'-webkit-fill-available', left:0, bottom: 0, margin:'2em' }}>
+                        <Layouts.Row gap={2} fill>
+                            <Controls.Button type={'solid'} icon={'chevron-left-bold'} color={'green'}>Receive</Controls.Button>
+                            <Controls.Button type={'solid'} icon={'chevron-right-bold'} color={'red'}>Send</Controls.Button>
+                        </Layouts.Row>
+                    </div>
+                </Layouts.Box>
+            </Layouts.Col>
+        </Layouts.Contents.InnerContent>
     );
 }

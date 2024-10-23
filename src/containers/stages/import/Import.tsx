@@ -35,8 +35,9 @@ export default function Import({ setStage }: Stage) {
                 info = storage.getItem(`${address}`);
                 if (info) return JSON.parse(info);
             } else {
-                info = { name: `Wallet ${wallets.length}`, address };
                 wallets.push(seed);
+                info = { address, name: `Wallet ${wallets.length}`, index: wallet.length };
+                storage.setItem('last', `${wallets.length}`)
                 storage.setItem(`${key}:wallets`, JSON.stringify(wallets));
                 storage.setItem(`${address}`, JSON.stringify(info));
                 return info;

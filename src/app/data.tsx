@@ -7,10 +7,13 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import Coinmeca from "assets/coinmeca.svg";
+import { useAccount } from "hooks";
 
 export default function Data() {
     const path = usePathname();
     const router = useRouter();
+    
+    const { account } = useAccount();
 
     const { windowWidth } = useWindowSize();
     const { isMobile } = useMobile();
@@ -59,27 +62,27 @@ export default function Data() {
 
     const header = {
         color: colorMap,
-        logo: true,
+        // logo: true,
         menu: {
             active: mobileMenu === "menu",
             onClick: () => (mobileMenu === "menu" ? setMobileMenu("") : setMobileMenu("menu")),
             children: [
-                // {
-                //     active: path?.startsWith("/asset"),
-                //     name: `${t("app.menu.asset")}`,
-                //     href: `/asset/${chain?.id || "-"}`,
-                //     onClick: () => {
-                //         setSidebar(false);
-                //         setMobileMenu("");
-                //     },
-                // },
+                {
+                    active: path?.startsWith("/asset"),
+                    // name: `${t("app.menu.asset")}`,
+                    // href: `/asset/${chain?.id || "-"}`,
+                    onClick: () => {
+                        setSidebar(false);
+                        setMobileMenu("");
+                    },
+                },
             ],
         },
         option: {
             active: true,
             children: (
                 <>
-                    <Controls.Tab
+                    {/* <Controls.Tab
                         onClick={() => {
                             if (!sidebar && mobileMenu !== "") setMobileMenu("");
                             setSidebar(!sidebar);
@@ -89,21 +92,34 @@ export default function Data() {
                         hide={"desktop"}
                         toggle
                         fit
-                    />
-                    <Controls.Tab
-                        onClick={() => {
-                            if (mobileMenu === "notify") {
-                                setMobileMenu("");
-                                // setRead(true);
-                            } else {
-                                // setRead(false);
-                                setMobileMenu("notify");
-                            }
-                        }}
-                        active={mobileMenu === "notify"}
-                        toggle
-                        fit
-                    />
+                    /> */}
+                    {account?.address && (
+                        <Controls.Dropdown
+                            chevron={false}
+                            scale={Root.Device.Tablet >= windowWidth ? 1.125 : undefined}
+                            option={{
+                                title: account.address,
+                                value: (
+                                    <Elements.Avatar
+                                        // color={colorMap}
+                                        scale={0.666}
+                                        size={2.5}
+                                        display={6}
+                                        ellipsis={' ... '}
+                                        name={account?.address}
+                                        align={'right'}
+                                    />
+                                ),
+                            }}
+                            options={[
+                                { icon: "copy", value: 'Copy Address' },
+                                // { icon: "power", value: t("app.wallet.disconnect") },
+                            ]}
+                            // onClickItem={(e: any, v: any, k: number) => handleUserOption(k)}
+                            responsive={isMobile}
+                            fix
+                        />
+                    )}
                     <Controls.Tab
                         onClick={() => (mobileMenu === "setting" ? setMobileMenu("") : setMobileMenu("setting"))}
                         active={mobileMenu === "setting"}
