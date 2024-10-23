@@ -3,8 +3,10 @@ import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useAccount, useTelegram } from "hooks";
 import { wallet } from "wallet";
 import { Stage } from "..";
+import { useRouter } from "next/navigation";
 
 export default function Create({ setStage }: Stage) {
+    const router = useRouter();
     const { telegram, user } = useTelegram();
     const { setAccount } = useAccount();
 
@@ -35,7 +37,8 @@ export default function Create({ setStage }: Stage) {
         });
 
         storage.setItem("init", "complete");
-        console.log("wallets", wallets);
+        router.push("/");
+        // console.log("wallets", wallets);
     };
 
     return (

@@ -3,13 +3,10 @@
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { Parts } from "@coinmeca/ui/index";
 import { useTelegram, useAccount } from "hooks";
-import { useCallback, useLayoutEffect, useState } from "react";
-import { wallet } from "wallet";
-import { useId } from "react";
+import { useLayoutEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 export default function Lock() {
-    const userId = useId();
     const length = 6;
 
     const router = useRouter();
@@ -21,45 +18,32 @@ export default function Lock() {
     const [code, setCode] = useState<string>("");
     const [error, setError] = useState({ state: false, message: "" });
 
-    const handleConfirm = () => {
-        let key;
-        if (telegram && user?.id) {
-            key = wallet().create(`${user.id}:${code}`).privateKey;
-            telegram.CloudStorage.setItem(`${user.id}:${code}`, key);
-        } else {
-            key = wallet().create(`${userId}:${code}`).privateKey;
-            localStorage.setItem(`userId`, userId);
-            localStorage.setItem(`${userId}:${code}`, key);
-        }
-    };
+    const handleNumberClick = (code: string) => {
+        if (code?.length > length) return;
 
-    const handleNumberClick = (v: string) => {
-        if (v?.length > length) return;
-
-        setCode(v);
-        if (v?.length === length) {
+        setCode(code);
+        if (code?.length === length) {
             let key: any;
-            if (code !== v)
-                setError({
-                    state: true,
-                    message: "The passcode you entered does not match the passcode initially entered.",
-                });
+            if (telegram && user?.id) key = telegram.CloudStorage.getItem(`${user.id}:${code}`);
             else {
-                if (telegram && user?.id) key = telegram.CloudStorage.getItem(`${user.id}:${code}`);
-                else key = localStorage.getItem(`${userId}:${code}`);
+                const userId = localStorage.getItem(`userId`);
+                console.log('userId', userId);
+                if (userId) key = localStorage.getItem(`${userId}:${code}`);
+            }
 
-                if (key) {
-                    sessionStorage.setItem("key", key);
-                    setCode("");
-                    router.push("/");
-                } else {
-                    // error
-                }
+            console.log('key', key);
+            if (key) {
+                sessionStorage.setItem("key", key);
+                setCode("");
+                router.push("/");
+            } else {
+                // error
             }
         } else {
             setError({ state: false, message: "" });
         }
     };
+
     return (
         <Layouts.Contents.SlideContainer
             vertical
@@ -103,6 +87,16 @@ export default function Lock() {
                                                 <Layouts.Col fill>
                                                     <Parts.Numberpad type="code" value={code} onChange={(e: any, v: any) => handleNumberClick(v)} />
                                                 </Layouts.Col>
+                                                    <Controls.Button
+                                                        onClick={() => router.push("/reset")}
+                                                        style={{ margin: "2em", marginTop: 0 }}>
+                                                        Reset
+                                                    </Controls.Button>
+                                                    <Controls.Button
+                                                        onClick={() => localStorage?.clear()}
+                                                        style={{ margin: "2em", marginTop: 0 }}>
+                                                        Clear
+                                                    </Controls.Button>
                                             </Layouts.Col>
                                         </Layouts.Contents.InnerContent>
                                     ),
