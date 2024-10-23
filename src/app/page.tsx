@@ -5,7 +5,7 @@ import { format } from "@coinmeca/ui/lib/utils";
 export default function Home() {
     return (
         <Layouts.Contents.InnerContent>
-            <Layouts.Col align="center" style={{maxHeight:'32em'}} fill>
+            <Layouts.Col align="center" style={{ height: '30vh', minHeight:'24em', maxHeight:'32em'}} fill>
                 <Layouts.Col gap={2}>
                     <Elements.Text type={'h2'}>
                         {format(0.123,'currency', {
