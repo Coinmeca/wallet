@@ -7,6 +7,11 @@ import { useRouter } from "next/navigation";
 import { Flows } from "index";
 import { AnimatePresence } from "framer-motion";
 
+interface CoinmecaWallet {
+    isCoinmecaWallet: boolean;
+    name: string;
+}
+
 export default function RootTemplate({ children }: { children: any }) {
     const router = useRouter();
 
@@ -17,17 +22,17 @@ export default function RootTemplate({ children }: { children: any }) {
     const [init, setInit] = useState(false);
     const [session, setSession] = useState(false);
 
-    useLayoutEffect(() => {
+    useLayoutEffect(() => {        
         const handleTabClose = () => sessionStorage.removeItem("key");
         window.addEventListener("beforeunload", handleTabClose);
-
-        const storage = (telegram && user?.id ? telegram.CloudStorage : localStorage);
+        
+        const storage = telegram && user?.id ? telegram.CloudStorage : localStorage;
         const init = storage?.getItem("init");
         const userId = storage.getItem(`userId`);
-        
+
         const session = sessionStorage.getItem("key");
 
-        console.log({init, session})
+        console.log({ init, session });
 
         if (!init) router.push("/welcome");
         else {
