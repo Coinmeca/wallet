@@ -1,20 +1,20 @@
 ﻿"use client";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useAccount, useTelegram } from "hooks";
+import { useAccount, useStorage, useTelegram } from "hooks";
 import { wallet } from "wallet";
 import { Stage } from "..";
 import { useRouter } from "next/navigation";
 
 export default function Import({ setStage }: Stage) {
     const router = useRouter();
-    const { telegram, user } = useTelegram();
+    const { storage, session } = useStorage();
     const { setAccount } = useAccount();
 
     const handleImportWallet = (seed: string) => {
         // error
         if (seed.length !== 64) return;
 
-        const key = sessionStorage.getItem("key");
+        const key = session?.get("key");
         // error
         if (!key || key === "") return;
 
@@ -23,28 +23,26 @@ export default function Import({ setStage }: Stage) {
         if (!address) return;
         console.log(address);
 
-        const storage = telegram && user?.id ? telegram.CloudStorage : localStorage;
-        let wallets: any = storage.getItem(`${key}:wallets`);
-
+        let wallets: any = storage?.get(`${key}:wallets`);
         if (!wallets) wallets = [];
         else wallets = JSON.parse(wallets?.toString());
 
         setAccount(() => {
             let info: any;
             if (wallets.find((w: string) => w?.toLowerCase() === seed?.toLowerCase())) {
-                info = storage.getItem(`${address}`);
+                info = storage?.get(`${address}`);
                 if (info) return JSON.parse(info);
             } else {
                 wallets.push(seed);
                 info = { address, name: `Wallet ${wallets.length}`, index: wallet.length };
-                storage.setItem('last', `${wallets.length}`)
-                storage.setItem(`${key}:wallets`, JSON.stringify(wallets));
-                storage.setItem(`${address}`, JSON.stringify(info));
+                storage?.set("last", `${wallets.length}`);
+                storage?.set(`${key}:wallets`, JSON.stringify(wallets));
+                storage?.set(`${address}`, JSON.stringify(info));
                 return info;
             }
         });
 
-        storage.setItem("init", "complete");
+        storage?.set("init", "complete");
         router.push("/");
         // setStage({ name: "wallet", level: 0 });
     };

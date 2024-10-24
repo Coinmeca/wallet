@@ -1,44 +1,45 @@
 ﻿"use client";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useAccount, useTelegram } from "hooks";
+import { useAccount, useStorage } from "hooks";
 import { wallet } from "wallet";
 import { Stage } from "..";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function Create({ setStage }: Stage) {
     const router = useRouter();
-    const { telegram, user } = useTelegram();
+    const { storage, session } = useStorage();
     const { setAccount } = useAccount();
+    const [create, setCreate] = useState(false);
 
     const handleCreateWallet = () => {
-        const key = sessionStorage.getItem("key");
+        if (create) return router.push("/");
+
+        const key = session?.get("key");
         // error
         if (!key || key === "") return;
 
-        const storage = telegram && user?.id ? telegram.CloudStorage : localStorage;
-        let wallets: any = storage.getItem(`${key}:wallets`);
-
+        let wallets: any = storage?.get(`${key}:wallets`);
         if (!wallets) wallets = [];
-        else wallets = JSON.parse(wallets);
 
         setAccount(() => {
             let info: any;
             const { privateKey, address } = wallet().create(`${key}:${wallets.length}`);
             if (wallets.find((w: string) => w?.toLowerCase() === privateKey?.toLowerCase())) {
-                info = storage.getItem(`${address}`);
-                if (info) return JSON.parse(info);
-            } else {
-                wallets.push(privateKey);
-                info = { address, name: `Wallet ${wallets.length}`, index: wallet.length };
-                storage.setItem('last', `${wallets.length}`);
-                storage.setItem(`${key}:wallets`, JSON.stringify(wallets));
-                storage.setItem(`${address}`, JSON.stringify(info));
-                return info;
-            }
+                info = storage?.get(`${address}`);
+                if (info) return info;
+            } else info = { address, name: `Wallet ${wallets.length + 1}`, index: wallets.length };
+            storage?.set("last", `${wallets.length}`);
+            wallets.push(privateKey);
+
+            storage?.set(`${key}:wallets`, wallets);
+            storage?.set(`${address}`, info);
+            return info;
         });
 
-        storage.setItem("init", "complete");
+        storage?.set("init", "complete");
         router.push("/");
+        setCreate(false);
         // console.log("wallets", wallets);
     };
 

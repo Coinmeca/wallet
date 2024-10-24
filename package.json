@@ -28,31 +28,39 @@
     "dependencies": {
         "@coinmeca/ui": "0.1.466",
         "@vercel/analytics": "^1.3.1",
+        "crypto-js": "^4.2.0",
         "discord-api-types": "^0.37.102",
         "discord-interactions": "^4.1.0",
+        "ethereumjs-tx": "^2.1.2",
+        "ethereumjs-wallet": "^1.0.2",
+        "eventemitter3": "^5.0.1",
         "framer-motion": "^11.11.9",
+<<<<<<< HEAD
         "next": "14.2.15",
         "node-fetch": "^3.3.2",
+=======
+        "next": "14.2.16",
+>>>>>>> dev
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
         "sass": "^1.80.3",
-        "vercel": "^35.2.4",
-        "viem": "^2.21.33"
+        "vercel": "37.12.1",
+        "viem": "^2.21.33",
+        "zustand": "^5.0.0"
     },
     "devDependencies": {
         "@svgr/webpack": "^8.1.0",
+        "@tanstack/react-query": "^5.59.16",
+        "@tanstack/react-query-devtools": "^5.59.16",
         "@types/crypto-js": "^4.2.2",
-        "@types/node": "^20",
+        "@types/node": "22.7.9",
         "@types/react": "^18",
         "@types/react-dom": "^18",
         "@types/telegram-web-app": "^7.8.0",
-        "crypto-js": "^4.2.0",
-        "eslint": "^8",
-        "eslint-config-next": "14.2.15",
-        "ethereumjs-wallet": "^1.0.2",
+        "eslint": "9.13.0",
+        "eslint-config-next": "15.0.1",
         "tsx": "^4.19.1",
-        "typescript": "^5.6.3",
-        "zustand": "^5.0.0"
+        "typescript": "^5.6.3"
     },
     "packageManager": "yarn@4.5.1"
 }
