@@ -1,10 +1,10 @@
 ﻿"use client";
 
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useMobile, useNotification, useWindowSize } from "@coinmeca/ui/hooks";
+import { useMobile, useWindowSize } from "@coinmeca/ui/hooks";
 import { Root } from "@coinmeca/ui/lib/style";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 
 import Coinmeca from "assets/coinmeca.svg";
 import { useAccount } from "hooks";
@@ -12,7 +12,7 @@ import { useAccount } from "hooks";
 export default function Data() {
     const path = usePathname();
     const router = useRouter();
-    
+
     const { account } = useAccount();
 
     const { windowWidth } = useWindowSize();
@@ -25,13 +25,7 @@ export default function Data() {
     const [mobileMenu, setMobileMenu] = useState("");
     const [sidebar, setSidebar] = useState(false);
 
-    const colorMap = path?.startsWith("/asset")
-        ? "red"
-        : path?.startsWith("/exchange")
-        ? "orange"
-        : path?.startsWith("/treasury")
-        ? "blue"
-        : "var(--rainbow)";
+    const colorMap = path?.startsWith("/asset") ? "red" : path?.startsWith("/exchange") ? "orange" : path?.startsWith("/treasury") ? "blue" : "var(--rainbow)";
 
     const languages = [
         {
@@ -105,14 +99,15 @@ export default function Data() {
                                         scale={0.666}
                                         size={2.5}
                                         display={6}
-                                        ellipsis={' ... '}
+                                        ellipsis={" ... "}
+                                        character={`${account?.index + 1}`}
                                         name={account?.address}
-                                        align={'right'}
+                                        align={"right"}
                                     />
                                 ),
                             }}
                             options={[
-                                { icon: "copy", value: 'Copy Address' },
+                                { icon: "copy", value: "Copy Address" },
                                 // { icon: "power", value: t("app.wallet.disconnect") },
                             ]}
                             // onClickItem={(e: any, v: any, k: number) => handleUserOption(k)}
@@ -136,9 +131,7 @@ export default function Data() {
             style: { ...(windowWidth <= Root.Device.Tablet && isMobile && { flexDirection: "column-reverse" }) },
             children: (
                 <>
-                    <Layouts.Row style={{ ...(windowWidth <= Root.Device.Tablet && isMobile && { order: 1 }) }} fit>
-
-                    </Layouts.Row>
+                    <Layouts.Row style={{ ...(windowWidth <= Root.Device.Tablet && isMobile && { order: 1 }) }} fit></Layouts.Row>
                 </>
             ),
         },

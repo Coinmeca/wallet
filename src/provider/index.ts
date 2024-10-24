@@ -1,5 +1,6 @@
 ﻿import EventEmitter from 'eventemitter3';
 import { Chain } from 'types';
+
 export { EventEmitter };
 
 export interface WalletConfig {
@@ -18,7 +19,7 @@ export interface WalletConfig {
 export interface WalletAdapterEvents {
     connect(chainId?: string): any;
     disconnect(chainId?: string): any;
-    error(error: any): any;
+    // error(error: WalletError): any;
     readyStateChange(readyState: WalletReadyState): void;
     chainChanged(chainId: string): any;
     accountsChanged(accounts: string[]): any;
@@ -91,7 +92,7 @@ export abstract class WalletAdapter<Name extends string = string>
     };
 
     get address() {
-        return Array.isArray(this._accounts) ? this._accounts[0] : this._accounts || '';
+        return Array.isArray(this._accounts) ? this._accounts[0] : this._accounts;
     }
 
     get connecting() {

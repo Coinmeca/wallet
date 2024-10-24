@@ -4,6 +4,7 @@ export interface AccountInfo {
     chain?: any;
     name: string;
     address: string;
+    index: number;
     tokens?: {
         fts?: string[];
         nfts?: string[];
@@ -23,7 +24,7 @@ export const useAccount = () => {
     return context;
 };
 
-export const AccountProvider: React.FC<{ src?: string; children: React.ReactNode }> = ({ children }) => {
+export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [account, setAccount] = useState<AccountInfo>();
     return <AccountContext.Provider value={{ account, setAccount }}>{children}</AccountContext.Provider>;
 };

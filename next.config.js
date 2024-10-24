@@ -3,21 +3,21 @@ const nextConfig = {
     async rewrites() {
         return [
             {
-                source: '/api/:path*',
-                destination: 'https://api.coinmeca.net/:path*', // Proxy to Backend
+                source: "/api/:path*",
+                destination: "https://api.coinmeca.net/:path*", // Proxy to Backend
             },
         ];
     },
     async headers() {
         return [
             {
-                source: '/api/:path*',
+                source: "/api/:path*",
                 headers: [
-                    { key: 'Access-Control-Allow-Origin', value: '*' },
-                    { key: 'Access-Control-Allow-Methods', value: 'GET,POST,PUT,OPTIONS' },
+                    { key: "Access-Control-Allow-Origin", value: "*" },
+                    { key: "Access-Control-Allow-Methods", value: "GET,POST,PUT,OPTIONS" },
                     {
-                        key: 'Access-Control-Allow-Headers',
-                        value: 'Origin, Content-Type, Access-Control-Allow-Headers, DeviceInfo, Authorization, X-Requested-With',
+                        key: "Access-Control-Allow-Headers",
+                        value: "Origin, Content-Type, Access-Control-Allow-Headers, DeviceInfo, Authorization, X-Requested-With",
                     },
                 ],
             },
@@ -26,19 +26,19 @@ const nextConfig = {
     webpack(config) {
         config.module.rules.push({
             test: /\.svg$/,
-            use: ['@svgr/webpack'],
+            use: ["@svgr/webpack"],
         });
         return config;
     },
     i18n: {
-        locales: ['en', 'es', 'fr', 'cn', 'jp', 'id', 'vi'],
-        defaultLocale: 'en',
+        locales: ["en", "es", "fr", "cn", "jp", "id", "vi"],
+        defaultLocale: "en",
     },
     images: {
         remotePatterns: [
             {
-                protocol: 'https',
-                hostname: 'coinmeca-token-list.vercel.app',
+                protocol: "https",
+                hostname: "coinmeca-token-list.vercel.app",
             },
         ],
     },

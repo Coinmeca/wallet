@@ -1,14 +1,15 @@
 ﻿"use client";
+import CryptoJS from "crypto-js";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useId, useMemo, useState } from "react";
-import { useTelegram } from "hooks";
+import { useState } from "react";
+import { useStorage, useTelegram } from "hooks";
 import { wallet } from "wallet";
 import { Parts } from "@coinmeca/ui/index";
 import { Stage } from "..";
 
 export default function Init({ stage, setStage }: Stage) {
     const length = 6;
-    const userId = useId();
+    const { storage, session } = useStorage();
     const { telegram, user } = useTelegram();
 
     const [pass, setPass] = useState<{ code: string; confirm?: string }>({ code: "" });
@@ -29,17 +30,14 @@ export default function Init({ stage, setStage }: Stage) {
                             message: "The passcode you entered does not match the passcode initially entered.",
                         });
                     else {
-                        if (telegram && user?.id) {
-                            key = wallet().create(`${user.id}:${pass.code}`).privateKey;
-                            telegram.CloudStorage.setItem(`${user.id}:${pass.code}`, key);
-                        } else {
-                            console.log(userId)
-                            console.log(pass.code)
-                            key = wallet().create(`${userId}:${pass.code}`).privateKey;
-                            localStorage.setItem(`userId`, userId);
-                            localStorage.setItem(`${userId}:${pass.code}`, key);
-                        }
-                        sessionStorage.setItem("key", key);
+                        const userId = telegram && user?.id ? user.id : crypto.randomUUID();
+                        const passcode = CryptoJS.SHA256(pass.code).toString();
+                        key = CryptoJS.SHA256(`${userId}:${passcode}`).toString();
+
+                        storage?.set(`userId`, userId);
+                        storage?.set(`${userId}:${passcode}`, key);
+                        session?.set("key", key);
+
                         setPass({ code: "" });
                         setStage({ name: "create", level: 0 });
                     }
@@ -135,7 +133,7 @@ export default function Init({ stage, setStage }: Stage) {
                                                 {stage.level === 0 ? (
                                                     <Controls.Button
                                                         onClick={() => {
-                                                            setStage({ name: "", level: 0 });
+                                                            setStage({ name: "welcome", level: 0 });
                                                             setPass({ code: "" });
                                                         }}
                                                         style={{ margin: "2em", marginTop: 0 }}>

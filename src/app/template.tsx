@@ -1,11 +1,9 @@
 ﻿"use client";
 import { Frames } from "@coinmeca/ui/containers";
 import Data from "./data";
-import { useAccount, useTelegram } from "hooks";
-import { useLayoutEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Flows } from "index";
-import { AnimatePresence } from "framer-motion";
+import { useAccount, useStorage } from "hooks";
+import { useLayoutEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 
 interface CoinmecaWallet {
     isCoinmecaWallet: boolean;
@@ -14,32 +12,33 @@ interface CoinmecaWallet {
 
 export default function RootTemplate({ children }: { children: any }) {
     const router = useRouter();
+    const path = usePathname();
 
     const { account } = useAccount();
-    const { telegram, user } = useTelegram();
+    const { storage, session } = useStorage();
     const { header } = Data();
 
     const [init, setInit] = useState(false);
-    const [session, setSession] = useState(false);
+    const [access, setAccess] = useState(false);
 
-    useLayoutEffect(() => {        
-        const handleTabClose = () => sessionStorage.removeItem("key");
+    useLayoutEffect(() => {
+        const handleTabClose = () => session?.remove("key");
         window.addEventListener("beforeunload", handleTabClose);
-        
-        const storage = telegram && user?.id ? telegram.CloudStorage : localStorage;
-        const init = storage?.getItem("init");
-        const userId = storage.getItem(`userId`);
 
-        const session = sessionStorage.getItem("key");
+        const init = storage?.get("init");
+        const key = session?.get("key");
 
-        console.log({ init, session });
+        // console.log({ init, access });
 
-        if (!init) router.push("/welcome");
-        else {
-            setInit(true);
-            if (!session) router.push("/lock");
-            else setSession(true);
-        }
+        if (!path.startsWith("welcome"))
+            if (!init) router.push("/welcome");
+            else setInit(true);
+
+        if (!path.startsWith("lock"))
+            if (!key) router.push("/lock");
+            else setAccess(true);
+
+        console.log({ account });
 
         return () => window.removeEventListener("beforeunload", handleTabClose);
     }, []);
@@ -51,7 +50,8 @@ export default function RootTemplate({ children }: { children: any }) {
             background={{ img: { src: 2 } }}
             // side={56}
         >
-            {init ? session ? children : <Flows.Lock /> : <Flows.Welcome />}
+            {children}
+            {/* {init && access && children} */}
         </Frames.Frame>
     );
 }
