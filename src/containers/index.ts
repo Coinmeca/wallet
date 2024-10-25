@@ -1,2 +1,3 @@
-﻿import * as Stages from "./stages";
-export { Stages }
+﻿import Header from "./header/Header";
+import * as Stages from "./stages";
+export { Header, Stages }
