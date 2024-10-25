@@ -29,7 +29,8 @@
         "paths": {
             "": ["./src/*"],
             "~/*": ["./src/*"],
-            "@coinmeca/ui/*": ["../ui-kit/dist/*"]
+            "@coinmeca/ui/*": ["../ui-kit/dist/*"],
+            "@coinmeca/wallet-core/*": ["wallet-core/*"]
         },
         "downlevelIteration": false,
         "typeRoots": ["src/types", "node_modules/@types"]

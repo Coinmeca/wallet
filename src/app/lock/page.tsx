@@ -3,7 +3,7 @@
 import CryptoJS from "crypto-js";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { Parts } from "@coinmeca/ui/index";
-import { useTelegram, useAccount, useStorage } from "hooks";
+import { useAccount, useStorage } from "hooks";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { usePortal } from "@coinmeca/ui/hooks";
@@ -15,7 +15,6 @@ export default function Lock() {
     const router = useRouter();
 
     const { storage, session } = useStorage();
-    const { telegram, user } = useTelegram();
     const { setAccount } = useAccount();
 
     const [code, setCode] = useState<string>("");
