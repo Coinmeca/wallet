@@ -32,17 +32,14 @@ export const StorageProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const format = (value?: any) => {
         if (typeof value === "undefined") return value;
         if (typeof value === "number") return value.toString();
-        else return JSON.stringify(value);
+        return JSON.stringify(value);
     };
 
     const parse = (value?: string) => {
         if (typeof value === "undefined") return value;
 
-        const isInteger = /^[0-9]+$/.test(value);
-        const isFloat = /^[0-9]*\.[0-9]+$/.test(value);
-
-        if (isInteger) return parseInt(value, 10);
-        else if (isFloat) return parseFloat(value);
+        const isNumber = /^[0-9]*\.[0-9]+$/.test(value);
+        if (isNumber) return parseFloat(value);
         else return JSON.parse(value);
     };
 
