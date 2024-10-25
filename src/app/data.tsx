@@ -56,24 +56,36 @@ export default function Data() {
 
     const header = {
         color: colorMap,
-        // logo: true,
-        menu: {
+        logo: !account,
+        menu: account && {
             active: mobileMenu === "menu",
             onClick: () => (mobileMenu === "menu" ? setMobileMenu("") : setMobileMenu("menu")),
             children: [
                 {
-                    active: path?.startsWith("/asset"),
-                    // name: `${t("app.menu.asset")}`,
-                    // href: `/asset/${chain?.id || "-"}`,
-                    onClick: () => {
-                        setSidebar(false);
-                        setMobileMenu("");
-                    },
+                    name: "Activity",
+                    path: "/activity",
+                    onClick: () => setMobileMenu(""),
+                },
+                {
+                    name: "Token",
+                    path: "/token",
+                    onClick: () => setMobileMenu(""),
+                },
+                {
+                    name: "NFT",
+                    path: "/nft",
+                    onClick: () => setMobileMenu(""),
                 },
             ],
         },
-        option: {
+        // option: {
+        //     active: true,
+        //     children: (
+        //     ),
+        // },
+        side: account && {
             active: true,
+            // style: { ...(windowWidth <= Root.Device.Tablet && isMobile && { flexDirection: "column-reverse" }) },
             children: (
                 <>
                     {/* <Controls.Tab
@@ -87,51 +99,63 @@ export default function Data() {
                         toggle
                         fit
                     /> */}
-                    {account?.address && (
-                        <Controls.Dropdown
-                            chevron={false}
-                            scale={Root.Device.Tablet >= windowWidth ? 1.125 : undefined}
-                            option={{
-                                title: account.address,
-                                value: (
-                                    <Elements.Avatar
-                                        // color={colorMap}
-                                        scale={0.666}
-                                        size={2.5}
-                                        display={6}
-                                        ellipsis={" ... "}
-                                        character={`${account?.index + 1}`}
-                                        name={account?.address}
-                                        align={"right"}
-                                    />
-                                ),
-                            }}
-                            options={[
-                                { icon: "copy", value: "Copy Address" },
-                                // { icon: "power", value: t("app.wallet.disconnect") },
-                            ]}
-                            // onClickItem={(e: any, v: any, k: number) => handleUserOption(k)}
-                            responsive={isMobile}
-                            fix
+                    <Layouts.Row fit>
+                        {account?.address && (
+                            <Controls.Dropdown
+                                chevron={false}
+                                scale={Root.Device.Tablet >= windowWidth ? 1.125 : undefined}
+                                option={{
+                                    title: account.address,
+                                    value: (
+                                        <Elements.Avatar
+                                            // color={colorMap}
+                                            scale={0.666}
+                                            size={2.5}
+                                            display={6}
+                                            ellipsis={" ... "}
+                                            character={`${account?.index + 1}`}
+                                            name={account?.address}
+                                        />
+                                    ),
+                                }}
+                                options={[
+                                    { icon: "copy", value: "Copy Address" },
+                                    // { icon: "power", value: t("app.wallet.disconnect") },
+                                ]}
+                                // onClickItem={(e: any, v: any, k: number) => handleUserOption(k)}
+                                responsive={isMobile}
+                                fix
+                            />
+                        )}
+                    </Layouts.Row>
+                    <Layouts.Row gap={0} align={"right"}>
+                        <Controls.Tab
+                            onClick={() => (mobileMenu === "setting" ? setMobileMenu("") : setMobileMenu("setting"))}
+                            active={mobileMenu === "setting"}
+                            toggle
+                            fit>
+                            <Elements.Avatar
+                                // color={colorMap}
+                                scale={0.666}
+                                size={2.5}
+                                display={6}
+                                ellipsis={" ... "}
+                                img={
+                                    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y+mAAAAnFBMVEVHcEy63veQu9qfzvCfzu+6vMGfzvCg0PGg0PGfzu+fz/H///+ipq77/f7///8hMUf///8UIzqg0PEQrf+Js9IeLUMWKkIHITz19/idn6XU1dgCEC4hJzgnR2NpeotFTl0UWISNuNiCqsdTYXNtkKshO1V/g40Yda8Vi88Qo/U2QVJ5rNDl5+qWyOyMk5wSluF3vetDtPy62/Qxeapv+0azAAAAD3RSTlMAEeV4xPyb3zGpREV4vabElXnOAAABVklEQVQokX2S6ZKCMBCEsTwQ90gmMQnILSJHibq77/9u28FaC3B1/oWv00N6xnGGtV47z2q9EGLxP555QhwOQnizRzYXYh8TxXsh5hO0cUVekGJMUZELdzNu1iVas760TrpB6xWalcS0MUoZoxmVaL26Mc82U0wnQZCmQZBoeKO110M3D5W18zlPl5wHBgcV5u4NbglHOnK+CzkEVsloO4ThjvOzFZg6mkLV+tzXEBwzWaoJNGdcYpz7bS2raApxKYFgqaW8TKAqcMmcIKBGyliNoAlwKeX8RFElre8QhnhkYQVxFUvZjKCG6ymEa1o10UXKTA2gscn0gkZm8K2jO0R8cG0hOGcAJXzv8SF4+0hjs+1BLeXPX/AYGb4f++gigCyT1/vIMOwP7pONjhR8L6Nho96WNluGUJuvbrwmtt7xryVRe31cMNTs87t7tprOy6Xu8Rj9AiYRKklhMZHhAAAAAElFTkSuQmCC"
+                                }
+                                // character={`${account?.index + 1}`}
+                                // name={account?.address}
+                            />
+                        </Controls.Tab>
+                        <Controls.Tab
+                            onClick={() => (mobileMenu === "setting" ? setMobileMenu("") : setMobileMenu("setting"))}
+                            active={mobileMenu === "setting"}
+                            iconLeft={"gear"}
+                            show={"tablet"}
+                            toggle
+                            fit
                         />
-                    )}
-                    <Controls.Tab
-                        onClick={() => (mobileMenu === "setting" ? setMobileMenu("") : setMobileMenu("setting"))}
-                        active={mobileMenu === "setting"}
-                        iconLeft={"gear"}
-                        show={"tablet"}
-                        toggle
-                        fit
-                    />
-                </>
-            ),
-        },
-        side: {
-            active: mobileMenu === "setting",
-            style: { ...(windowWidth <= Root.Device.Tablet && isMobile && { flexDirection: "column-reverse" }) },
-            children: (
-                <>
-                    <Layouts.Row style={{ ...(windowWidth <= Root.Device.Tablet && isMobile && { order: 1 }) }} fit></Layouts.Row>
+                    </Layouts.Row>
                 </>
             ),
         },

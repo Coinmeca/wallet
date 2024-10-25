@@ -4,6 +4,7 @@ import Data from "./data";
 import { useAccount, useStorage } from "hooks";
 import { useLayoutEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { Containers } from "index";
 
 interface CoinmecaWallet {
     isCoinmecaWallet: boolean;
@@ -41,14 +42,16 @@ export default function RootTemplate({ children }: { children: any }) {
     }, []);
 
     return (
-        <Frames.Frame
-            header={header}
-            // align={"right"}
-            background={{ img: { src: 2 } }}
-            // side={56}
-        >
-            {children}
-            {/* {init && access && children} */}
-        </Frames.Frame>
+        <>
+            <Frames.Frame
+                header={{ type: "custom", children: <Containers.Header {...header} /> }}
+                // align={"right"}
+                background={{ img: { src: 2 } }}
+                // side={56}
+            >
+                {children}
+                {/* {init && access && children} */}
+            </Frames.Frame>
+        </>
     );
 }
