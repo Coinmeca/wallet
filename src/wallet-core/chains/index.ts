@@ -1,4 +1,4 @@
-import type { Chain, Chains } from "types";
+import type { Chain, Chains } from "@coinmeca/wallet-core/types";
 
 export const chainlist: Chains = {
     ethereum: {
