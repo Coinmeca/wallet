@@ -29,7 +29,7 @@ export default function Lock() {
             const key = storage?.get(`${storage?.get(`userId`)}:${CryptoJS.SHA256(code)}`);
             if (key) {
                 session?.set("key", key);
-                let wallets: any = storage?.get(`${key}:wallets`);
+                const wallets: any = storage?.get(`${key}:wallets`);
 
                 console.log({ wallets });
                 if (!wallets) {
