@@ -18,7 +18,6 @@ export default function Welcome() {
     useEffect(() => {
         const init = storage?.get("init");
         const userId = storage?.get("userId");
-        console.log({ init, userId });
         if (userId) {
             if (!init) storage?.set("init", "complete");
             router.push("/");

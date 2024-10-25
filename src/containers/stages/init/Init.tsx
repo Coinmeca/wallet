@@ -3,7 +3,6 @@ import CryptoJS from "crypto-js";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useState } from "react";
 import { useStorage, useTelegram } from "hooks";
-import { wallet } from "wallet";
 import { Parts } from "@coinmeca/ui/index";
 import { Stage } from "..";
 
@@ -34,7 +33,7 @@ export default function Init({ stage, setStage }: Stage) {
                         const passcode = CryptoJS.SHA256(pass.code).toString();
                         key = CryptoJS.SHA256(`${userId}:${passcode}`).toString();
 
-                        storage?.set(`userId`, userId);
+                        storage?.set("userId", userId);
                         storage?.set(`${userId}:${passcode}`, key);
                         session?.set("key", key);
 

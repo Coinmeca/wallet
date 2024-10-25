@@ -19,14 +19,13 @@ export default function Create({ setStage }: Stage) {
         // error
         if (!key || key === "") return;
 
-        let wallets: any = storage?.get(`${key}:wallets`);
-        if (!wallets) wallets = [];
+        const wallets: string[] = storage?.get(`${key}:wallets`) || [];
 
         setAccount(() => {
             let info: any;
             const { privateKey, address } = wallet().create(`${key}:${wallets.length}`);
             if (wallets.find((w: string) => w?.toLowerCase() === privateKey?.toLowerCase())) {
-                info = storage?.get(`${address}`);
+                info = storage?.get(address);
                 if (info) return info;
             } else info = { address, name: `Wallet ${wallets.length + 1}`, index: wallets.length };
             storage?.set("last", `${wallets.length}`);
@@ -40,7 +39,6 @@ export default function Create({ setStage }: Stage) {
         storage?.set("init", "complete");
         router.push("/");
         setCreate(false);
-        // console.log("wallets", wallets);
     };
 
     return (

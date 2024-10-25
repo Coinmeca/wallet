@@ -26,19 +26,17 @@ export default function Lock() {
 
         setCode(code);
         if (code?.length === length) {
-            let key: any;
-            key = storage?.get(`${telegram && user?.id ? user.id : storage.get(`userId`)}:${CryptoJS.SHA256(code)}`);
+            const key = storage?.get(`${storage?.get("userId")}:${CryptoJS.SHA256(code).toString()}`);
             if (key) {
                 session?.set("key", key);
-                let wallets: any = storage?.get(`${key}:wallets`);
+                const wallets: any = storage?.get(`${key}:wallets`);
 
-                console.log({ wallets });
                 if (!wallets) {
                     storage?.remove("init");
                     router.push("/welcome");
                 } else {
                     const last: any = storage?.get("last");
-                    const info: any = storage?.get(`${wallet(wallets[last ? last - 1 : 0]).address}`);
+                    const info: any = storage?.get(`${wallet(wallets[last]).address}`);
                     if (info) setAccount(info);
                     router.push("/");
                 }

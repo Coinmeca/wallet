@@ -21,25 +21,21 @@ export default function Import({ setStage }: Stage) {
         const address = wallet(seed).address;
         // error
         if (!address) return;
-        console.log(address);
 
-        let wallets: any = storage?.get(`${key}:wallets`);
-        if (!wallets) wallets = [];
-        else wallets = JSON.parse(wallets?.toString());
+        const wallets: string[] = storage?.get(`${key}:wallets`) || [];
 
         setAccount(() => {
             let info: any;
             if (wallets.find((w: string) => w?.toLowerCase() === seed?.toLowerCase())) {
-                info = storage?.get(`${address}`);
-                if (info) return JSON.parse(info);
-            } else {
-                wallets.push(seed);
-                info = { address, name: `Wallet ${wallets.length}`, index: wallet.length };
-                storage?.set("last", `${wallets.length}`);
-                storage?.set(`${key}:wallets`, JSON.stringify(wallets));
-                storage?.set(`${address}`, JSON.stringify(info));
-                return info;
-            }
+                info = storage?.get(address);
+                if (info) return info;
+            } else info = { address, name: `Wallet ${wallets.length + 1}`, index: wallets.length };
+            storage?.set("last", `${wallets.length}`);
+            wallets.push(seed);
+
+            storage?.set(`${key}:wallets`, wallets);
+            storage?.set(`${address}`, info);
+            return info;
         });
 
         storage?.set("init", "complete");
