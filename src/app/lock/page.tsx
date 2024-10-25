@@ -40,6 +40,7 @@ export default function Lock() {
                     router.push("/welcome");
                 } else {
                     const last: any = storage?.get("last");
+                    console.log(last, last ? last - 1 : 0);
                     const info: any = storage?.get(`${wallet(wallets[last ? last - 1 : 0]).address}`);
                     if (info) setAccount(info);
                     alert(`${wallet(wallets[last ? last - 1 : 0]).address}`);

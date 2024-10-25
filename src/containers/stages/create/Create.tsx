@@ -28,7 +28,7 @@ export default function Create({ setStage }: Stage) {
             if (wallets.find((w: string) => w?.toLowerCase() === privateKey?.toLowerCase())) {
                 info = storage?.get(address);
                 if (info) return info;
-            } else info = { address, name: `Wallet ${wallets.length}`, index: wallets.length };
+            } else info = { address, name: `Wallet ${wallets.length + 1}`, index: wallets.length };
             storage?.set("last", `${wallets.length}`);
             wallets.push(privateKey);
 
