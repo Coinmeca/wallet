@@ -30,13 +30,16 @@ export default function RootTemplate({ children }: { children: any }) {
 
         // console.log({ init, access });
 
-        if (!path.startsWith("welcome"))
-            if (!init) router.push("/welcome");
-            else setInit(true);
+        console.log(init, key)
 
-        if (!path.startsWith("lock"))
-            if (!key) router.push("/lock");
-            else setAccess(true);
+        if (!path.startsWith("/welcome"))
+            if (!init) router.push("/welcome");
+            else {
+                setInit(true);
+                if (!path.startsWith("/lock"))
+                    if (!key) router.push("/lock");
+                    else setAccess(true);
+            }
 
         console.log({ account });
 
