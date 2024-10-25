@@ -32,14 +32,13 @@ export default function Import({ setStage }: Stage) {
             if (wallets.find((w: string) => w?.toLowerCase() === seed?.toLowerCase())) {
                 info = storage?.get(`${address}`);
                 if (info) return JSON.parse(info);
-            } else {
-                wallets.push(seed);
-                info = { address, name: `Wallet ${wallets.length}`, index: wallet.length };
-                storage?.set("last", `${wallets.length}`);
-                storage?.set(`${key}:wallets`, JSON.stringify(wallets));
-                storage?.set(`${address}`, JSON.stringify(info));
-                return info;
-            }
+            } else info = { address, name: `Wallet ${wallets.length}`, index: wallets.length };
+            storage?.set("last", `${wallets.length}`);
+            wallets.push(seed);
+
+            storage?.set(`${key}:wallets`, wallets);
+            storage?.set(`${address}`, info);
+            return info;
         });
 
         storage?.set("init", "complete");
