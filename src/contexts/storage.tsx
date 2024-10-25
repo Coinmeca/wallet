@@ -31,15 +31,15 @@ export const StorageProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     const format = (value?: any) => {
         if (typeof value === "undefined") return value;
-        if (typeof value === "number") return value.toString();
+        if (typeof value === "boolean" || typeof value === "number") return value.toString();
         return JSON.stringify(value);
     };
 
     const parse = (value?: string) => {
         if (typeof value === "undefined") return value;
 
-        const isNumber = /^[0-9]*\.[0-9]+$/.test(value);
-        if (isNumber) return parseFloat(value);
+        if (value === "true" || value === "false") return value === "true";
+        else if (/^[0-9]*\.[0-9]+$/.test(value)) return parseFloat(value);
         else return JSON.parse(value);
     };
 
