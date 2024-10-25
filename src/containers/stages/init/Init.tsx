@@ -34,7 +34,7 @@ export default function Init({ stage, setStage }: Stage) {
                         const passcode = CryptoJS.SHA256(pass.code).toString();
                         key = CryptoJS.SHA256(`${userId}:${passcode}`).toString();
 
-                        storage?.set(`userId`, userId);
+                        storage?.set('userId', userId);
                         storage?.set(`${userId}:${passcode}`, key);
                         session?.set("key", key);
 

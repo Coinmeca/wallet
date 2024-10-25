@@ -26,8 +26,7 @@ export default function Lock() {
 
         setCode(code);
         if (code?.length === length) {
-            let key: any;
-            key = storage?.get(`${telegram && user?.id ? user.id : storage.get(`userId`)}:${CryptoJS.SHA256(code)}`);
+            const key = storage?.get(`${storage?.get(`userId`)}:${CryptoJS.SHA256(code)}`);
             if (key) {
                 session?.set("key", key);
                 let wallets: any = storage?.get(`${key}:wallets`);
