@@ -1,5 +1,7 @@
-﻿import EventEmitter from 'eventemitter3';
+import EventEmitter from 'eventemitter3';
+import { WalletError } from './errors';
 import { Chain } from 'types';
+import { Account } from './svm/module';
 
 export { EventEmitter };
 
@@ -19,16 +21,16 @@ export interface WalletConfig {
 export interface WalletAdapterEvents {
     connect(chainId?: string): any;
     disconnect(chainId?: string): any;
-    // error(error: WalletError): any;
+    error(error: WalletError): any;
     readyStateChange(readyState: WalletReadyState): void;
     chainChanged(chainId: string): any;
-    accountsChanged(accounts: string[]): any;
+    accountsChanged(accounts: string[] | Account[]): any;
 }
 
 export interface WalletAdapterProps<Name extends string = string> {
     name: WalletName<Name>;
     state: WalletReadyState;
-    address: string | string[] | null;
+    address: string | string[] | Account | Account[] | null;
     connecting: boolean;
     connected: boolean;
 
@@ -75,7 +77,8 @@ export enum WalletReadyState {
 }
 
 export abstract class WalletAdapter<Name extends string = string>
-    implements Wallet<Name> {
+    implements Wallet<Name>
+{
     abstract name: WalletName<Name>;
 
     protected abstract _state: WalletReadyState;
@@ -92,7 +95,7 @@ export abstract class WalletAdapter<Name extends string = string>
     };
 
     get address() {
-        return Array.isArray(this._accounts) ? this._accounts[0] : this._accounts;
+        return Array.isArray(this._accounts) ? this._accounts[0] : this._accounts || '';
     }
 
     get connecting() {
