@@ -23,9 +23,7 @@ export default function Import({ setStage }: Stage) {
         if (!address) return;
         console.log(address);
 
-        let wallets: any = storage?.get(`${key}:wallets`);
-        if (!wallets) wallets = [];
-        else wallets = JSON.parse(wallets?.toString());
+        const wallets: string[] = storage?.get(`${key}:wallets`) || [];
 
         setAccount(() => {
             let info: any;

@@ -19,8 +19,7 @@ export default function Create({ setStage }: Stage) {
         // error
         if (!key || key === "") return;
 
-        let wallets: any = storage?.get(`${key}:wallets`);
-        if (!wallets) wallets = [];
+        const wallets: string[] = storage?.get(`${key}:wallets`) || [];
 
         setAccount(() => {
             let info: any;
