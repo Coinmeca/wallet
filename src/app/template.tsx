@@ -5,6 +5,7 @@ import { useAccount, useStorage } from "hooks";
 import { useLayoutEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Containers } from "index";
+import { AnimatePresence } from "framer-motion";
 
 interface CoinmecaWallet {
     isCoinmecaWallet: boolean;
@@ -21,6 +22,7 @@ export default function RootTemplate({ children }: { children: any }) {
 
     const [init, setInit] = useState(false);
     const [access, setAccess] = useState(false);
+    const [load, setLoad] = useState(false);
 
     useLayoutEffect(() => {
         const handleTabClose = () => session?.remove("key");
@@ -38,19 +40,14 @@ export default function RootTemplate({ children }: { children: any }) {
                     else setAccess(true);
             }
 
+        setLoad(true);
         return () => window.removeEventListener("beforeunload", handleTabClose);
     }, []);
 
     return (
         <>
-            <Frames.Frame
-                header={{ type: "custom", children: <Containers.Header {...header} /> }}
-                // align={"right"}
-                background={{ img: { src: 2 } }}
-                // side={56}
-            >
-                {children}
-                {/* {init && access && children} */}
+            <Frames.Frame header={{ type: "custom", children: <Containers.Header {...header} /> }} align={"right"} background={{ img: { src: 2 } }} side={56}>
+                <AnimatePresence>{load && children}</AnimatePresence>
             </Frames.Frame>
         </>
     );

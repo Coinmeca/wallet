@@ -176,7 +176,7 @@ export default function Header(props: Header) {
                 </Layouts.Row>
                 {props?.side?.children && (
                     <Side $scale={scale} $width={side} data-active={props?.side?.active} style={props?.side?.style}>
-                        <Layouts.Row>{props?.side?.children}</Layouts.Row>
+                        <Layouts.Row gap={1}>{props?.side?.children}</Layouts.Row>
                     </Side>
                 )}
             </Layouts.Row>
