@@ -3,7 +3,6 @@ import CryptoJS from "crypto-js";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useState } from "react";
 import { useStorage, useTelegram } from "hooks";
-import { wallet } from "wallet";
 import { Parts } from "@coinmeca/ui/index";
 import { Stage } from "..";
 
