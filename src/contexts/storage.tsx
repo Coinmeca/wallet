@@ -107,14 +107,14 @@ export const StorageProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 }
             },
             clear: () => {
-                return telegram && user?.id ? telegram?.CloudStorage.removeItems(telegram?.CloudStorage.getKeys() as any) : localStorage?.clear();
+                return (telegram && user?.id) ? telegram?.CloudStorage.removeItems(telegram?.CloudStorage.getKeys() as any) : localStorage?.clear();
             },
         }),
         [telegram, user, storage],
     );
 
     useLayoutEffect(() => {
-        setStorage(telegram && user?.id ? telegram?.CloudStorage : localStorage);
+        setStorage((telegram && user?.id) ? telegram?.CloudStorage : localStorage);
         setSession(sessionStorage);
     }, []);
 

@@ -30,7 +30,7 @@ export default function Init({ stage, setStage }: Stage) {
                             message: "The passcode you entered does not match the passcode initially entered.",
                         });
                     else {
-                        const userId = telegram && user?.id ? user.id : crypto.randomUUID();
+                        const userId = (telegram && user?.id) ? user.id : crypto.randomUUID();
                         const passcode = CryptoJS.SHA256(pass.code).toString();
                         key = CryptoJS.SHA256(`${userId}:${passcode}`).toString();
 
