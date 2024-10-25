@@ -28,8 +28,8 @@ export default function Import({ setStage }: Stage) {
         setAccount(() => {
             let info: any;
             if (wallets.find((w: string) => w?.toLowerCase() === seed?.toLowerCase())) {
-                info = storage?.get(`${address}`);
-                if (info) return JSON.parse(info);
+                info = storage?.get(address);
+                if (info) return info;
             } else info = { address, name: `Wallet ${wallets.length}`, index: wallets.length };
             storage?.set("last", `${wallets.length}`);
             wallets.push(seed);

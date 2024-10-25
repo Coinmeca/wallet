@@ -16,6 +16,7 @@ export default function Create({ setStage }: Stage) {
         if (create) return router.push("/");
 
         const key = session?.get("key");
+        alert(key);
         // error
         if (!key || key === "") return;
 
@@ -25,7 +26,7 @@ export default function Create({ setStage }: Stage) {
             let info: any;
             const { privateKey, address } = wallet().create(`${key}:${wallets.length}`);
             if (wallets.find((w: string) => w?.toLowerCase() === privateKey?.toLowerCase())) {
-                info = storage?.get(`${address}`);
+                info = storage?.get(address);
                 if (info) return info;
             } else info = { address, name: `Wallet ${wallets.length}`, index: wallets.length };
             storage?.set("last", `${wallets.length}`);
