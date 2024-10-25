@@ -16,7 +16,6 @@ export default function Create({ setStage }: Stage) {
         if (create) return router.push("/");
 
         const key = session?.get("key");
-        console.log("created key", key);
         // error
         if (!key || key === "") return;
 
@@ -40,7 +39,6 @@ export default function Create({ setStage }: Stage) {
         storage?.set("init", "complete");
         router.push("/");
         setCreate(false);
-        // console.log("wallets", wallets);
     };
 
     return (

@@ -28,10 +28,6 @@ export default function RootTemplate({ children }: { children: any }) {
         const init = storage?.get("init");
         const key = session?.get("key");
 
-        // console.log({ init, access });
-
-        console.log({ init, key });
-
         if (!path.startsWith("/welcome"))
             if (!init) router.push("/welcome");
             else {
@@ -40,8 +36,6 @@ export default function RootTemplate({ children }: { children: any }) {
                     if (!key) router.push("/lock");
                     else setAccess(true);
             }
-
-        console.log({ account });
 
         return () => window.removeEventListener("beforeunload", handleTabClose);
     }, []);
