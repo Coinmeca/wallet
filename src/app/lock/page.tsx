@@ -26,6 +26,8 @@ export default function Lock() {
 
         setCode(code);
         if (code?.length === length) {
+            alert(storage?.get("userId"));
+            alert(CryptoJS.SHA256(code));
             alert(`${storage?.get("userId")}:${CryptoJS.SHA256(code)}`);
             const key = storage?.get(`${storage?.get("userId")}:${CryptoJS.SHA256(code)}`);
             if (key) {

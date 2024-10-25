@@ -31,9 +31,10 @@ export default function Init({ stage, setStage }: Stage) {
                         });
                     else {
                         const userId = (telegram && user?.id) ? user.id : crypto.randomUUID();
-                        alert(userId);
-                        const passcode = CryptoJS.SHA256(pass.code).toString();
-                        key = CryptoJS.SHA256(`${userId}:${passcode}`).toString();
+                        alert(`${user?.id}, ${userId}`);
+                        const passcode = CryptoJS.SHA256(pass.code);
+                        key = CryptoJS.SHA256(`${userId}:${passcode}`);
+                        alert(passcode);
                         alert(key);
 
                         storage?.set('userId', userId);
