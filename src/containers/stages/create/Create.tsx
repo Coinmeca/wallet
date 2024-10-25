@@ -16,7 +16,7 @@ export default function Create({ setStage }: Stage) {
         if (create) return router.push("/");
 
         const key = session?.get("key");
-        alert(key);
+        console.log("created key", key);
         // error
         if (!key || key === "") return;
 

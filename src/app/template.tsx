@@ -30,7 +30,7 @@ export default function RootTemplate({ children }: { children: any }) {
 
         // console.log({ init, access });
 
-        console.log(init, key)
+        console.log({ init, key });
 
         if (!path.startsWith("/welcome"))
             if (!init) router.push("/welcome");

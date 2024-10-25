@@ -21,7 +21,7 @@ export default function Import({ setStage }: Stage) {
         const address = wallet(seed).address;
         // error
         if (!address) return;
-        console.log(address);
+        console.log({ address });
 
         const wallets: string[] = storage?.get(`${key}:wallets`) || [];
 

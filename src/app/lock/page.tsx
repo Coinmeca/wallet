@@ -26,9 +26,9 @@ export default function Lock() {
 
         setCode(code);
         if (code?.length === length) {
-            alert(storage?.get("userId"));
-            alert(CryptoJS.SHA256(code).toString());
-            alert(`${storage?.get("userId")}:${CryptoJS.SHA256(code).toString()}`);
+            console.log("userId", storage?.get("userId"));
+            console.log("code", CryptoJS.SHA256(code).toString());
+            console.log("pkey", `${storage?.get("userId")}:${CryptoJS.SHA256(code).toString()}`);
             const key = storage?.get(`${storage?.get("userId")}:${CryptoJS.SHA256(code).toString()}`);
             if (key) {
                 session?.set("key", key);
@@ -40,11 +40,11 @@ export default function Lock() {
                     router.push("/welcome");
                 } else {
                     const last: any = storage?.get("last");
-                    console.log(last, last ? last - 1 : 0);
+                    console.log("last", last, last ? last - 1 : 0);
                     const info: any = storage?.get(`${wallet(wallets[last ? last - 1 : 0]).address}`);
                     if (info) setAccount(info);
-                    alert(`${wallet(wallets[last ? last - 1 : 0]).address}`);
-                    alert(JSON.stringify(info));
+                    console.log("wallet address", `${wallet(wallets[last ? last - 1 : 0]).address}`);
+                    console.log({ info });
                     router.push("/");
                 }
 
