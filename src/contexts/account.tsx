@@ -1,7 +1,6 @@
 ﻿import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
 
 export interface AccountInfo {
-    chain?: any;
     name: string;
     address: string;
     index: number;

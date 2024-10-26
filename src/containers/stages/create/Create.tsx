@@ -28,7 +28,7 @@ export default function Create({ setStage }: Stage) {
                 info = storage?.get(address);
                 if (info) return info;
             } else info = { address, name: `Wallet ${wallets.length + 1}`, index: wallets.length };
-            storage?.set("last", `${wallets.length}`);
+            storage?.set("last:wallet", `${wallets.length}`);
             wallets.push(privateKey);
 
             storage?.set(`${key}:wallets`, wallets);

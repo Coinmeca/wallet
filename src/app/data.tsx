@@ -84,6 +84,7 @@ export default function Data() {
         //     ),
         // },
         side: account && {
+            width: 48,
             active: true,
             // style: { ...(windowWidth <= Root.Device.Tablet && isMobile && { flexDirection: "column-reverse" }) },
             children: (
