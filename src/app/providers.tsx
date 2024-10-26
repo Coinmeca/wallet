@@ -11,13 +11,13 @@ export default function Providers({ children }: { children: any }) {
             <WindowSize>
                 <TelegramProvider>
                     <StorageProvider>
-                        <AccountProvider>
-                            <WalletProvider>
+                        <WalletProvider>
+                            <AccountProvider>
                                 <Theme>
                                     <Style.Initialize>{children}</Style.Initialize>
                                 </Theme>
-                            </WalletProvider>
-                        </AccountProvider>
+                            </AccountProvider>
+                        </WalletProvider>
                     </StorageProvider>
                 </TelegramProvider>
             </WindowSize>

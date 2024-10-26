@@ -16,7 +16,7 @@ interface WalletProviderContextProps {
 
 const WalletProviderContext = createContext<WalletProviderContextProps | undefined>(undefined);
 
-export const useWalletProvider = () => {
+export const useWallet = () => {
     const context = useContext(WalletProviderContext);
     if (!context) throw new Error("InjectedWalletContext for useInjectedWallet doesn't initialized yet.");
     return context;
