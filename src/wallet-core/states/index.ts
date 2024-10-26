@@ -1,5 +1,5 @@
 ﻿import { create } from "zustand";
-import { Chain } from "types";
+import { Chain } from "../types";
 
 export type ConnectArgs =
     | [undefined]

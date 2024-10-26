@@ -1,6 +1,6 @@
 import EventEmitter from 'eventemitter3';
 import { WalletError } from './errors';
-import { Chain } from 'types';
+import { Chain } from '../types';
 import { Account } from './svm/module';
 
 export { EventEmitter };
@@ -77,8 +77,7 @@ export enum WalletReadyState {
 }
 
 export abstract class WalletAdapter<Name extends string = string>
-    implements Wallet<Name>
-{
+    implements Wallet<Name> {
     abstract name: WalletName<Name>;
 
     protected abstract _state: WalletReadyState;
