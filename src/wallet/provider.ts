@@ -4,8 +4,7 @@ import { keccak256, ecsign, toBuffer, hashPersonalMessage, bufferToHex } from 'e
 
 import EventEmitter from 'eventemitter3';
 import axios from 'axios';
-import { wallet } from 'wallet';
-import { loadStroage, StorageController } from 'utils';
+import { loadStorage, StorageController } from 'utils';
 import { AccountInfo } from 'contexts/account';
 
 export interface RequestParams {
@@ -51,16 +50,19 @@ export interface CoinmecaWalletProviderConfig {
 }
 
 export class CoinmecaWalletProvider {
-    private wallet?: Wallet;
-    private chainId: string;
-    private providerUrl?: string;
+    private storage: StorageController;
     private events: EventEmitter;
 
+    private wallet?: Wallet;
+    private providerUrl?: string;
+
+    public chainId: string;
     public address?: string;
     public isCoinmecaWallet = true;
 
     constructor(config?: CoinmecaWalletProviderConfig) {
         this.events = new EventEmitter();
+        this.storage = loadStorage("coinmeca:wallet", this.isTelegram ? (window as any).Telegram?.WebApp?.CloudStorage : localStorage);
 
         // Check if the config object is provided before destructuring
         const { privateKey, chainId, providerUrl } = config || {};
@@ -71,11 +73,10 @@ export class CoinmecaWalletProvider {
         if (chainId) {
             this.chainId = chainId;
         } else {
-            const storedChainId = this.stroage.get('last:chainId');
+            const storedChainId = this.storage.get('last:chainId');
             this.chainId = storedChainId || "0x1"; // Default to "0x1" if no stored chainId
         }
     }
-
 
     async request({ method, params }: { method: string; params?: any[] }) {
         switch (method) {
@@ -159,10 +160,6 @@ export class CoinmecaWalletProvider {
             default:
                 throw new Error(`Method '${method}' not supported`);
         }
-    }
-
-    private get stroage() {
-        return loadStroage("coinmeca:wallet", this.isTelegram ? (window as any).Telegram?.WebApp?.CloudStorage : localStorage);
     }
 
     get isTelegram() {
@@ -338,6 +335,11 @@ export class CoinmecaWalletProvider {
         return this.address;
     }
 
+    async balance() {
+        if (this.address) return await this.sendRpcRequest('eth_getBalance', [this.address, 'latest']);
+        else return 0;
+    }
+
     // Event handling with EventEmitter3
     on(event: string, listener: (...args: any[]) => void, context?: any): this {
         this.events.on(event, listener);
@@ -353,13 +355,14 @@ export class CoinmecaWalletProvider {
         this.events.emit(event, ...args);
     }
 
+
     // Trigger account and chain change events
     changeAccount(privateKey: string): void {
         this.wallet = Wallet.fromPrivateKey(Buffer.from(privateKey.substring(0, 64), "hex"));
         this.address = this.wallet.getAddressString();
 
-        const info: AccountInfo = this.stroage.get(this.address);
-        this.stroage.set('last:wallet', info.index);
+        const info: AccountInfo = this.storage.get(this.address);
+        this.storage.set('last:wallet', info.index);
 
         this.emit('accountsChanged', [this.address]);
     }
@@ -367,7 +370,7 @@ export class CoinmecaWalletProvider {
     changeChain(chainId: string): void {
         if (this.chainId !== chainId) {
             this.chainId = chainId;
-            this.stroage.set('last:chainId', chainId);
+            this.storage.set('last:chainId', chainId);
             this.emit('chainChanged', chainId);
         }
     }

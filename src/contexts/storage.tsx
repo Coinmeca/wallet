@@ -1,6 +1,6 @@
 ﻿import { useTelegram } from "hooks";
 import React, { createContext, useCallback, useContext, useLayoutEffect, useMemo, useState } from "react";
-import { loadStroage } from "utils";
+import { loadStorage } from "utils";
 
 interface StorageProps {
     get: (key: string) => any;
@@ -29,7 +29,7 @@ export const StorageProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const [session, setSession] = useState<CloudStorage | Storage>();
 
     const modules = useCallback(
-        (storage?: CloudStorage | Storage) => loadStroage("coinmeca:wallet", storage, !!(telegram && user?.id)),
+        (storage?: CloudStorage | Storage) => loadStorage("coinmeca:wallet", storage, !!(telegram && user?.id)),
         [telegram, user, storage],
     );
 

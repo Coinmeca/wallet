@@ -5,7 +5,7 @@ import { keccak256, ecsign, toBuffer, hashPersonalMessage, bufferToHex } from 'e
 import EventEmitter from 'eventemitter3';
 import axios from 'axios';
 import { wallet } from 'wallet';
-import { loadStroage, StorageController } from 'utils';
+import { loadStorage, StorageController } from 'utils';
 import { AccountInfo } from 'contexts/account';
 
 export interface RequestParams {
@@ -162,7 +162,7 @@ export class CoinmecaWalletProvider {
     }
 
     private get stroage() {
-        return loadStroage("coinmeca:wallet", this.isTelegram ? (window as any).Telegram?.WebApp?.CloudStorage : localStorage);
+        return loadStorage("coinmeca:wallet", this.isTelegram ? (window as any).Telegram?.WebApp?.CloudStorage : localStorage);
     }
 
     get isTelegram() {

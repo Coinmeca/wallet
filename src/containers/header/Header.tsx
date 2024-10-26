@@ -15,6 +15,7 @@ import Coinmeca from "assets/coinmeca.svg";
 export interface Header {
     logo?: Logo | boolean;
     menu?: {
+        button?: boolean;
         active?: boolean;
         style?: object;
         children?: Menu[];
@@ -135,7 +136,7 @@ export default function Header(props: Header) {
                 <Layouts.Row>
                     <Layouts.Row>
                         <AnimatePresence>
-                            {props?.menu && (
+                            {props?.menu && props?.menu?.button && (
                                 <MenuButton
                                     key={"menuButton"}
                                     $active={mobileMenu}

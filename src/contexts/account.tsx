@@ -1,5 +1,8 @@
-﻿import { useStorage, useWallet } from "hooks";
+﻿import { getChainById } from "chains";
+import { useStorage, useWallet } from "hooks";
 import React, { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { Chain } from "types";
+import { formatChainId } from "utils";
 
 export interface AccountInfo {
     name: string;
@@ -13,7 +16,9 @@ export interface AccountInfo {
 
 interface AccountContextProps {
     account: AccountInfo | undefined;
-    setAccount: (account?: AccountInfo | ((prevState?: AccountInfo | undefined) => AccountInfo | undefined)) => void;
+    setAccount: React.Dispatch<React.SetStateAction<AccountInfo | undefined>>;
+    chain: Chain | undefined;
+    setChain: React.Dispatch<React.SetStateAction<Chain | undefined>>;
 }
 
 const AccountContext = createContext<AccountContextProps | undefined>(undefined);
@@ -28,17 +33,34 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const { storage, session } = useStorage();
     const { provider } = useWallet();
 
-    const [account, changeAccount] = useState<AccountInfo>();
+    const [account, setAccount] = useState<AccountInfo>();
+    const [chain, setChain] = useState<Chain>();
 
-    const setAccount = useCallback((account?: AccountInfo | ((prevState?: AccountInfo | undefined) => AccountInfo | undefined)) => {
-        return changeAccount((state?: AccountInfo) => {
-            account = (typeof account === "function" ? account(state) : account) as AccountInfo;
-            const key = session?.get("key");
-            const wallets = storage?.get(`${key}:wallets`);
-            if (wallets) provider?.changeAccount(wallets[account.index]);
-            return account;
-        });
-    }, []);
+    const updateChain = (chainId?: string | number) => {
+        chainId = (chainId || storage?.get("last:chainId") || 0) as string | number;
+        const chainInfo = getChainById(chainId);
+        if (chainInfo) {
+            provider?.changeChain(formatChainId(chainId));
+            provider?.changeProviderUrl(chainInfo?.rpc[0]);
+            setChain(chainInfo);
+        }
+    };
 
-    return <AccountContext.Provider value={{ account, setAccount }}>{children}</AccountContext.Provider>;
+    useEffect(() => {
+        const key = session?.get("key");
+        const wallets = storage?.get(`${key}:wallets`);
+        const last = {
+            chainId: storage?.get("last:chainId"),
+            wallet: storage?.get("last:wallet"),
+        };
+
+        if (last.wallet) provider?.changeAccount(wallets[last.wallet]);
+        if (!provider?.chainId || last.chainId !== provider?.chainId) updateChain(last.chainId);
+    }, [account]);
+
+    useEffect(() => {
+        if (chain?.id !== provider?.chainId) updateChain(chain?.id);
+    }, [chain, provider?.chainId]);
+
+    return <AccountContext.Provider value={{ account, setAccount, chain, setChain }}>{children}</AccountContext.Provider>;
 };

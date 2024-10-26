@@ -60,28 +60,28 @@ export default function Data() {
         menu: account && {
             active: mobileMenu === "menu",
             onClick: () => (mobileMenu === "menu" ? setMobileMenu("") : setMobileMenu("menu")),
-            // children: [
-            //     {
-            //         name: "Activity",
-            //         href: "/activity",
-            //         onClick: () => setMobileMenu(""),
-            //     },
-            //     {
-            //         name: "Token",
-            //         href: "/token",
-            //         onClick: () => setMobileMenu(""),
-            //     },
-            //     {
-            //         name: "NFT",
-            //         href: "/nft",
-            //         onClick: () => setMobileMenu(""),
-            //     },
-            //     {
-            //         name: "Test",
-            //         href: "/test",
-            //         onClick: () => setMobileMenu(""),
-            //     },
-            // ],
+            children: [
+                {
+                    name: "Activity",
+                    href: "/activity",
+                    onClick: () => setMobileMenu(""),
+                },
+                {
+                    name: "Token",
+                    href: "/token",
+                    onClick: () => setMobileMenu(""),
+                },
+                {
+                    name: "NFT",
+                    href: "/nft",
+                    onClick: () => setMobileMenu(""),
+                },
+                {
+                    name: "Test",
+                    href: "/test",
+                    onClick: () => setMobileMenu(""),
+                },
+            ],
         },
         // option: {
         //     active: true,
