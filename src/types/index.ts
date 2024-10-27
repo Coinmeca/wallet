@@ -1,5 +1,3 @@
-import { Cluster } from "@solana/web3.js";
-import { Adapter } from "core/types";
 export interface NativeCurrency {
     name: string;
     symbol: string;
@@ -15,7 +13,7 @@ export interface Asset {
 }
 
 export type ChainBase = 'evm' | 'svm'
-export type ChainType = 'mainnet' | Cluster;
+export type ChainType = 'mainnet' | 'mainnet-beta' | 'testnet' | 'devnet';
 
 export interface Chain {
     id: number;
@@ -38,16 +36,4 @@ export interface Chains {
             [key: string]: Chain | undefined;
         }
     };
-}
-
-export interface Providers {
-    [key: string]: Provider;
-}
-
-export interface Provider {
-    name: string;
-    logo?: string;
-    website?: string;
-    url?: string;
-    adapter: (config?: any) => Adapter;
 }

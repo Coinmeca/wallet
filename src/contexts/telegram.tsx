@@ -1,42 +1,9 @@
 ﻿"use client";
 import Script from "next/script";
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { loadTelegram, TelegramController } from "utils";
 
-interface TelegramContextProps {
-    telegram: Telegram["WebApp"] | undefined;
-    user: Telegram["WebApp"]["initDataUnsafe"]["user"] | undefined;
-    isInApp?: boolean;
-    isVerticalSwipe?: boolean;
-    isCloseConfirm?: boolean;
-    storage?: CloudStorage;
-    send: (text: string) => void | undefined;
-    enable: {
-        vertical: () => void | undefined;
-        closeConfirm: () => void | undefined;
-    };
-    disable: {
-        vertical: () => void | undefined;
-        closeConfirm: () => void | undefined;
-    };
-    bio: {
-        request: (reason?: string) => BiometricManager | undefined;
-        auth: (reason?: string) => BiometricManager | undefined;
-    };
-    show: {
-        alert: (message: string, callback?: () => void) => void | undefined;
-        confirm: (title: string, callback?: (ok: boolean) => void) => void | undefined;
-        popup: (popup: PopupParams, callback?: ((button_id: string) => void) | undefined) => void | undefined;
-        scanQR: (text: string, callback?: (data: string) => void) => void | undefined;
-    };
-    open: {
-        internal: (url: string, callback?: Function) => void;
-        external: (url: string, try_instant_view?: boolean, callback?: Function) => void;
-    };
-    expand: (callback?: Function) => void;
-    exit: (callback?: Function) => void;
-}
-
-const TelegramContext = createContext<TelegramContextProps | undefined>(undefined);
+const TelegramContext = createContext<TelegramController | undefined>(undefined);
 
 export const useTelegram = () => {
     const context = useContext(TelegramContext);
@@ -59,73 +26,7 @@ export const TelegramProvider: React.FC<{ src?: string; children: React.ReactNod
         }
     };
 
-    const modules = useMemo(
-        () => ({
-            isInApp: telegram && telegram?.platform !== "unknown",
-            isExpanded: telegram?.isExpanded || false,
-            isVerticalSwipe: telegram?.isVerticalSwipesEnabled,
-            isCloseConfirm: telegram?.isClosingConfirmationEnabled,
-
-            storage: telegram?.CloudStorage,
-
-            send: (text: string) => telegram && telegram?.sendData(text),
-
-            enable: {
-                vertical: () => telegram?.enableVerticalSwipes?.(),
-                closeConfirm: () => telegram?.enableClosingConfirmation?.(),
-            },
-
-            disable: {
-                vertical: () => telegram?.disableVerticalSwipes?.(),
-                closeConfirm: () => telegram?.disableClosingConfirmation?.(),
-            },
-
-            bio: {
-                request: (reason?: string) => telegram && telegram.BiometricManager.requestAccess({ reason }),
-                auth: (reason?: string) => telegram && telegram.BiometricManager.authenticate({ reason }),
-            },
-
-            show: {
-                alert: (message: string, callback?: () => void) => telegram && telegram?.showAlert(message, callback),
-                confirm: (title: string, callback?: (ok: boolean) => void) => telegram && telegram?.showConfirm(title, callback),
-                popup: (popup: PopupParams, callback?: ((button_id: string) => void) | undefined) => telegram && telegram?.showPopup(popup, callback),
-                scanQR: (text: string, callback?: (data: string) => void) => telegram && telegram?.showScanQrPopup({ text }, callback),
-            },
-
-            open: {
-                internal: (url: string, callback?: Function) => {
-                    if (telegram) {
-                        telegram?.openTelegramLink(url);
-                        callback?.();
-                    }
-                },
-                external: (url: string, try_instant_view?: boolean, callback?: Function) => {
-                    if (telegram) {
-                        telegram?.openLink(url, { try_instant_view });
-                        callback?.();
-                    }
-                },
-            },
-
-            expand: (callback?: Function) => {
-                if (telegram) {
-                    telegram?.expand();
-                    callback?.();
-                }
-            },
-
-            exit: (callback?: Function) => {
-                if (telegram) {
-                    telegram?.close();
-                    telegram?.MainButton?.offClick(() => {
-                        setUser(undefined);
-                        callback?.();
-                    });
-                }
-            },
-        }),
-        [telegram],
-    );
+    const modules = useMemo(() => loadTelegram(telegram), [telegram]);
 
     useEffect(() => {
         if (telegram) {
@@ -139,7 +40,20 @@ export const TelegramProvider: React.FC<{ src?: string; children: React.ReactNod
     return (
         <>
             <Script src={src} onLoad={onLoad} />
-            <TelegramContext.Provider value={{ telegram, user, ...modules }}>{children}</TelegramContext.Provider>
+            <TelegramContext.Provider
+                value={{
+                    ...{
+                        ...modules,
+                        exit: (callback?: Function) => {
+                            modules.exit(callback);
+                            setUser(undefined);
+                        },
+                    },
+                    telegram,
+                    user,
+                }}>
+                {children}
+            </TelegramContext.Provider>
         </>
     );
 };

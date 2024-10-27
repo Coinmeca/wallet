@@ -15,6 +15,7 @@ import Coinmeca from "assets/coinmeca.svg";
 export interface Header {
     logo?: Logo | boolean;
     menu?: {
+        button?: boolean;
         active?: boolean;
         style?: object;
         children?: Menu[];
@@ -135,8 +136,9 @@ export default function Header(props: Header) {
                 <Layouts.Row>
                     <Layouts.Row>
                         <AnimatePresence>
-                            {props?.menu && (
+                            {props?.menu && props?.menu?.button && (
                                 <MenuButton
+                                    key={"menuButton"}
                                     $active={mobileMenu}
                                     onClick={(e: any) => {
                                         if (typeof props?.menu?.onClick === "function") props?.menu?.onClick(e);
@@ -150,12 +152,12 @@ export default function Header(props: Header) {
                                 </MenuButton>
                             )}
                             {props?.logo && (
-                                <Logo href={typeof props?.logo === "object" ? props?.logo?.href : "/"}>
+                                <Logo key={"logo"} href={typeof props?.logo === "object" ? props?.logo?.href : "/"}>
                                     <LogoImage />
                                 </Logo>
                             )}
                             {props?.menu?.children && props?.menu?.children?.length > 0 && (
-                                <Menu data-active={mobileMenu} onClick={() => setMobileMenu(false)}>
+                                <Menu accessKey={"menu"} data-active={mobileMenu} onClick={() => setMobileMenu(false)}>
                                     {props?.menu?.children?.map((v: Menu, k: number) => (
                                         <Nav
                                             key={k}

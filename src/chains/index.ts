@@ -1,4 +1,5 @@
-import type { Chain, Chains } from "@coinmeca/wallet-core/types";
+import type { Chain, Chains } from "types";
+import { parseChainId } from "utils";
 
 export const chainlist: Chains = {
     ethereum: {
@@ -772,7 +773,8 @@ export function getChainByName(name: string): Chain | undefined {
         .find(f => f?.name?.toLowerCase()?.includes(name));
 }
 
-export function getChainById(id: number): Chain | undefined {
+export function getChainById(id: number | string): Chain | undefined {
+    id = parseChainId(id) as number;
     return Object.values(chainlist)
         .flatMap(network => [network?.mainnet, ...(network?.testnet ? Object.values(network?.testnet) : [])])
         .filter(f => f)

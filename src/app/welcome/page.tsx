@@ -28,6 +28,7 @@ export default function Welcome() {
         <AnimatePresence>
             {load && (
                 <Layouts.Contents.SlideContainer
+                    key="welcome"
                     contents={[
                         {
                             active: stage.name === "welcome",

@@ -63,17 +63,22 @@ export default function Data() {
             children: [
                 {
                     name: "Activity",
-                    path: "/activity",
+                    href: "/activity",
                     onClick: () => setMobileMenu(""),
                 },
                 {
                     name: "Token",
-                    path: "/token",
+                    href: "/token",
                     onClick: () => setMobileMenu(""),
                 },
                 {
                     name: "NFT",
-                    path: "/nft",
+                    href: "/nft",
+                    onClick: () => setMobileMenu(""),
+                },
+                {
+                    name: "Test",
+                    href: "/test",
                     onClick: () => setMobileMenu(""),
                 },
             ],
@@ -84,6 +89,7 @@ export default function Data() {
         //     ),
         // },
         side: account && {
+            width: 48,
             active: true,
             // style: { ...(windowWidth <= Root.Device.Tablet && isMobile && { flexDirection: "column-reverse" }) },
             children: (

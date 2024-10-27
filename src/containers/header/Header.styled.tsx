@@ -235,6 +235,10 @@ export const Side = styled.div<{ $scale: number; $width: number }>`
         padding-left: 0;
         justify-content: space-between;
     }
+
+    @media all and (max-width: ${Root.Device.Tablet}px) {
+        max-width: initial;
+    }
 `;
 
 export const Panel = styled.div`
