@@ -97,16 +97,25 @@ const send = async (response: TelegramResponse) => {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { message, callback_data } = body;
+        const { message, callback_query } = body;
 
-        if (message && message.text) {
+        // Define a response template
+        let response: TelegramResponse = {
+            chat_id: message?.chat?.id || callback_query?.message?.chat.id,
+            text: "",
+        };
+
+        if (callback_query && callback_query.data) {
+            // Handle data sent from Telegram WebApp using sendData
+            const chat_id = callback_query.message.chat.id;
+            response = {
+                chat_id,
+                text: `Received data from WebApp: ${callback_query.data}`,
+            };
+        } else if (message && message.text) {
+            // Handle regular commands as before
             const chat_id = message.chat.id;
             const command = message.text;
-
-            let response: TelegramResponse = {
-                chat_id,
-                text: "",
-            };
 
             if (command.startsWith("/")) {
                 // Handle commands
@@ -128,13 +137,13 @@ export async function POST(req: NextRequest) {
                         resize_keyboard: true,
                     };
                 } else if (command.startsWith("/create")) {
-                    const mnemonic = command?.split(" ");
+                    const mnemonic = command.split(" ");
                     const seed = chat_id + mnemonic[1];
                     const { address } = wallet(seed);
 
                     response.text = `
                         mnemonic: ${mnemonic.toString()},\n
-                        mnemonic length:${mnemonic?.length},\n
+                        mnemonic length:${mnemonic.length},\n
                         mnemonic isBlank:${mnemonic[1] ? mnemonic[1] === "" : "none"},\n
                         mnemonic code length:${mnemonic[1] ? mnemonic[1].length : "none"},\n
                         ${chat_id} => ${address}`;
@@ -164,18 +173,15 @@ export async function POST(req: NextRequest) {
                     response.text = "Unknown command. Use /help to see available commands.";
                 }
             } else {
-                // Handle other messages
                 response.text = `You said: ${command}`;
             }
-            response.text += ` ${callback_data.data}`;
-
-            // Send a response back to the Telegram chat
-            await send(response);
-
-            return NextResponse.json({ message: "OK" });
         } else {
-            return NextResponse.json({ error: "Bad Request: No message data found" }, { status: 400 });
+            return NextResponse.json({ error: "Bad Request: No message or callback_query data found" }, { status: 400 });
         }
+
+        // Send response back to Telegram
+        await send(response);
+        return NextResponse.json({ message: "OK" });
     } catch (error) {
         console.error("Error handling the request:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
