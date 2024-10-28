@@ -26,25 +26,14 @@ export const isMobile = () => {
         )
     );
 };
-// Import a crypto library for AES encryption if needed
-// This example uses the Web Crypto API which is built into modern browsers
 
-export const format = async (value?: any) => {
+export const format = (value?: any) => {
     if (typeof value === "undefined") return value;
     if (typeof value === "boolean" || typeof value === "number") return value.toString();
-
-    // Ensure any string is sanitized to prevent XSS
-    return JSON.stringify(value); // This should be safe as long as values are controlled
+    return JSON.stringify(value);
 };
 
-// XSS defense function
-const sanitizeInput = (input: string): string => {
-    const div = document.createElement("div");
-    div.innerText = input; // Using innerText ensures that any HTML tags are escaped
-    return div.innerHTML; // Return the sanitized version
-};
-
-export const parse = async (value?: string) => {
+export const parse = (value?: string) => {
     if (typeof value === "undefined") return value;
 
     if (value === "true" || value === "false") return value === "true";
@@ -52,146 +41,78 @@ export const parse = async (value?: string) => {
     else return JSON.parse(value);
 };
 
-// Encrypt and decrypt functions
-const encryptData = async (data: string, key: CryptoKey): Promise<string> => {
-    const iv = window.crypto.getRandomValues(new Uint8Array(12)); // Initialization vector
-    const encryptedData = await window.crypto.subtle.encrypt(
-        {
-            name: "AES-GCM",
-            iv: iv,
-        },
-        key,
-        new TextEncoder().encode(data),
-    );
-
-    // Combine the IV and encrypted data for storage
-    const combinedData = new Uint8Array(iv.byteLength + encryptedData.byteLength);
-    combinedData.set(iv);
-    combinedData.set(new Uint8Array(encryptedData), iv.byteLength);
-
-    return btoa(String.fromCharCode(...combinedData)); // Convert to Base64 for storage
-};
-
-const decryptData = async (data: string, key: CryptoKey): Promise<string> => {
-    const combinedData = new Uint8Array(
-        atob(data)
-            .split("")
-            .map((c) => c.charCodeAt(0)),
-    );
-    const iv = combinedData.slice(0, 12);
-    const encryptedData = combinedData.slice(12);
-
-    const decryptedData = await window.crypto.subtle.decrypt(
-        {
-            name: "AES-GCM",
-            iv: iv,
-        },
-        key,
-        encryptedData,
-    );
-
-    return new TextDecoder().decode(decryptedData);
-};
-
-// Key generation function (run once to get a CryptoKey)
-export const generateKey = async (): Promise<CryptoKey> => {
-    return await window.crypto.subtle.generateKey(
-        {
-            name: "AES-GCM",
-            length: 256,
-        },
-        true, // Extractable
-        ["encrypt", "decrypt"],
-    );
-};
-
 export interface StorageController {
-    get: (key: string) => Promise<any>; // Adjust the return type as needed
-    gets: (keys: string[]) => Promise<Record<string, any>>;
-    getAll: () => Promise<Record<string, any>>;
-    set: (key: string, value: any) => Promise<void>;
-    sets: (map: string[][]) => Promise<void>;
-    remove: (key: string) => Promise<void>;
-    removes: (keys: string[]) => Promise<void>;
-    clear: () => Promise<void>;
+    get: (key: string) => any; // Adjust the return type as needed
+    gets: (keys: string[]) => Record<string, any>;
+    getAll: () => Record<string, any>;
+    set: (key: string, value: any) => void;
+    sets: (map: string[][]) => void;
+    remove: (key: string) => void;
+    removes: (keys: string[]) => void;
+    clear: () => void;
 }
 
-export const loadStorage = (prefix: string, storage?: CloudStorage | Storage, isTelegram?: boolean, encryptionKey?: CryptoKey): StorageController => ({
-    get: async (key: string) => {
-        const encryptedValue = storage?.getItem(`${prefix}:${key}`) as string;
-        return encryptedValue ? await decryptData(encryptedValue, encryptionKey!) : undefined;
+export const loadStorage = (prefix: string, storage?: CloudStorage | Storage, isTelegram?: boolean): StorageController => ({
+    get: (key: string) => {
+        return parse(storage?.getItem(`${prefix}:${key}`) as any);
     },
-    gets: async (keys: string[]) => {
+    gets: (keys: string[]) => {
         const values: Record<string, any> = {};
         if (isTelegram) {
-            const items = storage?.getItems(keys.map((k) => `${prefix}:${k}`)) as any;
-            await Promise.all(
-                items.map(async (v: string | undefined, i: number) => {
-                    if (v) values[keys[i]] = await decryptData(v, encryptionKey!);
-                }),
-            );
+            const items = storage?.getItems(keys?.map((k) => `${prefix}:${k}`)) as any;
+            items.forEach((v: string | undefined, i: number) => {
+                if (v) values[keys[i]] = parse(v);
+            });
         } else {
-            await Promise.all(
-                keys.map(async (key) => {
-                    const value = storage.getItem(`${prefix}:${key}`);
-                    if (value) values[key] = await decryptData(value, encryptionKey!);
-                }),
-            );
+            keys.forEach((key) => {
+                const value = localStorage.getItem(`${prefix}:${key}`);
+                if (value) values[key] = parse(value);
+            });
         }
         return values;
     },
-    getAll: async () => {
+    getAll: () => {
         const values: Record<string, any> = {};
         if (isTelegram) {
             const keys = storage?.getKeys() as any;
             const items = storage?.getItems(keys) as any;
-            await Promise.all(
-                items.map(async (v: string | undefined, i: number) => {
-                    if (v) values[keys[i].replace(`${prefix}:`, "")] = await decryptData(v, encryptionKey!);
-                }),
-            );
+            items.forEach((v: string | undefined, i: number) => {
+                if (v) values[keys[i].replace(`${prefix}:`, "")] = parse(v);
+            });
         } else {
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (key && key.startsWith(`${prefix}:`)) {
                     const value = localStorage.getItem(key);
-                    if (value) values[key.replace(`${prefix}:`, "")] = await decryptData(value, encryptionKey!);
+                    if (value) values[key.replace(`${prefix}:`, "")] = parse(value);
                 }
             }
         }
         return values;
     },
-    set: async (key: string, value: any) => {
-        if (value) {
-            const formattedValue = await format(value);
-            const encryptedValue = await encryptData(formattedValue, encryptionKey!);
-            return storage?.setItem(`${prefix}:${key}`, encryptedValue);
-        }
+    set: (key: string, value: any) => {
+        return value && storage?.setItem(`${prefix}:${key}`, format(value) as any);
     },
-    sets: async (map: string[][]) => {
-        if (map && Array.isArray(map) && Array.isArray(map[0])) {
-            await Promise.all(
-                map.map(async (item) => {
-                    if (item[0] && item[1]) {
-                        const encryptedValue = await encryptData(await format(item[1]), encryptionKey!);
-                        storage?.setItem(`${prefix}:${item[0]}`, encryptedValue);
-                    }
-                }),
-            );
-        }
+    sets: (map: string[][]) => {
+        return (
+            map &&
+            Array.isArray(map) &&
+            Array?.isArray(map?.[0]) &&
+            map?.map((item) => item?.[0] && item?.[1] && storage?.setItem(`${prefix}:${item[0]}`, format(item[1]) as any))
+        );
     },
-    remove: async (key: string) => {
+    remove: (key: string) => {
         return storage?.removeItem(`${prefix}:${key}`);
     },
-    removes: async (keys: string[]) => {
+    removes: (keys: string[]) => {
         if (isTelegram) {
-            storage?.removeItems(keys.map((k) => `${prefix}:${k}`));
+            storage?.removeItems(keys?.map((k) => `${prefix}:${k}`));
         } else {
-            await Promise.all(keys.map(async (key) => localStorage.removeItem(`${prefix}:${key}`)));
+            keys.forEach((key) => localStorage.removeItem(`${prefix}:${key}`));
         }
     },
-    clear: async () => {
-        return isTelegram ? storage?.removeItems(storage?.getKeys() as any) : localStorage.clear();
+    clear: () => {
+        return isTelegram ? storage?.removeItems(storage?.getKeys() as any) : localStorage?.clear();
     },
 });
 
