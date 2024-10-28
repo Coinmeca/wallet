@@ -167,7 +167,7 @@ export async function POST(req: NextRequest) {
                 // Handle other messages
                 response.text = `You said: ${command}`;
             }
-            response.text += ` ${callback_data}`;
+            response.text += ` ${callback_data.data}`;
 
             // Send a response back to the Telegram chat
             await send(response);
