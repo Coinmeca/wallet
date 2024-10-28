@@ -5,8 +5,9 @@ import { keccak256, ecsign, toBuffer, hashPersonalMessage, bufferToHex } from "e
 
 import EventEmitter from "eventemitter3";
 import axios from "axios";
-import { loadStorage, StorageController } from "utils";
+import { formatChainId, loadStorage, StorageController } from "utils";
 import { AccountInfo } from "contexts/account";
+import { Chain } from "viem";
 
 export interface RequestParams {
     method: string;
@@ -46,18 +47,15 @@ export interface EIP712Message {
 
 export interface CoinmecaWalletProviderConfig {
     privateKey?: string;
-    chainId?: string;
-    providerUrl?: string;
+    chain?: Chain;
 }
 
 export class CoinmecaWalletProvider {
     private storage: StorageController;
+    private wallet?: Wallet;
     private events: EventEmitter;
 
-    private wallet?: Wallet;
-    private providerUrl?: string;
-
-    public chainId: string;
+    public chain?: Chain;
     public address?: string;
     public isCoinmecaWallet = true;
 
@@ -66,17 +64,9 @@ export class CoinmecaWalletProvider {
         this.storage = loadStorage("coinmeca:wallet", this.isTelegram ? (window as any).Telegram?.WebApp?.CloudStorage : secureLocalStorage);
 
         // Check if the config object is provided before destructuring
-        const { privateKey, chainId, providerUrl } = config || {};
-
-        if (providerUrl) this.providerUrl = providerUrl;
+        const { privateKey, chain } = config || {};
         if (privateKey) this.changeAccount(privateKey);
-
-        if (chainId) {
-            this.chainId = chainId;
-        } else {
-            const storedChainId = this.storage.get("last:chainId");
-            this.chainId = storedChainId || "0x1"; // Default to "0x1" if no stored chainId
-        }
+        if (chain) this.chain = chain;
     }
 
     async request({ method, params }: { method: string; params?: any[] }) {
@@ -161,6 +151,10 @@ export class CoinmecaWalletProvider {
             default:
                 throw new Error(`Method '${method}' not supported`);
         }
+    }
+
+    get chainId(): string {
+        return this.chain?.id ? formatChainId(this.chainId) : '';
     }
 
     get isTelegram() {
@@ -332,6 +326,10 @@ export class CoinmecaWalletProvider {
         return { success: true, message: `Asset ${symbol} at ${address} added to watch list.` };
     }
 
+    private async getRpcUrl() {
+
+    }
+
     async getAddress() {
         return this.address;
     }
@@ -367,15 +365,11 @@ export class CoinmecaWalletProvider {
         this.emit("accountsChanged", [this.address]);
     }
 
-    changeChain(chainId: string): void {
+    changeChain(chain: Chain): void {
+        const chainId = formatChainId(chain.id);
         if (this.chainId !== chainId) {
-            this.chainId = chainId;
             this.storage.set("last:chainId", chainId);
-            this.emit("chainChanged", chainId);
+            this.emit("chainChanged", chain);
         }
-    }
-
-    changeProviderUrl(url: string): void {
-        this.providerUrl = url;
     }
 }

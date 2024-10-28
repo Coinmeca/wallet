@@ -1,4 +1,6 @@
-﻿import React, { createContext, useContext, useLayoutEffect, useState } from "react";
+﻿import { getChainById } from "chains";
+import React, { createContext, useContext, useLayoutEffect, useState } from "react";
+import { parseChainId } from "utils";
 import { CoinmecaWalletProvider } from "wallet/provider";
 
 // Inject the provider into window.ethereum
@@ -27,6 +29,15 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     useLayoutEffect(() => {
         const walletProvider = new CoinmecaWalletProvider(/* constructor parameters */);
+        if (!walletProvider.providerUrl) {
+            const chainId = walletProvider.chainId || "0x1";
+            const chain = getChainById(parseChainId(chainId));
+
+            if (chain?.rpc[0]) {
+                walletProvider.changeProviderUrl(chain?.rpc[0]);
+                if (chainId !== walletProvider.chainId) walletProvider.changeChain(chainId);
+            }
+        }
         setProvider(walletProvider);
 
         window.ethereum = { ...window.ethereum, ...walletProvider };
