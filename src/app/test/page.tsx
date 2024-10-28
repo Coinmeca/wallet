@@ -61,6 +61,20 @@ export default function Home() {
         }
     };
 
+    const handleWindowPopup = () => {
+        const width = 360;
+        const height = 720;
+
+        const left = (screen.width - width) / 2;
+        const top = (screen.height - height) / 2;
+
+        window.open(
+        'https://wallet.coinmeca.net',
+        '_blank',
+        `left=${left},top=${top},width=${width},height=${height},toolbar=no,location=no,menubar=no,status=no,resizable=no,scrollbars=no`
+        );
+    }
+
     return (
         <Layouts.Col>
             <div>{telegram ? `Success, Platform: ${telegram.platform}` : "Fail"}</div>
@@ -70,6 +84,7 @@ export default function Home() {
             <Controls.Button onClick={handleShowPopup}>Show Popup</Controls.Button>
             <Controls.Button onClick={handleRequest}>Biometric Request</Controls.Button>
             <Controls.Button onClick={handleAuthenticate}>Biometric Auth</Controls.Button>
+            <Controls.Button onClick={handleWindowPopup}>New Popup</Controls.Button>
             <Controls.Button onClick={handleClose}>Close</Controls.Button>
             {authenticate && `Authenticate: ${authenticate}`}
             <br />
