@@ -9,7 +9,7 @@ import { AnimatePresence } from "framer-motion";
 
 export default function Welcome() {
     const router = useRouter();
-    const { storage } = useStorage();
+    const { storage, session } = useStorage();
     const { account } = useAccount();
 
     const [load, setLoad] = useState(false);
@@ -21,7 +21,12 @@ export default function Welcome() {
         if (userId) {
             if (!init) storage?.set("init", "complete");
             router.push("/");
-        } else setLoad(true);
+        } else {
+            const key = session?.get("key");
+            const wallets = storage?.get(`${key}:wallets`);
+            if (!wallets || wallets?.length) setStage({ name: "setup", level: 0 })
+            else setLoad(true);
+        }
     }, []);
 
     return (
