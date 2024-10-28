@@ -26,35 +26,31 @@ export const isMobile = () => {
         )
     );
 };
-export const format = (value?: any) => {
+
+// Encrypt and decrypt functions
+const encrypt = (data?: string, salt?: string): string | undefined => {
+    if (!data || !salt) return data;
+    const encrypted = CryptoJS.AES.encrypt(data, salt, { mode: CryptoJS.mode.ECB });
+    return encrypted.toString();
+};
+
+const decrypt = (data?: string, salt?: string): string | undefined => {
+    if (!data || !salt) return data;
+    const decrypted = CryptoJS.AES.decrypt(data, salt, { mode: CryptoJS.mode.ECB });
+    return decrypted.toString(CryptoJS.enc.Utf8);
+};
+
+export const format = (value?: any): string | undefined => {
     if (typeof value === "undefined") return value;
     if (typeof value === "boolean" || typeof value === "number") return value.toString();
     return JSON.stringify(value);
 };
 
-export const parse = (value?: string) => {
+export const parse = (value?: string): any => {
     if (typeof value === "undefined") return value;
-
     if (value === "true" || value === "false") return value === "true";
     else if (/^[0-9]*\.[0-9]+$/.test(value)) return parseFloat(value);
     else return JSON.parse(value);
-};
-
-const salt = process.env.SECURE_LOCAL_STORAGE_HASH_KEY;
-
-// Encrypt and decrypt functions
-const encryptData = (data: string): string | undefined => {
-    if (salt) {
-        const encrypted = CryptoJS.AES.encrypt(data, salt, { mode: CryptoJS.mode.ECB });
-        return encrypted.toString();
-    }
-};
-
-const decryptData = (data: string): string | undefined => {
-    if (salt) {
-        const decrypted = CryptoJS.AES.decrypt(data, salt, { mode: CryptoJS.mode.ECB });
-        return decrypted.toString(CryptoJS.enc.Utf8);
-    }
 };
 
 export interface StorageController {
@@ -68,22 +64,21 @@ export interface StorageController {
     clear: () => void;
 }
 
-export const loadStorage = (prefix: string, storage?: CloudStorage | Storage, isTelegram?: boolean): StorageController => ({
+export const loadStorage = (prefix: string, storage?: CloudStorage | Storage, isTelegram?: boolean, salt?: string): StorageController => ({
     get: (key: string) => {
-        const encryptedValue = storage?.getItem(`${prefix}:${key}`) as string;
-        return encryptedValue ? parse(decryptData(encryptedValue)) : undefined;
+        return parse(decrypt(storage?.getItem(`${prefix}:${key}`) as string, salt));
     },
     gets: (keys: string[]) => {
         const values: Record<string, any> = {};
         if (isTelegram) {
-            const items = storage?.getItems(keys.map((k) => `${prefix}:${k}`)) as any;
+            const items = storage?.getItems(keys?.map((k) => `${prefix}:${k}`)) as string[];
             items.forEach((v: string | undefined, i: number) => {
-                if (v) values[keys[i]] = parse(decryptData(v));
+                if (v) values[keys[i]] = parse(decrypt(v, salt));
             });
         } else {
             keys.forEach((key) => {
                 const value = storage?.getItem(`${prefix}:${key}`) as string;
-                if (value) values[key] = parse(decryptData(value));
+                if (value) values[key] = parse(decrypt(value, salt));
             });
         }
         return values;
@@ -94,7 +89,7 @@ export const loadStorage = (prefix: string, storage?: CloudStorage | Storage, is
             const keys = storage?.getKeys() as any;
             const items = storage?.getItems(keys) as any;
             items.forEach((v: string | undefined, i: number) => {
-                if (v) values[keys[i].replace(`${prefix}:`, "")] = parse(decryptData(v));
+                if (v) values[keys[i].replace(`${prefix}:`, "")] = parse(decrypt(v, salt));
             });
         } else {
             if ((storage as Storage)?.length)
@@ -102,34 +97,38 @@ export const loadStorage = (prefix: string, storage?: CloudStorage | Storage, is
                     const key = (storage as Storage)?.key(i);
                     if (key && key.startsWith(`${prefix}:`)) {
                         const value = storage?.getItem(key) as string;
-                        if (value) values[key.replace(`${prefix}:`, "")] = parse(decryptData(value));
+                        if (value) values[key.replace(`${prefix}:`, "")] = parse(decrypt(value, salt));
                     }
                 }
         }
         return values;
     },
     set: (key: string, value: any) => {
-        if (value) {
-            const encryptedValue = encryptData(format(value) as string);
-            if (encryptedValue) return storage?.setItem(`${prefix}:${key}`, encryptedValue);
-        }
+        value = encrypt(format(value), salt);
+        return value && storage?.setItem(`${prefix}:${key}`, value as string);
     },
     sets: (map: string[][]) => {
-        if (map && Array.isArray(map) && Array.isArray(map[0])) {
-            map.forEach((item) => {
-                if (item[0] && item[1]) {
-                    const encryptedValue = encryptData(format(item[1]) as string);
-                    if (encryptedValue) storage?.setItem(`${prefix}:${item[0]}`, encryptedValue);
+        return (
+            map &&
+            Array.isArray(map) &&
+            Array?.isArray(map?.[0]) &&
+            map?.map((item) => {
+                if (item?.[0] && item?.[1]) {
+                    const value = encrypt(format(item[1]), salt);
+                    if (value) storage?.setItem(`${prefix}:${item[0]}`, value as any);
                 }
-            });
-        }
+            })
+        );
     },
     remove: (key: string) => {
         return storage?.removeItem(`${prefix}:${key}`);
     },
     removes: (keys: string[]) => {
-        if (isTelegram) storage?.removeItems(keys.map((k) => `${prefix}:${k}`));
-        else keys.forEach((key) => storage?.removeItem(`${prefix}:${key}`));
+        if (isTelegram) {
+            storage?.removeItems(keys?.map((k) => `${prefix}:${k}`));
+        } else {
+            keys.forEach((key) => localStorage.removeItem(`${prefix}:${key}`));
+        }
     },
     clear: () => {
         return isTelegram ? storage?.removeItems(storage?.getKeys() as any) : (storage as Storage)?.clear();
