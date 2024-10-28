@@ -27,32 +27,27 @@ export const isMobile = () => {
     );
 };
 
-const salt = process.env.SECURE_LOCAL_STORAGE_HASH_KEY;
-
 // Encrypt and decrypt functions
-const encryptData = (data: string): string | undefined => {
-    if (salt) {
-        const encrypted = CryptoJS.AES.encrypt(data, salt, { mode: CryptoJS.mode.ECB });
-        return encrypted.toString();
-    }
+const encrypt = (data?: string, salt?: string): string | undefined => {
+    if (!data || !salt) return data;
+    const encrypted = CryptoJS.AES.encrypt(data, salt, { mode: CryptoJS.mode.ECB });
+    return encrypted.toString();
 };
 
-const decryptData = (data: string): string | undefined => {
-    if (salt) {
-        const decrypted = CryptoJS.AES.decrypt(data, salt, { mode: CryptoJS.mode.ECB });
-        return decrypted.toString(CryptoJS.enc.Utf8);
-    }
+const decrypt = (data?: string, salt?: string): string | undefined => {
+    if (!data || !salt) return data;
+    const decrypted = CryptoJS.AES.decrypt(data, salt, { mode: CryptoJS.mode.ECB });
+    return decrypted.toString(CryptoJS.enc.Utf8);
 };
 
-export const format = (value?: any) => {
+export const format = (value?: any): string | undefined => {
     if (typeof value === "undefined") return value;
     if (typeof value === "boolean" || typeof value === "number") return value.toString();
     return JSON.stringify(value);
 };
 
-export const parse = (value?: string) => {
+export const parse = (value?: string): any => {
     if (typeof value === "undefined") return value;
-
     if (value === "true" || value === "false") return value === "true";
     else if (/^[0-9]*\.[0-9]+$/.test(value)) return parseFloat(value);
     else return JSON.parse(value);
@@ -69,21 +64,21 @@ export interface StorageController {
     clear: () => void;
 }
 
-export const loadStorage = (prefix: string, storage?: CloudStorage | Storage, isTelegram?: boolean): StorageController => ({
+export const loadStorage = (prefix: string, storage?: CloudStorage | Storage, isTelegram?: boolean, salt?: string): StorageController => ({
     get: (key: string) => {
-        return parse(storage?.getItem(`${prefix}:${key}`) as any);
+        return parse(decrypt(storage?.getItem(`${prefix}:${key}`) as string, salt));
     },
     gets: (keys: string[]) => {
         const values: Record<string, any> = {};
         if (isTelegram) {
             const items = storage?.getItems(keys?.map((k) => `${prefix}:${k}`)) as string[];
             items.forEach((v: string | undefined, i: number) => {
-                if (v) values[keys[i]] = parse(v);
+                if (v) values[keys[i]] = parse(decrypt(v, salt));
             });
         } else {
             keys.forEach((key) => {
                 const value = storage?.getItem(`${prefix}:${key}`) as string;
-                if (value) values[key] = parse(value);
+                if (value) values[key] = parse(decrypt(value, salt));
             });
         }
         return values;
@@ -94,7 +89,7 @@ export const loadStorage = (prefix: string, storage?: CloudStorage | Storage, is
             const keys = storage?.getKeys() as any;
             const items = storage?.getItems(keys) as any;
             items.forEach((v: string | undefined, i: number) => {
-                if (v) values[keys[i].replace(`${prefix}:`, "")] = parse(v);
+                if (v) values[keys[i].replace(`${prefix}:`, "")] = parse(decrypt(v, salt));
             });
         } else {
             if ((storage as Storage)?.length)
@@ -102,21 +97,27 @@ export const loadStorage = (prefix: string, storage?: CloudStorage | Storage, is
                     const key = (storage as Storage)?.key(i);
                     if (key && key.startsWith(`${prefix}:`)) {
                         const value = storage?.getItem(key) as string;
-                        if (value) values[key.replace(`${prefix}:`, "")] = parse(value);
+                        if (value) values[key.replace(`${prefix}:`, "")] = parse(decrypt(value, salt));
                     }
                 }
         }
         return values;
     },
     set: (key: string, value: any) => {
-        return value && storage?.setItem(`${prefix}:${key}`, format(value) as any);
+        value = encrypt(format(value), salt);
+        return value && storage?.setItem(`${prefix}:${key}`, value as string);
     },
     sets: (map: string[][]) => {
         return (
             map &&
             Array.isArray(map) &&
             Array?.isArray(map?.[0]) &&
-            map?.map((item) => item?.[0] && item?.[1] && storage?.setItem(`${prefix}:${item[0]}`, format(item[1]) as any))
+            map?.map((item) => {
+                if (item?.[0] && item?.[1]) {
+                    const value = encrypt(format(item[1]), salt);
+                    if (value) storage?.setItem(`${prefix}:${item[0]}`, value as any);
+                }
+            })
         );
     },
     remove: (key: string) => {

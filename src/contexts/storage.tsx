@@ -30,7 +30,7 @@ export const StorageProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const [session, setSession] = useState<CloudStorage | Storage | any>();
 
     const modules = useCallback(
-        (storage?: CloudStorage | Storage | any) => loadStorage("coinmeca:wallet", storage, !!(telegram && user?.id)),
+        (storage?: CloudStorage | Storage | any) => loadStorage("coinmeca:wallet", storage, !!(telegram && user?.id), process.env.SECURE_LOCAL_STORAGE_HASH_KEY),
         [telegram, user, storage],
     );
 
