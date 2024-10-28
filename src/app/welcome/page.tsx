@@ -24,6 +24,7 @@ export default function Welcome() {
         } else {
             const key = session?.get("key");
             const wallets = storage?.get(`${key}:wallets`);
+            // fixme:
             if (!wallets || wallets?.length) setStage({ name: "setup", level: 0 })
             else setLoad(true);
         }
