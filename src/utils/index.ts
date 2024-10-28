@@ -70,21 +70,13 @@ export interface StorageController {
 
 export const loadStorage = (prefix: string, storage?: CloudStorage | Storage, isTelegram?: boolean): StorageController => ({
     get: (key: string) => {
-        const encryptedKey = decryptData(`${prefix}:${key}`);
-        if (encryptedKey) {
-            const encryptedValue = storage?.getItem(encryptedKey) as string;
-            return encryptedValue ? parse(decryptData(encryptedValue)) : undefined;
-        }
+        const encryptedValue = storage?.getItem(`${prefix}:${key}`) as string;
+        return encryptedValue ? parse(decryptData(encryptedValue)) : undefined;
     },
     gets: (keys: string[]) => {
         const values: Record<string, any> = {};
         if (isTelegram) {
-            const items = storage?.getItems(
-                keys.map((k) => {
-                    const encryptedKey = decryptData(`${prefix}:${k}`);
-                    if (encryptedKey) return encryptedKey;
-                }),
-            ) as any;
+            const items = storage?.getItems(keys.map((k) => `${prefix}:${k}`)) as any;
             items.forEach((v: string | undefined, i: number) => {
                 if (v) values[keys[i]] = parse(decryptData(v));
             });
@@ -118,8 +110,7 @@ export const loadStorage = (prefix: string, storage?: CloudStorage | Storage, is
     },
     set: (key: string, value: any) => {
         if (value) {
-            const formattedValue = format(value) as string;
-            const encryptedValue = encryptData(formattedValue);
+            const encryptedValue = encryptData(format(value) as string);
             if (encryptedValue) return storage?.setItem(`${prefix}:${key}`, encryptedValue);
         }
     },
@@ -137,11 +128,8 @@ export const loadStorage = (prefix: string, storage?: CloudStorage | Storage, is
         return storage?.removeItem(`${prefix}:${key}`);
     },
     removes: (keys: string[]) => {
-        if (isTelegram) {
-            storage?.removeItems(keys.map((k) => `${prefix}:${k}`));
-        } else {
-            keys.forEach((key) => storage?.removeItem(`${prefix}:${key}`));
-        }
+        if (isTelegram) storage?.removeItems(keys.map((k) => `${prefix}:${k}`));
+        else keys.forEach((key) => storage?.removeItem(`${prefix}:${key}`));
     },
     clear: () => {
         return isTelegram ? storage?.removeItems(storage?.getKeys() as any) : (storage as Storage)?.clear();
