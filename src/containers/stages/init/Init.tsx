@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useStorage, useTelegram } from "hooks";
 import { Parts } from "@coinmeca/ui/index";
 import { Stage } from "..";
+import { getChainsByType } from "chains";
 
 export default function Init({ stage, setStage }: Stage) {
     const length = 6;
@@ -35,6 +36,9 @@ export default function Init({ stage, setStage }: Stage) {
 
                         storage?.set("userId", userId);
                         storage?.set(`${userId}:${passcode}`, key);
+                        console.log(getChainsByType('mainnet'));
+                        storage?.set(`${key}:chains`, getChainsByType('mainnet'));
+                        
                         session?.set("key", key);
 
                         setPass({ code: "" });

@@ -2,54 +2,17 @@
 import Wallet from "ethereumjs-wallet";
 import { Transaction } from "ethereumjs-tx";
 import { keccak256, ecsign, toBuffer, hashPersonalMessage, bufferToHex } from "ethereumjs-util";
+import axios from "axios";
 
 import EventEmitter from "eventemitter3";
-import axios from "axios";
 import { formatChainId, loadStorage, StorageController } from "utils";
 import { AccountInfo } from "contexts/account";
-import { getChainById } from "chains";
-
-export interface NativeCurrency {
-    name: string;
-    symbol: string;
-    decimals: number;
-}
-
-type ERC20Options = {
-    address: string;
-    symbol?: string;
-    decimals?: number;
-    image?: string;
-};
-
-type ERC721Options = {
-    address: string;
-    symbol?: string;
-    decimals?: number;
-    image?: string;
-    tokenId?: string;
-};
-
-type ERC1155Options = {
-    address: string;
-    symbol?: string;
-    decimals?: number;
-    image?: string;
-    tokenId?: string;
-};
-
-type AssetOptions<Name> = Name extends "ERC20" ? ERC20Options : Name extends "ERC721" ? ERC721Options : Name extends "ERC1155" ? ERC1155Options : never;
-
-export interface Asset<Name extends "ERC20" | "ERC721" | "ERC1155"> {
-    type: Name;
-    options: AssetOptions<Name>;
-}
 
 export type ChainBase = "evm" | "svm";
 export type ChainType = "mainnet" | "mainnet-beta" | "testnet" | "devnet";
 
 export interface Chain {
-    base: ChainBase;
+    base?: ChainBase;
     type?: ChainType;
     chainName?: string;
     chainId: number | string;
@@ -92,8 +55,55 @@ export interface EIP712Message {
     message: any;
 }
 
-// export interface CoinmecaWalletProvider extends Provider { }
-// export interface CoinmecaWalletAdapterConfig extends WalletConfig { }
+export interface NativeCurrency {
+    name: string;
+    symbol: string;
+    decimals: number;
+}
+
+export type ERC20Options = {
+    address: string;
+    symbol?: string;
+    decimals?: number;
+    image?: string;
+};
+
+export type ERC721Options = {
+    address: string;
+    symbol?: string;
+    decimals?: number;
+    image?: string;
+    tokenId?: string;
+};
+
+export type ERC1155Options = {
+    address: string;
+    symbol?: string;
+    decimals?: number;
+    image?: string;
+    tokenId?: string;
+};
+
+export type AssetOptions<Name> = Name extends "ERC20" ? ERC20Options : Name extends "ERC721" ? ERC721Options : Name extends "ERC1155" ? ERC1155Options : never;
+
+export interface Asset<Name extends "ERC20" | "ERC721" | "ERC1155"> {
+    type: Name;
+    options: AssetOptions<Name>;
+}
+
+// Create a custom Axios instance
+const axiosQuiet = axios.create({
+    timeout: 5000,
+});
+
+// Suppress logging of errors
+axiosQuiet.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        // Return a resolved promise for errors to avoid logging
+        return Promise.resolve({ error });
+    },
+);
 
 export interface CoinmecaWalletProviderConfig {
     privateKey?: string;
@@ -137,7 +147,7 @@ export class CoinmecaWalletProvider {
                 return this.chainId;
 
             case "net_version":
-                return this.chainId;
+                return this.chainId?.toString();
 
             // Transaction and Gas Estimation
             case "eth_sendTransaction":
@@ -332,7 +342,7 @@ export class CoinmecaWalletProvider {
 
     private async sendRpcRequest(method: string, params: any[] = []) {
         const rpc = await this.rpcUrl();
-        if (!rpc) return new Error(`Provider URL was not setup yet.`);
+        if (!rpc) return new Error("Provider URL was not setup yet.");
         const response = await axios.post(rpc, {
             jsonrpc: "2.0",
             id: new Date().getTime(),
@@ -376,25 +386,30 @@ export class CoinmecaWalletProvider {
     }
 
     private async rpcUrl() {
-        const urls =
-            typeof this.chain?.rpcUrls === "object" ? Object.values(this.chain?.rpcUrls) : Array.isArray(this.chain?.rpcUrls) ? this.chain?.rpcUrls : [];
-        if (urls?.length) {
-            if (urls.length === 1) return urls[0];
-            const start = Date.now();
-            const latency = await Promise.all(
-                urls?.map(async (url: string) => {
-                    try {
-                        await axios.get(url, { timeout: 5000 });
-                        const latency = Date.now() - start;
-                        return { url, latency };
-                    } catch (error) {
-                        return { url, latency: Number.MAX_SAFE_INTEGER }; // Failed to connect
-                    }
-                }),
-            );
-            latency.sort((a: { url: string; latency: number }, b: { url: string; latency: number }) => a.latency - b.latency);
-            return latency[0].url;
-        }
+        const urls = (
+            typeof this.chain?.rpcUrls === "object" ? Object.values(this.chain.rpcUrls) : Array.isArray(this.chain?.rpcUrls) ? this.chain.rpcUrls : []
+        ).filter((url) => url?.startsWith("http"));
+
+        if (urls.length === 0) return null;
+        const availableUrls = await Promise.all(
+            urls.map(async (url: string) => {
+                const start = Date.now();
+                try {
+                    await axiosQuiet.get(url); // Making the request
+                    const elapsed = Date.now() - start;
+
+                    // If the request is successful, return the URL and its latency
+                    return { url, latency: elapsed };
+                } catch {
+                    // Return an object indicating failure without logging errors
+                    return { url, latency: Number.MAX_SAFE_INTEGER };
+                }
+            }),
+        );
+
+        // Filter out URLs that resulted in an error
+        const workingUrls = availableUrls.filter((result) => !!result && result.latency !== Number.MAX_SAFE_INTEGER).sort((a, b) => a.latency - b.latency);
+        return workingUrls.length ? workingUrls[0].url : null;
     }
 
     async getAddress() {

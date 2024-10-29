@@ -136,7 +136,7 @@ export default function Data() {
                     </Layouts.Row>
                     <Layouts.Row gap={0} align={"right"}>
                         <Controls.Tab
-                            onClick={() => (mobileMenu === "setting" ? setMobileMenu("") : setMobileMenu("setting"))}
+                            onClick={() => setMobileMenu(mobileMenu === "chain" ? "" : "chain")}
                             active={mobileMenu === "setting"}
                             toggle
                             fit>
@@ -154,7 +154,7 @@ export default function Data() {
                             />
                         </Controls.Tab>
                         <Controls.Tab
-                            onClick={() => (mobileMenu === "setting" ? setMobileMenu("") : setMobileMenu("setting"))}
+                            onClick={() => (setMobileMenu(mobileMenu === "setting" ? "" : "setting"))}
                             active={mobileMenu === "setting"}
                             iconLeft={"gear"}
                             show={"tablet"}
@@ -165,6 +165,20 @@ export default function Data() {
                 </>
             ),
         },
+        panels: [
+            {
+                active: mobileMenu === "chain",
+                children: <>
+                    <Controls.Button>First</Controls.Button>
+                </>,
+            },
+            {
+                active: mobileMenu === "setting",
+                children: <>
+                    <Controls.Button>second</Controls.Button>
+                </>,
+            },
+        ]
     };
 
     const footer = {

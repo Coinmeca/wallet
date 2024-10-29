@@ -11,6 +11,7 @@ import { Logo, Menu, MenuButton, Nav, Side, Style } from "./Header.styled";
 import Link from "next/link";
 import Image from "next/image";
 import Coinmeca from "assets/coinmeca.svg";
+import { Panel } from "@coinmeca/ui/components/layouts/panel/Panel";
 
 export interface Header {
     logo?: Logo | boolean;
@@ -27,6 +28,7 @@ export interface Header {
         children?: any;
     };
     side?: Side;
+    panels?: Panel[]
     scale?: number;
     height?: number;
     color?: string;
@@ -180,6 +182,11 @@ export default function Header(props: Header) {
                     <Side $scale={scale} $width={side} data-active={props?.side?.active} style={props?.side?.style}>
                         <Layouts.Row gap={1}>{props?.side?.children}</Layouts.Row>
                     </Side>
+                )}
+                {(props?.panels && props?.panels?.length) && (
+                    <Layouts.Panel active={props?.panels?.find(p => p?.active) ? true : false}>
+                        {props?.panels?.map((panel, key) => (<Layouts.Panel key={key} {...panel} fix>{panel?.children}</Layouts.Panel>))}
+                    </Layouts.Panel>
                 )}
             </Layouts.Row>
         </Style>

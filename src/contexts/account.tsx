@@ -37,14 +37,18 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const [chain, setChain] = useState<Chain>();
 
     const updateChain = (chainId?: string | number) => {
-        chainId = (chainId || storage?.get("last:chainId") || 0) as string | number;
-        const chainInfo = getChainById(chainId);
-        if (chainInfo) {
-            provider?.changeChain(formatChainId(chainId));
-            provider?.changeProviderUrl(chainInfo?.rpc[0]);
-            setChain(chainInfo);
+        chainId = (chainId || storage?.get("last:chainId"));
+        if (chainId) {
+            const chain = getChainById(chainId);
+            if (chain) provider?.changeChain({
+                chainId: chain.id,
+                chainName: chain.name,
+                nativeCurrency: chain.nativeCurrency,
+                rpcUrls: chain.rpc,
+                blockExplorerUrls: chain.explorer,
+            });
         }
-    };
+    }
 
     useEffect(() => {
         const key = session?.get("key");
