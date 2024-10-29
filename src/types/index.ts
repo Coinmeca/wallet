@@ -5,15 +5,15 @@ export interface NativeCurrency {
 }
 
 export interface Asset {
-    type?: string,
+    type?: string;
     address?: string;
     symbol?: string;
     decimals?: string | number;
     image?: string;
 }
 
-export type ChainBase = 'evm' | 'svm'
-export type ChainType = 'mainnet' | 'mainnet-beta' | 'testnet' | 'devnet';
+export type ChainBase = "evm" | "svm";
+export type ChainType = "mainnet" | "mainnet-beta" | "testnet" | "devnet";
 
 export interface Chain {
     id: number;
@@ -31,9 +31,9 @@ export interface Chains {
         mainnet?: Chain;
         testnet?: {
             [key: string]: Chain | undefined;
-        }
+        };
         devnet?: {
             [key: string]: Chain | undefined;
-        }
+        };
     };
 }

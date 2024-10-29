@@ -7,7 +7,57 @@ import EventEmitter from "eventemitter3";
 import axios from "axios";
 import { formatChainId, loadStorage, StorageController } from "utils";
 import { AccountInfo } from "contexts/account";
-import { Chain } from "viem";
+import { getChainById } from "chains";
+
+export interface NativeCurrency {
+    name: string;
+    symbol: string;
+    decimals: number;
+}
+
+type ERC20Options = {
+    address: string;
+    symbol?: string;
+    decimals?: number;
+    image?: string;
+};
+
+type ERC721Options = {
+    address: string;
+    symbol?: string;
+    decimals?: number;
+    image?: string;
+    tokenId?: string;
+};
+
+type ERC1155Options = {
+    address: string;
+    symbol?: string;
+    decimals?: number;
+    image?: string;
+    tokenId?: string;
+};
+
+type AssetOptions<Name> = Name extends "ERC20" ? ERC20Options : Name extends "ERC721" ? ERC721Options : Name extends "ERC1155" ? ERC1155Options : never;
+
+export interface Asset<Name extends "ERC20" | "ERC721" | "ERC1155"> {
+    type: Name;
+    options: AssetOptions<Name>;
+}
+
+export type ChainBase = "evm" | "svm";
+export type ChainType = "mainnet" | "mainnet-beta" | "testnet" | "devnet";
+
+export interface Chain {
+    base: ChainBase;
+    type?: ChainType;
+    chainName?: string;
+    chainId: number | string;
+    nativeCurrency: NativeCurrency;
+    rpcUrls: string[];
+    blockExplorerUrls?: string[];
+    iconUrls?: string[];
+}
 
 export interface RequestParams {
     method: string;
@@ -87,7 +137,7 @@ export class CoinmecaWalletProvider {
                 return this.chainId;
 
             case "net_version":
-                return parseInt(this.chainId, 16).toString();
+                return this.chainId;
 
             // Transaction and Gas Estimation
             case "eth_sendTransaction":
@@ -153,8 +203,8 @@ export class CoinmecaWalletProvider {
         }
     }
 
-    get chainId(): string {
-        return this.chain?.id ? formatChainId(this.chainId) : '';
+    get chainId() {
+        return typeof this.chain?.chainId === "number" ? formatChainId(this.chain.chainId) : this.chain?.chainId;
     }
 
     get isTelegram() {
@@ -281,8 +331,9 @@ export class CoinmecaWalletProvider {
     }
 
     private async sendRpcRequest(method: string, params: any[] = []) {
-        if (!this.providerUrl) return new Error(`Provider URL was not setup yet.`);
-        const response = await axios.post(this.providerUrl, {
+        const rpc = await this.rpcUrl();
+        if (!rpc) return new Error(`Provider URL was not setup yet.`);
+        const response = await axios.post(rpc, {
             jsonrpc: "2.0",
             id: new Date().getTime(),
             method,
@@ -293,24 +344,22 @@ export class CoinmecaWalletProvider {
         return response.data.result;
     }
 
-    private async addEthereumChain(chainParams: any) {
+    private async addEthereumChain(chain: Chain) {
         // Check for required chain parameters
-        const { chainId, chainName, rpcUrls, nativeCurrency } = chainParams;
-        if (!chainId || !rpcUrls || rpcUrls.length === 0) throw new Error("Invalid chain parameters. `chainId` and at least one `rpcUrl` are required.");
+        const { chainId, chainName, rpcUrls, nativeCurrency } = chain;
+        if (!chainId || !rpcUrls || rpcUrls.length === 0 || !nativeCurrency.decimals)
+            throw new Error("Invalid chain parameters. `chainId` and at least one `rpcUrl` are required.");
 
         // Check if the current chainId matches the provided chainId
-        if (this.chainId !== chainId) {
-            // Emit a chain change event if updating the chainId
-            this.chainId = chainId;
-            this.providerUrl = rpcUrls[0]; // Update the provider URL to the first rpcUrl
-            this.emit("chainChanged", chainId);
-        }
+
+        this.chain = chain;
+        this.emit("chainChanged", formatChainId(chainId));
 
         return { message: `Chain ${chainName} with chainId ${chainId} added successfully.` };
     }
 
-    private async watchAsset(assetParams: any) {
-        const { type, options } = assetParams;
+    private async watchAsset(asset: Asset<"ERC20" | "ERC721" | "ERC1155">) {
+        const { type, options } = asset;
         if (type !== "ERC20") throw new Error("Unsupported asset type. Only ERC20 tokens are supported.");
 
         const { address, symbol, decimals, image } = options;
@@ -326,8 +375,26 @@ export class CoinmecaWalletProvider {
         return { success: true, message: `Asset ${symbol} at ${address} added to watch list.` };
     }
 
-    private async getRpcUrl() {
-
+    private async rpcUrl() {
+        const urls =
+            typeof this.chain?.rpcUrls === "object" ? Object.values(this.chain?.rpcUrls) : Array.isArray(this.chain?.rpcUrls) ? this.chain?.rpcUrls : [];
+        if (urls?.length) {
+            if (urls.length === 1) return urls[0];
+            const start = Date.now();
+            const latency = await Promise.all(
+                urls?.map(async (url: string) => {
+                    try {
+                        await axios.get(url, { timeout: 5000 });
+                        const latency = Date.now() - start;
+                        return { url, latency };
+                    } catch (error) {
+                        return { url, latency: Number.MAX_SAFE_INTEGER }; // Failed to connect
+                    }
+                }),
+            );
+            latency.sort((a: { url: string; latency: number }, b: { url: string; latency: number }) => a.latency - b.latency);
+            return latency[0].url;
+        }
     }
 
     async getAddress() {
@@ -366,7 +433,7 @@ export class CoinmecaWalletProvider {
     }
 
     changeChain(chain: Chain): void {
-        const chainId = formatChainId(chain.id);
+        const chainId = formatChainId(chain.chainId);
         if (this.chainId !== chainId) {
             this.storage.set("last:chainId", chainId);
             this.emit("chainChanged", chain);
