@@ -184,7 +184,7 @@ export default function Header(props: Header) {
                     </Side>
                 )}
                 {(props?.panels && props?.panels?.length) && (
-                    <Layouts.Panel active={props?.panels?.find(p => p?.active) ? true : false}>
+                    <Layouts.Panel active={props?.panels?.some(p => p?.active)}>
                         {props?.panels?.map((panel, key) => (<Layouts.Panel key={key} {...panel} fix>{panel?.children}</Layouts.Panel>))}
                     </Layouts.Panel>
                 )}
