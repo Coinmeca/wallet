@@ -29,7 +29,7 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const updateChain = (chain?: string | number | Chain) => {
         chain = chain || storage?.get("last:chainId");
         if (chain) {
-            if (typeof chain === 'string' || typeof chain === 'number') chain = getChainById(chain);
+            if (typeof chain === "string" || typeof chain === "number") chain = getChainById(chain);
             if (chain) {
                 setChain(chain);
                 provider?.changeChain({
@@ -41,10 +41,10 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 });
             }
         }
-    }
+    };
 
     const updateBalance = async (account?: Account) => {
-        const balance = await provider?.balance() || 0;
+        const balance = (await provider?.balance()) || 0;
         // setAccount((state) => {
         //     if (account || state) {
         //         return {
@@ -72,13 +72,13 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (!provider?.chainId || last.chainId !== provider?.chainId) updateChain(last.chainId);
         if (last.wallet) {
             const account = wallets?.[last.wallet];
-            if (account) {   
+            if (account) {
                 provider?.changeAccount(account);
-                updateBalance(account)
+                updateBalance(account);
             }
-        };
+        }
     }, [account]);
-    
+
     useEffect(() => {
         if (chain?.id !== provider?.chainId) updateChain(chain?.id);
         updateBalance();

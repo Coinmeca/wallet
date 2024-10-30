@@ -12,8 +12,8 @@ export function formatChainId(chain: number | string | Chain): string {
             ? chain
             : formatChainId(parseInt(chain))
         : typeof chain === "number"
-        ? `0x${chain?.toString(16)}`
-        : formatChainId(chain?.id);
+            ? `0x${chain?.toString(16)}`
+            : formatChainId(chain?.id);
 }
 
 export const isMobile = () => {

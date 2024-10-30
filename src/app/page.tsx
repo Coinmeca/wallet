@@ -8,12 +8,12 @@ import { useEffect, useLayoutEffect, useState } from "react";
 export default function Home() {
     const path = usePathname();
     const router = useRouter();
-    
+
     const { chain } = useAccount();
     const { provider } = useWallet();
 
     const [balance, setBalance] = useState(0);
-    const [tab, setTab] = useState('token');
+    const [tab, setTab] = useState("token");
 
     useEffect(() => {
         (async () => await provider?.balance())().then((balance: any) => {
@@ -22,10 +22,11 @@ export default function Home() {
     }, [chain, provider?.address]);
 
     useEffect(() => {
-        if (path.startsWith('/')) setTab('token');
-        if (path.startsWith('/token')) setTab('token');
-        if (path.startsWith('/nft')) setTab('nft');
-    }, [path])
+        // fixme:
+        if (path.startsWith("/")) setTab("token");
+        if (path.startsWith("/token")) setTab("token");
+        if (path.startsWith("/nft")) setTab("nft");
+    }, [path]);
 
     return (
         <Layouts.Page snap>
@@ -59,13 +60,19 @@ export default function Home() {
                         menu={[
                             [
                                 <>
-                                    <Controls.Tab active={tab === 'token'} onClick={() => router.push('/token')}>Token</Controls.Tab>
+                                    <Controls.Tab active={tab === "token"} onClick={() => router.push("/token")}>
+                                        Token
+                                    </Controls.Tab>
                                 </>,
                                 <>
-                                    <Controls.Tab active={tab === 'nft'} onClick={() => router.push('/nft')}>NFT</Controls.Tab>
+                                    <Controls.Tab active={tab === "nft"} onClick={() => router.push("/nft")}>
+                                        NFT
+                                    </Controls.Tab>
                                 </>,
                                 <>
-                                    <Controls.Tab active={tab === 'activity'} onClick={() => router.push('/activity')}>Activity</Controls.Tab>
+                                    <Controls.Tab active={tab === "activity"} onClick={() => router.push("/activity")}>
+                                        Activity
+                                    </Controls.Tab>
                                 </>,
                             ],
                         ]}
