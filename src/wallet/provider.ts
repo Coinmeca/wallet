@@ -105,6 +105,28 @@ axiosQuiet.interceptors.response.use(
     },
 );
 
+const handleWindowPopup = (target: string) => {
+    const width = 360;
+    const height = 720;
+
+    // Get the current window's dimensions and position
+    const currentWindowWidth = window.innerWidth;
+    const currentWindowHeight = window.innerHeight;
+    const currentWindowLeft = window.screenX;
+    const currentWindowTop = window.screenY;
+
+    // Calculate center position based on the current window
+    const left = currentWindowLeft + (currentWindowWidth - width) / 2;
+    const top = currentWindowTop + (currentWindowHeight - height) / 2;
+
+    window.open(
+        // "https://wallet.coinmeca.net",
+        target,
+        "_blank",
+        `left=${left},top=${top},width=${width},height=${height},toolbar=no,location=no,menubar=no,status=no,resizable=no,scrollbars=no`,
+    );
+};
+
 export interface CoinmecaWalletProviderConfig {
     privateKey?: string;
     chain?: Chain;
@@ -136,6 +158,7 @@ export class CoinmecaWalletProvider {
                 return [this.address];
 
             case "eth_requestAccounts":
+                handleWindowPopup("/connect");
                 this.emit("connect", { chainId: this.chainId });
                 return [this.address];
 

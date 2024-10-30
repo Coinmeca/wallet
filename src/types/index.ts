@@ -37,3 +37,14 @@ export interface Chains {
         };
     };
 }
+
+export interface Account {
+    name: string;
+    address: string;
+    index: number;
+    balance?: number;
+    tokens?: {
+        fts?: string[];
+        nfts?: string[];
+    };
+}

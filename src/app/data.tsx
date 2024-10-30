@@ -9,16 +9,18 @@ import { useLayoutEffect, useMemo, useState } from "react";
 import Coinmeca from "assets/coinmeca.svg";
 import { useAccount, useStorage, useWallet } from "hooks";
 import { Avatar } from "@coinmeca/ui/components/elements";
-import { Chain } from "types";
+import { Account, Chain } from "types";
+import { wallet } from "wallet";
 
 export default function Data() {
+    const router = useRouter();
     const path = usePathname();
 
-    const { account, chain, setChain } = useAccount();
-    const { storage, session } = useStorage();
-    
     const { windowWidth } = useWindowSize();
     const { isMobile } = useMobile();
+
+    const { account, setAccount, chain, setChain } = useAccount();
+    const { storage, session } = useStorage();
     
     const [value, setValue] = useState<number>(0);
     const [tab, setTab] = useState<string>("icon");
@@ -26,6 +28,7 @@ export default function Data() {
     const [mobileMenu, setMobileMenu] = useState("");
        
     const [chains, setChains] = useState<Chain[]>();
+    const [accounts, setAccounts] = useState<Account[]>();
     const colorMap = path?.startsWith("/asset") ? "red" : path?.startsWith("/exchange") ? "orange" : path?.startsWith("/treasury") ? "blue" : "var(--rainbow)";
 
     const languages = [
@@ -57,7 +60,13 @@ export default function Data() {
 
     useLayoutEffect(() => {
         const key = session?.get("key");
-        if (key) setChains(storage?.get(`${key}:chains`));
+        if (key) {
+            setChains(storage?.get(`${key}:chains`));
+            setAccounts([...storage?.get(`${key}:wallets`)]?.map((w) => {
+                const account = storage?.get(`${wallet(w).address}`)
+                return account;
+            }));
+        }
     }, [])
 
     const chainlist = useMemo(() => {
@@ -87,6 +96,55 @@ export default function Data() {
             })
             )}
     }, [chain, chains]);
+
+    const accountlist = useMemo(() => {
+        if (accounts?.length) {
+            return accounts.map((a: Account) => ({
+                    onClick: () => {
+                        setAccount(a)
+                        setMobileMenu("")
+                    },
+                    style: {padding: '2em 4em', ...((account?.address === a?.address) && {pointerEvents: 'none'})},
+                    children: [
+                        [
+                            {
+                                children: (
+                                    <Layouts.Row gap={1} fill fix>
+                                        <Layouts.Row gap={2} style={{ overflow: 'hidden', ...((account?.address === a?.address) && { opacity: 0.3 })}} fill fix>
+                                            <Layouts.Row fit>
+                                                <Elements.Avatar
+                                                    // color={colorMap}
+                                                    scale={1.25}
+                                                    size={2.5}
+                                                    // display={6}
+                                                    // ellipsis={" ... "}
+                                                    character={`${a?.index + 1}`}
+                                                    name={a?.address}
+                                                    stroke={0.25}
+                                                    hideName
+                                                    />
+                                            </Layouts.Row>
+                                            <Layouts.Col gap={0} style={{overflow:'hidden'}}>
+                                                <Elements.Text size={1.5} title={a?.name} fix>
+                                                    {a?.name}
+                                                </Elements.Text>
+                                                <Elements.Text size={1.5} weight={'light'} opacity={0.6} title={a?.address} fix>
+                                                    {a?.address}
+                                                </Elements.Text>
+                                            </Layouts.Col>
+                                        </Layouts.Row>
+                                        <Layouts.Row gap={0} style={{pointerEvents: 'initial'}} fit>
+                                            <Controls.Button icon={'copy'} />
+                                            <Controls.Button icon={'more'} />
+                                        </Layouts.Row>
+                                    </Layouts.Row>
+                                ),
+                            }
+                        ],
+                    ]
+                }))
+        }
+    }, [account, accounts]);
 
     const header = {
         color: colorMap,
@@ -141,36 +199,25 @@ export default function Data() {
                     /> */}
                     <Layouts.Row fit>
                         {account?.address && (
-                            <Controls.Dropdown
-                                chevron={false}
-                                scale={Root.Device.Tablet >= windowWidth ? 1.125 : undefined}
-                                option={{
-                                    title: account.address,
-                                    value: (
-                                        <Elements.Avatar
-                                            // color={colorMap}
-                                            scale={0.666}
-                                            size={2.5}
-                                            display={6}
-                                            ellipsis={" ... "}
-                                            character={`${account?.index + 1}`}
-                                            name={account?.address}
-                                        />
-                                    ),
-                                }}
-                                options={[
-                                    { icon: "copy", value: "Copy Address" },
-                                    // { icon: "power", value: t("app.wallet.disconnect") },
-                                ]}
-                                // onClickItem={(e: any, v: any, k: number) => handleUserOption(k)}
-                                responsive={isMobile}
-                                fix
-                            />
+                            <Layouts.Row gap={0} fit>
+                                <Controls.Tab onClick={() => setMobileMenu(mobileMenu === "accounts" ? "" : "accounts")}>
+                                    <Elements.Avatar
+                                        // color={colorMap}
+                                        scale={0.666}
+                                        size={2.5}
+                                        display={6}
+                                        ellipsis={" ... "}
+                                        character={`${account?.index + 1}`}
+                                        name={account?.address}
+                                    />
+                                </Controls.Tab>
+                                <Controls.Button icon={'copy'} title={"Copy address"}/>
+                            </Layouts.Row>
                         )}
                     </Layouts.Row>
                     <Layouts.Row gap={0} align={"right"}>
                         <Controls.Tab
-                            onClick={() => setMobileMenu(mobileMenu === "chain" ? "" : "chain")}
+                            onClick={() => setMobileMenu(mobileMenu === "chains" ? "" : "chains")}
                             active={mobileMenu === "setting"}
                             toggle
                             fit>
@@ -199,13 +246,25 @@ export default function Data() {
         },
         panels: [
             {
-                active: mobileMenu === "chain",
+                active: mobileMenu === "accounts",
                 children: <Layouts.Col gap={0} fill>
-                        {/* <Elements.Text type={'strong'} style={{padding:'1em 3em 0.5em'}}>Chains</Elements.Text> */}
-                    <Controls.Input placeholder={'Search chain by id or name...'} left={{children:<Elements.Icon icon={'search'} />}} style={ {padding: '2em 4em'}} />
-                    {/* <Layouts.Contents.InnerContent padding={[0, 4]}> */}
-                        <Layouts.List list={chainlist} style={{padding: '0em 4em'}} />
-                    {/* </Layouts.Contents.InnerContent> */}
+
+                    <Controls.Input placeholder={'Search chain by id or name...'} left={{children:<Elements.Icon icon={'search'} />}} style={ {padding: '2em'}} />
+                    <Layouts.List list={accountlist} />
+                    <Layouts.Col style={{padding:'4em', paddingTop:'2em'}} fit>
+                        <Controls.Button type={'line'} icon={'plus'} onClick={() => {
+                            router.push('/create')
+                        }}>
+                            Create or Import wallet
+                        </Controls.Button>
+                    </Layouts.Col>
+                </Layouts.Col>,
+            },
+            {
+                active: mobileMenu === "chains",
+                children: <Layouts.Col gap={0} fill>
+                    <Controls.Input placeholder={'Search chain by id or name...'} left={{children:<Elements.Icon icon={'search'} />}} style={ {padding: '2em'}} />
+                    <Layouts.List list={chainlist} style={{ padding: '0em 4em' }} />
                 </Layouts.Col>,
             },
             {
