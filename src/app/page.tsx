@@ -9,7 +9,7 @@ export default function Home() {
     const path = usePathname();
     const router = useRouter();
 
-    const { chain } = useAccount();
+    const { chain, account } = useAccount();
     const { provider } = useWallet();
 
     const [balance, setBalance] = useState(0);
@@ -19,7 +19,7 @@ export default function Home() {
         (async () => await provider?.balance())().then((balance: any) => {
             setBalance(Number(balance) / (10 ^ (chain?.nativeCurrency.decimals || 1)));
         });
-    }, [chain, provider?.address]);
+    }, [chain, account]);
 
     useEffect(() => {
         // fixme:

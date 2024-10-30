@@ -1,14 +1,14 @@
 ﻿import { getChainById } from "chains";
 import { useStorage, useWallet } from "hooks";
-import React, { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import React, { createContext, useContext, useLayoutEffect, useState } from "react";
 import { Account, Chain } from "types";
+import { wallet } from "wallet";
 
 interface AccountContextProps {
     account: Account | undefined;
-    setAccount: React.Dispatch<React.SetStateAction<Account | undefined>>;
+    setAccount: (newAccount: Account) => void;
     chain: Chain | undefined;
     setChain: (chainId?: string | number | Chain) => void;
-    // setChain: React.Dispatch<React.SetStateAction<Chain | undefined>>;
 }
 
 const AccountContext = createContext<AccountContextProps | undefined>(undefined);
@@ -27,62 +27,49 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const [chain, setChain] = useState<Chain>();
 
     const updateChain = (chain?: string | number | Chain) => {
-        chain = chain || storage?.get("last:chainId");
+        if (typeof chain === "undefined") return;
+        if (typeof chain === "string" || typeof chain === "number") chain = getChainById(chain);
         if (chain) {
-            if (typeof chain === "string" || typeof chain === "number") chain = getChainById(chain);
-            if (chain) {
-                setChain(chain);
-                provider?.changeChain({
-                    chainId: chain.id,
-                    chainName: chain.name,
-                    nativeCurrency: chain.nativeCurrency,
-                    rpcUrls: chain.rpc,
-                    blockExplorerUrls: chain.explorer,
-                });
-            }
+            setChain((state) => {
+                const { id: chainId, name: chainName, rpc: rpcUrls, explorer: blockExplorerUrls, nativeCurrency } = chain as Chain;
+                if (!state || (state && state.id !== chainId)) {
+                    storage?.set("last:chainId", chainId);
+                    provider?.changeChain({
+                        chainId,
+                        chainName,
+                        nativeCurrency,
+                        rpcUrls,
+                        blockExplorerUrls,
+                    });
+                    return chain;
+                } else return state;
+            });
         }
     };
 
-    const updateBalance = async (account?: Account) => {
-        const balance = (await provider?.balance()) || 0;
-        // setAccount((state) => {
-        //     if (account || state) {
-        //         return {
-        //             ...(account || state),
-        //             balance,
-        //         } as Account;
-        //     }
-        //     return state;
-        // });
+    const updateAccount = (info: number | string | Account) => {
+        const key = session?.get("key");
+        const wallets = storage?.get(`${key}:wallets`);
+
+        if (typeof info === "number") info = storage?.get(wallet(wallets?.[info] || "").address) as Account;
+        else if (typeof info === "string") info = storage?.get(info) as Account;
+        if (!info) return;
+        if (info?.address?.toLowerCase() !== account?.address?.toLowerCase()) {
+            provider?.changeAccount(wallets[info.index]);
+            storage?.set((info as Account).address, info);
+            storage?.set("last:wallet", info.index);
+            setAccount(info);
+        }
     };
 
     useLayoutEffect(() => {
-        const chainId = provider?.chainId || storage?.get("last:chainId");
-        if (chainId) updateChain(chainId);
-    }, []);
-
-    useEffect(() => {
-        const key = session?.get("key");
-        const wallets = storage?.get(`${key}:wallets`);
         const last = {
             chainId: storage?.get("last:chainId"),
             wallet: storage?.get("last:wallet"),
         };
+        updateChain(provider?.chainId || last.chainId || 1);
+        updateAccount(last.wallet);
+    }, []);
 
-        if (!provider?.chainId || last.chainId !== provider?.chainId) updateChain(last.chainId);
-        if (last.wallet) {
-            const account = wallets?.[last.wallet];
-            if (account) {
-                provider?.changeAccount(account);
-                updateBalance(account);
-            }
-        }
-    }, [account]);
-
-    useEffect(() => {
-        if (chain?.id !== provider?.chainId) updateChain(chain?.id);
-        updateBalance();
-    }, [chain, provider?.chainId]);
-
-    return <AccountContext.Provider value={{ account, setAccount, chain, setChain: updateChain }}>{children}</AccountContext.Provider>;
+    return <AccountContext.Provider value={{ account, setAccount: updateAccount, chain, setChain: updateChain }}>{children}</AccountContext.Provider>;
 };

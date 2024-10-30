@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 export default function Import({ setStage }: Stage) {
     const router = useRouter();
     const { storage, session } = useStorage();
-    const { setAccount } = useAccount();
+    const { setAccount, setChain } = useAccount();
 
     const handleImportWallet = (seed: string) => {
         // error
@@ -24,19 +24,18 @@ export default function Import({ setStage }: Stage) {
 
         const wallets: string[] = storage?.get(`${key}:wallets`) || [];
 
-        setAccount(() => {
-            let info: any;
-            if (wallets.find((w: string) => w?.toLowerCase() === seed?.toLowerCase())) {
-                info = storage?.get(address);
-                if (info) return info;
-            } else info = { address, name: `Wallet ${wallets.length + 1}`, index: wallets.length };
+        let info;
+        if (wallets.find((w: string) => w?.toLowerCase() === seed?.toLowerCase())) info = storage?.get(address);
+        else {
+            info = { address, name: `Wallet ${wallets.length + 1}`, index: wallets.length };
             storage?.set("last:wallet", `${wallets.length}`);
             wallets.push(seed);
 
             storage?.set(`${key}:wallets`, wallets);
             storage?.set(`${address}`, info);
-            return info;
-        });
+        }
+
+        setAccount(info);
 
         storage?.set("init", "complete");
         router.push("/");

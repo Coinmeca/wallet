@@ -35,7 +35,7 @@ export default function Lock() {
                     router.push("/welcome");
                 } else {
                     const last: any = storage?.get("last:wallet");
-                    const info: any = storage?.get(`${wallet(wallets[last]).address}`);
+                    const info: any = storage?.get(wallet(wallets[last]).address);
                     if (info) setAccount(info);
                     router.push("/");
                 }

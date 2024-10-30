@@ -44,7 +44,7 @@ export default function RootTemplate({ children }: { children: any }) {
             }
 
         setLoad(true);
-    }, [path])
+    }, [path]);
 
     return (
         <>
