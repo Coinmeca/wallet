@@ -26,24 +26,25 @@
         "discord": "tsx ./src/app/api/discord/register"
     },
     "dependencies": {
-        "@coinmeca/ui": "0.1.47",
+        "@coinmeca/ui": "0.1.48",
         "@vercel/analytics": "^1.3.1",
         "axios": "^1.7.7",
         "crypto-js": "^4.2.0",
         "discord-api-types": "^0.37.102",
         "discord-interactions": "^4.1.0",
         "ethereumjs-tx": "^2.1.2",
+        "ethereumjs-util": "^7.1.5",
         "ethereumjs-wallet": "^1.0.2",
         "eventemitter3": "^5.0.1",
         "framer-motion": "^11.11.9",
         "next": "14.2.16",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
+        "react-secure-storage": "^1.3.2",
         "sass": "^1.80.3",
         "styled-components": "^6.1.13",
         "vercel": "37.12.1",
-        "viem": "^2.21.33",
-        "zustand": "^5.0.0"
+        "viem": "^2.21.33"
     },
     "devDependencies": {
         "@svgr/webpack": "^8.1.0",

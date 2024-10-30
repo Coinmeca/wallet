@@ -1,5 +1,7 @@
-﻿import { useTelegram } from "hooks";
-import React, { createContext, useCallback, useContext, useLayoutEffect, useMemo, useState } from "react";
+﻿import React, { createContext, useCallback, useContext, useLayoutEffect, useState } from "react";
+import secureLocalStorage from "react-secure-storage";
+import { useTelegram } from "hooks";
+import { loadStorage } from "utils";
 
 interface StorageProps {
     get: (key: string) => any;
@@ -24,89 +26,11 @@ export const useStorage = () => {
 
 export const StorageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { telegram, user } = useTelegram();
-    const [storage, setStorage] = useState<CloudStorage | Storage>();
-    const [session, setSession] = useState<CloudStorage | Storage>();
+    const [storage, setStorage] = useState<CloudStorage | Storage | any>();
+    const [session, setSession] = useState<CloudStorage | Storage | any>();
 
-    const prefix = "coinmeca:wallet";
-
-    const format = (value?: any) => {
-        if (typeof value === "undefined") return value;
-        if (typeof value === "boolean" || typeof value === "number") return value.toString();
-        return JSON.stringify(value);
-    };
-
-    const parse = (value?: string) => {
-        if (typeof value === "undefined") return value;
-
-        if (value === "true" || value === "false") return value === "true";
-        else if (/^[0-9]*\.[0-9]+$/.test(value)) return parseFloat(value);
-        else return JSON.parse(value);
-    };
-
-    const modules = useMemo(
-        () => (storage?: CloudStorage | Storage) => ({
-            get: (key: string) => {
-                return parse(storage?.getItem(`${prefix}:${key}`) as any);
-            },
-            gets: (keys: string[]) => {
-                const values: Record<string, any> = {};
-                if (telegram && user?.id) {
-                    const items = telegram?.CloudStorage.getItems(keys?.map((k) => `${prefix}:${k}`)) as any;
-                    items.forEach((v: string | undefined, i: number) => {
-                        if (v) values[keys[i]] = parse(v);
-                    });
-                } else {
-                    keys.forEach((key) => {
-                        const value = localStorage.getItem(`${prefix}:${key}`);
-                        if (value) values[key] = parse(value);
-                    });
-                }
-                return values;
-            },
-            getAll: () => {
-                const values: Record<string, any> = {};
-                if (telegram && user?.id) {
-                    const keys = telegram?.CloudStorage.getKeys() as any;
-                    const items = telegram?.CloudStorage.getItems(keys) as any;
-                    items.forEach((v: string | undefined, i: number) => {
-                        if (v) values[keys[i].replace(`${prefix}:`, "")] = parse(v);
-                    });
-                } else {
-                    for (let i = 0; i < localStorage.length; i++) {
-                        const key = localStorage.key(i);
-                        if (key && key.startsWith(`${prefix}:`)) {
-                            const value = localStorage.getItem(key);
-                            if (value) values[key.replace(`${prefix}:`, "")] = parse(value);
-                        }
-                    }
-                }
-                return values;
-            },
-            set: (key: string, value: any) => {
-                return value && storage?.setItem(`${prefix}:${key}`, format(value) as any);
-            },
-            sets: (map: string[][]) => {
-                return (
-                    map &&
-                    Array.isArray(map) &&
-                    Array?.isArray(map?.[0]) &&
-                    map?.map((item) => item?.[0] && item?.[1] && storage?.setItem(`${prefix}:${item[0]}`, format(item[1]) as any))
-                );
-            },
-            remove: (key: string) => {
-                return storage?.removeItem(`${prefix}:${key}`);
-            },
-            removes: (keys: string[]) => {
-                if (telegram && user?.id) {
-                    telegram?.CloudStorage.removeItems(keys?.map((k) => `${prefix}:${k}`));
-                } else {
-                    keys.forEach((key) => localStorage.removeItem(`${prefix}:${key}`));
-                }
-            },
-            clear: () => {
-                return telegram && user?.id ? telegram?.CloudStorage.removeItems(telegram?.CloudStorage.getKeys() as any) : localStorage?.clear();
-            },
-        }),
+    const modules = useCallback(
+        (storage?: CloudStorage | Storage | any) => loadStorage("coinmeca:wallet", storage, !!(telegram && user?.id), process.env.SECURE_LOCAL_STORAGE_HASH_KEY),
         [telegram, user, storage],
     );
 
@@ -115,5 +39,5 @@ export const StorageProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setSession(sessionStorage);
     }, []);
 
-    return <StorageContext.Provider value={{ storage: modules(storage), session: modules(session) }}>{children}</StorageContext.Provider>;
+    return <StorageContext.Provider value={{ storage: modules(secureLocalStorage), session: modules(session) }}>{children}</StorageContext.Provider>;
 };

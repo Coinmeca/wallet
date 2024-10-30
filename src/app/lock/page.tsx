@@ -30,11 +30,11 @@ export default function Lock() {
                 session?.set("key", key);
                 const wallets: any = storage?.get(`${key}:wallets`);
 
-                if (!wallets) {
+                if (!wallets || !wallets.length) {
                     storage?.remove("init");
                     router.push("/welcome");
                 } else {
-                    const last: any = storage?.get("last");
+                    const last: any = storage?.get("last:wallet");
                     const info: any = storage?.get(`${wallet(wallets[last]).address}`);
                     if (info) setAccount(info);
                     router.push("/");

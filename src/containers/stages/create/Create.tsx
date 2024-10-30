@@ -5,6 +5,8 @@ import { wallet } from "wallet";
 import { Stage } from "..";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import Image from "next/image";
+import MECA from "assets/graphics/meca.png";
 
 export default function Create({ setStage }: Stage) {
     const router = useRouter();
@@ -28,7 +30,7 @@ export default function Create({ setStage }: Stage) {
                 info = storage?.get(address);
                 if (info) return info;
             } else info = { address, name: `Wallet ${wallets.length + 1}`, index: wallets.length };
-            storage?.set("last", `${wallets.length}`);
+            storage?.set("last:wallet", `${wallets.length}`);
             wallets.push(privateKey);
 
             storage?.set(`${key}:wallets`, wallets);
@@ -48,13 +50,25 @@ export default function Create({ setStage }: Stage) {
                     active: true,
                     children: (
                         <Layouts.Contents.InnerContent scroll={false}>
+                            <Layouts.BG
+                                video={{
+                                    poster: "",
+                                    src: "https://coinmeca.net/img/video/1.mp4",
+                                    controls: false,
+                                    muted: true,
+                                    autoPlay: true,
+                                    preload: "auto",
+                                    loop: true,
+                                }}
+                                filter={"black"}
+                            />
                             <Layouts.Col align={"center"} style={{ padding: "4em" }} fill>
                                 <Layouts.Col gap={4} align={"center"} fit>
-                                    {" "}
+                                    <Image src={MECA} width="256" height="256" alt="" />
                                 </Layouts.Col>
                             </Layouts.Col>
-                            <Layouts.Col gap={2} align={"center"} style={{ padding: "4em" }} fill>
-                                <Layouts.Col align={"center"} fill>
+                            <Layouts.Col gap={0} align={"center"} style={{ padding: "4em" }} fill>
+                                <Layouts.Col align={"center"} style={{ padding: "4em" }} fill>
                                     <Layouts.Col gap={4} align={"center"} fit>
                                         <Elements.Text type={"h2"}> Setup </Elements.Text>
                                         <Elements.Text weight={"bold"} opacity={0.6}>
@@ -62,12 +76,14 @@ export default function Create({ setStage }: Stage) {
                                         </Elements.Text>
                                     </Layouts.Col>
                                 </Layouts.Col>
-                                <Controls.Button type={"line"} onClick={() => handleCreateWallet()}>
-                                    Create a new wallet
-                                </Controls.Button>
-                                <Controls.Button type={"line"} onClick={() => setStage({ name: "import", level: 0 })}>
-                                    Import an exist wallet
-                                </Controls.Button>
+                                <Layouts.Col gap={4} align={"center"} style={{ margin: 0 }}>
+                                    <Controls.Button type={"line"} onClick={() => handleCreateWallet()}>
+                                        Create a new wallet
+                                    </Controls.Button>
+                                    <Controls.Button type={"line"} onClick={() => setStage({ name: "import", level: 0 })}>
+                                        Import an exist wallet
+                                    </Controls.Button>
+                                </Layouts.Col>
                             </Layouts.Col>
                         </Layouts.Contents.InnerContent>
                     ),
