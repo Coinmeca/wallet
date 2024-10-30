@@ -20,6 +20,7 @@ export default function Welcome() {
         const userId = storage?.get("userId");
         if (userId) {
             if (!init) storage?.set("init", "complete");
+<<<<<<< HEAD
             router.push("/");
         } else {
             const key = session?.get("key");
@@ -28,6 +29,19 @@ export default function Welcome() {
             if (!wallets || wallets?.length) setStage({ name: "setup", level: 0 })
             else setLoad(true);
         }
+=======
+
+            const key = session?.get("key");
+            if (key) {
+                const wallets: any = storage?.get(`${key}:wallets`);
+
+                if (!wallets || !wallets.length) {
+                    setStage({ name: "create", level: 0 });
+                    setLoad(true);
+                } else router.push("/");
+            } else router.push("/lock");
+        } else setLoad(true);
+>>>>>>> dev
     }, []);
 
     return (

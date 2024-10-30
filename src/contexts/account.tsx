@@ -1,24 +1,14 @@
 ﻿import { getChainById } from "chains";
 import { useStorage, useWallet } from "hooks";
 import React, { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
-import { Chain } from "types";
-import { formatChainId } from "utils";
-
-export interface AccountInfo {
-    name: string;
-    address: string;
-    index: number;
-    tokens?: {
-        fts?: string[];
-        nfts?: string[];
-    };
-}
+import { Account, Chain } from "types";
 
 interface AccountContextProps {
-    account: AccountInfo | undefined;
-    setAccount: React.Dispatch<React.SetStateAction<AccountInfo | undefined>>;
+    account: Account | undefined;
+    setAccount: React.Dispatch<React.SetStateAction<Account | undefined>>;
     chain: Chain | undefined;
-    setChain: React.Dispatch<React.SetStateAction<Chain | undefined>>;
+    setChain: (chainId?: string | number | Chain) => void;
+    // setChain: React.Dispatch<React.SetStateAction<Chain | undefined>>;
 }
 
 const AccountContext = createContext<AccountContextProps | undefined>(undefined);
@@ -33,18 +23,43 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const { storage, session } = useStorage();
     const { provider } = useWallet();
 
-    const [account, setAccount] = useState<AccountInfo>();
+    const [account, setAccount] = useState<Account>();
     const [chain, setChain] = useState<Chain>();
 
-    const updateChain = (chainId?: string | number) => {
-        chainId = (chainId || storage?.get("last:chainId") || 0) as string | number;
-        const chainInfo = getChainById(chainId);
-        if (chainInfo) {
-            provider?.changeChain(formatChainId(chainId));
-            provider?.changeProviderUrl(chainInfo?.rpc[0]);
-            setChain(chainInfo);
+    const updateChain = (chain?: string | number | Chain) => {
+        chain = chain || storage?.get("last:chainId");
+        if (chain) {
+            if (typeof chain === 'string' || typeof chain === 'number') chain = getChainById(chain);
+            if (chain) {
+                setChain(chain);
+                provider?.changeChain({
+                    chainId: chain.id,
+                    chainName: chain.name,
+                    nativeCurrency: chain.nativeCurrency,
+                    rpcUrls: chain.rpc,
+                    blockExplorerUrls: chain.explorer,
+                });
+            }
         }
+    }
+
+    const updateBalance = async (account?: Account) => {
+        const balance = await provider?.balance() || 0;
+        // setAccount((state) => {
+        //     if (account || state) {
+        //         return {
+        //             ...(account || state),
+        //             balance,
+        //         } as Account;
+        //     }
+        //     return state;
+        // });
     };
+
+    useLayoutEffect(() => {
+        const chainId = provider?.chainId || storage?.get("last:chainId");
+        if (chainId) updateChain(chainId);
+    }, []);
 
     useEffect(() => {
         const key = session?.get("key");
@@ -54,13 +69,20 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
             wallet: storage?.get("last:wallet"),
         };
 
-        if (last.wallet) provider?.changeAccount(wallets[last.wallet]);
         if (!provider?.chainId || last.chainId !== provider?.chainId) updateChain(last.chainId);
+        if (last.wallet) {
+            const account = wallets?.[last.wallet];
+            if (account) {   
+                provider?.changeAccount(account);
+                updateBalance(account)
+            }
+        };
     }, [account]);
-
+    
     useEffect(() => {
         if (chain?.id !== provider?.chainId) updateChain(chain?.id);
+        updateBalance();
     }, [chain, provider?.chainId]);
 
-    return <AccountContext.Provider value={{ account, setAccount, chain, setChain }}>{children}</AccountContext.Provider>;
+    return <AccountContext.Provider value={{ account, setAccount, chain, setChain: updateChain }}>{children}</AccountContext.Provider>;
 };

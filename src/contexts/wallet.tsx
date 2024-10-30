@@ -1,4 +1,6 @@
-﻿import React, { createContext, useContext, useLayoutEffect, useState } from "react";
+﻿import { getChainById } from "chains";
+import { useStorage } from "hooks";
+import React, { createContext, useContext, useLayoutEffect, useState } from "react";
 import { CoinmecaWalletProvider } from "wallet/provider";
 
 // Inject the provider into window.ethereum
@@ -23,16 +25,23 @@ export const useWallet = () => {
 };
 
 export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const { storage } = useStorage();
     const [provider, setProvider] = useState<CoinmecaWalletProvider>();
 
     useLayoutEffect(() => {
-        const walletProvider = new CoinmecaWalletProvider(/* constructor parameters */);
+        const chain = getChainById(storage?.get('last:chainId') || 1)!;
+        const walletProvider = new CoinmecaWalletProvider({chain:{
+            chainId: chain.id,
+            chainName: chain.name,
+            nativeCurrency: chain.nativeCurrency,
+            rpcUrls: chain.rpc,
+            blockExplorerUrls: chain.explorer,
+        }});
         setProvider(walletProvider);
 
         window.ethereum = { ...window.ethereum, ...walletProvider };
-
         window.ethereum.providers = window.ethereum.providers || [];
-        window.ethereum.providers.push(walletProvider);
+        if(!window.ethereum.providers.find((p:any) => p?.isCoinmecaWallet)) window.ethereum.providers.push(walletProvider);
 
         if (!window.ethereum.providerMap) window.ethereum.providerMap = new Map<string, any>(); // Ensure providerMap is initialized
         window.ethereum.providerMap.set("CoinmecaWallet", walletProvider);

@@ -1,7 +1,7 @@
 "use client";
 
-import { cloneElement, isValidElement, useCallback, useEffect, useState } from "react";
-import { Layouts } from "@coinmeca/ui/components";
+import { cloneElement, isValidElement, useCallback, useEffect, useMemo, useState } from "react";
+import { Controls, Layouts } from "@coinmeca/ui/components";
 import { useWindowSize } from "@coinmeca/ui/hooks";
 import { Root } from "@coinmeca/ui/lib/style";
 
@@ -11,6 +11,7 @@ import { Logo, Menu, MenuButton, Nav, Side, Style } from "./Header.styled";
 import Link from "next/link";
 import Image from "next/image";
 import Coinmeca from "assets/coinmeca.svg";
+import { Panel } from "@coinmeca/ui/components/layouts/panel/Panel";
 
 export interface Header {
     logo?: Logo | boolean;
@@ -27,6 +28,7 @@ export interface Header {
         children?: any;
     };
     side?: Side;
+    panels?: Panel[]
     scale?: number;
     height?: number;
     color?: string;
@@ -182,6 +184,9 @@ export default function Header(props: Header) {
                     </Side>
                 )}
             </Layouts.Row>
+            {(props?.panels && props?.panels?.length) && (<Layouts.Panel active={props?.panels?.some(p => p?.active)}>
+                {props?.panels?.map((panel, key) => (<Layouts.Panel {...panel} key={key} fix>{panel?.children}</Layouts.Panel>))}
+            </Layouts.Panel>)}
         </Style>
     );
 }

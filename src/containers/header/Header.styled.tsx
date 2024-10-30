@@ -7,6 +7,7 @@ import * as Divider from "@coinmeca/ui/components/layouts/divider/Divider.styled
 import * as Button from "@coinmeca/ui/components/controls/button/Button.styled";
 import * as Avatar from "@coinmeca/ui/components/elements/avatar/Avatar.styled";
 import * as Dropdown from "@coinmeca/ui/components/controls/dropdown/Dropdown.styled";
+import * as Panel from "@coinmeca/ui/components/layouts/panel/Panel.styled";
 
 export const Logo = styled.a`
     max-width: max-content;
@@ -241,83 +242,6 @@ export const Side = styled.div<{ $scale: number; $width: number }>`
     }
 `;
 
-export const Panel = styled.div`
-    @media all and (max-width: ${Root.Device.Tablet}px) {
-        position: fixed;
-        display: flex;
-        top: 6em;
-        left: 0;
-        max-width: initial;
-        width: calc(100% - (4em * 2));
-        height: calc(100% - (4em * 2) - 6em);
-        background: rgba(0, 0, 0, 0.9);
-        z-index: 100;
-        padding: 4em;
-        opacity: 0;
-
-        &[data-active="false"] {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        &&& > ${Row.default} {
-            width: 100%;
-            flex-flow: column-reverse;
-            height: max-content;
-            max-height: max-content;
-            padding: 0;
-
-            & ${Row.default} {
-                width: 100%;
-                height: max-content;
-                max-width: initial;
-                max-height: max-content;
-                flex-flow: column;
-                align-items: flex-start;
-                padding: 0;
-            }
-        }
-
-        &&& ${Row.default} {
-            & > *:not(${Row.default}) {
-                font-size: 1.125em;
-                width: 100%;
-                max-width: initial;
-                min-width: initial;
-            }
-
-            & ${Button.default} {
-                padding: 1em;
-
-                & > * > span {
-                    width: 100%;
-                }
-            }
-
-            & ${Avatar.default} {
-                font-size: 0.75em;
-            }
-
-            & ${Dropdown.default} {
-                ${Dropdown.Item} {
-                    width: calc(100% - 6em);
-                    padding: 1.5em;
-                    padding-right: 4.5em;
-
-                    & > i {
-                        right: 0.5em;
-                    }
-                }
-            }
-        }
-
-        &[data-active="true"] {
-            opacity: 1;
-            pointer-events: inherit;
-        }
-    }
-`;
-
 export const Style = styled.header<{
     $scale: number;
     $color: string;
@@ -359,6 +283,108 @@ export const Style = styled.header<{
 
     ${Divider.default} {
         background: ${({ $color }) => ($color === Root.Color($color) ? $color : `rgb(${Root.Color($color)})`)};
+    }
+
+    & > ${Panel.default} {
+        @media all and (min-width: ${Root.Device.Tablet + 1}px) {
+            opacity: 0!important;
+            pointer-events: none!important;
+        }
+
+        position: fixed;
+        background: rgba(0, 0, 0, 0.9);
+        display: flex;
+        top: 6em;
+        left: 0;
+        max-width: initial;
+        width:100%;
+        height: calc(100% - 6em);
+        z-index: 100;
+        opacity: 0;
+        
+        &[data-active="false"] {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        &[data-active="true"] {
+            opacity: 1;
+            pointer-events: inherit;
+        }
+
+        & ${Panel.default} {
+            position: absolute;
+            width:100%;
+            height:100%;
+            top: 0;
+            opacity: 0;
+
+            ::selection {
+                color: black;
+                background: white;
+            }
+
+            html {
+                color-scheme: dark;
+            }
+
+            ::-webkit-scrollbar {
+                width: 4px;
+            }
+
+            ::-webkit-scrollbar-track {
+                -webkit-box-shadow: inset 0 0 0 rgba(var(--black), var(--o03));
+            }
+
+            ::-webkit-scrollbar-thumb {
+                -webkit-box-shadow: inset 0 0 2rem rgba(var(--white), var(--o03));
+            }
+
+            &&& > ${Row.default} {
+                width: 100%;
+                flex-flow: column-reverse;
+                height: max-content;
+                max-height: max-content;
+                padding: 0;
+                & ${Row.default} {
+                    width: 100%;
+                    height: max-content;
+                    max-width: initial;
+                    max-height: max-content;
+                    flex-flow: column;
+                    align-items: flex-start;
+                    padding: 0;
+                }
+            }
+
+            &&& ${Row.default} {
+                & > *:not(${Row.default}) {
+                    font-size: 1.125em;
+                    width: 100%;
+                    max-width: initial;
+                    min-width: initial;
+                }
+                & ${Button.default} {
+                    padding: 1em;
+                    & > * > span {
+                        width: 100%;
+                    }
+                }
+                & ${Avatar.default} {
+                    font-size: 0.75em;
+                }
+                & ${Dropdown.default} {
+                    ${Dropdown.Item} {
+                        width: calc(100% - 6em);
+                        padding: 1.5em;
+                        padding-right: 4.5em;
+                        & > i {
+                            right: 0.5em;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     @media all and (max-width: ${Root.Device.Laptop}px) {

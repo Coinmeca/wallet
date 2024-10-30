@@ -6,6 +6,7 @@ export function parseChainId(chain: number | string | Chain): number {
 }
 
 export function formatChainId(chain: number | string | Chain): string {
+    if (!chain) return chain as any;
     return typeof chain === "string"
         ? chain.startsWith("0x")
             ? chain
