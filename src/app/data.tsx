@@ -318,9 +318,17 @@ export default function Data() {
             {
                 active: mobileMenu === "setting",
                 children: (
-                    <>
-                        <Controls.Button>second</Controls.Button>
-                    </>
+                    <Layouts.Col gap={0} style={{ padding: "4em" }} fill>
+                        <Controls.Button scale={1.25} style={{ padding: "1em" }}>
+                            Connected Apps
+                        </Controls.Button>
+                        <Controls.Button scale={1.25} style={{ padding: "1em" }}>
+                            Reset Passcode
+                        </Controls.Button>
+                        <Controls.Button scale={1.25} style={{ padding: "1em" }}>
+                            Lock
+                        </Controls.Button>
+                    </Layouts.Col>
                 ),
             },
         ],
