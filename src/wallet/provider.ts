@@ -450,6 +450,7 @@ export class CoinmecaWalletProvider {
     changeChain(chain: Chain): void {
         const chainId = formatChainId(chain.chainId);
         if (this.chainId !== chainId) {
+            if (window) window.ethereum.chainId = chainId;
             this.storage.set("last:chainId", chainId);
             this.emit("chainChanged", chain);
         }

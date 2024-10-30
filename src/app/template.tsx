@@ -27,7 +27,10 @@ export default function RootTemplate({ children }: { children: any }) {
     useLayoutEffect(() => {
         const handleTabClose = () => session?.remove("key");
         window.addEventListener("beforeunload", handleTabClose);
+        return () => window.removeEventListener("beforeunload", handleTabClose);
+    }, []);
 
+    useLayoutEffect(() => {
         const init = storage?.get("init");
         const key = session?.get("key");
 
@@ -41,8 +44,7 @@ export default function RootTemplate({ children }: { children: any }) {
             }
 
         setLoad(true);
-        return () => window.removeEventListener("beforeunload", handleTabClose);
-    }, []);
+    }, [path])
 
     return (
         <>

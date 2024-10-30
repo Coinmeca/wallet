@@ -36,7 +36,6 @@ export default function Init({ stage, setStage }: Stage) {
 
                         storage?.set("userId", userId);
                         storage?.set(`${userId}:${passcode}`, key);
-                        console.log(getChainsByType('mainnet'));
                         storage?.set(`${key}:chains`, getChainsByType('mainnet'));
                         
                         session?.set("key", key);

@@ -285,23 +285,61 @@ export const Style = styled.header<{
         background: ${({ $color }) => ($color === Root.Color($color) ? $color : `rgb(${Root.Color($color)})`)};
     }
 
-    & ${Panel.default} ${Panel.default} {
-        @media all and (max-width: ${Root.Device.Tablet}px) {
-            position: fixed;
-            display: flex;
-            top: 6em;
-            left: 0;
-            max-width: initial;
-            width: calc(100% - (4em * 2));
-            height: calc(100% - (4em * 2) - 6em);
-            background: rgba(0, 0, 0, 0.9);
-            z-index: 100;
-            padding: 4em;
+    & > ${Panel.default} {
+        @media all and (min-width: ${Root.Device.Tablet + 1}px) {
+            opacity: 0!important;
+            pointer-events: none!important;
+        }
+
+        position: fixed;
+        background: rgba(0, 0, 0, 0.9);
+        display: flex;
+        top: 6em;
+        left: 0;
+        max-width: initial;
+        width:100%;
+        height: calc(100% - 6em);
+        z-index: 100;
+        opacity: 0;
+        
+        &[data-active="false"] {
             opacity: 0;
-            &[data-active="false"] {
-                opacity: 0;
-                pointer-events: none;
+            pointer-events: none;
+        }
+        
+        &[data-active="true"] {
+            opacity: 1;
+            pointer-events: inherit;
+        }
+
+        & ${Panel.default} {
+            position: absolute;
+            width:100%;
+            height:100%;
+            top: 0;
+            opacity: 0;
+
+            ::selection {
+                color: black;
+                background: white;
             }
+
+            html {
+                color-scheme: dark;
+            }
+
+            ::-webkit-scrollbar {
+                width: 4px;
+            }
+
+            ::-webkit-scrollbar-track {
+                -webkit-box-shadow: inset 0 0 0 rgba(var(--black), var(--o03));
+            }
+
+            ::-webkit-scrollbar-thumb {
+                -webkit-box-shadow: inset 0 0 2rem rgba(var(--white), var(--o03));
+            }
+
             &&& > ${Row.default} {
                 width: 100%;
                 flex-flow: column-reverse;
@@ -318,6 +356,7 @@ export const Style = styled.header<{
                     padding: 0;
                 }
             }
+
             &&& ${Row.default} {
                 & > *:not(${Row.default}) {
                     font-size: 1.125em;
@@ -344,10 +383,6 @@ export const Style = styled.header<{
                         }
                     }
                 }
-            }
-            &[data-active="true"] {
-                opacity: 1;
-                pointer-events: inherit;
             }
         }
     }

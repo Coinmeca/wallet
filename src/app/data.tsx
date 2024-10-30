@@ -4,27 +4,28 @@ import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useMobile, useWindowSize } from "@coinmeca/ui/hooks";
 import { Root } from "@coinmeca/ui/lib/style";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
 
 import Coinmeca from "assets/coinmeca.svg";
-import { useAccount } from "hooks";
+import { useAccount, useStorage, useWallet } from "hooks";
+import { Avatar } from "@coinmeca/ui/components/elements";
+import { Chain } from "types";
 
 export default function Data() {
     const path = usePathname();
-    const router = useRouter();
 
-    const { account } = useAccount();
-
+    const { account, chain, setChain } = useAccount();
+    const { storage, session } = useStorage();
+    
     const { windowWidth } = useWindowSize();
     const { isMobile } = useMobile();
-
+    
     const [value, setValue] = useState<number>(0);
     const [tab, setTab] = useState<string>("icon");
     const [active, setActive] = useState(false);
-
     const [mobileMenu, setMobileMenu] = useState("");
-    const [sidebar, setSidebar] = useState(false);
-
+       
+    const [chains, setChains] = useState<Chain[]>();
     const colorMap = path?.startsWith("/asset") ? "red" : path?.startsWith("/exchange") ? "orange" : path?.startsWith("/treasury") ? "blue" : "var(--rainbow)";
 
     const languages = [
@@ -53,6 +54,39 @@ export default function Data() {
             code: "ko",
         },
     ];
+
+    useLayoutEffect(() => {
+        const key = session?.get("key");
+        if (key) setChains(storage?.get(`${key}:chains`));
+    }, [])
+
+    const chainlist = useMemo(() => {
+        if (chains?.length) {
+            return chains.map((c: Chain) => ({
+                onClick: () => {
+                    setChain(c);
+                    setMobileMenu("")
+                },
+                style: {padding: '2em', ...((chain?.id === c?.id) && {opacity: 0.3, pointerEvents: 'none'})},
+                children: [
+                    [
+                        {
+                            children: (
+                                <Layouts.Row gap={2}>
+                                    <Layouts.Row gap={1} fit>
+                                        <Avatar img={c?.logo} />
+                                    </Layouts.Row>
+                                    <Elements.Text size={1.5}>
+                                        {c?.name}
+                                    </Elements.Text>
+                                </Layouts.Row>
+                            ),
+                        }
+                    ],
+                ]
+            })
+            )}
+    }, [chain, chains]);
 
     const header = {
         color: colorMap,
@@ -146,9 +180,7 @@ export default function Data() {
                                 size={2.5}
                                 display={6}
                                 ellipsis={" ... "}
-                                img={
-                                    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y+mAAAAnFBMVEVHcEy63veQu9qfzvCfzu+6vMGfzvCg0PGg0PGfzu+fz/H///+ipq77/f7///8hMUf///8UIzqg0PEQrf+Js9IeLUMWKkIHITz19/idn6XU1dgCEC4hJzgnR2NpeotFTl0UWISNuNiCqsdTYXNtkKshO1V/g40Yda8Vi88Qo/U2QVJ5rNDl5+qWyOyMk5wSluF3vetDtPy62/Qxeapv+0azAAAAD3RSTlMAEeV4xPyb3zGpREV4vabElXnOAAABVklEQVQokX2S6ZKCMBCEsTwQ90gmMQnILSJHibq77/9u28FaC3B1/oWv00N6xnGGtV47z2q9EGLxP555QhwOQnizRzYXYh8TxXsh5hO0cUVekGJMUZELdzNu1iVas760TrpB6xWalcS0MUoZoxmVaL26Mc82U0wnQZCmQZBoeKO110M3D5W18zlPl5wHBgcV5u4NbglHOnK+CzkEVsloO4ThjvOzFZg6mkLV+tzXEBwzWaoJNGdcYpz7bS2raApxKYFgqaW8TKAqcMmcIKBGyliNoAlwKeX8RFElre8QhnhkYQVxFUvZjKCG6ymEa1o10UXKTA2gscn0gkZm8K2jO0R8cG0hOGcAJXzv8SF4+0hjs+1BLeXPX/AYGb4f++gigCyT1/vIMOwP7pONjhR8L6Nho96WNluGUJuvbrwmtt7xryVRe31cMNTs87t7tprOy6Xu8Rj9AiYRKklhMZHhAAAAAElFTkSuQmCC"
-                                }
+                                img={chain?.logo}
                                 // character={`${account?.index + 1}`}
                                 // name={account?.address}
                             />
@@ -168,9 +200,13 @@ export default function Data() {
         panels: [
             {
                 active: mobileMenu === "chain",
-                children: <>
-                    <Controls.Button>First</Controls.Button>
-                </>,
+                children: <Layouts.Col gap={0} fill>
+                        {/* <Elements.Text type={'strong'} style={{padding:'1em 3em 0.5em'}}>Chains</Elements.Text> */}
+                    <Controls.Input placeholder={'Search chain by id or name...'} left={{children:<Elements.Icon icon={'search'} />}} style={ {padding: '2em 4em'}} />
+                    {/* <Layouts.Contents.InnerContent padding={[0, 4]}> */}
+                        <Layouts.List list={chainlist} style={{padding: '0em 4em'}} />
+                    {/* </Layouts.Contents.InnerContent> */}
+                </Layouts.Col>,
             },
             {
                 active: mobileMenu === "setting",

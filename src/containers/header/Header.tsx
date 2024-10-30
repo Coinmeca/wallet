@@ -1,7 +1,7 @@
 "use client";
 
-import { cloneElement, isValidElement, useCallback, useEffect, useState } from "react";
-import { Layouts } from "@coinmeca/ui/components";
+import { cloneElement, isValidElement, useCallback, useEffect, useMemo, useState } from "react";
+import { Controls, Layouts } from "@coinmeca/ui/components";
 import { useWindowSize } from "@coinmeca/ui/hooks";
 import { Root } from "@coinmeca/ui/lib/style";
 
@@ -183,12 +183,10 @@ export default function Header(props: Header) {
                         <Layouts.Row gap={1}>{props?.side?.children}</Layouts.Row>
                     </Side>
                 )}
-                {(props?.panels && props?.panels?.length) && (
-                    <Layouts.Panel active={props?.panels?.some(p => p?.active)}>
-                        {props?.panels?.map((panel, key) => (<Layouts.Panel key={key} {...panel} fix>{panel?.children}</Layouts.Panel>))}
-                    </Layouts.Panel>
-                )}
             </Layouts.Row>
+            {(props?.panels && props?.panels?.length) && (<Layouts.Panel active={props?.panels?.some(p => p?.active)}>
+                {props?.panels?.map((panel, key) => (<Layouts.Panel {...panel} key={key} fix>{panel?.children}</Layouts.Panel>))}
+            </Layouts.Panel>)}
         </Style>
     );
 }

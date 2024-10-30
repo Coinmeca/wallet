@@ -18,7 +18,8 @@ interface AccountContextProps {
     account: AccountInfo | undefined;
     setAccount: React.Dispatch<React.SetStateAction<AccountInfo | undefined>>;
     chain: Chain | undefined;
-    setChain: React.Dispatch<React.SetStateAction<Chain | undefined>>;
+    setChain: (chainId?: string | number | Chain) => void;
+    // setChain: React.Dispatch<React.SetStateAction<Chain | undefined>>;
 }
 
 const AccountContext = createContext<AccountContextProps | undefined>(undefined);
@@ -36,19 +37,27 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const [account, setAccount] = useState<AccountInfo>();
     const [chain, setChain] = useState<Chain>();
 
-    const updateChain = (chainId?: string | number) => {
-        chainId = (chainId || storage?.get("last:chainId"));
-        if (chainId) {
-            const chain = getChainById(chainId);
-            if (chain) provider?.changeChain({
-                chainId: chain.id,
-                chainName: chain.name,
-                nativeCurrency: chain.nativeCurrency,
-                rpcUrls: chain.rpc,
-                blockExplorerUrls: chain.explorer,
-            });
+    const updateChain = (chain?: string | number | Chain) => {
+        chain = chain || storage?.get("last:chainId");
+        if (chain) {
+            if (typeof chain === 'string' || typeof chain === 'number') chain = getChainById(chain);
+            if (chain) {
+                setChain(chain);
+                provider?.changeChain({
+                    chainId: chain.id,
+                    chainName: chain.name,
+                    nativeCurrency: chain.nativeCurrency,
+                    rpcUrls: chain.rpc,
+                    blockExplorerUrls: chain.explorer,
+                });
+            }
         }
     }
+
+    useLayoutEffect(() => {
+        const chainId = provider?.chainId || storage?.get("last:chainId");
+        if (chainId) updateChain(chainId);
+    }, []);
 
     useEffect(() => {
         const key = session?.get("key");
@@ -66,5 +75,5 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (chain?.id !== provider?.chainId) updateChain(chain?.id);
     }, [chain, provider?.chainId]);
 
-    return <AccountContext.Provider value={{ account, setAccount, chain, setChain }}>{children}</AccountContext.Provider>;
+    return <AccountContext.Provider value={{ account, setAccount, chain, setChain: updateChain }}>{children}</AccountContext.Provider>;
 };
