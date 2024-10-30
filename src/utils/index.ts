@@ -12,8 +12,8 @@ export function formatChainId(chain: number | string | Chain): string {
             ? chain
             : formatChainId(parseInt(chain))
         : typeof chain === "number"
-        ? `0x${chain?.toString(16)}`
-        : formatChainId(chain?.id);
+            ? `0x${chain?.toString(16)}`
+            : formatChainId(chain?.id);
 }
 
 export const isMobile = () => {
@@ -67,18 +67,18 @@ export interface StorageController {
 
 export const loadStorage = (prefix: string, storage?: CloudStorage | Storage, isTelegram?: boolean, salt?: string): StorageController => ({
     get: (key: string) => {
-        return parse(decrypt(storage?.getItem(`${prefix}:${key}`) as string, salt));
+        return parse(decrypt(storage?.getItem(encrypt(`${prefix}:${key}`, salt)!) as string, salt));
     },
     gets: (keys: string[]) => {
         const values: Record<string, any> = {};
         if (isTelegram) {
-            const items = storage?.getItems(keys?.map((k) => `${prefix}:${k}`)) as string[];
+            const items = storage?.getItems(keys?.map((k) => encrypt(`${prefix}:${k}`, salt))) as string[];
             items.forEach((v: string | undefined, i: number) => {
                 if (v) values[keys[i]] = parse(decrypt(v, salt));
             });
         } else {
             keys.forEach((key) => {
-                const value = storage?.getItem(`${prefix}:${key}`) as string;
+                const value = storage?.getItem(encrypt(`${prefix}:${key}`, salt)!) as string;
                 if (value) values[key] = parse(decrypt(value, salt));
             });
         }
@@ -88,7 +88,7 @@ export const loadStorage = (prefix: string, storage?: CloudStorage | Storage, is
         const values: Record<string, any> = {};
         if (isTelegram) {
             const keys = storage?.getKeys() as any;
-            const items = storage?.getItems(keys) as any;
+            const items = storage?.getItems(keys?.map((k: string) => decrypt(k, salt))) as any;
             items.forEach((v: string | undefined, i: number) => {
                 if (v) values[keys[i].replace(`${prefix}:`, "")] = parse(decrypt(v, salt));
             });
@@ -106,7 +106,7 @@ export const loadStorage = (prefix: string, storage?: CloudStorage | Storage, is
     },
     set: (key: string, value: any) => {
         value = encrypt(format(value), salt);
-        return value && storage?.setItem(`${prefix}:${key}`, value as string);
+        return value && storage?.setItem(encrypt(`${prefix}:${key}`, salt)!, value as string);
     },
     sets: (map: string[][]) => {
         return (
@@ -116,23 +116,23 @@ export const loadStorage = (prefix: string, storage?: CloudStorage | Storage, is
             map?.map((item) => {
                 if (item?.[0] && item?.[1]) {
                     const value = encrypt(format(item[1]), salt);
-                    if (value) storage?.setItem(`${prefix}:${item[0]}`, value as any);
+                    if (value) storage?.setItem(encrypt(`${prefix}:${item[0]}`, salt)!, value as any);
                 }
             })
         );
     },
     remove: (key: string) => {
-        return storage?.removeItem(`${prefix}:${key}`);
+        return storage?.removeItem(encrypt(`${prefix}:${key}`, salt)!);
     },
     removes: (keys: string[]) => {
         if (isTelegram) {
-            storage?.removeItems(keys?.map((k) => `${prefix}:${k}`));
+            storage?.removeItems(keys?.map((k) => encrypt(`${prefix}:${k}`, salt)));
         } else {
-            keys.forEach((key) => localStorage.removeItem(`${prefix}:${key}`));
+            keys.forEach((key) => localStorage.removeItem(encrypt(`${prefix}:${key}`, salt)!));
         }
     },
     clear: () => {
-        return isTelegram ? storage?.removeItems(storage?.getKeys() as any) : (storage as Storage)?.clear();
+        return isTelegram ? storage?.removeItems(storage?.getKeys()?.map((k: string) => encrypt(k, salt)) as any) : (storage as Storage)?.clear();
     },
 });
 

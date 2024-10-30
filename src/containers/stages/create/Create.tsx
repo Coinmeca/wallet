@@ -1,6 +1,6 @@
 ﻿"use client";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useAccount, useStorage } from "hooks";
+import { useAccount, useStorage, useWallet } from "hooks";
 import { wallet } from "wallet";
 import { Stage } from "..";
 import { useRouter } from "next/navigation";
@@ -11,7 +11,7 @@ import MECA from "assets/graphics/meca.png";
 export default function Create({ setStage }: Stage) {
     const router = useRouter();
     const { storage, session } = useStorage();
-    const { setAccount } = useAccount();
+    const { setAccount, setChain } = useAccount();
     const [create, setCreate] = useState(false);
 
     const handleCreateWallet = () => {
@@ -22,21 +22,21 @@ export default function Create({ setStage }: Stage) {
         if (!key || key === "") return;
 
         const wallets: string[] = storage?.get(`${key}:wallets`) || [];
+        const { privateKey, address } = wallet().create(`${key}:${wallets.length}`);
 
-        setAccount(() => {
-            let info: any;
-            const { privateKey, address } = wallet().create(`${key}:${wallets.length}`);
-            if (wallets.find((w: string) => w?.toLowerCase() === privateKey?.toLowerCase())) {
-                info = storage?.get(address);
-                if (info) return info;
-            } else info = { address, name: `Wallet ${wallets.length + 1}`, index: wallets.length };
+        let info: any;
+        if (wallets.find((w: string) => w?.toLowerCase() === privateKey?.toLowerCase())) {
+            info = storage?.get(address);
+        } else {
+            info = { address, name: `Wallet ${wallets.length + 1}`, index: wallets.length };
             storage?.set("last:wallet", `${wallets.length}`);
             wallets.push(privateKey);
 
             storage?.set(`${key}:wallets`, wallets);
             storage?.set(`${address}`, info);
-            return info;
-        });
+        }
+
+        setAccount(info);
 
         storage?.set("init", "complete");
         router.push("/");
