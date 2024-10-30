@@ -20,11 +20,9 @@ export default function Welcome() {
         const userId = storage?.get("userId");
         if (userId) {
             if (!init) storage?.set("init", "complete");
-
             const key = session?.get("key");
             if (key) {
                 const wallets: any = storage?.get(`${key}:wallets`);
-
                 if (!wallets || !wallets.length) {
                     setStage({ name: "create", level: 0 });
                     setLoad(true);

@@ -6,7 +6,7 @@ import axios from "axios";
 
 import EventEmitter from "eventemitter3";
 import { formatChainId, loadStorage, StorageController } from "utils";
-import { AccountInfo } from "contexts/account";
+import { Account } from "types";
 
 export type ChainBase = "evm" | "svm";
 export type ChainType = "mainnet" | "mainnet-beta" | "testnet" | "devnet";
@@ -464,7 +464,7 @@ export class CoinmecaWalletProvider {
         this.wallet = Wallet.fromPrivateKey(Buffer.from(privateKey.substring(0, 64), "hex"));
         this.address = this.wallet.getAddressString();
 
-        const info: AccountInfo = this.storage.get(this.address);
+        const info: Account = this.storage.get(this.address);
         this.storage.set("last:wallet", info.index);
 
         this.emit("accountsChanged", [this.address]);
