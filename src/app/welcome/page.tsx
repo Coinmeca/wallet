@@ -1,14 +1,18 @@
 ﻿"use client";
 
-import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
+import CryptoJS from "crypto-js";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Stages } from "containers";
-import { useAccount, useStorage } from "hooks";
+import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { AnimatePresence } from "framer-motion";
+
+import { Stages } from "containers";
+import { useAccount, useStorage, useTelegram } from "hooks";
+import { getChainsByType } from "chains";
 
 export default function Welcome() {
     const router = useRouter();
+    const { telegram, user } = useTelegram();
     const { storage, session } = useStorage();
     const { account } = useAccount();
 
@@ -31,6 +35,19 @@ export default function Welcome() {
         } else setLoad(true);
     }, []);
 
+    const handleConfirm = (passcode: string) => {
+        passcode = CryptoJS.SHA256(passcode).toString();
+        const userId = telegram && user?.id ? user.id : crypto.randomUUID();
+        const key = CryptoJS.SHA256(`${userId}:${passcode}`).toString();
+
+        storage?.set("userId", userId);
+        storage?.set(`${userId}:${passcode}`, key);
+        storage?.set(`${key}:chains`, getChainsByType('mainnet'));
+        
+        session?.set("key", key);
+        return true;
+    }
+
     return (
         <AnimatePresence>
             {load && (
@@ -43,8 +60,48 @@ export default function Welcome() {
                         },
                         {
                             active: stage.name === "init",
-                            children: <Stages.Init stage={stage} setStage={setStage} />,
+                            children: <Stages.Init stage={stage} setStage={setStage} exit={'welcome'} onConfirm={handleConfirm} />,
                         },
+                        // {
+                        //     active: stage.level === 2,
+                        //     children: (
+                        //         <Layouts.Contents.SlideContainer
+                        //             contents={[
+                        //                 {
+                        //                     active: true,
+                        //                     children: (
+                        //                         <Layouts.Contents.InnerContent scroll={false}>
+                        //                             <Layouts.Col align={"center"} style={{ padding: "4em" }} fill>
+                        //                                 <Layouts.Col gap={4} align={"center"} fit>
+                        //                                     <Elements.Text type={"h6"} opacity={0.6}>
+                        //                                     BIOMETRIC
+                        //                                     </Elements.Text>
+                        //                                     <Elements.Icon
+                        //                                         icon={"wallet"}
+                        //                                         scale={3}
+                        //                                         style={{ padding: "0.5em", borderRadius: "4em", background: "rgba(var(--white),.15)" }}
+                        //                                     />
+                        //                                     <Elements.Text type={"h6"}>
+                        //                                         test
+                        //                                     </Elements.Text>
+                        //                                 </Layouts.Col>
+                        //                             </Layouts.Col>
+                        //                             <Layouts.Col gap={0} align={"center"} fill>
+                        //                                 <Layouts.Col align={"center"} style={{ padding: "4em" }} fill>
+                        //                                     <Layouts.Col gap={4} align={"center"} fit>
+                        //                                         {" "}
+                        //                                     </Layouts.Col>
+                        //                                     <Controls.Button style={{ margin: "4em", marginTop: "2em" }}>YES</Controls.Button>
+                        //                                     <Controls.Button style={{ margin: "4em", marginTop: "2em" }}>NO</Controls.Button>
+                        //                                 </Layouts.Col>
+                        //                             </Layouts.Col>
+                        //                         </Layouts.Contents.InnerContent>
+                        //                     ),
+                        //                 },
+                        //             ]}
+                        //         />
+                        //     ),
+                        // },
                         {
                             active: stage.name === "create",
                             children: <Stages.Create stage={stage} setStage={setStage} />,

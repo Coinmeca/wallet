@@ -465,7 +465,7 @@ export class CoinmecaWalletProvider {
         this.address = this.wallet.getAddressString();
 
         const info: Account = this.storage.get(this.address);
-        this.storage.set("last:wallet", info.index);
+        // this.storage.set("last:wallet", info.index);
 
         this.emit("accountsChanged", [this.address]);
     }
@@ -474,7 +474,7 @@ export class CoinmecaWalletProvider {
         const chainId = formatChainId(chain.chainId);
         if (this.chainId !== chainId) {
             if (window) window.ethereum.chainId = chainId;
-            this.storage.set("last:chainId", chainId);
+            // this.storage.set("last:chainId", chainId);
             this.emit("chainChanged", chain);
         }
     }

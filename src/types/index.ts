@@ -12,6 +12,13 @@ export interface Asset {
     image?: string;
 }
 
+export interface App {
+    name?: string;
+    url?: string;
+    logo?: string;
+    address?: string[];
+}
+
 export type ChainBase = "evm" | "svm";
 export type ChainType = "mainnet" | "mainnet-beta" | "testnet" | "devnet";
 

@@ -30,7 +30,6 @@ export default function Home() {
 
     return (
         <Layouts.Page snap>
-            {/* <Layouts.Contents.InnerContent> */}
             <Layouts.Col
                 align="center"
                 style={{
@@ -51,9 +50,6 @@ export default function Home() {
                     <Elements.Text type={"h6"}>{chain?.nativeCurrency.symbol}</Elements.Text>
                 </Layouts.Col>
             </Layouts.Col>
-            {/* <Layouts.Col fill> */}
-            {/* </Layouts.Col> */}
-            {/* </Layouts.Contents.InnerContent> */}
             <Layouts.Box padding={[2, "", "", ""]} fit>
                 <Layouts.Col gap={0}>
                     <Layouts.Menu
