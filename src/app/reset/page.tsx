@@ -37,12 +37,9 @@ export default function Reset() {
             // error
         }
         const seed = CryptoJS.SHA256(passcode).toString();
-        const key = CryptoJS.SHA256(`${userId}:${seed}`).toString();
-        if (!key) {
-            // error
-        }
-        storage?.set(`${userId}:${seed}`, key);
-        storage?.remove(`${userId}:${CryptoJS.SHA256(code).toString()}`);
+        const legacy = `${userId}:${CryptoJS.SHA256(code).toString()}`
+        storage?.set(`${userId}:${seed}`, storage?.get(legacy));
+        storage?.remove(legacy);
         setCode("");
         router.push('/');
         return true;
