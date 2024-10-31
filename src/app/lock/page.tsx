@@ -5,9 +5,8 @@ import { useAccount, useStorage } from "hooks";
 import { useRouter } from "next/navigation";
 import { wallet } from "wallet";
 import { Stages } from "containers";
-import { useEffect } from "react";
 
-export default function Lock({ params }:{params:any}) {
+export default function Lock({ params }: { params: any }) {
     const router = useRouter();
     const { storage, session } = useStorage();
     const { setAccount } = useAccount();
@@ -24,14 +23,12 @@ export default function Lock({ params }:{params:any}) {
             const last: any = storage?.get("last:wallet");
             const info: any = storage?.get(wallet(wallets[last]).address);
             if (info) setAccount(info);
-            router.push("/");
+
+            const target = new URLSearchParams(window.location.search).get("target");
+            if (target) router.push(target === "" || target === "%2F" || target?.startsWith("/welcome") ? "/" : (target?.startsWith("/") ? "" : "/") + target);
+            else router.push("/");
         }
-    }
+    };
 
-
-    useEffect(() => {
-        console.log(params?.target)
-    }, [])
-
-    return <Stages.Lock onUnlock={handleUnlock} />
+    return <Stages.Lock onUnlock={handleUnlock} />;
 }
