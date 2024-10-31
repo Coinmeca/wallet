@@ -85,7 +85,7 @@ export default function Init({ stage, setStage, exit, onConfirm }: Stage & { exi
                                                             effect
                                                         />
                                                         {error.message !== "" && (
-                                                            <Elements.Text weight={"bold"} opacity={0.6} color={"red"} style={{ marginTop: "2em" }}>
+                                                            <Elements.Text weight={"bold"} color={"red"} style={{ marginTop: "2em" }}>
                                                                 {error.message}
                                                             </Elements.Text>
                                                         )}

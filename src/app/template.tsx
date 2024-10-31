@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Containers } from "index";
 import { AnimatePresence } from "framer-motion";
 
-export default function RootTemplate({ children }: { children: any }) {
+export default function RootTemplate({ children, params }: { children: any; params: any; }) {
     const router = useRouter();
     const path = usePathname();
 
@@ -29,7 +29,9 @@ export default function RootTemplate({ children }: { children: any }) {
         const init = storage?.get("init");
         const key = session?.get("key");
 
-        if (!path.startsWith("/welcome"))
+        if (path.startsWith("/test")) {
+            params.target = path;  
+        } else if (!path.startsWith("/welcome"))
             if (!init) router.push("/welcome");
             else {
                 setInit(true);

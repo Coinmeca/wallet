@@ -3,7 +3,7 @@
 import CryptoJS from "crypto-js";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { Parts } from "@coinmeca/ui/index";
-import { useAccount, useStorage } from "hooks";
+import { useStorage } from "hooks";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { usePortal } from "@coinmeca/ui/hooks";
@@ -64,9 +64,14 @@ export default function Lock({ onUnlock }: {onUnlock:Function}) {
                                     </Elements.Text>
                                     <Elements.Passcode index={code?.length || 0} length={length} error={error.state} gap={"5%"} effect />
                                     {error.message !== "" && (
-                                        <Elements.Text weight={"bold"} opacity={0.6} color={"red"} style={{ marginTop: "2em" }}>
-                                            {error.message}
-                                        </Elements.Text>
+                                        <Layouts.Col gap={2} align={"center"}>
+                                            <Elements.Text weight={"bold"} color={"red"}>
+                                                {error.message}
+                                            </Elements.Text>
+                                            <Controls.Button onClick={showResetConfirm} fit>
+                                                Reset Passcode
+                                            </Controls.Button>
+                                        </Layouts.Col>
                                     )}
                                 </Layouts.Col>
                             </Layouts.Col>
@@ -92,9 +97,6 @@ export default function Lock({ onUnlock }: {onUnlock:Function}) {
                                                 <Layouts.Col fill>
                                                     <Parts.Numberpad type="code" value={code} onChange={(e: any, v: any) => handleNumberClick(v)} />
                                                 </Layouts.Col>
-                                                <Controls.Button onClick={showResetConfirm} style={{ margin: "2em", marginTop: 0 }}>
-                                                    Reset
-                                                </Controls.Button>
                                                 <Controls.Button onClick={() => storage?.clear()} style={{ margin: "2em", marginTop: 0 }}>
                                                     Clear
                                                 </Controls.Button>

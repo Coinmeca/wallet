@@ -5,8 +5,9 @@ import { useAccount, useStorage } from "hooks";
 import { useRouter } from "next/navigation";
 import { wallet } from "wallet";
 import { Stages } from "containers";
+import { useEffect } from "react";
 
-export default function Lock() {
+export default function Lock({ params }:{params:any}) {
     const router = useRouter();
     const { storage, session } = useStorage();
     const { setAccount } = useAccount();
@@ -26,6 +27,11 @@ export default function Lock() {
             router.push("/");
         }
     }
+
+
+    useEffect(() => {
+        console.log(params?.target)
+    }, [])
 
     return <Stages.Lock onUnlock={handleUnlock} />
 }
