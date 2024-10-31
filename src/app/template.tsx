@@ -1,23 +1,18 @@
 ﻿"use client";
+
+import { useLayoutEffect } from "react";
 import { Frames } from "@coinmeca/ui/containers";
-import Data from "./data";
-import { useAccount, useStorage } from "hooks";
-import { useLayoutEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import { Containers } from "index";
+import { Contents, Layouts } from "@coinmeca/ui/components";
 import { AnimatePresence } from "framer-motion";
 
-export default function RootTemplate({ children, params }: { children: any; params: any; }) {
-    const router = useRouter();
-    const path = usePathname();
+import { useGuard, useStorage } from "hooks";
+import { Containers } from "index";
+import Data from "./data";
 
-    const { account } = useAccount();
-    const { storage, session } = useStorage();
+export default function RootTemplate({ children, params }: { children: any; params: any }) {
+    const { isLoad } = useGuard();
+    const { session } = useStorage();
     const { header } = Data();
-
-    const [init, setInit] = useState(false);
-    const [access, setAccess] = useState(false);
-    const [load, setLoad] = useState(false);
 
     useLayoutEffect(() => {
         const handleTabClose = () => session?.remove("key");
@@ -25,28 +20,14 @@ export default function RootTemplate({ children, params }: { children: any; para
         return () => window.removeEventListener("beforeunload", handleTabClose);
     }, []);
 
-    useLayoutEffect(() => {
-        const init = storage?.get("init");
-        const key = session?.get("key");
-
-        if (path.startsWith("/test")) {
-            params.target = path;  
-        } else if (!path.startsWith("/welcome"))
-            if (!init) router.push("/welcome");
-            else {
-                setInit(true);
-                if (!path.startsWith("/lock"))
-                    if (!key) router.push("/lock");
-                    else setAccess(true);
-            }
-
-        setLoad(true);
-    }, [path]);
-
     return (
         <>
             <Frames.Frame header={{ type: "custom", children: <Containers.Header {...header} /> }} align={"right"} background={{ img: { src: 2 } }} side={56}>
-                <AnimatePresence>{load && children}</AnimatePresence>
+                <Layouts.Page>
+                    <AnimatePresence>
+                        {isLoad ? children : <Contents.States.Loading style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%" }} />}
+                    </AnimatePresence>
+                </Layouts.Page>
             </Frames.Frame>
         </>
     );
