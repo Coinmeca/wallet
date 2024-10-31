@@ -1,4 +1,5 @@
-﻿import { Chain } from "types";
+﻿import CryptoJS from "crypto-js";
+import { Chain } from "types";
 
 export function parseChainId(chain: number | string | Chain): number {
     if (!chain) return 0;
@@ -28,17 +29,20 @@ export const isMobile = () => {
     );
 };
 
-// Encrypt and decrypt functions
 const encrypt = (data?: string, salt?: string): string | undefined => {
     if (!data || !salt) return data;
-    const encrypted = CryptoJS.AES.encrypt(data, salt, { mode: CryptoJS.mode.ECB });
-    return encrypted.toString();
+    return CryptoJS.AES.encrypt(data, CryptoJS.SHA256(salt), {
+        mode: CryptoJS.mode.ECB,
+        padding: CryptoJS.pad.Pkcs7
+    }).toString();
 };
 
 const decrypt = (data?: string, salt?: string): string | undefined => {
     if (!data || !salt) return data;
-    const decrypted = CryptoJS.AES.decrypt(data, salt, { mode: CryptoJS.mode.ECB });
-    return decrypted.toString(CryptoJS.enc.Utf8);
+    return CryptoJS.AES.decrypt(data, CryptoJS.SHA256(salt), {
+        mode: CryptoJS.mode.ECB,
+        padding: CryptoJS.pad.Pkcs7
+    }).toString(CryptoJS.enc.Utf8);
 };
 
 export const format = (value?: any): string | undefined => {

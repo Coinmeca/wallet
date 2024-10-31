@@ -1,5 +1,4 @@
 ﻿import React, { createContext, useCallback, useContext, useLayoutEffect, useState } from "react";
-import secureLocalStorage from "react-secure-storage";
 import { useTelegram } from "hooks";
 import { loadStorage } from "utils";
 
@@ -30,8 +29,7 @@ export const StorageProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const [session, setSession] = useState<CloudStorage | Storage | any>();
 
     const modules = useCallback(
-        (storage?: CloudStorage | Storage | any) =>
-            loadStorage("coinmeca:wallet", storage, !!(telegram && user?.id), process.env.SECURE_LOCAL_STORAGE_HASH_KEY),
+        (storage?: CloudStorage | Storage | any) => loadStorage("coinmeca:wallet", storage, !!(telegram && user?.id), process.env.NEXT_PUBLIC_KEY),
         [telegram, user, storage],
     );
 
@@ -40,5 +38,5 @@ export const StorageProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setSession(sessionStorage);
     }, []);
 
-    return <StorageContext.Provider value={{ storage: modules(secureLocalStorage), session: modules(session) }}>{children}</StorageContext.Provider>;
+    return <StorageContext.Provider value={{ storage: modules(storage), session: modules(session) }}>{children}</StorageContext.Provider>;
 };
