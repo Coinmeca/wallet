@@ -19,7 +19,7 @@ export default function Data() {
     const { windowWidth } = useWindowSize();
     const { isMobile } = useMobile();
 
-    const { account, setAccount, chain, setChain } = useAccount();
+    const { account, setAccount, resetAccount, chain, setChain } = useAccount();
     const { storage, session } = useStorage();
 
     const [value, setValue] = useState<number>(0);
@@ -125,51 +125,78 @@ export default function Data() {
         (accounts: Account[] = []) => {
             if (accounts?.length) {
                 return accounts.map((a: Account) => {
-                    const selected = account?.address?.toLowerCase() !== a?.address?.toLowerCase();
+                    const selected = account?.address?.toLowerCase() === a?.address?.toLowerCase();
                     return {
-                        onClick: selected && (() => {}),
-                        style: { padding: "2em clamp(2em, 5%, 8em)", ...(selected && { pointerEvents: "none" }) },
+                        onClick: !selected && (() => {}),
+                        style: { padding: "2em clamp(2em, 5%, 8em)", ...(selected && { background: "transparent", pointerEvents: "none" }) },
                         children: [
                             [
-                                {
-                                    children: (
-                                        <Layouts.Row gap={1} fill fix>
-                                            <Layouts.Row
-                                                gap={2}
-                                                style={{ overflow: "hidden", ...(account?.address === a?.address && { opacity: 0.3 }) }}
-                                                fill
-                                                fix>
-                                                <Layouts.Row fit>
-                                                    <Elements.Avatar
-                                                        // color={colorMap}
-                                                        scale={1.25}
-                                                        size={2.5}
-                                                        // display={6}
-                                                        // ellipsis={" ... "}
-                                                        character={`${a?.index + 1}`}
-                                                        name={a?.address}
-                                                        stroke={0.1}
-                                                        hideName
-                                                    />
-                                                </Layouts.Row>
-                                                <Layouts.Col gap={0} style={{ overflow: "hidden" }}>
-                                                    <Elements.Text size={1.5} height={1.375} title={a?.name} fix>
-                                                        {a?.name}
-                                                    </Elements.Text>
-                                                    <Elements.Text size={1.375} height={1.375} weight={"light"} opacity={0.6} title={a?.address} fix>
-                                                        {a?.address}
-                                                    </Elements.Text>
-                                                </Layouts.Col>
-                                            </Layouts.Row>
-                                            <Layouts.Row gap={0} style={{ pointerEvents: "initial" }} fit>
-                                                <Controls.Button icon={"copy"} onClick={() => handleCopyAddress(a)} />
-                                                <Controls.Button icon={"more"} />
-                                            </Layouts.Row>
-                                        </Layouts.Row>
-                                    ),
-                                },
-                            ],
-                        ],
+                                [
+                                    [
+                                        {
+                                            gap: 2,
+                                            style: selected ? { opacity: .3 } : {},
+                                            onClick: () => {
+                                                setAccount(a);
+                                                setMobileMenu("")
+                                            },
+                                            children: [
+                                                {
+                                                    fit: true,
+                                                    children: (
+                                                        <Elements.Avatar
+                                                            // color={colorMap}
+                                                            scale={1.25}
+                                                            size={2.5}
+                                                            // display={6}
+                                                            // ellipsis={" ... "}
+                                                            character={`${a?.index + 1}`}
+                                                            name={a?.address}
+                                                            stroke={0.2}
+                                                            hideName
+                                                        />
+                                                    )
+                                                },
+                                                {
+                                                    gap: 0,
+                                                    children:[
+                                                        <>
+                                                            <Elements.Text size={1.5} height={1.5} title={a?.name} fix>
+                                                                {a?.name}
+                                                            </Elements.Text>
+                                                        </>,
+                                                        <>
+                                                            <Elements.Text size={1.375} height={1.5} weight={"light"} opacity={0.6} title={a?.address} fix>
+                                                                {a?.address}
+                                                            </Elements.Text>
+                                                        </>
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ],
+                                    {
+                                        fit: true,
+                                        children:[
+                                            {
+                                                
+                                                gap: 0,
+                                                fit: true,
+                                                style: { pointerEvents: "initial" },
+                                                children: [
+                                                    <>
+                                                        <Controls.Button icon={"copy"} onClick={() => handleCopyAddress(a)} />
+                                                    </>,
+                                                    <>
+                                                        <Controls.Button icon={"more"} />
+                                                    </>
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ],
+                            ]
+                        ]
                     };
                 });
             }
@@ -235,17 +262,23 @@ export default function Data() {
                                     active={mobileMenu === "accounts"}
                                     onClick={() => setMobileMenu(mobileMenu === "accounts" ? "" : "accounts")}
                                     toggle>
-                                    <Elements.Avatar
-                                        // color={colorMap}
-                                        scale={0.666}
-                                        size={2.5}
-                                        display={6}
-                                        ellipsis={" ... "}
-                                        character={`${account?.index + 1}`}
-                                        name={account?.address}
-                                    />
+                                    {mobileMenu === "accounts" ? (
+                                        <Elements.Icon icon={"x"} scale={0.666} />
+                                    ): (    
+                                        <Elements.Avatar
+                                            // color={colorMap}
+                                            scale={0.666}
+                                            size={2.5}
+                                            display={6}
+                                            ellipsis={" ... "}
+                                            character={`${account?.index + 1}`}
+                                            name={account?.address}
+                                        />
+                                    )}
                                 </Controls.Tab>
-                                <Controls.Button icon={"copy"} title={"Copy address"} />
+                                {mobileMenu !== "accounts" && (
+                                    <Controls.Button icon={"copy"} title={"Copy address"} />
+                                )}
                             </Layouts.Row>
                         )}
                     </Layouts.Row>
@@ -289,10 +322,10 @@ export default function Data() {
                             style={{ padding: "2em clamp(0em, 3.75%, 6em)" }}
                         />
                         <Layouts.List list={accounts} formatter={accountlist} />
-                        <Layouts.Col style={{ padding: "4em", paddingTop: "2em" }} fit>
+                        <Layouts.Col style={{ padding: "4em", paddingTop: "0" }} fit>
                             <Controls.Button
                                 type={"line"}
-                                icon={"plus"}
+                                iconLeft={"plus-small-bold"}
                                 onClick={() => {
                                     router.push("/create");
                                 }}>
@@ -312,22 +345,38 @@ export default function Data() {
                             style={{ padding: "2em clamp(0em, 3.75%, 6em)" }}
                         />
                         <Layouts.List list={chains} formatter={chainlist} />
+                        <Layouts.Col style={{ padding: "4em", paddingTop: "0" }} fit>
+                            <Controls.Button
+                                type={"line"}
+                                icon={"plus"}
+                                onClick={() => {
+                                    // router.push("/create");
+                                }}>
+                                Add new chain
+                            </Controls.Button>
+                        </Layouts.Col>
                     </Layouts.Col>
                 ),
             },
             {
                 active: mobileMenu === "setting",
                 children: (
-                    <Layouts.Col gap={0} style={{ padding: "4em" }} fill>
-                        <Controls.Button scale={1.25} style={{ padding: "1em" }}>
-                            Connected Apps
-                        </Controls.Button>
-                        <Controls.Button scale={1.25} style={{ padding: "1em" }}>
-                            Reset Passcode
-                        </Controls.Button>
-                        <Controls.Button scale={1.25} style={{ padding: "1em" }}>
-                            Lock
-                        </Controls.Button>
+                    <Layouts.Col style={{ padding: "4em" }} reverse fill>
+                        <Layouts.Col gap={4}>
+                            <Controls.Button scale={1.25} style={{ padding: "1em" }}>
+                                Connected Apps
+                            </Controls.Button>
+                            <Controls.Button scale={1.25} style={{ padding: "1em" }} onClick={() => router.push("/reset")}>
+                                Reset Passcode
+                            </Controls.Button>
+                            <Controls.Button type={'line'} scale={1.25} style={{ padding: "1em" }} onClick={() => {
+                                session?.remove("key");
+                                resetAccount();
+                                router.push("/lock");
+                            }}>
+                                Lock
+                            </Controls.Button>
+                        </Layouts.Col>
                     </Layouts.Col>
                 ),
             },

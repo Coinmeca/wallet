@@ -7,6 +7,7 @@ import { wallet } from "wallet";
 interface AccountContextProps {
     account: Account | undefined;
     setAccount: (newAccount: Account) => void;
+    resetAccount: () => void;
     chain: Chain | undefined;
     setChain: (chainId?: string | number | Chain) => void;
 }
@@ -62,6 +63,8 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
     };
 
+    const resetAccount = () => setAccount(undefined);
+
     useLayoutEffect(() => {
         const last = {
             chainId: storage?.get("last:chainId"),
@@ -71,5 +74,5 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
         updateAccount(last.wallet);
     }, []);
 
-    return <AccountContext.Provider value={{ account, setAccount: updateAccount, chain, setChain: updateChain }}>{children}</AccountContext.Provider>;
+    return <AccountContext.Provider value={{ account, setAccount: updateAccount, resetAccount, chain, setChain: updateChain }}>{children}</AccountContext.Provider>;
 };

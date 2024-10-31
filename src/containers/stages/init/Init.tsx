@@ -1,16 +1,12 @@
 ﻿"use client";
 import CryptoJS from "crypto-js";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useState } from "react";
-import { useStorage, useTelegram } from "hooks";
+import { useEffect, useState } from "react";
 import { Parts } from "@coinmeca/ui/index";
 import { Stage } from "..";
-import { getChainsByType } from "chains";
 
-export default function Init({ stage, setStage }: Stage) {
+export default function Init({ stage, setStage, exit, onConfirm }: Stage & { exit: string;  onConfirm?: (passcode:string) => boolean}) {
     const length = 6;
-    const { storage, session } = useStorage();
-    const { telegram, user } = useTelegram();
 
     const [pass, setPass] = useState<{ code: string; confirm?: string }>({ code: "" });
     const [error, setError] = useState({ state: false, message: "" });
@@ -23,25 +19,15 @@ export default function Init({ stage, setStage }: Stage) {
             if (stage.name === "init") {
                 if (stage.level === 0) setStage((state: any) => ({ ...state, level: 1 }));
                 else if (stage.level === 1) {
-                    let key;
                     if (pass.code !== v)
                         setError({
                             state: true,
                             message: "The passcode you entered does not match the passcode initially entered.",
                         });
                     else {
-                        const userId = telegram && user?.id ? user.id : crypto.randomUUID();
-                        const passcode = CryptoJS.SHA256(pass.code).toString();
-                        key = CryptoJS.SHA256(`${userId}:${passcode}`).toString();
-
-                        storage?.set("userId", userId);
-                        storage?.set(`${userId}:${passcode}`, key);
-                        storage?.set(`${key}:chains`, getChainsByType('mainnet'));
-                        
-                        session?.set("key", key);
-
-                        setPass({ code: "" });
-                        setStage({ name: "create", level: 0 });
+                        if(typeof onConfirm === 'function') onConfirm(pass.code);
+                        setStage({ name: "create", level: 2 });
+                        // setStage(telegram ? { name: "create", level: 2 } : { name: "create", level: 0 });                       
                     }
                 }
             }
@@ -49,6 +35,10 @@ export default function Init({ stage, setStage }: Stage) {
             setError({ state: false, message: "" });
         }
     };
+
+    useEffect(() => {
+        return () => setPass({ code: "" });
+    }, [])
 
     return (
         <Layouts.Contents.SlideContainer
@@ -135,7 +125,7 @@ export default function Init({ stage, setStage }: Stage) {
                                                 {stage.level === 0 ? (
                                                     <Controls.Button
                                                         onClick={() => {
-                                                            setStage({ name: "welcome", level: 0 });
+                                                            setStage({ name: exit, level: 0 });
                                                             setPass({ code: "" });
                                                         }}
                                                         style={{ margin: "2em", marginTop: 0 }}>

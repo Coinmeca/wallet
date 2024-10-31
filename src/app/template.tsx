@@ -7,11 +7,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { Containers } from "index";
 import { AnimatePresence } from "framer-motion";
 
-interface CoinmecaWallet {
-    isCoinmecaWallet: boolean;
-    name: string;
-}
-
 export default function RootTemplate({ children }: { children: any }) {
     const router = useRouter();
     const path = usePathname();
