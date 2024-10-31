@@ -21,25 +21,23 @@ export default function RootTemplate({ children, params }: { children: any; para
     }, []);
 
     return (
-        <>
-            <Frames.Frame
-                header={{ type: "custom", children: <Containers.Header {...header} /> }}
-                align={"right"}
-                background={{ img: { src: 2 } }}
-                side={56}
-                toast={toastlist}>
-                <Layouts.Page>
-                    <AnimatePresence>
-                        {isLoad ? (
-                            children
-                        ) : (
-                            <Contents.States.Loading
-                                style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", zIndex: 100, background: "black" }}
-                            />
-                        )}
-                    </AnimatePresence>
-                </Layouts.Page>
-            </Frames.Frame>
-        </>
+        <Frames.Frame
+            header={{ type: "custom", children: <Containers.Header {...header} /> }}
+            align={"right"}
+            background={{ img: { src: 2 } }}
+            side={56}
+            toast={toastlist}>
+            <Layouts.Page>
+                <AnimatePresence>
+                    {isLoad ? (
+                        children
+                    ) : (
+                        <Contents.States.Loading
+                            style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", zIndex: 1000, background: "black" }}
+                        />
+                    )}
+                </AnimatePresence>
+            </Layouts.Page>
+        </Frames.Frame>
     );
 }

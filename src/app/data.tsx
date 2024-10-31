@@ -372,6 +372,9 @@ export default function Data() {
                 children: (
                     <Layouts.Col style={{ padding: "4em" }} reverse fill>
                         <Layouts.Col gap={4}>
+                            <Controls.Button scale={1.125} style={{ padding: "0.5em 1em" }} onClick={() => router.push("/test")}>
+                                Test
+                            </Controls.Button>
                             <Controls.Button scale={1.125} style={{ padding: "0.5em 1em" }}>
                                 Connected Apps
                             </Controls.Button>

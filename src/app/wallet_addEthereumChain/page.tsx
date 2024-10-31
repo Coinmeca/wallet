@@ -99,6 +99,34 @@ export default function wallet_addEthereumChain() {
                                         style={{ padding: "0.5em", borderRadius: "4em", background: "rgba(var(--white),.15)" }}
                                     />
                                     <Elements.Text type={"h6"}>{chain?.chainId}</Elements.Text>
+                                    <Layouts.Box style={{ background: "rgba(var(--white), 0.15)" }}>
+                                        <Layouts.Col gap={2}>
+                                            <Layouts.Col gap={0}>
+                                                <Elements.Text size={1.25} opacity={0.6}>
+                                                    Chain RPC URLs
+                                                </Elements.Text>
+                                                <Elements.Text>{chain.rpcUrls[0]}</Elements.Text>
+                                            </Layouts.Col>
+                                            <Layouts.Col gap={0}>
+                                                <Elements.Text size={1.25} opacity={0.6}>
+                                                    Currency Name
+                                                </Elements.Text>
+                                                <Elements.Text>{chain.nativeCurrency.name}</Elements.Text>
+                                            </Layouts.Col>
+                                            <Layouts.Col gap={0}>
+                                                <Elements.Text size={1.25} opacity={0.6}>
+                                                    Currency Symbol
+                                                </Elements.Text>
+                                                <Elements.Text>{chain.nativeCurrency.symbol}</Elements.Text>
+                                            </Layouts.Col>
+                                            <Layouts.Col gap={0}>
+                                                <Elements.Text size={1.25} opacity={0.6}>
+                                                    Currency Decimals
+                                                </Elements.Text>
+                                                <Elements.Text>{chain.nativeCurrency.decimals}</Elements.Text>
+                                            </Layouts.Col>
+                                        </Layouts.Col>
+                                    </Layouts.Box>
                                 </Layouts.Col>
                                 <Layouts.Col align={"center"} style={{ padding: "4em" }} fill>
                                     <Layouts.Col gap={4} align={"center"} fit>
