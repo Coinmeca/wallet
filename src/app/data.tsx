@@ -263,7 +263,12 @@ export default function Data() {
                                     onClick={() => setMobileMenu(mobileMenu === "accounts" ? "" : "accounts")}
                                     toggle>
                                     {mobileMenu === "accounts" ? (
-                                        <Elements.Icon icon={"x"} scale={0.666} />
+                                        <Layouts.Row gap={0.5} align={"middle"}>
+                                            <Elements.Icon icon={"x"} scale={0.666} />
+                                            <Elements.Text size={1}>
+                                                    Close Account List
+                                            </Elements.Text>
+                                        </Layouts.Row>
                                     ): (    
                                         <Elements.Avatar
                                             // color={colorMap}
