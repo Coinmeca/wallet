@@ -135,10 +135,10 @@ export default function Data() {
                                     [
                                         {
                                             gap: 2,
-                                            style: selected ? { opacity: .3 } : {},
+                                            style: { ...(selected ? { opacity: 0.3 } : {}), overflow: "hidden" },
                                             onClick: () => {
                                                 setAccount(a);
-                                                setMobileMenu("")
+                                                setMobileMenu("");
                                             },
                                             children: [
                                                 {
@@ -155,11 +155,11 @@ export default function Data() {
                                                             stroke={0.2}
                                                             hideName
                                                         />
-                                                    )
+                                                    ),
                                                 },
                                                 {
                                                     gap: 0,
-                                                    children:[
+                                                    children: [
                                                         <>
                                                             <Elements.Text size={1.5} height={1.5} title={a?.name} fix>
                                                                 {a?.name}
@@ -169,17 +169,16 @@ export default function Data() {
                                                             <Elements.Text size={1.375} height={1.5} weight={"light"} opacity={0.6} title={a?.address} fix>
                                                                 {a?.address}
                                                             </Elements.Text>
-                                                        </>
-                                                    ]
-                                                }
-                                            ]
-                                        }
+                                                        </>,
+                                                    ],
+                                                },
+                                            ],
+                                        },
                                     ],
                                     {
                                         fit: true,
-                                        children:[
+                                        children: [
                                             {
-                                                
                                                 gap: 0,
                                                 fit: true,
                                                 style: { pointerEvents: "initial" },
@@ -189,14 +188,14 @@ export default function Data() {
                                                     </>,
                                                     <>
                                                         <Controls.Button icon={"more"} />
-                                                    </>
-                                                ]
-                                            }
-                                        ]
-                                    }
+                                                    </>,
+                                                ],
+                                            },
+                                        ],
+                                    },
                                 ],
-                            ]
-                        ]
+                            ],
+                        ],
                     };
                 });
             }
@@ -265,11 +264,9 @@ export default function Data() {
                                     {mobileMenu === "accounts" ? (
                                         <Layouts.Row gap={0.5} align={"middle"}>
                                             <Elements.Icon icon={"x"} scale={0.666} />
-                                            <Elements.Text size={1}>
-                                                    Close Account List
-                                            </Elements.Text>
+                                            <Elements.Text size={1}>Close Account List</Elements.Text>
                                         </Layouts.Row>
-                                    ): (    
+                                    ) : (
                                         <Elements.Avatar
                                             // color={colorMap}
                                             scale={0.666}
@@ -281,9 +278,7 @@ export default function Data() {
                                         />
                                     )}
                                 </Controls.Tab>
-                                {mobileMenu !== "accounts" && (
-                                    <Controls.Button icon={"copy"} title={"Copy address"} />
-                                )}
+                                {mobileMenu !== "accounts" && <Controls.Button icon={"copy"} title={"Copy address"} />}
                             </Layouts.Row>
                         )}
                     </Layouts.Row>
@@ -374,11 +369,15 @@ export default function Data() {
                             <Controls.Button scale={1.125} style={{ padding: "1em" }} onClick={() => router.push("/reset")}>
                                 Reset Passcode
                             </Controls.Button>
-                            <Controls.Button type={'line'} scale={1.125} style={{ padding: "1em" }} onClick={() => {
-                                session?.remove("key");
-                                resetAccount();
-                                router.push("/lock");
-                            }}>
+                            <Controls.Button
+                                type={"line"}
+                                scale={1.125}
+                                style={{ padding: "1em" }}
+                                onClick={() => {
+                                    session?.remove("key");
+                                    resetAccount();
+                                    router.push("/lock");
+                                }}>
                                 Lock
                             </Controls.Button>
                         </Layouts.Col>
