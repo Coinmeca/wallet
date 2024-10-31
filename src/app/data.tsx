@@ -363,13 +363,13 @@ export default function Data() {
                 children: (
                     <Layouts.Col style={{ padding: "4em" }} reverse fill>
                         <Layouts.Col gap={4}>
-                            <Controls.Button scale={1.25} style={{ padding: "1em" }}>
+                            <Controls.Button scale={1.125} style={{ padding: "1em" }}>
                                 Connected Apps
                             </Controls.Button>
-                            <Controls.Button scale={1.25} style={{ padding: "1em" }} onClick={() => router.push("/reset")}>
+                            <Controls.Button scale={1.125} style={{ padding: "1em" }} onClick={() => router.push("/reset")}>
                                 Reset Passcode
                             </Controls.Button>
-                            <Controls.Button type={'line'} scale={1.25} style={{ padding: "1em" }} onClick={() => {
+                            <Controls.Button type={'line'} scale={1.125} style={{ padding: "1em" }} onClick={() => {
                                 session?.remove("key");
                                 resetAccount();
                                 router.push("/lock");
