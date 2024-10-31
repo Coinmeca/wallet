@@ -1,5 +1,4 @@
-﻿import { access } from "fs";
-import { useStorage } from "hooks";
+﻿import { useStorage } from "hooks";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useLayoutEffect, useMemo, useState } from "react";
 
@@ -30,28 +29,38 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // const [isLoad, setIsLoad] = useState<boolean>(false);
 
     useLayoutEffect(() => {
-        if (storage || session) {
+        if (storage && session) {
             const check = {
                 init: !!storage?.get("init"),
                 access: !!session?.get("key"),
             };
 
-            console.log({ check });
             if (typeof check.init !== "undefined" && typeof check.access !== "undefined") {
                 let target;
+
+                const fullPath = window.location.pathname; // Current path
+                const queryString = window.location.search; // Current query string
+
+                // If the user is not initialized, direct to welcome page
                 if (!check.init) {
-                    if (!path?.startsWith("/welcome")) target = "welcome";
+                    if (!path?.startsWith("/welcome")) target = "/welcome";
                 } else {
                     setIsInit(true);
+                    // If access is not granted, check for redirection to lock page
                     if (!check.access) {
-                        const url = encodeURIComponent(path);
                         if (!path.startsWith("/lock") && path !== "/lock?" && path !== "/lock?target=") {
-                            target = url && url !== "" && url !== "%2F" && url !== "welcome" ? `/lock?target=${url}` : "/lock";
+                            // Construct the target URL
+                            target = `/lock?target=${encodeURIComponent(fullPath + queryString)}`;
                         }
-                    } else setIsAccess(true);
+                    } else {
+                        setIsAccess(true);
+                    }
                 }
 
-                if (target) setTarget(target);
+                if (target) {
+                    console.log({ target }); // Log target before setting
+                    setTarget(target);
+                }
                 setCheck(check);
             }
         }

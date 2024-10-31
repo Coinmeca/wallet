@@ -1,5 +1,4 @@
-﻿import secureLocalStorage from "react-secure-storage";
-import Wallet from "ethereumjs-wallet";
+﻿import Wallet from "ethereumjs-wallet";
 import { Transaction } from "ethereumjs-tx";
 import { keccak256, ecsign, toBuffer, hashPersonalMessage, bufferToHex } from "ethereumjs-util";
 import axios from "axios";
@@ -143,7 +142,7 @@ export class CoinmecaWalletProvider {
 
     constructor(config?: CoinmecaWalletProviderConfig) {
         this.events = new EventEmitter();
-        this.storage = loadStorage("coinmeca:wallet", this.isTelegram ? (window as any).Telegram?.WebApp?.CloudStorage : secureLocalStorage);
+        this.storage = loadStorage("coinmeca:wallet", this.isTelegram ? (window as any).Telegram?.WebApp?.CloudStorage : localStorage);
 
         // Check if the config object is provided before destructuring
         const { privateKey, chain } = config || {};

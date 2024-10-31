@@ -1,3 +1,5 @@
+const path = require("path");
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     async headers() {
@@ -30,7 +32,7 @@ const nextConfig = {
         remotePatterns: [
             {
                 protocol: "https",
-                hostname: "coinmeca-token-list.vercel.app",
+                hostname: "web3.coinmeca.net",
             },
         ],
     },
@@ -40,7 +42,6 @@ const nextConfig = {
     compiler: {
         styledComponents: true,
     },
-    swcMinify: true,
 };
 
 module.exports = nextConfig;

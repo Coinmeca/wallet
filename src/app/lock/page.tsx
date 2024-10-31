@@ -25,6 +25,7 @@ export default function Lock({ params }: { params: any }) {
             if (info) setAccount(info);
 
             const target = new URLSearchParams(window.location.search).get("target");
+            console.log({ target });
             if (target) router.push(target === "" || target === "%2F" || target?.startsWith("/welcome") ? "/" : (target?.startsWith("/") ? "" : "/") + target);
             else router.push("/");
         }
