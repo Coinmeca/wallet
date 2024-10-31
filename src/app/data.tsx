@@ -29,10 +29,10 @@ export default function Data() {
 
     const [chains, setChains] = useState<Chain[]>();
     const [accounts, setAccounts] = useState<Account[]>();
+
+    const { toasts, addToast } = useNotification();
+
     const colorMap = path?.startsWith("/asset") ? "red" : path?.startsWith("/exchange") ? "orange" : path?.startsWith("/treasury") ? "blue" : "var(--rainbow)";
-
-    const { addToast } = useNotification();
-
     const languages = [
         {
             code: "en",
@@ -102,6 +102,15 @@ export default function Data() {
         [chain, chains],
     );
 
+    const handleAccountChange = (account: Account) => {
+        setAccount(account);
+        setMobileMenu("");
+        // addToast({
+        //     title: `Account Change`,
+        //     message: `The account changed to ${account.name}.`,
+        // });
+    };
+
     const handleCopyAddress = (account: Account) => {
         navigator.clipboard
             .writeText(account.address)
@@ -132,54 +141,53 @@ export default function Data() {
                         children: [
                             [
                                 [
-                                    [
-                                        {
-                                            gap: 2,
-                                            style: selected ? { opacity: .3 } : {},
-                                            onClick: () => {
-                                                setAccount(a);
-                                                setMobileMenu("")
+                                    {
+                                        style: { overflow: "hidden" },
+                                        children: [
+                                            {
+                                                gap: 2,
+                                                style: selected ? { opacity: 0.3 } : {},
+                                                onClick: () => handleAccountChange(a),
+                                                children: [
+                                                    {
+                                                        fit: true,
+                                                        children: (
+                                                            <Elements.Avatar
+                                                                // color={colorMap}
+                                                                scale={1.25}
+                                                                size={2.5}
+                                                                // display={6}
+                                                                // ellipsis={" ... "}
+                                                                character={`${a?.index + 1}`}
+                                                                name={a?.address}
+                                                                stroke={0.2}
+                                                                hideName
+                                                            />
+                                                        ),
+                                                    },
+                                                    {
+                                                        gap: 0,
+                                                        children: [
+                                                            <>
+                                                                <Elements.Text size={1.5} height={1.5} title={a?.name} fix>
+                                                                    {a?.name}
+                                                                </Elements.Text>
+                                                            </>,
+                                                            <>
+                                                                <Elements.Text size={1.375} height={1.5} weight={"light"} opacity={0.6} title={a?.address} fix>
+                                                                    {a?.address}
+                                                                </Elements.Text>
+                                                            </>,
+                                                        ],
+                                                    },
+                                                ],
                                             },
-                                            children: [
-                                                {
-                                                    fit: true,
-                                                    children: (
-                                                        <Elements.Avatar
-                                                            // color={colorMap}
-                                                            scale={1.25}
-                                                            size={2.5}
-                                                            // display={6}
-                                                            // ellipsis={" ... "}
-                                                            character={`${a?.index + 1}`}
-                                                            name={a?.address}
-                                                            stroke={0.2}
-                                                            hideName
-                                                        />
-                                                    )
-                                                },
-                                                {
-                                                    gap: 0,
-                                                    children:[
-                                                        <>
-                                                            <Elements.Text size={1.5} height={1.5} title={a?.name} fix>
-                                                                {a?.name}
-                                                            </Elements.Text>
-                                                        </>,
-                                                        <>
-                                                            <Elements.Text size={1.375} height={1.5} weight={"light"} opacity={0.6} title={a?.address} fix>
-                                                                {a?.address}
-                                                            </Elements.Text>
-                                                        </>
-                                                    ]
-                                                }
-                                            ]
-                                        }
-                                    ],
+                                        ],
+                                    },
                                     {
                                         fit: true,
-                                        children:[
+                                        children: [
                                             {
-                                                
                                                 gap: 0,
                                                 fit: true,
                                                 style: { pointerEvents: "initial" },
@@ -189,14 +197,14 @@ export default function Data() {
                                                     </>,
                                                     <>
                                                         <Controls.Button icon={"more"} />
-                                                    </>
-                                                ]
-                                            }
-                                        ]
-                                    }
+                                                    </>,
+                                                ],
+                                            },
+                                        ],
+                                    },
                                 ],
-                            ]
-                        ]
+                            ],
+                        ],
                     };
                 });
             }
@@ -265,11 +273,9 @@ export default function Data() {
                                     {mobileMenu === "accounts" ? (
                                         <Layouts.Row gap={0.5} align={"middle"}>
                                             <Elements.Icon icon={"x"} scale={0.666} />
-                                            <Elements.Text size={1}>
-                                                    Close Account List
-                                            </Elements.Text>
+                                            <Elements.Text size={1}>Close Account List</Elements.Text>
                                         </Layouts.Row>
-                                    ): (    
+                                    ) : (
                                         <Elements.Avatar
                                             // color={colorMap}
                                             scale={0.666}
@@ -281,9 +287,7 @@ export default function Data() {
                                         />
                                     )}
                                 </Controls.Tab>
-                                {mobileMenu !== "accounts" && (
-                                    <Controls.Button icon={"copy"} title={"Copy address"} />
-                                )}
+                                {mobileMenu !== "accounts" && <Controls.Button icon={"copy"} title={"Copy address"} />}
                             </Layouts.Row>
                         )}
                     </Layouts.Row>
@@ -368,17 +372,21 @@ export default function Data() {
                 children: (
                     <Layouts.Col style={{ padding: "4em" }} reverse fill>
                         <Layouts.Col gap={4}>
-                            <Controls.Button scale={1.125} style={{ padding: "1em" }}>
+                            <Controls.Button scale={1.125} style={{ padding: "0.5em 1em" }}>
                                 Connected Apps
                             </Controls.Button>
-                            <Controls.Button scale={1.125} style={{ padding: "1em" }} onClick={() => router.push("/reset")}>
+                            <Controls.Button scale={1.125} style={{ padding: "0.5em 1em" }} onClick={() => router.push("/reset")}>
                                 Reset Passcode
                             </Controls.Button>
-                            <Controls.Button type={'line'} scale={1.125} style={{ padding: "1em" }} onClick={() => {
-                                session?.remove("key");
-                                resetAccount();
-                                router.push("/lock");
-                            }}>
+                            <Controls.Button
+                                type={"line"}
+                                scale={1.125}
+                                style={{ padding: "0.5em 1em" }}
+                                onClick={() => {
+                                    session?.remove("key");
+                                    resetAccount();
+                                    router.push("/lock");
+                                }}>
                                 Lock
                             </Controls.Button>
                         </Layouts.Col>
@@ -439,6 +447,12 @@ export default function Data() {
         bottom: "Copyright © 2024 Coinmeca. All rights reserved.",
     };
 
+    const toastlist = {
+        active: toasts && toasts?.length > 0 && mobileMenu !== "notify",
+        list: toasts,
+        swipe: true,
+    };
+
     return {
         value,
         setValue,
@@ -448,5 +462,6 @@ export default function Data() {
         setActive,
         header,
         footer,
+        toastlist,
     };
 }
