@@ -1,114 +1,100 @@
 ﻿"use client";
 
 import Image from "next/image";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useStorage, useWallet } from "hooks";
+import { useAccount, useStorage } from "hooks";
 import { Chain } from "wallet/provider";
+import { parseChainId } from "utils";
 
 /*
 http://localhost:3000/wallet_addEthereumChain?chainId=421614&base=evm&chainName=Arbitrum+Sepolia&logo=https%3A%2F%2Fcoinmeca-web3.vercel.app%2F42161%2Flogo.svg&rpcUrls%5B%5D=https%3A%2F%2Fsepolia-rollup.arbitrum.io%2Frpc&rpc%5B%5D=https%3A%2F%2Farbitrum-sepolia.blockpi.network%2Fv1%2Frpc%2Fpublic&rpc%5B%5D=https%3A%2F%2Fendpoints.omniatech.io%2Fv1%2Farbitrum%2Fsepolia%2Fpublic&blockExplorerUrls%5B%5D=https%3A%2F%2Fsepolia.arbiscan.io%2F&nativeCurrency%5Bname%5D=Ethereum&nativeCurrency%5Bsymbol%5D=ETH&nativeCurrency%5Bdecimals%5D=18
 */
 
-export default function wallet_addEthereumChain() {
+export default function wallet_addEthereumChain({ params }: { params: any }) {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+
     const { storage, session } = useStorage();
-    const { provider } = useWallet();
-    const [level, setLevel] = useState(0);
-    const searchParams = useSearchParams(); // Get the search parameters
+    const { chain, setChain } = useAccount();
 
-    const decimals = searchParams.get("nativeCurrency[decimals]");
+    const [newChain, setNewChain] = useState<Chain>();
+    const [level, setLevel] = useState(1);
 
-    const chain = {
-        chainId: searchParams.get("chainId"),
-        chainName: searchParams.get("chainName"),
-        rpcUrls: searchParams.getAll("rpc[]"),
-        blockExplorerUrls: searchParams.getAll("blockExplorerUrls[]"),
-        nativeCurrency: {
-            name: searchParams.get("nativeCurrency[name]"),
-            symbol: searchParams.get("nativeCurrency[symbol]"),
-            decimals: decimals && decimals !== "" ? parseInt(decimals) : null,
-        },
-    };
+    useLayoutEffect(() => {
+        const decimals = searchParams.get("nativeCurrency[decimals]");
+        const c = {
+            chainId: searchParams.get("chainId") || searchParams.get("id"),
+            chainName: searchParams.get("chainName") || searchParams.get("name"),
+            rpcUrls: searchParams.getAll("rpcUrls[]") || searchParams.getAll("rpc[]"),
+            blockExplorerUrls: searchParams.getAll("blockExplorerUrls[]") || searchParams.getAll("explorer[]"),
+            nativeCurrency: {
+                name: searchParams.get("nativeCurrency[name]"),
+                symbol: searchParams.get("nativeCurrency[symbol]"),
+                decimals: decimals && decimals !== "" ? parseInt(decimals) : null,
+            },
+        };        
+        const { chainId, chainName, rpcUrls, nativeCurrency } = c;
+        if (
+            chainId &&
+            chainName &&
+            nativeCurrency &&
+            nativeCurrency.name &&
+            nativeCurrency.symbol &&
+            nativeCurrency.decimals &&
+            rpcUrls &&
+            rpcUrls.length > 0
+        ) setNewChain(c as Chain);
+    }, [])
 
-    console.log({ chain }); // This should now correctly log the chain object
-
-    const handleCancel = () => {};
+    const handleCancel = () => { };
     const handleClose = () => {
         console.log('test');
     };
 
     const handleAddChain = () => {
+        if (!newChain) return;
+
         const key = session?.get("key");
         const chains = storage?.get(`${key}:chains`) || [];
 
-        const { chainId, rpcUrls, nativeCurrency } = chain;
-        if (!chainId || !rpcUrls || rpcUrls.length === 0 || !nativeCurrency || !nativeCurrency.decimals) {
-            // error
-            return;
-        }
-
-        const exist = chains.find((c: Chain) => c?.chainId === chainId);
-        if (exist) chains.map((c: Chain) => (c?.chainId === chainId ? chain : c));
-        else chains.push(chain);
+        const exist = chains.find((c: Chain) => c?.chainId === newChain?.chainId);
+        if (exist) chains.map((c: Chain) => (c?.chainId === newChain?.chainId ? newChain : c));
+        else chains.push(newChain);
 
         setLevel(1);
     };
 
     const handleSwitchChain = () => {
-        const { chainId, chainName, rpcUrls, nativeCurrency, blockExplorerUrls } = chain;
-        if (
-            !chainId ||
-            !chainName ||
-            !rpcUrls ||
-            rpcUrls.length === 0 ||
-            !nativeCurrency ||
-            !nativeCurrency.name ||
-            !nativeCurrency.symbol ||
-            !nativeCurrency.decimals
-        ) {
-            // error
-            return;
-        } else {
-            chain.chainId;
-            const { name, symbol, decimals } = nativeCurrency;
-            provider?.changeChain({
-                chainId,
-                chainName,
-                rpcUrls,
-                nativeCurrency: { name, symbol, decimals },
-                blockExplorerUrls,
-            });
-        }
+        if (!newChain) return;
+        setChain(typeof newChain?.chainId === 'string' ? newChain?.chainId?.startsWith("0x") ? parseChainId(newChain?.chainId) : parseInt(newChain?.chainId) : newChain?.chainId);
+        router.push('/')
     };
 
-    useLayoutEffect(() => {}, []);
+    useLayoutEffect(() => { }, []);
 
-    return (
+    return newChain ? (
         <Layouts.Contents.SlideContainer
             contents={[
                 {
                     active: level === 0,
                     children: (
                         <Layouts.Contents.InnerContent scroll={false}>
-                            <Layouts.Col align={"center"} style={{ padding: "4em" }} fill>
-                                <Layouts.Col gap={4} align={"center"} fill>
+                            <Layouts.Col align={"center"} style={{ padding: "2em" }} fill>
+                                <Layouts.Col gap={4} align={"center"} style={{ padding: "2em" }} fill>
                                     <Layouts.Col gap={4} align={"center"} fill>
                                         <Layouts.Col gap={8} align={"center"} fit>
                                             <div
                                                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: "12em", height: "12em", padding: "0.5em", borderRadius: "100%", background: "rgba(var(--white),.15)" }}
                                             >
-                                                <Image src={`https://web3.coinmeca.net/${chain.chainId}/logo.svg`} width={0} height={0} alt={chain.chainName || ''} style={{width:"8em", height:"8em"}} />
-                                                {/* <Elements.Icon
-                                                    icon={"wallet"}
-                                                    scale={3}
-                                                /> */}
+                                                <Image src={`https://web3.coinmeca.net/${newChain.chainId}/logo.svg`} width={0} height={0} alt={newChain.chainName || ''} style={{width:"8em", height:"8em"}} />
                                             </div>
-                                            <Layouts.Col gap={1}>    
+                                            <Layouts.Col gap={1}>
                                                 <Elements.Text type={"h6"}>
-                                                    {chain?.chainName}
+                                                    {newChain?.chainName}
                                                 </Elements.Text>
-                                                <Elements.Text type={"strong"} opacity={0.6}>{chain?.chainId}</Elements.Text>
+                                                <Elements.Text type={"strong"} opacity={0.6}>{newChain?.chainId}</Elements.Text>
                                             </Layouts.Col>
                                         </Layouts.Col>
                                     </Layouts.Col>
@@ -118,25 +104,25 @@ export default function wallet_addEthereumChain() {
                                                 <Elements.Text size={1.25} opacity={0.6}>
                                                     Chain RPC URLs
                                                 </Elements.Text>
-                                                <Elements.Text>{chain.rpcUrls[0]}</Elements.Text>
+                                                <Elements.Text>{newChain.rpcUrls[0]}</Elements.Text>
                                             </Layouts.Col>
                                             <Layouts.Col gap={0.5}>
                                                 <Elements.Text size={1.25} opacity={0.6}>
-                                                    Native Currency
+                                                    Native Currency Name
                                                 </Elements.Text>
-                                                <Elements.Text>{chain.nativeCurrency.name} {chain.nativeCurrency.symbol}</Elements.Text>
+                                                <Elements.Text>{newChain.nativeCurrency.name}</Elements.Text>
                                             </Layouts.Col>
                                             <Layouts.Col gap={0.5}>
                                                 <Elements.Text size={1.25} opacity={0.6}>
-                                                    Native Currency
+                                                    Native Currency Symbol
                                                 </Elements.Text>
-                                                <Elements.Text>{chain.nativeCurrency.name} {chain.nativeCurrency.symbol}</Elements.Text>
+                                                <Elements.Text>{newChain.nativeCurrency.symbol}</Elements.Text>
                                             </Layouts.Col>
                                             <Layouts.Col gap={0.5}>
                                                 <Elements.Text size={1.25} opacity={0.6}>
                                                     Currency Decimals
                                                 </Elements.Text>
-                                                <Elements.Text>{chain.nativeCurrency.decimals}</Elements.Text>
+                                                <Elements.Text>{newChain.nativeCurrency.decimals}</Elements.Text>
                                             </Layouts.Col>
                                         </Layouts.Col>
                                     </Layouts.Box>
@@ -159,29 +145,59 @@ export default function wallet_addEthereumChain() {
                     active: level === 1,
                     children: (
                         <Layouts.Contents.InnerContent scroll={false}>
-                            <Layouts.Col align={"center"} style={{ padding: "4em" }} fill>
-                                <Layouts.Col gap={4} align={"center"} fit>
-                                    {/* Additional content can go here */}
-                                </Layouts.Col>
-                            </Layouts.Col>
-                            <Layouts.Col gap={0} align={"center"} fill>
-                                <Layouts.Col align={"center"} style={{ padding: "4em" }} fill>
-                                    <Layouts.Col gap={4} align={"center"} fit>
-                                        <Elements.Text type={"h2"}> Import </Elements.Text>
-                                        <Elements.Text weight={"bold"} opacity={0.6}>
-                                            Please enter a private key of the wallet that be imported.
-                                        </Elements.Text>
+                            <Layouts.Col align={"center"} style={{padding: "4em"}} fill>
+                                <Layouts.Col align={'center'} style={{ flex: 1 }}>
+                                    <Layouts.Col gap={6} fit>
+                                        <Layouts.Row gap={2} align={'middle'} fix>
+                                            <div
+                                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', maxWidth: "6em", height: "6em", padding: "0.5em", borderRadius: "100%", background: "rgba(var(--white),.15)" }}
+                                                >
+                                                <Image src={`https://web3.coinmeca.net/${chain?.id}/logo.svg`} width={0} height={0} alt={newChain.chainName || ''} style={{width:"4em", height:"4em"}} />
+                                            </div>
+                                            <Layouts.Col gap={0} align={'center'}>    
+                                                <Elements.Text type={"h6"} height={0} align={'left'} >
+                                                    {chain?.name}
+                                                </Elements.Text>
+                                                <Elements.Text type={"strong"} height={0} align={'left'} opacity={0.6}>{chain?.id}</Elements.Text>
+                                            </Layouts.Col>
+                                        </Layouts.Row>
+                                        <Layouts.Divider>
+                                            <Elements.Icon icon={'chevron-down'} />
+                                        </Layouts.Divider>
+                                        <Layouts.Row gap={2} align={'middle'} fix>
+                                            <div
+                                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', maxWidth: "6em", height: "6em", padding: "0.5em", borderRadius: "100%", background: "rgba(var(--white),.15)" }}
+                                                >
+                                                <Image src={`https://web3.coinmeca.net/${newChain?.chainId}/logo.svg`} width={0} height={0} alt={newChain.chainName || ''} style={{width:"4em", height:"4em"}} />
+                                            </div>
+                                            <Layouts.Col gap={0} align={'center'}> 
+                                                <Elements.Text type={"h6"} height={0} align={'left'} >
+                                                    {newChain?.chainName}
+                                                </Elements.Text>
+                                                <Elements.Text type={"strong"} height={0} align={'left'} opacity={0.6}>{newChain?.chainId}</Elements.Text>
+                                            </Layouts.Col>
+                                        </Layouts.Row>
                                     </Layouts.Col>
                                 </Layouts.Col>
-                                <Layouts.Col gap={4} align={"center"} style={{ margin: 0 }}>
-                                    <Layouts.Row gap={2}>
-                                        <Controls.Button type={"glass"} onClick={handleClose}>
-                                            OK
-                                        </Controls.Button>
-                                        <Controls.Button type={"line"} onClick={handleSwitchChain}>
-                                            Switch Chain
-                                        </Controls.Button>
-                                    </Layouts.Row>
+                                <Layouts.Col gap={0} align={"center"} style={{flex:1}} fill>
+                                    <Layouts.Col align={"center"} style={{ padding: "4em" }}>
+                                        <Layouts.Col gap={4} align={"center"} fit>
+                                            <Elements.Text type={"h2"}>Switch</Elements.Text>
+                                            <Elements.Text weight={"bold"} opacity={0.6}>
+                                                Please enter a private key of the wallet that be imported.
+                                            </Elements.Text>
+                                        </Layouts.Col>
+                                    </Layouts.Col>
+                                    <Layouts.Col gap={4} align={"center"} style={{ margin: 0 }} fit>
+                                        <Layouts.Row gap={2}>
+                                            <Controls.Button type={"glass"} onClick={handleClose}>
+                                                OK
+                                            </Controls.Button>
+                                            <Controls.Button type={"line"} onClick={handleSwitchChain}>
+                                                Switch Chain
+                                            </Controls.Button>
+                                        </Layouts.Row>
+                                    </Layouts.Col>
                                 </Layouts.Col>
                             </Layouts.Col>
                         </Layouts.Contents.InnerContent>
@@ -189,5 +205,7 @@ export default function wallet_addEthereumChain() {
                 },
             ]}
         />
+    ) : (
+        <>Chain information is something wrong.</>
     );
 }
