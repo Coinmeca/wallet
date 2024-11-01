@@ -14,7 +14,7 @@ import { wallet } from "wallet";
 export default function Data() {
     const router = useRouter();
     const path = usePathname();
-    
+
     const { account, setAccount, resetAccount, chain, setChain } = useAccount();
     const { storage, session } = useStorage();
 
@@ -67,7 +67,7 @@ export default function Data() {
                 }),
             );
         }
-    }, []);
+    }, [path]);
 
     const chainlist = useCallback(
         (chains: Chain[] = []) => {
@@ -84,7 +84,7 @@ export default function Data() {
                                 children: (
                                     <Layouts.Row gap={2}>
                                         <Layouts.Row gap={1} fit>
-                                            <Avatar img={c?.logo} />
+                                            <Avatar img={`https://web3.coinmeca.net/${c?.id}/logo.svg`} />
                                         </Layouts.Row>
                                         <Elements.Text size={1.5}>{c?.name}</Elements.Text>
                                     </Layouts.Row>

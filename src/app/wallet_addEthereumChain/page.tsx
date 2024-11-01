@@ -57,7 +57,9 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
         const chains = storage?.get(`${key}:chains`) || [];
 
         if (chains) {
-            if (chains?.find((c: Chain) => c?.chainId === newChain?.chainId))
+            if (chains?.find((c: any) => {
+                return (c?.id === newChain?.chainId)
+            }))
                 chains.map((c: Chain) => (c?.chainId === newChain?.chainId ? newChain : c));
             else storage?.set(`${key}:chains`, [ ...chains, {
                 id: newChain.chainId,
@@ -66,14 +68,16 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
                 rpc: newChain.rpcUrls,
                 explorer: newChain.blockExplorerUrls
             }]);
+            setLevel(1);
+        } else {
+            // error
         }
-
-        setLevel(1);
     };
 
     const handleSwitchChain = () => {
         if (!newChain) return;
-        handleClose();
+        // handleClose();
+        setLevel(2);
         setChain(typeof newChain?.chainId === 'string' ? newChain?.chainId?.startsWith("0x") ? parseChainId(newChain?.chainId) : parseInt(newChain?.chainId) : newChain?.chainId);
     };
 
@@ -91,7 +95,7 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
                                     <Layouts.Col gap={4} align={"center"} fill>
                                         <Layouts.Col gap={8} align={"center"} fit>
                                             <div
-                                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: "12em", height: "12em", padding: "0.5em", borderRadius: "100%", background: "rgba(var(--white),.15)" }}
+                                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', maxWidth: "max-content", maxHeight: "max-content", padding: "2em", borderRadius: "100%", background: "rgba(var(--white),.15)" }}
                                             >
                                                 <Image src={`https://web3.coinmeca.net/${newChain.chainId}/logo.svg`} width={0} height={0} alt={newChain.chainName || ''} style={{width:"8em", height:"8em"}} />
                                             </div>
@@ -103,7 +107,7 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
                                             </Layouts.Col>
                                         </Layouts.Col>
                                     </Layouts.Col>
-                                    <Layouts.Box style={{ "--white": "255,255,255", "--black":"0, 0, 0", background:"rgba(var(--white),.15)", maxHeight:"max-content", padding: "clamp(2em, 5%, 4em)" }} fit>
+                                    <Layouts.Box style={{ "--white": "255,255,255", "--black":"0, 0, 0", background:"rgba(var(--white),.15)", maxHeight:"max-content", padding: "clamp(2em, 7.5%, 4em)" }} fit>
                                         <Layouts.Col gap={2} align={'left'}>
                                             <Layouts.Col gap={0.5} >
                                                 <Elements.Text size={1.25} opacity={0.6}>
@@ -153,13 +157,13 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
                             <Layouts.Col align={"center"} style={{padding: "4em"}} fill>
                                 <Layouts.Col align={'center'} style={{ flex: 1 }}>
                                     <Layouts.Col gap={6} fit>
-                                        <Layouts.Row gap={2} align={'middle'} fix>
+                                        <Layouts.Row gap={3} align={'center'} fix>
                                             <div
-                                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', maxWidth: "6em", height: "6em", padding: "0.5em", borderRadius: "100%", background: "rgba(var(--white),.15)" }}
+                                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', maxWidth: "max-content", maxHeight: "max-content", padding: "2em", borderRadius: "100%", background: "rgba(var(--white),.15)" }}
                                                 >
                                                 <Image src={`https://web3.coinmeca.net/${chain?.id}/logo.svg`} width={0} height={0} alt={newChain.chainName || ''} style={{width:"4em", height:"4em"}} />
                                             </div>
-                                            <Layouts.Col gap={0} align={'center'}>    
+                                            <Layouts.Col gap={0} align={'center'} fill>
                                                 <Elements.Text type={"h6"} height={0} align={'left'} >
                                                     {chain?.name}
                                                 </Elements.Text>
@@ -169,13 +173,13 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
                                         <Layouts.Divider>
                                             <Elements.Icon icon={'chevron-down'} />
                                         </Layouts.Divider>
-                                        <Layouts.Row gap={2} align={'middle'} fix>
+                                        <Layouts.Row gap={3} align={'center'} fix>
                                             <div
-                                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', maxWidth: "6em", height: "6em", padding: "0.5em", borderRadius: "100%", background: "rgba(var(--white),.15)" }}
+                                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', maxWidth: "max-content", maxHeight: "max-content", padding: "2em", borderRadius: "100%", background: "rgba(var(--white),.15)" }}
                                                 >
                                                 <Image src={`https://web3.coinmeca.net/${newChain?.chainId}/logo.svg`} width={0} height={0} alt={newChain.chainName || ''} style={{width:"4em", height:"4em"}} />
                                             </div>
-                                            <Layouts.Col gap={0} align={'center'}> 
+                                            <Layouts.Col gap={0} align={'center'}>
                                                 <Elements.Text type={"h6"} height={0} align={'left'} >
                                                     {newChain?.chainName}
                                                 </Elements.Text>
@@ -196,12 +200,57 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
                                     <Layouts.Col gap={4} align={"center"} style={{ margin: 0 }} fit>
                                         <Layouts.Row gap={2}>
                                             <Controls.Button type={"glass"} onClick={handleClose}>
-                                                OK
+                                                Close
                                             </Controls.Button>
                                             <Controls.Button type={"line"} onClick={handleSwitchChain}>
                                                 Switch Chain
                                             </Controls.Button>
                                         </Layouts.Row>
+                                    </Layouts.Col>
+                                </Layouts.Col>
+                            </Layouts.Col>
+                        </Layouts.Contents.InnerContent>
+                    ),
+                },
+                {
+                    active: level === 2,
+                    children: (
+                        <Layouts.Contents.InnerContent scroll={false}>
+                            <Layouts.Col align={"center"} style={{padding: "4em"}} fill>
+                                <Layouts.Col align={'center'} style={{ flex: 1 }}>
+                                    <Layouts.Col fit>
+                                        <Layouts.Col gap={8} align={'center'} fit>
+                                            <div
+                                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', maxWidth: "max-content", maxHeight: "max-content", padding: "1em", borderRadius: "100%", background: "rgba(var(--white),.15)" }}
+                                                >
+                                                <Image src={require('../../assets/animation/success.gif')} width={0} height={0} alt={newChain.chainName || ''} style={{width:"12em", height:"12em"}} />
+                                            </div>
+                                            <Layouts.Col gap={0} align={'center'}> 
+                                                <Elements.Text type={"h6"} height={0}>
+                                                    {newChain?.chainName}
+                                                </Elements.Text>
+                                                <Elements.Text type={"strong"} height={0} opacity={0.6}>{newChain?.chainId}</Elements.Text>
+                                            </Layouts.Col>
+                                        </Layouts.Col>
+                                    </Layouts.Col>
+                                </Layouts.Col>
+                                <Layouts.Col gap={0} align={"center"} style={{flex:1}} fill>
+                                    <Layouts.Col align={"center"} style={{ padding: "4em" }}>
+                                        <Layouts.Col gap={4} align={"center"} fit>
+                                            <Elements.Text type={"h2"}>Approved</Elements.Text>
+                                            <Elements.Text size={1} weight={'bold'}>
+                                                <Elements.Text opacity={0.6}>Switch chain from</Elements.Text>
+                                                <Elements.Text>{` ${chain?.name}` }</Elements.Text>
+                                                <Elements.Text opacity={0.6}>to</Elements.Text>
+                                                <Elements.Text>{` ${newChain?.chainName}`}</Elements.Text>
+                                                <Elements.Text opacity={0.6}>.</Elements.Text>
+                                            </Elements.Text>
+                                        </Layouts.Col>
+                                    </Layouts.Col>
+                                    <Layouts.Col gap={4} align={"center"} style={{ margin: 0 }} fit>
+                                        <Controls.Button type={"glass"} onClick={handleClose}>
+                                            Close
+                                        </Controls.Button>
                                     </Layouts.Col>
                                 </Layouts.Col>
                             </Layouts.Col>
