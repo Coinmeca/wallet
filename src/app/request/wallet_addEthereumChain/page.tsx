@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useAccount, usePopupChecker, useStorage } from "hooks";
+import { useAccount, usePopupChecker, useStorage, useTelegram } from "hooks";
 import { Chain } from "wallet/provider";
 import { parseChainId } from "utils";
 
@@ -16,6 +16,7 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
     const router = useRouter();
     const searchParams = useSearchParams();
 
+    const { telegram } = useTelegram();
     const { isPopup } = usePopupChecker();
     const { storage, session } = useStorage();
     const { chain, setChain } = useAccount();
@@ -43,6 +44,7 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
 
     const handleClose = () => {
         if (isPopup) window.close();
+        else if (telegram) telegram?.close();
         else router.push("/");
     };
 
