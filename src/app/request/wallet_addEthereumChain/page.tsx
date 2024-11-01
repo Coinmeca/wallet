@@ -41,8 +41,6 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
             setNewChain(c as Chain);
     }, []);
 
-    console.log("request", { isPopup });
-
     const handleClose = () => {
         if (isPopup) window.close();
         else router.push("/");

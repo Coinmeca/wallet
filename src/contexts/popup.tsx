@@ -1,6 +1,4 @@
-﻿import { useStorage } from "hooks";
-import { useSearchParams } from "next/navigation";
-import React, { createContext, useContext, useLayoutEffect, useMemo, useState } from "react";
+﻿import React, { createContext, useContext, useLayoutEffect, useState } from "react";
 
 interface PopupContextProps {
     isPopup: boolean;
@@ -29,8 +27,6 @@ export const PopupProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             }
         }
     }, []);
-
-    console.log({ isPopup });
 
     return <PopupContext.Provider value={{ isPopup, popupId }}>{children}</PopupContext.Provider>;
 };
