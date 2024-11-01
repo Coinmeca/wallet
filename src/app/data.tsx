@@ -2,7 +2,6 @@
 
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useMobile, useNotification, useWindowSize } from "@coinmeca/ui/hooks";
-import { Root } from "@coinmeca/ui/lib/style";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useLayoutEffect, useMemo, useState } from "react";
 
@@ -15,9 +14,6 @@ import { wallet } from "wallet";
 export default function Data() {
     const router = useRouter();
     const path = usePathname();
-
-    const { windowWidth } = useWindowSize();
-    const { isMobile } = useMobile();
 
     const { account, setAccount, resetAccount, chain, setChain } = useAccount();
     const { storage, session } = useStorage();
@@ -71,7 +67,7 @@ export default function Data() {
                 }),
             );
         }
-    }, []);
+    }, [path]);
 
     const chainlist = useCallback(
         (chains: Chain[] = []) => {
@@ -88,7 +84,7 @@ export default function Data() {
                                 children: (
                                     <Layouts.Row gap={2}>
                                         <Layouts.Row gap={1} fit>
-                                            <Avatar img={c?.logo} />
+                                            <Avatar img={`https://web3.coinmeca.net/${c?.id}/logo.svg`} />
                                         </Layouts.Row>
                                         <Elements.Text size={1.5}>{c?.name}</Elements.Text>
                                     </Layouts.Row>
@@ -297,14 +293,9 @@ export default function Data() {
                                 <Elements.Icon icon={"x"} scale={0.666} />
                             ) : (
                                 <Elements.Avatar
-                                    // color={colorMap}
                                     scale={0.666}
                                     size={2.5}
-                                    display={6}
-                                    ellipsis={" ... "}
-                                    img={chain?.logo}
-                                    // character={`${account?.index + 1}`}
-                                    // name={account?.address}
+                                    img={`https://web3.coinmeca.net/${chain?.id}/logo.svg`}
                                 />
                             )}
                         </Controls.Tab>
@@ -357,7 +348,7 @@ export default function Data() {
                         <Layouts.Col style={{ padding: "4em", paddingTop: "0" }} fit>
                             <Controls.Button
                                 type={"line"}
-                                icon={"plus"}
+                                iconLeft={"plus-small-bold"}
                                 onClick={() => {
                                     // router.push("/create");
                                 }}>
