@@ -2,7 +2,6 @@
 
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useMobile, useNotification, useWindowSize } from "@coinmeca/ui/hooks";
-import { Root } from "@coinmeca/ui/lib/style";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useLayoutEffect, useMemo, useState } from "react";
 
@@ -15,10 +14,7 @@ import { wallet } from "wallet";
 export default function Data() {
     const router = useRouter();
     const path = usePathname();
-
-    const { windowWidth } = useWindowSize();
-    const { isMobile } = useMobile();
-
+    
     const { account, setAccount, resetAccount, chain, setChain } = useAccount();
     const { storage, session } = useStorage();
 
@@ -302,7 +298,7 @@ export default function Data() {
                                     size={2.5}
                                     display={6}
                                     ellipsis={" ... "}
-                                    img={chain?.logo}
+                                    img={`https://web3.coinmeca.net/${chain?.id}/logo.svg`}
                                     // character={`${account?.index + 1}`}
                                     // name={account?.address}
                                 />

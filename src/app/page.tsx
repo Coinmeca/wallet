@@ -34,7 +34,7 @@ export default function Home() {
     return (
         <Layouts.Page snap>
             <AnimatePresence>
-                {/* {isLoad && ( */}
+                {isLoad && (
                 <>
                     <Layouts.Col
                         align="center"
@@ -92,7 +92,7 @@ export default function Home() {
                         </div>
                     </Layouts.Box>
                 </>
-                {/* )} */}
+                )}
             </AnimatePresence>
         </Layouts.Page>
     );

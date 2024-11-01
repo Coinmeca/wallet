@@ -20,7 +20,7 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
     const { chain, setChain } = useAccount();
 
     const [newChain, setNewChain] = useState<Chain>();
-    const [level, setLevel] = useState(1);
+    const [level, setLevel] = useState(0);
 
     useLayoutEffect(() => {
         const decimals = searchParams.get("nativeCurrency[decimals]");
@@ -34,7 +34,7 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
                 symbol: searchParams.get("nativeCurrency[symbol]"),
                 decimals: decimals && decimals !== "" ? parseInt(decimals) : null,
             },
-        };        
+        };
         const { chainId, chainName, rpcUrls, nativeCurrency } = c;
         if (
             chainId &&
@@ -48,10 +48,7 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
         ) setNewChain(c as Chain);
     }, [])
 
-    const handleCancel = () => { };
-    const handleClose = () => {
-        console.log('test');
-    };
+    const handleClose = () => router.push('/');
 
     const handleAddChain = () => {
         if (!newChain) return;
@@ -59,17 +56,25 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
         const key = session?.get("key");
         const chains = storage?.get(`${key}:chains`) || [];
 
-        const exist = chains.find((c: Chain) => c?.chainId === newChain?.chainId);
-        if (exist) chains.map((c: Chain) => (c?.chainId === newChain?.chainId ? newChain : c));
-        else chains.push(newChain);
+        if (chains) {
+            if (chains?.find((c: Chain) => c?.chainId === newChain?.chainId))
+                chains.map((c: Chain) => (c?.chainId === newChain?.chainId ? newChain : c));
+            else storage?.set(`${key}:chains`, [ ...chains, {
+                id: newChain.chainId,
+                name: newChain.chainName,
+                nativeCurrency: newChain.nativeCurrency,
+                rpc: newChain.rpcUrls,
+                explorer: newChain.blockExplorerUrls
+            }]);
+        }
 
         setLevel(1);
     };
 
     const handleSwitchChain = () => {
         if (!newChain) return;
+        handleClose();
         setChain(typeof newChain?.chainId === 'string' ? newChain?.chainId?.startsWith("0x") ? parseChainId(newChain?.chainId) : parseInt(newChain?.chainId) : newChain?.chainId);
-        router.push('/')
     };
 
     useLayoutEffect(() => { }, []);
@@ -129,7 +134,7 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
                                 </Layouts.Col>
                                 <Layouts.Col gap={4} align={"center"} style={{ margin: 0 }}>
                                     <Layouts.Row gap={2}>
-                                        <Controls.Button onClick={handleCancel}>
+                                        <Controls.Button onClick={handleClose}>
                                             Cancel
                                         </Controls.Button>
                                         <Controls.Button type={"line"} onClick={handleAddChain}>
