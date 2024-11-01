@@ -1,6 +1,42 @@
 ﻿import CryptoJS from "crypto-js";
 import { Chain } from "types";
 
+export const openWindow = (target: string) => {
+    if (typeof window === 'undefined') return;
+    const width = 360;
+    const height = 720;
+    const currentWindowWidth = window.innerWidth;
+    const currentWindowHeight = window.innerHeight;
+    const currentWindowLeft = window.screenX;
+    const currentWindowTop = window.screenY;
+
+    const left = currentWindowLeft + (currentWindowWidth - width) / 2;
+    const top = currentWindowTop + (currentWindowHeight - height) / 2;
+
+    // Generate a unique popup ID
+    const popupId = `popup_${Date.now()}`;
+
+    // Parse the target URL and add the popupId as a query parameter
+    const url = new URL(target, window.location.origin);
+    url.searchParams.append("popupId", popupId);
+
+    const newWindow: any = window.open(
+        url.toString(),
+        "_blank",
+        `left=${left},top=${top},width=${width},height=${height},toolbar=no,location=no,menubar=no,status=no,resizable=no,scrollbars=no`,
+    );
+
+    if (newWindow) {
+        // Send message to new window after it loads
+        newWindow.addEventListener("load", () => {
+            newWindow.coinmeca = {
+                isPopup: true,
+                popupId,
+            }
+        });
+    }
+};
+
 export function parseChainId(chain: number | string | Chain): number {
     if (!chain) return 0;
     return typeof chain === "string" ? (chain.startsWith("0x") ? Number(chain) : parseInt(chain)) : typeof chain === "number" ? chain : parseChainId(chain?.id);
