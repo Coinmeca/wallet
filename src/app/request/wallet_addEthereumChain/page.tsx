@@ -43,8 +43,8 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
     }, []);
 
     const handleClose = () => {
-        if (isPopup) window.close();
-        else if (telegram) telegram?.close();
+        if (telegram) telegram?.close();
+        else if (isPopup) window?.close();
         else router.push("/");
     };
 
@@ -86,8 +86,6 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
         );
     };
 
-    useLayoutEffect(() => {}, []);
-
     return newChain ? (
         <Layouts.Contents.SlideContainer
             contents={[
@@ -111,9 +109,9 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
                                                     background: "rgba(var(--white),.15)",
                                                 }}>
                                                 <Image
-                                                    src={`https://web3.coinmeca.net/${newChain.chainId}/logo.svg`}
                                                     width={0}
                                                     height={0}
+                                                    src={`https://web3.coinmeca.net/${newChain.chainId}/logo.svg`}
                                                     alt={newChain.chainName || ""}
                                                     style={{ width: "8em", height: "8em" }}
                                                 />

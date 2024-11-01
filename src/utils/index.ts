@@ -1,40 +1,79 @@
 ﻿import CryptoJS from "crypto-js";
 import { Chain } from "types";
 
-export const openWindow = (target: string) => {
+export const objectToUrlParams = (obj: { [x: string | number | symbol]: any }) => {
+    const params = new URLSearchParams();
+    for (const key in obj) {
+        const value = obj[key];
+
+        if (Array.isArray(value)) value.forEach((v) => params.append(`${key}[]`, encodeURIComponent(v)));
+        else if (typeof value === 'object' && value !== null) {
+            for (const nestedKey in value) {
+                params.append(`${key}[${nestedKey}]`, encodeURIComponent(value[nestedKey]));
+            }
+        } else params.append(key, encodeURIComponent(value));
+    }
+
+    return params.toString();
+}
+
+export const getFaviconUrl = () => {
+    const links = document.querySelectorAll("link[rel~='icon']") as NodeListOf<HTMLLinkElement>;
+    if (links?.length > 0) return links[0].href;
+    return `${window.location.origin}/favicon.ico`;
+};
+
+export const getFaviconUri = async () => {
+    const links = document.querySelectorAll("link[rel~='icon']") as NodeListOf<HTMLLinkElement>;
+    const faviconUrl = links?.length > 0 ? links[0].href : `${window.location.origin}/favicon.ico`;
+
+    try {
+        // Fetch the favicon as a Blob
+        const response = await fetch(faviconUrl);
+        const blob = await response.blob();
+
+        // Convert the Blob to a data URI
+        return await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    } catch (error) {
+        console.error("Error fetching favicon:", error);
+        return null;
+    }
+};
+
+export const openWindow = (target: string, size: { width?: number; height?: number }) => {
     if (typeof window === 'undefined') return;
-    const width = 360;
-    const height = 720;
-    const currentWindowWidth = window.innerWidth;
-    const currentWindowHeight = window.innerHeight;
-    const currentWindowLeft = window.screenX;
-    const currentWindowTop = window.screenY;
+    const width = size?.width || 360;
+    const height = size?.height || 640;
+    const origin = {
+        width: window.innerWidth,
+        height: window.innerHeight,
+        left: window.screenX,
+        top: window.screenY,
+    }
 
-    const left = currentWindowLeft + (currentWindowWidth - width) / 2;
-    const top = currentWindowTop + (currentWindowHeight - height) / 2;
+    const left = origin.left + (origin.width - width) / 2;
+    const top = origin.top + (origin.height - height) / 2;
 
-    // Generate a unique popup ID
     const popupId = `popup_${Date.now()}`;
-
-    // Parse the target URL and add the popupId as a query parameter
     const url = new URL(target, window.location.origin);
-    url.searchParams.append("popupId", popupId);
-
+    // url.searchParams.append("popupId", popupId);
     const newWindow: any = window.open(
         url.toString(),
         "_blank",
         `left=${left},top=${top},width=${width},height=${height},toolbar=no,location=no,menubar=no,status=no,resizable=no,scrollbars=no`,
     );
 
-    if (newWindow) {
-        // Send message to new window after it loads
-        newWindow.addEventListener("load", () => {
-            newWindow.coinmeca = {
-                isPopup: true,
-                popupId,
-            }
-        });
-    }
+    if (newWindow) newWindow.addEventListener("load", () => {
+        newWindow.coinmeca = {
+            isPopup: true,
+            popupId,
+        }
+    });
 };
 
 export function parseChainId(chain: number | string | Chain): number {

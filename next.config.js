@@ -34,6 +34,10 @@ const nextConfig = {
                 protocol: "https",
                 hostname: "web3.coinmeca.net",
             },
+            {
+                protocol: "https",
+                hostname: "*",
+            },
         ],
     },
     experimental: {
