@@ -26,8 +26,6 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const [check, setCheck] = useState<any>();
     const [target, setTarget] = useState<string>();
 
-    // const [isLoad, setIsLoad] = useState<boolean>(false);
-
     useLayoutEffect(() => {
         if (storage && session) {
             const check = {
@@ -38,29 +36,19 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             if (typeof check.init !== "undefined" && typeof check.access !== "undefined") {
                 let target;
 
-                const fullPath = window.location.pathname; // Current path
-                const queryString = window.location.search; // Current query string
+                const fullPath = window.location.pathname;
+                const queryString = window.location.search;
 
-                // If the user is not initialized, direct to welcome page
                 if (!check.init) {
                     if (!path?.startsWith("/welcome")) target = "/welcome";
                 } else {
                     setIsInit(true);
-                    // If access is not granted, check for redirection to lock page
                     if (!check.access) {
-                        if (!path.startsWith("/lock") && path !== "/lock?" && path !== "/lock?target=") {
-                            // Construct the target URL
-                            target = `/lock?target=${encodeURIComponent(fullPath + queryString)}`;
-                        }
-                    } else {
-                        setIsAccess(true);
-                    }
+                        if (!path.startsWith("/lock") && path !== "/lock?" && path !== "/lock?target=") target = `/lock?target=${encodeURIComponent(fullPath + queryString)}`;
+                    } else setIsAccess(true);
                 }
 
-                if (target) {
-                    console.log({ target }); // Log target before setting
-                    setTarget(target);
-                }
+                if (target) setTarget(target);
                 setCheck(check);
             }
         }

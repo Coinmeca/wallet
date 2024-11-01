@@ -293,14 +293,9 @@ export default function Data() {
                                 <Elements.Icon icon={"x"} scale={0.666} />
                             ) : (
                                 <Elements.Avatar
-                                    // color={colorMap}
                                     scale={0.666}
                                     size={2.5}
-                                    display={6}
-                                    ellipsis={" ... "}
                                     img={`https://web3.coinmeca.net/${chain?.id}/logo.svg`}
-                                    // character={`${account?.index + 1}`}
-                                    // name={account?.address}
                                 />
                             )}
                         </Controls.Tab>
@@ -353,7 +348,7 @@ export default function Data() {
                         <Layouts.Col style={{ padding: "4em", paddingTop: "0" }} fit>
                             <Controls.Button
                                 type={"line"}
-                                icon={"plus"}
+                                iconLeft={"plus-small-bold"}
                                 onClick={() => {
                                     // router.push("/create");
                                 }}>

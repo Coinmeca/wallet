@@ -7,6 +7,7 @@ import { AccountProvider, StorageProvider, TelegramProvider, WalletProvider } fr
 import { dehydrate, HydrationBoundary, QueryClientProvider } from "@tanstack/react-query";
 import { getQueryClient } from "api";
 import { GuardProvider } from "contexts/guard";
+import { PopupProvider } from "contexts/popup";
 
 export default function Providers({ children }: { children: any }) {
     const client = getQueryClient();
@@ -16,21 +17,23 @@ export default function Providers({ children }: { children: any }) {
             <WindowSize>
                 <TelegramProvider>
                     <StorageProvider>
-                        <WalletProvider>
-                            <AccountProvider>
-                                <Theme>
-                                    <QueryClientProvider {...{ client }}>
-                                        <HydrationBoundary state={dehydrate(client)}>
-                                            <GuardProvider>
-                                                <Notification>
-                                                    <Style.Initialize>{children}</Style.Initialize>
-                                                </Notification>
-                                            </GuardProvider>
-                                        </HydrationBoundary>
-                                    </QueryClientProvider>
-                                </Theme>
-                            </AccountProvider>
-                        </WalletProvider>
+                        <PopupProvider>
+                            <WalletProvider>
+                                <AccountProvider>
+                                    <Theme>
+                                        <QueryClientProvider {...{ client }}>
+                                            <HydrationBoundary state={dehydrate(client)}>
+                                                <GuardProvider>
+                                                    <Notification>
+                                                        <Style.Initialize>{children}</Style.Initialize>
+                                                    </Notification>
+                                                </GuardProvider>
+                                            </HydrationBoundary>
+                                        </QueryClientProvider>
+                                    </Theme>
+                                </AccountProvider>
+                            </WalletProvider>
+                        </PopupProvider>
                     </StorageProvider>
                 </TelegramProvider>
             </WindowSize>

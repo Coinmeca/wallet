@@ -9,7 +9,7 @@ import { Chain } from "wallet/provider";
 import { parseChainId } from "utils";
 
 /*
-http://localhost:3000/wallet_addEthereumChain?chainId=421614&base=evm&chainName=Arbitrum+Sepolia&logo=https%3A%2F%2Fcoinmeca-web3.vercel.app%2F42161%2Flogo.svg&rpcUrls%5B%5D=https%3A%2F%2Fsepolia-rollup.arbitrum.io%2Frpc&rpc%5B%5D=https%3A%2F%2Farbitrum-sepolia.blockpi.network%2Fv1%2Frpc%2Fpublic&rpc%5B%5D=https%3A%2F%2Fendpoints.omniatech.io%2Fv1%2Farbitrum%2Fsepolia%2Fpublic&blockExplorerUrls%5B%5D=https%3A%2F%2Fsepolia.arbiscan.io%2F&nativeCurrency%5Bname%5D=Ethereum&nativeCurrency%5Bsymbol%5D=ETH&nativeCurrency%5Bdecimals%5D=18
+http://localhost:3000/request/wallet_addEthereumChain?chainId=421614&base=evm&chainName=Arbitrum+Sepolia&logo=https%3A%2F%2Fcoinmeca-web3.vercel.app%2F42161%2Flogo.svg&rpcUrls%5B%5D=https%3A%2F%2Fsepolia-rollup.arbitrum.io%2Frpc&rpc%5B%5D=https%3A%2F%2Farbitrum-sepolia.blockpi.network%2Fv1%2Frpc%2Fpublic&rpc%5B%5D=https%3A%2F%2Fendpoints.omniatech.io%2Fv1%2Farbitrum%2Fsepolia%2Fpublic&blockExplorerUrls%5B%5D=https%3A%2F%2Fsepolia.arbiscan.io%2F&nativeCurrency%5Bname%5D=Ethereum&nativeCurrency%5Bsymbol%5D=ETH&nativeCurrency%5Bdecimals%5D=18
 */
 
 export default function wallet_addEthereumChain({ params }: { params: any }) {
@@ -20,6 +20,7 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
     const { chain, setChain } = useAccount();
 
     const [newChain, setNewChain] = useState<Chain>();
+    const [isPopup, setIsPopup] = useState(false);
     const [level, setLevel] = useState(0);
 
     useLayoutEffect(() => {
@@ -48,7 +49,31 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
         ) setNewChain(c as Chain);
     }, [])
 
-    const handleClose = () => router.push('/');
+    useLayoutEffect(() => {
+        // Listen for messages from the parent window
+        const handleMessage = (event:any) => {
+            if (event.origin === window.location.origin && event.data.isPopup) {
+                setIsPopup(event.data.isPopup);
+            }
+        };
+
+        window.addEventListener("message", handleMessage);
+
+        return () => {
+            window.removeEventListener("message", handleMessage);
+        };
+    }, []);
+
+
+
+    console.log('request',{isPopup})
+
+    const handleClose = () => {
+        if(isPopup) window.close;
+        else router.push('/');
+    }
+
+    console.log({ isPopup });
 
     const handleAddChain = () => {
         if (!newChain) return;
@@ -57,9 +82,7 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
         const chains = storage?.get(`${key}:chains`) || [];
 
         if (chains) {
-            if (chains?.find((c: any) => {
-                return (c?.id === newChain?.chainId)
-            }))
+            if (chains?.find((c: any) => c?.id === newChain?.chainId))
                 chains.map((c: Chain) => (c?.chainId === newChain?.chainId ? newChain : c));
             else storage?.set(`${key}:chains`, [ ...chains, {
                 id: newChain.chainId,
@@ -223,7 +246,7 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
                                             <div
                                                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', maxWidth: "max-content", maxHeight: "max-content", padding: "1em", borderRadius: "100%", background: "rgba(var(--white),.15)" }}
                                                 >
-                                                <Image src={require('../../assets/animation/success.gif')} width={0} height={0} alt={newChain.chainName || ''} style={{width:"12em", height:"12em"}} />
+                                                <Image src={require('../../../assets/animation/success.gif')} width={0} height={0} alt={newChain.chainName || ''} style={{width:"12em", height:"12em"}} />
                                             </div>
                                             <Layouts.Col gap={0} align={'center'}> 
                                                 <Elements.Text type={"h6"} height={0}>
