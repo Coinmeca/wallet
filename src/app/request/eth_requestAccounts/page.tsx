@@ -26,7 +26,7 @@ export default function eth_requestAccounts({ params }: { params: any }) {
     const [level, setLevel] = useState(0);
 
     const handleClose = () => {
-        if (level === 0) window.opener.postMessage({
+        if (level === 0) window?.opener?.postMessage({
             method,
             error: "User rejected the request",
         }, "*");
@@ -38,52 +38,27 @@ export default function eth_requestAccounts({ params }: { params: any }) {
 
     const handleConnect = () => {
         const key = session?.get("key");
-        let apps = storage?.get(`${key}:apps`)
-        let address: string[] = [];
+        const apps = storage?.get(`${key}:apps`) || [];
+        const existingApp = apps.find((a: App) => a.url?.toLowerCase() === app?.url?.toLowerCase());
 
-        if (apps) {
-            const selectedApp = apps?.find((a: App) => a?.url?.toLowerCase() === app?.url?.toLowerCase());
-            if (selectedApp) {
-                if (Array.isArray(selectedApp?.address)) {
-                    const exist = selectedApp?.address?.find((address: string) => address?.toLowerCase() === account?.address?.toLowerCase())
-                    if (!exist) {
-                        address = [...selectedApp?.address, account?.address];
-                        storage?.set(`${key}`, apps?.map((a: App) => a?.url?.toLowerCase() === selectedApp?.url?.toLowerCase() ? {
-                            ...selectedApp,
-                            address,
-                        } : a));
-                    } else {
-                        address = selectedApp?.address
-                    }
-                } else {
-                    if (account?.address) address = [account?.address];
-                    storage?.set(`${key}`, apps?.map((a: App) => a?.url?.toLowerCase() === selectedApp?.url?.toLowerCase() ? {
-                        ...selectedApp,
-                        address,
-                    } : a));
-                }
-            } else {
-                if (account?.address) address = [account?.address];
-                storage?.set(`${key}:apps`, [...apps, {
-                    ...app,
-                    address,
-                }]);
-            }
-        } else {
-            if (account?.address) address = [account?.address];
-            storage?.set(`${key}:apps`, [{
-                ...app,
-                address,
-            }]);
+        const addressList = existingApp ? existingApp.address || [] : [];
+        if (!addressList.includes(account?.address)) {
+            addressList.push(account?.address);
         }
 
-        window.opener.postMessage({
-            method,
-            result: address,
-        }, "*");
-        setLevel(1);
-    }
+        const updatedApps = existingApp
+            ? apps.map((a: App) => a.url?.toLowerCase() === existingApp.url?.toLowerCase() ? { ...a, address: addressList } : a)
+            : [...apps, { ...app, address: addressList }];
 
+        storage?.set(`${key}:apps`, updatedApps);
+
+        window?.opener?.postMessage({
+            method,
+            result: addressList,
+        }, "*");
+
+        setLevel(1);
+    };
 
     useLayoutEffect(() => {
         const url = searchParams.get("appUrl");

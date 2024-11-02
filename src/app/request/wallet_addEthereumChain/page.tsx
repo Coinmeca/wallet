@@ -58,7 +58,7 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
     }, []);
 
     const handleClose = () => {
-        if (level < 2) window.opener.postMessage({
+        if (level < 2) window?.opener?.postMessage({
             method,
             ...(level === 0 ? { error: "User rejected the request" } : {})
 
@@ -91,7 +91,7 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
             setLevel(1);
         } else {
             // error
-            window.opener.postMessage({
+            window?.opener?.postMessage({
                 method,
                 error: "Invalid chain information",
             }, "*");
@@ -107,7 +107,7 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
                     : parseInt(newChain?.chainId)
                 : newChain?.chainId,
         );
-        window.opener.postMessage({
+        window?.opener?.postMessage({
             method,
             result: newChain,
         }, "*");
