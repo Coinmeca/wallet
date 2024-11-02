@@ -1,12 +1,12 @@
 ﻿"use client";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useAccount, useStorage, useWallet } from "hooks";
-import { wallet } from "wallet";
-import { Stage } from "..";
+import MECA from "assets/graphics/meca.png";
+import { useAccount, useStorage } from "hooks";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import Image from "next/image";
-import MECA from "assets/graphics/meca.png";
+import { wallet } from "wallet";
+import { Stage } from "..";
 
 export default function Create({ setStage }: Stage) {
     const router = useRouter();

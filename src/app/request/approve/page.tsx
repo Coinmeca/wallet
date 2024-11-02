@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useAccount, usePopupChecker, useStorage, useTelegram } from "hooks";
@@ -8,11 +8,11 @@ import { useLayoutEffect, useState } from "react";
 import { App } from "types";
 
 /*
-http://localhost:3000/request/eth_requestAccounts?appName=MetaMask&appUrl=www.npmjs.com&appLogo=https://static-production.npmjs.com/b0f1a8318363185cc2ea6a40ac23eeb2.png
-http://localhost:3000/request/eth_requestAccounts
+http://localhost:3000/request/approve?appName=MetaMask&appUrl=www.npmjs.com&appLogo=https://static-production.npmjs.com/b0f1a8318363185cc2ea6a40ac23eeb2.png
+http://localhost:3000/request/approve
 */
 
-export default function eth_requestAccounts({ params }: { params: any }) {
+export default function Approve({ params }: { params: any }) {
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -44,27 +44,7 @@ export default function eth_requestAccounts({ params }: { params: any }) {
     };
 
     const handleConnect = () => {
-        const key = session?.get("key");
-        let apps = storage?.get(`${key}:apps`)
 
-        if (apps) {
-            const selectedApp = apps?.find((a: App) => a?.url?.toLowerCase() === app?.url?.toLowerCase());
-            if (selectedApp) {
-                if (Array.isArray(selectedApp?.address)) {
-                    const exist = selectedApp?.address?.find((address: string) => address?.toLowerCase() === account?.address?.toLowerCase())
-                    if (!exist) storage?.set(`${key}`, apps?.map((a: App) => a?.url?.toLowerCase() === selectedApp?.url?.toLowerCase() ? {
-                        ...selectedApp,
-                        address: [...selectedApp?.address, account?.address],
-                    } : a));
-                } else storage?.set(`${key}`, apps?.map((a: App) => a?.url?.toLowerCase() === selectedApp?.url?.toLowerCase() ? {
-                    ...selectedApp,
-                    address: [account?.address],
-                } : a));
-            }
-        } else storage?.set(`${key}:apps`, [{
-            ...app,
-            address: [account?.address]
-        }]);
 
         setLevel(1);
     }

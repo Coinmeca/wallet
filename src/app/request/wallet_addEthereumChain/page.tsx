@@ -1,15 +1,16 @@
 ﻿"use client";
 
+import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
+import { useAccount, usePopupChecker, useStorage, useTelegram } from "hooks";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
-import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useAccount, usePopupChecker, useStorage, useTelegram } from "hooks";
-import { Chain } from "wallet/provider";
 import { parseChainId } from "utils";
+import { Chain } from "wallet/provider";
 
 /*
 http://localhost:3000/request/wallet_addEthereumChain?chainId=421614&base=evm&chainName=Arbitrum+Sepolia&logo=https%3A%2F%2Fcoinmeca-web3.vercel.app%2F42161%2Flogo.svg&rpcUrls%5B%5D=https%3A%2F%2Fsepolia-rollup.arbitrum.io%2Frpc&rpc%5B%5D=https%3A%2F%2Farbitrum-sepolia.blockpi.network%2Fv1%2Frpc%2Fpublic&rpc%5B%5D=https%3A%2F%2Fendpoints.omniatech.io%2Fv1%2Farbitrum%2Fsepolia%2Fpublic&blockExplorerUrls%5B%5D=https%3A%2F%2Fsepolia.arbiscan.io%2F&nativeCurrency%5Bname%5D=Ethereum&nativeCurrency%5Bsymbol%5D=ETH&nativeCurrency%5Bdecimals%5D=18
+http://localhost:3000/request/wallet_addEthereumChain?
 */
 
 export default function wallet_addEthereumChain({ params }: { params: any }) {
@@ -357,6 +358,50 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
             ]}
         />
     ) : (
-        <>Chain information is something wrong.</>
+
+        <Layouts.Contents.InnerContent scroll={false}>
+            <Layouts.Col align={"center"} style={{ padding: "4em" }} fill>
+                <Layouts.Col gap={4} align={"center"} style={{ flex: 1 }} fill>
+                    <Layouts.Col gap={4} align={"center"} fill>
+                        <Layouts.Col gap={8} align={"center"} fit>
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    maxWidth: "max-content",
+                                    maxHeight: "max-content",
+                                    padding: "2em",
+                                    borderRadius: "100%",
+                                    background: "rgba(var(--white),.15)",
+                                }}>
+                                <Image
+                                    width={0}
+                                    height={0}
+                                    src={require("../../../assets/animation/failure.gif")}
+                                    alt={"Unknown"}
+                                    style={{ width: "8em", height: "8em" }}
+                                />
+                            </div>
+                        </Layouts.Col>
+                    </Layouts.Col>
+                </Layouts.Col>
+                <Layouts.Col gap={0} align={"center"} style={{ flex: 1 }} fill>
+                    <Layouts.Col align={"center"} style={{ flex: 1 }} fill>
+                        <Layouts.Col gap={4} align={"center"} fit>
+                            <Elements.Text type={"h3"}>Invalid Request</Elements.Text>
+                            <Elements.Text weight={"bold"} opacity={0.6}>
+                                The given chain information is something wrong. Couldn't found the information of requested chain.
+                            </Elements.Text>
+                        </Layouts.Col>
+                    </Layouts.Col>
+                    <Layouts.Row gap={2}>
+                        <Controls.Button type={"glass"} onClick={handleClose}>
+                            Cancel
+                        </Controls.Button>
+                    </Layouts.Row>
+                </Layouts.Col>
+            </Layouts.Col>
+        </Layouts.Contents.InnerContent>
     );
 }
