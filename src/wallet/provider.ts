@@ -304,8 +304,9 @@ export class CoinmecaWalletProvider {
     }
 
     private confirm(method: string, params: string) {
-        if (window.location.hostname?.includes("wallet.coinmeca.net")) window.location.href = `${window.location.hostname}/request/${method}?${params}`
-        else return openWindow(`/request/${method}?${params}`);
+        console.log(window.location.hostname?.includes("wallet.coinmeca.net"))
+        if (window.location.hostname?.includes("wallet.coinmeca.net")) window.location.href = `${window.location.origin}/request/${method}?${params}`;
+        else return openWindow(`https://wallet.coinmeca.net/request/${method}?${params}`);
     }
 
     private hashDomain(domain: EIP712Domain) {
