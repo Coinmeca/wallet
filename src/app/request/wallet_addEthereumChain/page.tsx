@@ -62,6 +62,9 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
             method,
             error: "User rejected the request",
         }, "*");
+        else if (level === 1) window.opener.postMessage({
+            method,
+        }, "*");
         if (isPopup) window?.close();
         else router.push("/");
     };

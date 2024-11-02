@@ -273,7 +273,8 @@ export class CoinmecaWalletProvider {
                 if (!params || params.length === 0) throw new Error("No chain parameters provided");
                 return await promise(method, this.confirm(method, objectToUrlParams(Array.isArray(params) ? params[0] : params))
                 ).then(async (result: any) => {
-                    await this.addEthereumChain(result);
+                    if (result) this.switchEthereumChain(result);
+                    else await this.addEthereumChain(result);
                     return result;
                 })
             case "wallet_switchEthereumChain":
