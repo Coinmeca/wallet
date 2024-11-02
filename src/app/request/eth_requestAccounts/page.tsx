@@ -30,8 +30,10 @@ export default function eth_requestAccounts({ params }: { params: any }) {
             method,
             error: "User rejected the request",
         }, "*");
-        if (isPopup) window?.close();
-        else router.push("/");
+        if (isPopup) {
+            if (telegram) telegram?.close();
+            window?.close()
+        } else router.push("/");
     };
 
     const handleConnect = () => {
