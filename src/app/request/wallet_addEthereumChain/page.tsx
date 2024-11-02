@@ -1,18 +1,20 @@
 ﻿"use client";
 
+import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
+import { useAccount, usePopupChecker, useStorage, useTelegram } from "hooks";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
-import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useAccount, usePopupChecker, useStorage, useTelegram } from "hooks";
-import { Chain } from "wallet/provider";
 import { parseChainId } from "utils";
+import { Chain } from "wallet/provider";
 
 /*
 http://localhost:3000/request/wallet_addEthereumChain?chainId=421614&base=evm&chainName=Arbitrum+Sepolia&logo=https%3A%2F%2Fcoinmeca-web3.vercel.app%2F42161%2Flogo.svg&rpcUrls%5B%5D=https%3A%2F%2Fsepolia-rollup.arbitrum.io%2Frpc&rpc%5B%5D=https%3A%2F%2Farbitrum-sepolia.blockpi.network%2Fv1%2Frpc%2Fpublic&rpc%5B%5D=https%3A%2F%2Fendpoints.omniatech.io%2Fv1%2Farbitrum%2Fsepolia%2Fpublic&blockExplorerUrls%5B%5D=https%3A%2F%2Fsepolia.arbiscan.io%2F&nativeCurrency%5Bname%5D=Ethereum&nativeCurrency%5Bsymbol%5D=ETH&nativeCurrency%5Bdecimals%5D=18
+http://localhost:3000/request/wallet_addEthereumChain?
 */
 
 export default function wallet_addEthereumChain({ params }: { params: any }) {
+    const method = "wallet_addEthereumChain"
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -21,6 +23,7 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
     const { storage, session } = useStorage();
     const { chain, setChain } = useAccount();
 
+    const [selectedChain, setSelectedChain] = useState<any>();
     const [newChain, setNewChain] = useState<Chain>();
     const [level, setLevel] = useState(0);
 
@@ -29,22 +32,37 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
         const c = {
             chainId: searchParams.get("chainId") || searchParams.get("id"),
             chainName: searchParams.get("chainName") || searchParams.get("name"),
-            rpcUrls: searchParams.getAll("rpcUrls[]") || searchParams.getAll("rpc[]"),
-            blockExplorerUrls: searchParams.getAll("blockExplorerUrls[]") || searchParams.getAll("explorer[]"),
+            rpcUrls: (searchParams.getAll("rpc[]") || [])?.map(url => decodeURIComponent(url)),
+            blockExplorerUrls: (searchParams.getAll("blockExplorerUrls[]") || searchParams.getAll("explorer[]") || [])?.map(url => decodeURIComponent(url)),
             nativeCurrency: {
                 name: searchParams.get("nativeCurrency[name]"),
                 symbol: searchParams.get("nativeCurrency[symbol]"),
                 decimals: decimals && decimals !== "" ? parseInt(decimals) : null,
             },
         };
+        console.log(c, searchParams, searchParams.getAll("rpcUrls[]") || searchParams.getAll("rpc[]"), (searchParams.getAll("rpcUrls[]") || searchParams.getAll("rpc[]") || [])?.map(url => decodeURIComponent(url)));
         const { chainId, chainName, rpcUrls, nativeCurrency } = c;
-        if (chainId && chainName && nativeCurrency && nativeCurrency.name && nativeCurrency.symbol && nativeCurrency.decimals && rpcUrls && rpcUrls.length > 0)
+        if (
+            chainId &&
+            chainName &&
+            nativeCurrency &&
+            nativeCurrency.name &&
+            nativeCurrency.symbol &&
+            nativeCurrency.decimals &&
+            rpcUrls &&
+            rpcUrls.length > 0
+        ) {
+            setSelectedChain(chain);
             setNewChain(c as Chain);
+        }
     }, []);
 
     const handleClose = () => {
-        if (isPopup) window.close();
-        else if (telegram) telegram?.close();
+        if (level === 0) window.opener.postMessage({
+            method,
+            error: "User rejected the request",
+        }, "*");
+        if (isPopup) window?.close();
         else router.push("/");
     };
 
@@ -70,13 +88,15 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
             setLevel(1);
         } else {
             // error
+            window.opener.postMessage({
+                method,
+                error: "Invalid chain information",
+            }, "*");
         }
     };
 
     const handleSwitchChain = () => {
         if (!newChain) return;
-        // handleClose();
-        setLevel(2);
         setChain(
             typeof newChain?.chainId === "string"
                 ? newChain?.chainId?.startsWith("0x")
@@ -84,9 +104,12 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
                     : parseInt(newChain?.chainId)
                 : newChain?.chainId,
         );
+        window.opener.postMessage({
+            method,
+            result: newChain,
+        }, "*");
+        setLevel(2);
     };
-
-    useLayoutEffect(() => {}, []);
 
     return newChain ? (
         <Layouts.Contents.SlideContainer
@@ -111,9 +134,9 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
                                                     background: "rgba(var(--white),.15)",
                                                 }}>
                                                 <Image
-                                                    src={`https://web3.coinmeca.net/${newChain.chainId}/logo.svg`}
                                                     width={0}
                                                     height={0}
+                                                    src={`https://web3.coinmeca.net/${newChain.chainId}/logo.svg`}
                                                     alt={newChain.chainName || ""}
                                                     style={{ width: "8em", height: "8em" }}
                                                 />
@@ -207,19 +230,19 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
                                                     background: "rgba(var(--white),.15)",
                                                 }}>
                                                 <Image
-                                                    src={`https://web3.coinmeca.net/${chain?.id}/logo.svg`}
+                                                    src={`https://web3.coinmeca.net/${selectedChain?.id}/logo.svg`}
                                                     width={0}
                                                     height={0}
-                                                    alt={newChain.chainName || ""}
+                                                    alt={selectedChain.chainName || ""}
                                                     style={{ width: "4em", height: "4em" }}
                                                 />
                                             </div>
                                             <Layouts.Col gap={0} align={"center"} fill>
                                                 <Elements.Text type={"h6"} height={0} align={"left"}>
-                                                    {chain?.name}
+                                                    {selectedChain?.name}
                                                 </Elements.Text>
                                                 <Elements.Text type={"strong"} height={0} align={"left"} opacity={0.6}>
-                                                    {chain?.id}
+                                                    {selectedChain?.id}
                                                 </Elements.Text>
                                             </Layouts.Col>
                                         </Layouts.Row>
@@ -328,7 +351,7 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
                                             <Elements.Text type={"h2"}>Complete</Elements.Text>
                                             <Elements.Text size={1} weight={"bold"}>
                                                 <Elements.Text opacity={0.6}>Selected chain was switched from</Elements.Text>{" "}
-                                                <Elements.Text>{chain?.name}</Elements.Text> <Elements.Text opacity={0.6}>to</Elements.Text>{" "}
+                                                <Elements.Text>{selectedChain?.name}</Elements.Text> <Elements.Text opacity={0.6}>to</Elements.Text>{" "}
                                                 <Elements.Text>{` ${newChain?.chainName}`}</Elements.Text>
                                                 <Elements.Text opacity={0.6}>.</Elements.Text>
                                             </Elements.Text>
@@ -347,6 +370,50 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
             ]}
         />
     ) : (
-        <>Chain information is something wrong.</>
+
+        <Layouts.Contents.InnerContent scroll={false}>
+            <Layouts.Col align={"center"} style={{ padding: "4em" }} fill>
+                <Layouts.Col gap={4} align={"center"} style={{ flex: 1 }} fill>
+                    <Layouts.Col gap={4} align={"center"} fill>
+                        <Layouts.Col gap={8} align={"center"} fit>
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    maxWidth: "max-content",
+                                    maxHeight: "max-content",
+                                    padding: "2em",
+                                    borderRadius: "100%",
+                                    background: "rgba(var(--white),.15)",
+                                }}>
+                                <Image
+                                    width={0}
+                                    height={0}
+                                    src={require("../../../assets/animation/failure.gif")}
+                                    alt={"Unknown"}
+                                    style={{ width: "8em", height: "8em" }}
+                                />
+                            </div>
+                        </Layouts.Col>
+                    </Layouts.Col>
+                </Layouts.Col>
+                <Layouts.Col gap={0} align={"center"} style={{ flex: 1 }} fill>
+                    <Layouts.Col align={"center"} style={{ flex: 1 }} fill>
+                        <Layouts.Col gap={4} align={"center"} fit>
+                            <Elements.Text type={"h3"}>Invalid Request</Elements.Text>
+                            <Elements.Text weight={"bold"} opacity={0.6}>
+                                The given chain information is something wrong. Couldn't found the information of requested chain.
+                            </Elements.Text>
+                        </Layouts.Col>
+                    </Layouts.Col>
+                    <Layouts.Row gap={2}>
+                        <Controls.Button type={"glass"} onClick={handleClose}>
+                            Cancel
+                        </Controls.Button>
+                    </Layouts.Row>
+                </Layouts.Col>
+            </Layouts.Col>
+        </Layouts.Contents.InnerContent>
     );
 }

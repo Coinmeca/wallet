@@ -58,6 +58,22 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (target) router.push(target);
     }, [target]);
 
+    useLayoutEffect(() => {
+        if (!path?.startsWith("/lock")) {
+            if (typeof window !== "undefined" && (window as any)?.coinmeca?.isPopup) {
+                const handleUnload = () => {
+                    window?.opener?.postMessage({
+                        close: true,
+                        error: "User rejected the request",
+                    }, "*");
+                };
+
+                window.addEventListener("beforeunload", handleUnload);
+                return () => window.removeEventListener("beforeunload", handleUnload);
+            }
+        }
+    }, [path]);
+
     const isLoad = useMemo(() => {
         if (typeof check?.init !== "boolean" && typeof check?.access !== "boolean") return false;
         if (check.init && check.access) return true;

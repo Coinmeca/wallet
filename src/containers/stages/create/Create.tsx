@@ -1,12 +1,12 @@
 ﻿"use client";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useAccount, useStorage, useWallet } from "hooks";
-import { wallet } from "wallet";
-import { Stage } from "..";
+import MECA from "assets/graphics/meca.png";
+import { useAccount, useStorage } from "hooks";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import Image from "next/image";
-import MECA from "assets/graphics/meca.png";
+import { wallet } from "wallet";
+import { Stage } from "..";
 
 export default function Create({ setStage }: Stage) {
     const router = useRouter();
@@ -63,26 +63,28 @@ export default function Create({ setStage }: Stage) {
                                 filter={"black"}
                             />
                             <Layouts.Col align={"center"} style={{ padding: "4em" }} fill>
-                                <Layouts.Col gap={4} align={"center"} fit>
-                                    <Image src={MECA} width="256" height="256" alt="" />
-                                </Layouts.Col>
-                            </Layouts.Col>
-                            <Layouts.Col gap={0} align={"center"} style={{ padding: "4em" }} fill>
-                                <Layouts.Col align={"center"} style={{ padding: "4em" }} fill>
+                                <Layouts.Col align={"center"} fill>
                                     <Layouts.Col gap={4} align={"center"} fit>
-                                        <Elements.Text type={"h2"}> Setup </Elements.Text>
-                                        <Elements.Text weight={"bold"} opacity={0.6}>
-                                            Please create a new wallet or import an exist your other wallet via private key.
-                                        </Elements.Text>
+                                        <Image src={MECA} width="256" height="256" alt="" />
                                     </Layouts.Col>
                                 </Layouts.Col>
-                                <Layouts.Col gap={4} align={"center"} style={{ margin: 0 }}>
-                                    <Controls.Button type={"line"} onClick={() => handleCreateWallet()}>
-                                        Create a new wallet
-                                    </Controls.Button>
-                                    <Controls.Button type={"line"} onClick={() => setStage({ name: "import", level: 0 })}>
-                                        Import an exist wallet
-                                    </Controls.Button>
+                                <Layouts.Col gap={0} align={"center"} fill>
+                                    <Layouts.Col align={"center"} style={{ padding: "4em" }} fill>
+                                        <Layouts.Col gap={4} align={"center"} fit>
+                                            <Elements.Text type={"h2"}> Setup </Elements.Text>
+                                            <Elements.Text weight={"bold"} opacity={0.6}>
+                                                Please create a new wallet or import an exist your other wallet via private key.
+                                            </Elements.Text>
+                                        </Layouts.Col>
+                                    </Layouts.Col>
+                                    <Layouts.Col gap={4} align={"center"} style={{ margin: 0 }}>
+                                        <Controls.Button type={"line"} onClick={() => handleCreateWallet()}>
+                                            Create a new wallet
+                                        </Controls.Button>
+                                        <Controls.Button type={"line"} onClick={() => setStage({ name: "import", level: 0 })}>
+                                            Import an exist wallet
+                                        </Controls.Button>
+                                    </Layouts.Col>
                                 </Layouts.Col>
                             </Layouts.Col>
                         </Layouts.Contents.InnerContent>

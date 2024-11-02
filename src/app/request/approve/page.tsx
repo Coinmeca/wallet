@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useAccount, usePopupChecker, useStorage, useTelegram } from "hooks";
@@ -8,12 +8,11 @@ import { useLayoutEffect, useState } from "react";
 import { App } from "types";
 
 /*
-http://localhost:3000/request/eth_requestAccounts?appName=MetaMask&appUrl=www.npmjs.com&appLogo=https://static-production.npmjs.com/b0f1a8318363185cc2ea6a40ac23eeb2.png
-http://localhost:3000/request/eth_requestAccounts
+http://localhost:3000/request/approve?appName=MetaMask&appUrl=www.npmjs.com&appLogo=https://static-production.npmjs.com/b0f1a8318363185cc2ea6a40ac23eeb2.png
+http://localhost:3000/request/approve
 */
 
-export default function eth_requestAccounts({ params }: { params: any }) {
-    const method = "eth_requestAccounts"
+export default function Approve({ params }: { params: any }) {
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -25,68 +24,9 @@ export default function eth_requestAccounts({ params }: { params: any }) {
     const [app, setApp] = useState<App>();
     const [level, setLevel] = useState(0);
 
-    const handleClose = () => {
-        if (level === 0) window.opener.postMessage({
-            method,
-            error: "User rejected the request",
-        }, "*");
-        if (isPopup) window?.close();
-        else router.push("/");
-    };
-
-    const handleConnect = () => {
-        const key = session?.get("key");
-        let apps = storage?.get(`${key}:apps`)
-        let address: string[] = [];
-
-        if (apps) {
-            const selectedApp = apps?.find((a: App) => a?.url?.toLowerCase() === app?.url?.toLowerCase());
-            if (selectedApp) {
-                if (Array.isArray(selectedApp?.address)) {
-                    const exist = selectedApp?.address?.find((address: string) => address?.toLowerCase() === account?.address?.toLowerCase())
-                    if (!exist) {
-                        address = [...selectedApp?.address, account?.address];
-                        storage?.set(`${key}`, apps?.map((a: App) => a?.url?.toLowerCase() === selectedApp?.url?.toLowerCase() ? {
-                            ...selectedApp,
-                            address,
-                        } : a));
-                    } else {
-                        address = selectedApp?.address
-                    }
-                } else {
-                    if (account?.address) address = [account?.address];
-                    storage?.set(`${key}`, apps?.map((a: App) => a?.url?.toLowerCase() === selectedApp?.url?.toLowerCase() ? {
-                        ...selectedApp,
-                        address,
-                    } : a));
-                }
-            } else {
-                if (account?.address) address = [account?.address];
-                storage?.set(`${key}:apps`, [...apps, {
-                    ...app,
-                    address,
-                }]);
-            }
-        } else {
-            if (account?.address) address = [account?.address];
-            storage?.set(`${key}:apps`, [{
-                ...app,
-                address,
-            }]);
-        }
-
-        window.opener.postMessage({
-            method,
-            result: address,
-        }, "*");
-        setLevel(1);
-    }
-
-
     useLayoutEffect(() => {
-        const url = searchParams.get("appUrl");
-        const site = url && decodeURIComponent(url);
-        const origin = site && new URL(site.startsWith("http") ? site : `https://${site}`).host;
+        const url = searchParams.get("appUrl")
+        const origin = url && new URL(url.startsWith("http") ? url : `https://${url}`).host;
 
         const app = {
             name: searchParams.get("appName") || undefined,
@@ -96,6 +36,18 @@ export default function eth_requestAccounts({ params }: { params: any }) {
 
         if (app?.name && app?.name !== "" && app?.url && app?.url !== "") setApp(app);
     }, []);
+
+    const handleClose = () => {
+        if (telegram) telegram?.close();
+        else if (isPopup) window?.close();
+        else router.push("/");
+    };
+
+    const handleConnect = () => {
+
+
+        setLevel(1);
+    }
 
     return app ? (
         <Layouts.Contents.SlideContainer
