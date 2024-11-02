@@ -1,11 +1,10 @@
-﻿import Wallet from "ethereumjs-wallet";
+﻿import axios from "axios";
 import { Transaction } from "ethereumjs-tx";
-import { keccak256, ecsign, toBuffer, hashPersonalMessage, bufferToHex } from "ethereumjs-util";
-import axios from "axios";
+import { bufferToHex, ecsign, hashPersonalMessage, keccak256, toBuffer } from "ethereumjs-util";
+import Wallet from "ethereumjs-wallet";
 
 import EventEmitter from "eventemitter3";
-import { formatChainId, getFaviconUri, loadStorage, objectToUrlParams, openWindow, StorageController } from "utils";
-import { Account } from "types";
+import { formatChainId, getFaviconUri, objectToUrlParams, openWindow } from "utils";
 
 export type ChainBase = "evm" | "svm";
 export type ChainType = "mainnet" | "mainnet-beta" | "testnet" | "devnet";
@@ -133,13 +132,11 @@ export class CoinmecaWalletProvider {
                 return [this.address];
 
             case "eth_requestAccounts":
-                const appInfo = objectToUrlParams({
+                this.confirm(method, objectToUrlParams({
                     appName: (document.querySelector('meta[property="og:site_name"]') as HTMLMetaElement)?.content || document.title?.split(" ")[0],
                     appUrl: window.location.hostname,
                     appLogo: getFaviconUri(),
-                })
-                if (window.location.hostname?.includes("wallet.coinmeca.net")) openWindow(`/request/eth_requestAccounts?${appInfo}`);
-                else window.location.href = `${window.location.hostname}/request/eth_requestAccounts?${appInfo}`
+                }))
                 this.emit("connect", { chainId: this.chainId });
                 return [this.address];
 
@@ -205,9 +202,7 @@ export class CoinmecaWalletProvider {
 
             case "wallet_addEthereumChain":
                 if (!params || params.length === 0) throw new Error("No chain parameters provided");
-                const chainInfo = objectToUrlParams(params[0])
-                if (window.location.hostname?.includes("wallet.coinmeca.net")) openWindow(`/request/wallet_addEthereumChain?${chainInfo}`);
-                else window.location.href = `${window.location.hostname}/request/wallet_addEthereumChain?${chainInfo}`
+                this.confirm(method, objectToUrlParams(params[0]));
                 return await this.addEthereumChain(params[0]);
 
             case "wallet_watchAsset":
@@ -226,6 +221,11 @@ export class CoinmecaWalletProvider {
 
     get isTelegram() {
         return typeof window !== "undefined" && (window as any)?.telegram;
+    }
+
+    private confirm(method: string, params: string) {
+        if (window.location.hostname?.includes("wallet.coinmeca.net")) openWindow(`/request/${method}?${params}`);
+        else window.location.href = `${window.location.hostname}/request/${method}?${params}`
     }
 
     private hashDomain(domain: EIP712Domain) {
