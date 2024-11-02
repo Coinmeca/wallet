@@ -11,7 +11,7 @@ import { Stage } from "..";
 export default function Create({ setStage }: Stage) {
     const router = useRouter();
     const { storage, session } = useStorage();
-    const { setAccount, setChain } = useAccount();
+    const { setAccount } = useAccount();
     const [create, setCreate] = useState(false);
 
     const handleCreateWallet = () => {
