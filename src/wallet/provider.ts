@@ -4,7 +4,7 @@ import { keccak256, ecsign, toBuffer, hashPersonalMessage, bufferToHex } from "e
 import axios from "axios";
 
 import EventEmitter from "eventemitter3";
-import { formatChainId, loadStorage, StorageController } from "utils";
+import { formatChainId, getFaviconUri, loadStorage, objectToUrlParams, openWindow, StorageController } from "utils";
 import { Account } from "types";
 
 export type ChainBase = "evm" | "svm";
@@ -104,35 +104,12 @@ axiosQuiet.interceptors.response.use(
     },
 );
 
-const handleWindowPopup = (target: string) => {
-    const width = 360;
-    const height = 720;
-
-    // Get the current window's dimensions and position
-    const currentWindowWidth = window.innerWidth;
-    const currentWindowHeight = window.innerHeight;
-    const currentWindowLeft = window.screenX;
-    const currentWindowTop = window.screenY;
-
-    // Calculate center position based on the current window
-    const left = currentWindowLeft + (currentWindowWidth - width) / 2;
-    const top = currentWindowTop + (currentWindowHeight - height) / 2;
-
-    window.open(
-        // "https://wallet.coinmeca.net",
-        target,
-        "_blank",
-        `left=${left},top=${top},width=${width},height=${height},toolbar=no,location=no,menubar=no,status=no,resizable=no,scrollbars=no`,
-    );
-};
-
 export interface CoinmecaWalletProviderConfig {
     privateKey?: string;
     chain?: Chain;
 }
 
 export class CoinmecaWalletProvider {
-    private storage: StorageController;
     private wallet?: Wallet;
     private events: EventEmitter;
 
@@ -142,7 +119,6 @@ export class CoinmecaWalletProvider {
 
     constructor(config?: CoinmecaWalletProviderConfig) {
         this.events = new EventEmitter();
-        this.storage = loadStorage("coinmeca:wallet", this.isTelegram ? (window as any).Telegram?.WebApp?.CloudStorage : localStorage);
 
         // Check if the config object is provided before destructuring
         const { privateKey, chain } = config || {};
@@ -157,7 +133,13 @@ export class CoinmecaWalletProvider {
                 return [this.address];
 
             case "eth_requestAccounts":
-                handleWindowPopup("/connect");
+                const appInfo = objectToUrlParams({
+                    appName: (document.querySelector('meta[property="og:site_name"]') as HTMLMetaElement)?.content || document.title?.split(" ")[0],
+                    appUrl: window.location.hostname,
+                    appLogo: getFaviconUri(),
+                })
+                if (window.location.hostname?.includes("wallet.coinmeca.net")) openWindow(`/request/eth_requestAccounts?${appInfo}`);
+                else window.location.href = `${window.location.hostname}/request/eth_requestAccounts?${appInfo}`
                 this.emit("connect", { chainId: this.chainId });
                 return [this.address];
 
@@ -223,6 +205,9 @@ export class CoinmecaWalletProvider {
 
             case "wallet_addEthereumChain":
                 if (!params || params.length === 0) throw new Error("No chain parameters provided");
+                const chainInfo = objectToUrlParams(params[0])
+                if (window.location.hostname?.includes("wallet.coinmeca.net")) openWindow(`/request/wallet_addEthereumChain?${chainInfo}`);
+                else window.location.href = `${window.location.hostname}/request/wallet_addEthereumChain?${chainInfo}`
                 return await this.addEthereumChain(params[0]);
 
             case "wallet_watchAsset":
@@ -462,10 +447,6 @@ export class CoinmecaWalletProvider {
     changeAccount(privateKey: string): void {
         this.wallet = Wallet.fromPrivateKey(Buffer.from(privateKey.substring(0, 64), "hex"));
         this.address = this.wallet.getAddressString();
-
-        const info: Account = this.storage.get(this.address);
-        // this.storage.set("last:wallet", info.index);
-
         this.emit("accountsChanged", [this.address]);
     }
 
@@ -473,7 +454,6 @@ export class CoinmecaWalletProvider {
         const chainId = formatChainId(chain.chainId);
         if (this.chainId !== chainId) {
             if (window) window.ethereum.chainId = chainId;
-            // this.storage.set("last:chainId", chainId);
             this.emit("chainChanged", chain);
         }
     }

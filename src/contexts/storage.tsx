@@ -1,4 +1,5 @@
-﻿import React, { createContext, useCallback, useContext, useLayoutEffect, useState } from "react";
+﻿import CryptoJS from "crypto-js";
+import React, { createContext, useCallback, useContext, useLayoutEffect, useState } from "react";
 import { useTelegram } from "hooks";
 import { loadStorage } from "utils";
 
@@ -29,13 +30,27 @@ export const StorageProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const [session, setSession] = useState<CloudStorage | Storage | any>();
 
     const modules = useCallback(
-        (storage?: CloudStorage | Storage | any) => loadStorage("coinmeca:wallet", storage, !!(telegram && user?.id), process.env.NEXT_PUBLIC_KEY),
+        (storage?: CloudStorage | Storage | any) => {
+            if (typeof window !== "undefined") {
+                const client = window?.navigator?.userAgent;
+                if (client)
+                    return loadStorage(
+                        "coinmeca:wallet",
+                        storage,
+                        !!(telegram && user?.id),
+                        CryptoJS.AES.encrypt(JSON.stringify(client), CryptoJS.SHA256(JSON.stringify(client)), {
+                            mode: CryptoJS.mode.ECB,
+                            padding: CryptoJS.pad.Pkcs7,
+                        }).toString(),
+                    );
+            }
+        },
         [telegram, user, storage],
     );
 
     useLayoutEffect(() => {
-        setStorage(telegram && user?.id ? telegram?.CloudStorage : localStorage);
         setSession(sessionStorage);
+        setStorage(telegram && user?.id ? telegram?.CloudStorage : localStorage);
     }, []);
 
     return <StorageContext.Provider value={{ storage: modules(storage), session: modules(session) }}>{children}</StorageContext.Provider>;

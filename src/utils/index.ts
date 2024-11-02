@@ -45,7 +45,7 @@ export const getFaviconUri = async () => {
     }
 };
 
-export const openWindow = (target: string, size: { width?: number; height?: number }) => {
+export const openWindow = (target: string, size?: { width?: number; height?: number }) => {
     if (typeof window === 'undefined') return;
     const width = size?.width || 360;
     const height = size?.height || 640;

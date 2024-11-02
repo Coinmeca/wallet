@@ -21,6 +21,7 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
     const { storage, session } = useStorage();
     const { chain, setChain } = useAccount();
 
+    const [selectedChain, setSelectedChain] = useState<any>();
     const [newChain, setNewChain] = useState<Chain>();
     const [level, setLevel] = useState(0);
 
@@ -38,8 +39,19 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
             },
         };
         const { chainId, chainName, rpcUrls, nativeCurrency } = c;
-        if (chainId && chainName && nativeCurrency && nativeCurrency.name && nativeCurrency.symbol && nativeCurrency.decimals && rpcUrls && rpcUrls.length > 0)
+        if (
+            chainId &&
+            chainName &&
+            nativeCurrency &&
+            nativeCurrency.name &&
+            nativeCurrency.symbol &&
+            nativeCurrency.decimals &&
+            rpcUrls &&
+            rpcUrls.length > 0
+        ) {
+            setSelectedChain(chain);
             setNewChain(c as Chain);
+        }
     }, []);
 
     const handleClose = () => {
@@ -205,19 +217,19 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
                                                     background: "rgba(var(--white),.15)",
                                                 }}>
                                                 <Image
-                                                    src={`https://web3.coinmeca.net/${chain?.id}/logo.svg`}
+                                                    src={`https://web3.coinmeca.net/${selectedChain?.id}/logo.svg`}
                                                     width={0}
                                                     height={0}
-                                                    alt={newChain.chainName || ""}
+                                                    alt={selectedChain.chainName || ""}
                                                     style={{ width: "4em", height: "4em" }}
                                                 />
                                             </div>
                                             <Layouts.Col gap={0} align={"center"} fill>
                                                 <Elements.Text type={"h6"} height={0} align={"left"}>
-                                                    {chain?.name}
+                                                    {selectedChain?.name}
                                                 </Elements.Text>
                                                 <Elements.Text type={"strong"} height={0} align={"left"} opacity={0.6}>
-                                                    {chain?.id}
+                                                    {selectedChain?.id}
                                                 </Elements.Text>
                                             </Layouts.Col>
                                         </Layouts.Row>
@@ -326,7 +338,7 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
                                             <Elements.Text type={"h2"}>Complete</Elements.Text>
                                             <Elements.Text size={1} weight={"bold"}>
                                                 <Elements.Text opacity={0.6}>Selected chain was switched from</Elements.Text>{" "}
-                                                <Elements.Text>{chain?.name}</Elements.Text> <Elements.Text opacity={0.6}>to</Elements.Text>{" "}
+                                                <Elements.Text>{selectedChain?.name}</Elements.Text> <Elements.Text opacity={0.6}>to</Elements.Text>{" "}
                                                 <Elements.Text>{` ${newChain?.chainName}`}</Elements.Text>
                                                 <Elements.Text opacity={0.6}>.</Elements.Text>
                                             </Elements.Text>
