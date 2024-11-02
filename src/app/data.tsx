@@ -1,13 +1,13 @@
 ﻿"use client";
 
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useMobile, useNotification, useWindowSize } from "@coinmeca/ui/hooks";
+import { useNotification } from "@coinmeca/ui/hooks";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useLayoutEffect, useMemo, useState } from "react";
+import { useCallback, useLayoutEffect, useState } from "react";
 
-import Coinmeca from "assets/coinmeca.svg";
-import { useAccount, useStorage, useWallet } from "hooks";
 import { Avatar } from "@coinmeca/ui/components/elements";
+import Coinmeca from "assets/coinmeca.svg";
+import { useAccount, useStorage } from "hooks";
 import { Account, Chain } from "types";
 import { wallet } from "wallet";
 
@@ -132,7 +132,7 @@ export default function Data() {
                 return accounts.map((a: Account) => {
                     const selected = account?.address?.toLowerCase() === a?.address?.toLowerCase();
                     return {
-                        onClick: !selected && (() => {}),
+                        onClick: !selected && (() => { }),
                         style: { padding: "2em clamp(2em, 5%, 8em)", ...(selected && { background: "transparent", pointerEvents: "none" }) },
                         children: [
                             [

@@ -26,7 +26,7 @@ export default function Approve({ params }: { params: any }) {
 
     useLayoutEffect(() => {
         const url = searchParams.get("appUrl")
-        const origin = url && new URL(url.startsWith("http") ? url : `https://${url}`).hostname;
+        const origin = url && new URL(url.startsWith("http") ? url : `https://${url}`).host;
 
         const app = {
             name: searchParams.get("appName") || undefined,

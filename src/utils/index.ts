@@ -74,6 +74,8 @@ export const openWindow = (target: string, size?: { width?: number; height?: num
             popupId,
         }
     });
+
+    return newWindow;
 };
 
 export function parseChainId(chain: number | string | Chain): number {

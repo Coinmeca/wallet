@@ -13,6 +13,7 @@ http://localhost:3000/request/eth_requestAccounts
 */
 
 export default function eth_requestAccounts({ params }: { params: any }) {
+    const method = "eth_requestAccounts"
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -24,9 +25,68 @@ export default function eth_requestAccounts({ params }: { params: any }) {
     const [app, setApp] = useState<App>();
     const [level, setLevel] = useState(0);
 
+    const handleClose = () => {
+        if (level === 0) window.opener.postMessage({
+            method,
+            error: "User rejected the request",
+        }, "*");
+        if (isPopup) window?.close();
+        else router.push("/");
+    };
+
+    const handleConnect = () => {
+        const key = session?.get("key");
+        let apps = storage?.get(`${key}:apps`)
+        let address: string[] = [];
+
+        if (apps) {
+            const selectedApp = apps?.find((a: App) => a?.url?.toLowerCase() === app?.url?.toLowerCase());
+            if (selectedApp) {
+                if (Array.isArray(selectedApp?.address)) {
+                    const exist = selectedApp?.address?.find((address: string) => address?.toLowerCase() === account?.address?.toLowerCase())
+                    if (!exist) {
+                        address = [...selectedApp?.address, account?.address];
+                        storage?.set(`${key}`, apps?.map((a: App) => a?.url?.toLowerCase() === selectedApp?.url?.toLowerCase() ? {
+                            ...selectedApp,
+                            address,
+                        } : a));
+                    } else {
+                        address = selectedApp?.address
+                    }
+                } else {
+                    if (account?.address) address = [account?.address];
+                    storage?.set(`${key}`, apps?.map((a: App) => a?.url?.toLowerCase() === selectedApp?.url?.toLowerCase() ? {
+                        ...selectedApp,
+                        address,
+                    } : a));
+                }
+            } else {
+                if (account?.address) address = [account?.address];
+                storage?.set(`${key}:apps`, [...apps, {
+                    ...app,
+                    address,
+                }]);
+            }
+        } else {
+            if (account?.address) address = [account?.address];
+            storage?.set(`${key}:apps`, [{
+                ...app,
+                address,
+            }]);
+        }
+
+        window.opener.postMessage({
+            method,
+            result: address,
+        }, "*");
+        setLevel(1);
+    }
+
+
     useLayoutEffect(() => {
-        const url = searchParams.get("appUrl")
-        const origin = url && new URL(url.startsWith("http") ? url : `https://${url}`).hostname;
+        const url = searchParams.get("appUrl");
+        const site = url && decodeURIComponent(url);
+        const origin = site && new URL(site.startsWith("http") ? site : `https://${site}`).host;
 
         const app = {
             name: searchParams.get("appName") || undefined,
@@ -36,38 +96,6 @@ export default function eth_requestAccounts({ params }: { params: any }) {
 
         if (app?.name && app?.name !== "" && app?.url && app?.url !== "") setApp(app);
     }, []);
-
-    const handleClose = () => {
-        if (telegram) telegram?.close();
-        else if (isPopup) window?.close();
-        else router.push("/");
-    };
-
-    const handleConnect = () => {
-        const key = session?.get("key");
-        let apps = storage?.get(`${key}:apps`)
-
-        if (apps) {
-            const selectedApp = apps?.find((a: App) => a?.url?.toLowerCase() === app?.url?.toLowerCase());
-            if (selectedApp) {
-                if (Array.isArray(selectedApp?.address)) {
-                    const exist = selectedApp?.address?.find((address: string) => address?.toLowerCase() === account?.address?.toLowerCase())
-                    if (!exist) storage?.set(`${key}`, apps?.map((a: App) => a?.url?.toLowerCase() === selectedApp?.url?.toLowerCase() ? {
-                        ...selectedApp,
-                        address: [...selectedApp?.address, account?.address],
-                    } : a));
-                } else storage?.set(`${key}`, apps?.map((a: App) => a?.url?.toLowerCase() === selectedApp?.url?.toLowerCase() ? {
-                    ...selectedApp,
-                    address: [account?.address],
-                } : a));
-            }
-        } else storage?.set(`${key}:apps`, [{
-            ...app,
-            address: [account?.address]
-        }]);
-
-        setLevel(1);
-    }
 
     return app ? (
         <Layouts.Contents.SlideContainer

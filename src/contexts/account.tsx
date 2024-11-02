@@ -74,5 +74,15 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
         updateAccount(last.wallet);
     }, []);
 
+    useLayoutEffect(() => {
+        if (provider) {
+            provider.on("chainChanged", updateChain);
+            return () => {
+                provider.off("chainChanged", updateChain);
+            };
+        }
+    }, [provider]);
+
+
     return <AccountContext.Provider value={{ account, setAccount: updateAccount, resetAccount, chain, setChain: updateChain }}>{children}</AccountContext.Provider>;
 };
