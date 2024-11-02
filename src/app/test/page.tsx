@@ -1,6 +1,7 @@
 "use client";
 import { Controls, Layouts } from "@coinmeca/ui/components";
-import { useTelegram } from "hooks";
+import { getChainById } from "chains";
+import { useTelegram, useWallet } from "hooks";
 import { useState } from "react";
 
 export default function Home() {
@@ -8,6 +9,8 @@ export default function Home() {
     const [authenticate, setAuthenticate] = useState<string | null>(null);
     const [requestAccess, setRequestAccess] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+
+    const { provider } = useWallet();
 
     const handleExpand = () => {
         expand();
@@ -61,37 +64,25 @@ export default function Home() {
         }
     };
 
-    const handleWindowPopup = () => {
-        const width = 360;
-        const height = 720;
+    const handleAddEthereumChain = async () => {
+        await provider?.request({ method: "wallet_addEthereumChain", params: [getChainById(17000)] })
+    }
 
-        // Get the current window's dimensions and position
-        const currentWindowWidth = window.innerWidth;
-        const currentWindowHeight = window.innerHeight;
-        const currentWindowLeft = window.screenX;
-        const currentWindowTop = window.screenY;
-
-        // Calculate center position based on the current window
-        const left = currentWindowLeft + (currentWindowWidth - width) / 2;
-        const top = currentWindowTop + (currentWindowHeight - height) / 2;
-
-        window.open(
-            "https://wallet.coinmeca.net",
-            "_blank",
-            `left=${left},top=${top},width=${width},height=${height},toolbar=no,location=no,menubar=no,status=no,resizable=no,scrollbars=no`,
-        );
-    };
+    const handleRequestAccounts = async () => {
+        await provider?.request({ method: "eth_requestAccounts" })
+    }
 
     return (
         <Layouts.Col>
             <div>{telegram ? `Success, Platform: ${telegram.platform}` : "Fail"}</div>
+            <Controls.Button onClick={handleAddEthereumChain}>Add Ethereum Chain</Controls.Button>
+            <Controls.Button onClick={handleRequestAccounts}>Request Accounts</Controls.Button>
             <Controls.Button onClick={handleSendData}>Send Data</Controls.Button>
             <Controls.Button onClick={handleExpand}>Expand</Controls.Button>
             <Controls.Button onClick={handleShowConfirm}>Show Confirm</Controls.Button>
             <Controls.Button onClick={handleShowPopup}>Show Popup</Controls.Button>
             <Controls.Button onClick={handleRequest}>Biometric Request</Controls.Button>
             <Controls.Button onClick={handleAuthenticate}>Biometric Auth</Controls.Button>
-            <Controls.Button onClick={handleWindowPopup}>New Popup</Controls.Button>
             <Controls.Button onClick={handleClose}>Close</Controls.Button>
             {authenticate && `Authenticate: ${authenticate}`}
             <br />
