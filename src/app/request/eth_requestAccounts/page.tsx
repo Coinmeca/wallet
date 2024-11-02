@@ -47,7 +47,7 @@ export default function eth_requestAccounts({ params }: { params: any }) {
                 if (Array.isArray(selectedApp?.address)) {
                     const exist = selectedApp?.address?.find((address: string) => address?.toLowerCase() === account?.address?.toLowerCase())
                     if (!exist) {
-                        address = [...selectedApp?.address, account?.address];
+                        address = [account?.address, ...selectedApp?.address];
                         storage?.set(`${key}`, apps?.map((a: App) => a?.url?.toLowerCase() === selectedApp?.url?.toLowerCase() ? {
                             ...selectedApp,
                             address,
