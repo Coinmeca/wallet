@@ -58,15 +58,15 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
     }, []);
 
     const handleClose = () => {
+        if (isPopup) {
+            if (telegram) telegram?.close();
+            window?.close()
+        } else router.push("/");
         if (level < 2) window?.opener?.postMessage({
             method,
             ...(level === 0 ? { error: "User rejected the request" } : {})
 
         }, "*");
-        if (isPopup) {
-            if (telegram) telegram?.close();
-            window?.close()
-        } else router.push("/");
     };
 
     const handleAddChain = () => {
