@@ -1,7 +1,7 @@
 "use client";
 import { Controls, Layouts } from "@coinmeca/ui/components";
 import { getChainById } from "chains";
-import { useTelegram, useWallet } from "hooks";
+import { useAccount, useTelegram, useWallet } from "hooks";
 import { useState } from "react";
 
 export default function Home() {
@@ -11,6 +11,7 @@ export default function Home() {
     const [error, setError] = useState<string | null>(null);
 
     const { provider } = useWallet();
+    const { account } = useAccount();
 
     const handleExpand = () => {
         expand();
@@ -65,18 +66,35 @@ export default function Home() {
     };
 
     const handleAddEthereumChain = async () => {
-        await provider?.request({ method: "wallet_addEthereumChain", params: [getChainById(17000)] })
-    }
+        await provider?.request({ method: "wallet_addEthereumChain", params: [getChainById(17000)] });
+    };
 
     const handleRequestAccounts = async () => {
-        await provider?.request({ method: "eth_requestAccounts" })
-    }
+        await provider?.request({ method: "eth_requestAccounts" });
+    };
+
+    const handleSendTransaction = async () => {
+        await provider?.request({
+            method: "eth_sendTransaction",
+            params: [
+                {
+                    from: account?.address,
+                    to: "0x0000000000000000000000000000000000000000",
+                    value: "0x0",
+                    gasLimit: "0x5028",
+                    maxFeePerGas: "0x2540be400",
+                    maxPriorityFeePerGas: "0x3b9aca00",
+                },
+            ],
+        });
+    };
 
     return (
         <Layouts.Col>
             <div>{telegram ? `Success, Platform: ${telegram.platform}` : "Fail"}</div>
             <Controls.Button onClick={handleAddEthereumChain}>Add Ethereum Chain</Controls.Button>
             <Controls.Button onClick={handleRequestAccounts}>Request Accounts</Controls.Button>
+            <Controls.Button onClick={handleSendTransaction}>Request Accounts</Controls.Button>
             <Controls.Button onClick={handleSendData}>Send Data</Controls.Button>
             <Controls.Button onClick={handleExpand}>Expand</Controls.Button>
             <Controls.Button onClick={handleShowConfirm}>Show Confirm</Controls.Button>
