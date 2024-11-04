@@ -14,9 +14,8 @@ http://localhost:3000/request/wallet_addEthereumChain?
 */
 
 export default function wallet_addEthereumChain({ params }: { params: any }) {
-    const method = "wallet_addEthereumChain"
+    const method = "wallet_addEthereumChain";
     const router = useRouter();
-    const searchParams = useSearchParams();
 
     const { telegram } = useTelegram();
     const { isPopup } = usePopupChecker();
@@ -28,45 +27,51 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
     const [level, setLevel] = useState(0);
 
     useLayoutEffect(() => {
-        const decimals = searchParams.get("nativeCurrency[decimals]");
-        const c = {
-            chainId: searchParams.get("chainId") || searchParams.get("id"),
-            chainName: searchParams.get("chainName") || searchParams.get("name"),
-            rpcUrls: (searchParams.getAll("rpc[]") || [])?.map(url => decodeURIComponent(url)),
-            blockExplorerUrls: (searchParams.getAll("blockExplorerUrls[]") || searchParams.getAll("explorer[]") || [])?.map(url => decodeURIComponent(url)),
-            nativeCurrency: {
-                name: searchParams.get("nativeCurrency[name]"),
-                symbol: searchParams.get("nativeCurrency[symbol]"),
-                decimals: decimals && decimals !== "" ? parseInt(decimals) : null,
-            },
-        };
-        console.log(c, searchParams, searchParams.getAll("rpcUrls[]") || searchParams.getAll("rpc[]"), (searchParams.getAll("rpcUrls[]") || searchParams.getAll("rpc[]") || [])?.map(url => decodeURIComponent(url)));
-        const { chainId, chainName, rpcUrls, nativeCurrency } = c;
-        if (
-            chainId &&
-            chainName &&
-            nativeCurrency &&
-            nativeCurrency.name &&
-            nativeCurrency.symbol &&
-            nativeCurrency.decimals &&
-            rpcUrls &&
-            rpcUrls.length > 0
-        ) {
-            setSelectedChain(chain);
-            setNewChain(c as Chain);
+        if ((window as any)?.coinmeca) {
+            const params = (window as any)?.coinmeca?.params;
+            if (params) {
+                const decimals = params?.nativeCurrency?.decimals;
+                const c = {
+                    chainId: params?.chainId || params?.id,
+                    chainName: params?.chainName || params?.name,
+                    rpcUrls: params?.rpcUrls || params?.rpc,
+                    blockExplorerUrls: params?.blockExplorerUrls || params?.explorer,
+                    nativeCurrency: {
+                        ...params?.nativeCurrency,
+                        decimals: decimals && decimals !== "" ? parseInt(decimals) : null,
+                    },
+                };
+                const { chainId, chainName, rpcUrls, nativeCurrency } = c;
+                if (
+                    chainId &&
+                    chainName &&
+                    nativeCurrency &&
+                    nativeCurrency.name &&
+                    nativeCurrency.symbol &&
+                    nativeCurrency.decimals &&
+                    rpcUrls &&
+                    rpcUrls.length > 0
+                ) {
+                    setSelectedChain(chain);
+                    setNewChain(c as Chain);
+                }
+            }
         }
     }, []);
 
     const handleClose = () => {
         if (isPopup) {
             if (telegram) telegram?.close();
-            window?.close()
+            window?.close();
         } else router.push("/");
-        if (level < 2) window?.opener?.postMessage({
-            method,
-            ...(level === 0 ? { error: "User rejected the request" } : {})
-
-        }, "*");
+        if (level < 2)
+            window?.opener?.postMessage(
+                {
+                    method,
+                    ...(level === 0 ? { error: "User rejected the request" } : {}),
+                },
+                "*",
+            );
     };
 
     const handleAddChain = () => {
@@ -91,10 +96,13 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
             setLevel(1);
         } else {
             // error
-            window?.opener?.postMessage({
-                method,
-                error: "Invalid chain information",
-            }, "*");
+            window?.opener?.postMessage(
+                {
+                    method,
+                    error: "Invalid chain information",
+                },
+                "*",
+            );
         }
     };
 
@@ -107,10 +115,13 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
                     : parseInt(newChain?.chainId)
                 : newChain?.chainId,
         );
-        window?.opener?.postMessage({
-            method,
-            result: newChain,
-        }, "*");
+        window?.opener?.postMessage(
+            {
+                method,
+                result: newChain,
+            },
+            "*",
+        );
         setLevel(2);
     };
 
@@ -373,7 +384,6 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
             ]}
         />
     ) : (
-
         <Layouts.Contents.InnerContent scroll={false}>
             <Layouts.Col align={"center"} style={{ padding: "4em" }} fill>
                 <Layouts.Col gap={4} align={"center"} style={{ flex: 1 }} fill>

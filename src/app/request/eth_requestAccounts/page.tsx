@@ -13,9 +13,8 @@ http://localhost:3000/request/eth_requestAccounts
 */
 
 export default function eth_requestAccounts({ params }: { params: any }) {
-    const method = "eth_requestAccounts"
+    const method = "eth_requestAccounts";
     const router = useRouter();
-    const searchParams = useSearchParams();
 
     const { storage, session } = useStorage();
     const { isPopup } = usePopupChecker();
@@ -26,13 +25,17 @@ export default function eth_requestAccounts({ params }: { params: any }) {
     const [level, setLevel] = useState(0);
 
     const handleClose = () => {
-        if (level === 0) window?.opener?.postMessage({
-            method,
-            error: "User rejected the request",
-        }, "*");
+        if (level === 0)
+            window?.opener?.postMessage(
+                {
+                    method,
+                    error: "User rejected the request",
+                },
+                "*",
+            );
         if (isPopup) {
             if (telegram) telegram?.close();
-            window?.close()
+            window?.close();
         } else router.push("/");
     };
 
@@ -47,31 +50,37 @@ export default function eth_requestAccounts({ params }: { params: any }) {
         }
 
         const updatedApps = existingApp
-            ? apps.map((a: App) => a.url?.toLowerCase() === existingApp.url?.toLowerCase() ? { ...a, address: addressList } : a)
+            ? apps.map((a: App) => (a.url?.toLowerCase() === existingApp.url?.toLowerCase() ? { ...a, address: addressList } : a))
             : [...apps, { ...app, address: addressList }];
 
         storage?.set(`${key}:apps`, updatedApps);
 
-        window?.opener?.postMessage({
-            method,
-            result: addressList,
-        }, "*");
+        window?.opener?.postMessage(
+            {
+                method,
+                result: addressList,
+            },
+            "*",
+        );
 
         setLevel(1);
     };
 
     useLayoutEffect(() => {
-        const url = searchParams.get("appUrl");
-        const site = url && decodeURIComponent(url);
-        const origin = site && new URL(site.startsWith("http") ? site : `https://${site}`).host;
-
-        const app = {
-            name: searchParams.get("appName") || undefined,
-            logo: searchParams.get("appLogo") || undefined,
-            url: origin || undefined,
-        };
-
-        if (app?.name && app?.name !== "" && app?.url && app?.url !== "") setApp(app);
+        if ((window as any)?.coinmeca) {
+            const params = (window as any)?.coinmeca?.params;
+            if (params) {
+                const url = params?.appUrl || params?.url;
+                const site = url && decodeURIComponent(url);
+                const origin = site && new URL(site.startsWith("http") ? site : `https://${site}`).host;
+                const app = {
+                    name: params?.appName || params?.name || undefined,
+                    logo: params?.appLogo || params?.logo || params?.appIcon || params?.icon || undefined,
+                    url: origin || undefined,
+                };
+                if (app?.name && app?.name !== "" && app?.url && app?.url !== "") setApp(app);
+            }
+        }
     }, []);
 
     return app ? (
@@ -99,7 +108,7 @@ export default function eth_requestAccounts({ params }: { params: any }) {
                                                 <Image
                                                     width={0}
                                                     height={0}
-                                                    src={level === 0 ? 'https://web3.coinmeca.net/wallets/MetaMask/logo.svg' : require("../../../assets/animation/success.gif")}
+                                                    src={level === 0 ? app?.logo || "" : require("../../../assets/animation/success.gif")}
                                                     alt={app.name || "Unknown"}
                                                     style={{ width: "8em", height: "8em" }}
                                                 />
@@ -118,7 +127,7 @@ export default function eth_requestAccounts({ params }: { params: any }) {
                                         contents={[
                                             {
                                                 active: level === 0,
-                                                children:
+                                                children: (
                                                     <Layouts.Contents.InnerContent scroll={false}>
                                                         <Layouts.Col align={"center"} style={{ flex: 1 }} fill>
                                                             <Layouts.Col gap={4} align={"center"} fit>
@@ -126,9 +135,18 @@ export default function eth_requestAccounts({ params }: { params: any }) {
                                                                 <Elements.Text size={1} weight={"bold"}>
                                                                     <Elements.Text opacity={0.6}>Connect</Elements.Text>{" "}
                                                                     <Elements.Text>{account?.name}</Elements.Text>{" "}
-                                                                    <Elements.Text opacity={0.6}>({account?.address?.substring(0, account?.address?.startsWith("0x") ? 8 : 6) + "..." + account?.address?.substring(account?.address?.length - 6, account?.address?.length)}) to</Elements.Text>{" "}
+                                                                    <Elements.Text opacity={0.6}>
+                                                                        (
+                                                                        {account?.address?.substring(0, account?.address?.startsWith("0x") ? 8 : 6) +
+                                                                            "..." +
+                                                                            account?.address?.substring(account?.address?.length - 6, account?.address?.length)}
+                                                                        ) to
+                                                                    </Elements.Text>{" "}
                                                                     <Elements.Text>{app?.name}</Elements.Text>{" "}
-                                                                    <Elements.Text opacity={0.6}>({app?.url}). Please checko out the information of app and allow connections only to apps you trust.</Elements.Text>
+                                                                    <Elements.Text opacity={0.6}>
+                                                                        ({app?.url}). Please check out the information of app and allow connections only to apps
+                                                                        you trust.
+                                                                    </Elements.Text>
                                                                 </Elements.Text>
                                                             </Layouts.Col>
                                                         </Layouts.Col>
@@ -141,10 +159,11 @@ export default function eth_requestAccounts({ params }: { params: any }) {
                                                             </Controls.Button>
                                                         </Layouts.Row>
                                                     </Layouts.Contents.InnerContent>
+                                                ),
                                             },
                                             {
                                                 active: level === 1,
-                                                children:
+                                                children: (
                                                     <Layouts.Contents.InnerContent scroll={false}>
                                                         <Layouts.Col align={"center"} style={{ flex: 1 }} fill>
                                                             <Layouts.Col gap={4} align={"center"} fit>
@@ -152,7 +171,13 @@ export default function eth_requestAccounts({ params }: { params: any }) {
                                                                 <Elements.Text size={1} weight={"bold"}>
                                                                     <Elements.Text opacity={0.6}>Comepete to connect</Elements.Text>{" "}
                                                                     <Elements.Text>{account?.name}</Elements.Text>{" "}
-                                                                    <Elements.Text opacity={0.6}>({account?.address?.substring(0, account?.address?.startsWith("0x") ? 8 : 6) + "..." + account?.address?.substring(account?.address?.length - 6, account?.address?.length)}) to</Elements.Text>{" "}
+                                                                    <Elements.Text opacity={0.6}>
+                                                                        (
+                                                                        {account?.address?.substring(0, account?.address?.startsWith("0x") ? 8 : 6) +
+                                                                            "..." +
+                                                                            account?.address?.substring(account?.address?.length - 6, account?.address?.length)}
+                                                                        ) to
+                                                                    </Elements.Text>{" "}
                                                                     <Elements.Text>{app?.name}</Elements.Text>{" "}
                                                                     <Elements.Text opacity={0.6}>({app?.url}).</Elements.Text>
                                                                 </Elements.Text>
@@ -164,12 +189,12 @@ export default function eth_requestAccounts({ params }: { params: any }) {
                                                             </Controls.Button>
                                                         </Layouts.Row>
                                                     </Layouts.Contents.InnerContent>
-                                            }
+                                                ),
+                                            },
                                         ]}
                                     />
                                 </Layouts.Col>
                             </Layouts.Col>
-
                         </Layouts.Contents.InnerContent>
                     ),
                 },
