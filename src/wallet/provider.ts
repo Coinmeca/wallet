@@ -193,25 +193,42 @@ const getSession = () => {
     )
 }
 
-async function sendNotification() {
+function requestAndSendNotification() {
+    // Check if notification permission has been granted
     if (Notification.permission === "granted") {
-        const notification = new Notification("Hello!", {
-            body: "This is a notification from your browser.",
-            icon: await getFaviconUri() || '', // Optional: URL of an icon to display in the notification
+        // Permission is already granted, send the notification directly
+        sendNotification();
+    } else if (Notification.permission !== "denied") {
+        // Permission has not been granted yet, request permission
+        Notification.requestPermission().then(permission => {
+            if (permission === "granted") {
+                // Permission was granted, send the notification
+                sendNotification();
+            } else {
+                console.log("Notification permission denied.");
+            }
         });
-
-        // Optional: add event listeners
-        notification.onclick = () => {
-            console.log("Notification clicked!");
-            window.focus(); // Bring the tab into focus
-        };
-
-        notification.onclose = () => {
-            console.log("Notification closed!");
-        };
     } else {
-        console.log("Notification permission is not granted.");
+        // If permission is explicitly denied, do nothing or notify the user
+        console.log("Notification permission is denied. Please enable it in your browser settings.");
     }
+}
+
+function sendNotification() {
+    const notification = new Notification("Hello!", {
+        body: "This is a notification from your browser.",
+        icon: "icon.png", // Optional: URL of an icon to display in the notification
+    });
+
+    // Optional: add event listeners
+    notification.onclick = () => {
+        console.log("Notification clicked!");
+        window.focus();
+    };
+
+    notification.onclose = () => {
+        console.log("Notification closed!");
+    };
 }
 
 export class CoinmecaWalletProvider {
@@ -481,7 +498,7 @@ export class CoinmecaWalletProvider {
         const app = this.#storage?.get(`app:${window.location.host}`);
         if (app) {
             const from = txParams?.from?.toLowerCase();
-            const exist = app?.address?.find((a: string) => a?.toLowerCase() === from?.toLowerCase());
+            const exist = app?.address?.find((a: string) => a?.toLowerCase() === from);
             if (exist) {
                 const account = this.#storage?.get(from);
                 if (!account) return new Error("Account information is something wrong.");
@@ -506,7 +523,7 @@ export class CoinmecaWalletProvider {
         const app = this.#storage?.get(`app:${window.location.host}`);
         if (app) {
             const from = txParams?.from?.toLowerCase();
-            const exist = app?.address?.find((a: string) => a?.toLowerCase() === from?.toLowerCase());
+            const exist = app?.address?.find((a: string) => a?.toLowerCase() === from);
             if (exist) {
                 const account = this.#storage?.get(from);
                 if (!account) return new Error("Account information is something wrong.");
@@ -518,7 +535,7 @@ export class CoinmecaWalletProvider {
                     [txParams, await this.#app()]
                 ).then(async (result: any) => {
                     if (result) {
-                        sendNotification();
+                        requestAndSendNotification();
                         const tx = new Transaction(txParams);
                         tx.sign((this.#storage?.get(`${this.#session?.get("key")}:wallets`))[exist.index]);
                         return await this.#broadcastTransaction(tx.serialize());

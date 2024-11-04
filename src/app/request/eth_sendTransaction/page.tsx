@@ -41,7 +41,6 @@ export default function eth_sendTransaction({ params }: { params: any }) {
         if ((window as any)?.coinmeca) {
             const params = (window as any)?.coinmeca?.params || (window as any)?.coinmeca?.params;
             if (params) {
-                console.log(params);
                 const { value, gasLimit, maxFeePerGas, maxPriorityFeePerGas } = params?.[0];
                 setTx({
                     ...params,
