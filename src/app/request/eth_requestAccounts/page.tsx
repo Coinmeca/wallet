@@ -40,34 +40,37 @@ export default function eth_requestAccounts({ params }: { params: any }) {
 
     const handleConnect = () => {
         const apps = storage?.get("apps");
+        const url = app?.url?.toLowerCase();
         let address = [];
 
         if (apps) {
-            const exist = apps?.find((a: string) => a.toLowerCase() === app?.url?.toLowerCase());
+            const exist = apps?.find((a: string) => a.toLowerCase() === url);
             if (exist) {
-                const info = storage?.get(`app:${exist?.url}`);
+                const info = storage?.get(`app:${url}`);
                 if (info) {
-                    address = [account?.address, ...info?.address?.filter((a: string) => a?.toLowerCase() !== account?.address?.toLowerCase())];
-                    storage?.set(`app:${exist?.url}`, { ...info, address });
+                    address = [account?.address, ...info?.address?.filter((a: string) => a?.toLowerCase() !== account?.address?.toLowerCase())].filter(
+                        (a) => a,
+                    );
+                    storage?.set(`app:${url}`, { ...info, address });
                 } else {
-                    address = [account?.address];
-                    storage?.set(`app:${exist?.url}`, { address });
+                    address = [account?.address].filter((a) => a);
+                    storage?.set(`app:${url}`, { address });
                 }
             } else {
-                address = [account?.address];
-                storage?.set("apps", [...apps, app?.url]);
-                storage?.set(`app:${app?.url}`, { address });
+                address = [account?.address].filter((a) => a);
+                storage?.set("apps", [...apps, url]);
+                storage?.set(`app:${url}`, { address });
             }
         } else {
-            address = [account?.address];
-            storage?.set("apps", [app?.url]);
-            storage?.set(`app:${app?.url}`, { address });
+            address = [account?.address].filter((a) => a);
+            storage?.set("apps", [url]);
+            storage?.set(`app:${url}`, { address });
         }
 
         window?.opener?.postMessage(
             {
                 method,
-                result: address && address,
+                result: address,
             },
             "*",
         );
