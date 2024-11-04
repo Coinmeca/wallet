@@ -44,7 +44,8 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 } else {
                     setIsInit(true);
                     if (!check.access) {
-                        if (!path.startsWith("/lock") && path !== "/lock?" && path !== "/lock?target=") target = `/lock?target=${encodeURIComponent(fullPath + queryString)}`;
+                        if (!path.startsWith("/lock") && path !== "/lock?" && path !== "/lock?target=")
+                            target = `/lock?target=${encodeURIComponent(fullPath + queryString)}`;
                     } else setIsAccess(true);
                 }
 
@@ -62,10 +63,13 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (!path?.startsWith("/lock")) {
             if (typeof window !== "undefined" && (window as any)?.coinmeca?.isPopup) {
                 const handleUnload = () => {
-                    window?.opener?.postMessage({
-                        close: true,
-                        error: "User rejected the request",
-                    }, "*");
+                    window?.opener?.postMessage(
+                        {
+                            close: true,
+                            error: "User rejected the request",
+                        },
+                        "*",
+                    );
                 };
 
                 window.addEventListener("beforeunload", handleUnload);

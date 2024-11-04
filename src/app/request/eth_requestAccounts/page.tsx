@@ -8,8 +8,7 @@ import { useLayoutEffect, useState } from "react";
 import { App } from "types";
 
 /*
-http://localhost:3000/request/eth_requestAccounts?appName=MetaMask&appUrl=www.npmjs.com&appLogo=https://static-production.npmjs.com/b0f1a8318363185cc2ea6a40ac23eeb2.png
-http://localhost:3000/request/eth_requestAccounts
+await window.ethereum.providerMap.get("CoinmecaWallet").request({method: 'eth_requestAccounts'})
 */
 
 export default function eth_requestAccounts({ params }: { params: any }) {
@@ -40,25 +39,35 @@ export default function eth_requestAccounts({ params }: { params: any }) {
     };
 
     const handleConnect = () => {
-        const key = session?.get("key");
-        const apps = storage?.get(`${key}:apps`) || [];
-        const existingApp = apps.find((a: App) => a.url?.toLowerCase() === app?.url?.toLowerCase());
+        const apps = storage?.get("apps");
+        let address = [];
 
-        const addressList = existingApp ? existingApp.address || [] : [];
-        if (!addressList.includes(account?.address)) {
-            addressList.push(account?.address);
+        if (apps) {
+            const exist = apps?.find((a: string) => a.toLowerCase() === app?.url?.toLowerCase());
+            if (exist) {
+                const info = storage?.get(`app:${exist?.url}`);
+                if (info) {
+                    address = [account?.address, ...info?.address?.filter((a: string) => a?.toLowerCase() !== account?.address?.toLowerCase())];
+                    storage?.set(`app:${exist?.url}`, { ...info, address });
+                } else {
+                    address = [account?.address];
+                    storage?.set(`app:${exist?.url}`, { address });
+                }
+            } else {
+                address = [account?.address];
+                storage?.set("apps", [...apps, app?.url]);
+                storage?.set(`app:${app?.url}`, { address });
+            }
+        } else {
+            address = [account?.address];
+            storage?.set("apps", [app?.url]);
+            storage?.set(`app:${app?.url}`, { address });
         }
-
-        const updatedApps = existingApp
-            ? apps.map((a: App) => (a.url?.toLowerCase() === existingApp.url?.toLowerCase() ? { ...a, address: addressList } : a))
-            : [...apps, { ...app, address: addressList }];
-
-        storage?.set(`${key}:apps`, updatedApps);
 
         window?.opener?.postMessage(
             {
                 method,
-                result: addressList,
+                result: address && address,
             },
             "*",
         );
@@ -131,7 +140,7 @@ export default function eth_requestAccounts({ params }: { params: any }) {
                                                     <Layouts.Contents.InnerContent scroll={false}>
                                                         <Layouts.Col align={"center"} style={{ flex: 1 }} fill>
                                                             <Layouts.Col gap={4} align={"center"} fit>
-                                                                <Elements.Text type={"h2"}>Connect</Elements.Text>
+                                                                <Elements.Text type={"h3"}>Connect</Elements.Text>
                                                                 <Elements.Text size={1} weight={"bold"}>
                                                                     <Elements.Text opacity={0.6}>Connect</Elements.Text>{" "}
                                                                     <Elements.Text>{account?.name}</Elements.Text>{" "}
@@ -167,7 +176,7 @@ export default function eth_requestAccounts({ params }: { params: any }) {
                                                     <Layouts.Contents.InnerContent scroll={false}>
                                                         <Layouts.Col align={"center"} style={{ flex: 1 }} fill>
                                                             <Layouts.Col gap={4} align={"center"} fit>
-                                                                <Elements.Text type={"h2"}>Approved</Elements.Text>
+                                                                <Elements.Text type={"h3"}>Approved</Elements.Text>
                                                                 <Elements.Text size={1} weight={"bold"}>
                                                                     <Elements.Text opacity={0.6}>Comepete to connect</Elements.Text>{" "}
                                                                     <Elements.Text>{account?.name}</Elements.Text>{" "}

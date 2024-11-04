@@ -26,14 +26,14 @@ export default function Create({ setStage }: Stage) {
 
         let info: any;
         if (wallets.find((w: string) => w?.toLowerCase() === privateKey?.toLowerCase())) {
-            info = storage?.get(address);
+            info = storage?.get(address?.toLowerCase());
         } else {
             info = { address, name: `Wallet ${wallets.length + 1}`, index: wallets.length };
-            storage?.set("last:wallet", `${wallets.length}`);
+            storage?.set("last:wallet", wallets.length);
             wallets.push(privateKey);
 
             storage?.set(`${key}:wallets`, wallets);
-            storage?.set(`${address}`, info);
+            storage?.set(address?.toLowerCase(), info);
         }
 
         setAccount(info);
@@ -69,15 +69,15 @@ export default function Create({ setStage }: Stage) {
                                     </Layouts.Col>
                                 </Layouts.Col>
                                 <Layouts.Col gap={0} style={{ flex: 1 }}>
-                                    <Layouts.Col align={'center'} style={{ padding: "4em" }} fill>
+                                    <Layouts.Col align={"center"} style={{ padding: "4em" }} fill>
                                         <Layouts.Col gap={4} fit>
-                                            <Elements.Text type={"h2"}> Setup </Elements.Text>
+                                            <Elements.Text type={"h3"}> Setup </Elements.Text>
                                             <Elements.Text weight={"bold"} opacity={0.6}>
                                                 Please create a new wallet or import an exist your other wallet via private key.
                                             </Elements.Text>
                                         </Layouts.Col>
                                     </Layouts.Col>
-                                    <Layouts.Col gap={4} >
+                                    <Layouts.Col gap={4}>
                                         <Controls.Button type={"line"} onClick={() => handleCreateWallet()}>
                                             Create a new wallet
                                         </Controls.Button>

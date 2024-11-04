@@ -21,11 +21,10 @@ export default function Lock({ params }: { params: any }) {
             router.push("/welcome");
         } else {
             const last: any = storage?.get("last:wallet");
-            const info: any = storage?.get(wallet(wallets[last]).address);
+            const info: any = storage?.get(wallet(wallets[last]).address?.toLowerCase());
             if (info) setAccount(info);
 
             const target = new URLSearchParams(window.location.search).get("target");
-            console.log({ target });
             if (target) router.push(target === "" || target === "%2F" || target?.startsWith("/welcome") ? "/" : (target?.startsWith("/") ? "" : "/") + target);
             else router.push("/");
         }
