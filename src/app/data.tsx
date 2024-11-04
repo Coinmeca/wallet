@@ -60,12 +60,7 @@ export default function Data() {
         const key = session?.get("key");
         if (key) {
             setChains(storage?.get(`${key}:chains`));
-            setAccounts(
-                [...(storage?.get(`${key}:wallets`) || [])]?.map((w) => {
-                    const account = storage?.get(wallet(w).address);
-                    return account;
-                }),
-            );
+            setAccounts([...(storage?.get(`${key}:wallets`) || [])]?.map((w) => storage?.get(wallet(w).address?.toLowerCase())));
         }
     }, [path]);
 
@@ -132,7 +127,7 @@ export default function Data() {
                 return accounts.map((a: Account) => {
                     const selected = account?.address?.toLowerCase() === a?.address?.toLowerCase();
                     return {
-                        onClick: !selected && (() => { }),
+                        onClick: !selected && (() => {}),
                         style: { padding: "2em clamp(2em, 5%, 8em)", ...(selected && { background: "transparent", pointerEvents: "none" }) },
                         children: [
                             [
@@ -292,11 +287,7 @@ export default function Data() {
                             {mobileMenu === "chains" ? (
                                 <Elements.Icon icon={"x"} scale={0.666} />
                             ) : (
-                                <Elements.Avatar
-                                    scale={0.666}
-                                    size={2.5}
-                                    img={`https://web3.coinmeca.net/${chain?.id}/logo.svg`}
-                                />
+                                <Elements.Avatar scale={0.666} size={2.5} img={`https://web3.coinmeca.net/${chain?.id}/logo.svg`} />
                             )}
                         </Controls.Tab>
                         <Controls.Tab

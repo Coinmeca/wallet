@@ -1,10 +1,11 @@
-﻿import axios from "axios";
+﻿
+import CryptoJS from "crypto-js";
+import EventEmitter from "eventemitter3";
+import Wallet from "ethereumjs-wallet";
 import { Transaction } from "ethereumjs-tx";
 import { bufferToHex, ecsign, hashPersonalMessage, keccak256, toBuffer } from "ethereumjs-util";
-import Wallet from "ethereumjs-wallet";
-
-import EventEmitter from "eventemitter3";
-import { formatChainId, getFaviconUri, loadStorage, objectToUrlParams, openWindow } from "utils";
+import { formatChainId, getFaviconUri, loadStorage, openWindow } from "utils";
+import axios from "axios";
 
 export type ChainBase = "evm" | "svm";
 export type ChainType = "mainnet" | "mainnet-beta" | "testnet" | "devnet";
@@ -126,19 +127,14 @@ const storage = (storage?: CloudStorage | Storage | any) => {
     }
 }
 
-const promise = async (method: string, popup: any) => {
+const promise = async (method: string, popup: any, params?: any) => {
     return new Promise((resolve, reject) => {
         const messageHandler = (event: any) => {
-            // if (event.origin !== "http://localhost:3000") { // Check the origin for security
-            // return;
-            // }
             if (event.data.method === method) {
-                if (event.data.result) {
-                    // Successfully received accounts
-                    resolve(event.data.result);
-                } else if (event.data.error) {
-                    // Handle error response
-                    reject(new Error(event.data.error));
+                if (event.data.result) resolve(event.data.result);
+                else {
+                    if (event.data.error) reject(new Error(event.data.error));
+                    else reject(new Error('Request something wrong.'))
                 }
                 window.removeEventListener("message", messageHandler);
             }
@@ -148,23 +144,81 @@ const promise = async (method: string, popup: any) => {
                 window.removeEventListener("message", messageHandler);
             }
         };
-
         window.addEventListener("message", messageHandler);
 
         if (popup) {
-            const isClosed = setInterval(() => {
+            const onLoad = (e: any) => {
+                if (popup?.coinmeca) popup.coinmeca = { ...popup.coinmeca, method, params };
+                else popup.coinmeca = { method, params };
+                e.coinmecaPopup = { method, params };
+            }
+            if (params) popup.addEventListener("load", onLoad)
+
+            const onClose = setInterval(() => {
                 if (popup.closed) {
-                    clearInterval(isClosed);
+                    clearInterval(onClose);
                     reject(new Error("User closed the window before approving the request."));
                     window.removeEventListener("message", messageHandler);
+                    if (params) window.removeEventListener("load", onLoad);
                 }
             }, 100); // Check every 100ms
         }
     });
 }
 
+const getStorage = () => {
+    const isTelegram = !!((window as any)?.Telegram && (window as any)?.Telegram?.WebApp?.initDataUnsafe?.user?.id);
+    return loadStorage(
+        "coinmeca:wallet",
+        isTelegram ? ((window as any)?.WebApp || (window as any)?.WebView)?.CloudStorage : localStorage,
+        isTelegram,
+        // fixme;
+        CryptoJS.AES.encrypt(JSON.stringify(window?.navigator?.userAgent), CryptoJS.SHA256(JSON.stringify(window?.navigator?.userAgent)), {
+            mode: CryptoJS.mode.ECB,
+            padding: CryptoJS.pad.Pkcs7,
+        }).toString(),
+    )
+}
+
+const getSession = () => {
+    return loadStorage(
+        "coinmeca:wallet",
+        sessionStorage,
+        false,
+        // fixme;
+        CryptoJS.AES.encrypt(JSON.stringify(window?.navigator?.userAgent), CryptoJS.SHA256(JSON.stringify(window?.navigator?.userAgent)), {
+            mode: CryptoJS.mode.ECB,
+            padding: CryptoJS.pad.Pkcs7,
+        }).toString(),
+    )
+}
+
+async function sendNotification() {
+    if (Notification.permission === "granted") {
+        const notification = new Notification("Hello!", {
+            body: "This is a notification from your browser.",
+            icon: await getFaviconUri() || '', // Optional: URL of an icon to display in the notification
+        });
+
+        // Optional: add event listeners
+        notification.onclick = () => {
+            console.log("Notification clicked!");
+            window.focus(); // Bring the tab into focus
+        };
+
+        notification.onclose = () => {
+            console.log("Notification closed!");
+        };
+    } else {
+        console.log("Notification permission is not granted.");
+    }
+}
+
 export class CoinmecaWalletProvider {
-    private wallet?: Wallet;
+    #storage = getStorage();
+    #session = getSession();
+    #wallet?: Wallet;
+
     private events: EventEmitter;
 
     public chain?: Chain;
@@ -179,10 +233,10 @@ export class CoinmecaWalletProvider {
         if (privateKey) this.changeAccount(privateKey);
         if (chain) this.chain = chain;
 
-        return this.proxy();
+        return this.#proxy();
     }
 
-    private proxy() {
+    #proxy() {
         const handler = {
             get: (target: any, prop: string) => {
                 if (typeof target[prop] === 'function') return (...args: any[]) => target[prop](...args);
@@ -200,14 +254,7 @@ export class CoinmecaWalletProvider {
                 return [this.address];
 
             case "eth_requestAccounts":
-                return await promise(method, this.confirm(method, objectToUrlParams({
-                    appName: (document.querySelector('meta[property="og:site_name"]') as HTMLMetaElement)?.content || document.title?.split(" ")[0],
-                    appUrl: window.location.host,
-                    appLogo: getFaviconUri(),
-                }))).then((result) => {
-                    this.emit("connect", { chainId: this.chainId });
-                    return result;
-                })
+                return await this.#requestAccounts()
 
             case "eth_coinbase":
                 return this.address;
@@ -221,32 +268,32 @@ export class CoinmecaWalletProvider {
 
             // Transaction and Gas Estimation
             case "eth_sendTransaction":
-                if (!params || params.length === 0) throw new Error("No transaction parameters provided");
-                return this.sendTransaction(params[0]);
+                if (!params || !params?.length) throw new Error("No transaction parameters provided");
+                return this.#sendTransaction(params[0]);
 
             case "eth_estimateGas":
-                if (!params || params.length === 0) throw new Error("No transaction parameters provided");
-                return await this.estimateGas(params[0]);
+                if (!params || !params?.length) throw new Error("No transaction parameters provided");
+                return await this.#estimateGas(params[0]);
 
             case "eth_gasPrice":
-                return await this.getGasPrice();
+                return await this.#getGasPrice();
 
             // Signing Methods
             case "eth_sign":
                 if (!params || params.length < 2) throw new Error("eth_sign requires address and message");
-                return await this.signMessage(params[0], params[1]);
+                return await this.#signMessage(params[0], params[1]);
 
             case "eth_signTypedData_v4":
                 if (!params || params.length < 2) throw new Error("eth_signTypedData_v4 requires address and typed data");
-                return await this.signTypedData(params[0], params[1]);
+                return await this.#signTypedData(params[0], params[1]);
 
             case "personal_sign":
                 if (!params || params.length < 2) throw new Error("personal_sign requires message and address");
-                return await this.signPersonalMessage(params[0], params[1]);
+                return await this.#signPersonalMessage(params[0], params[1]);
 
             case "eth_signTransaction":
-                if (!params || params.length === 0) throw new Error("No transaction parameters provided");
-                return await this.signTransaction(params[0]);
+                if (!params || !params?.length) throw new Error("No transaction parameters provided");
+                return await this.#signTransaction(params[0]);
 
             // Event Subscription
             case "eth_subscribe":
@@ -255,39 +302,55 @@ export class CoinmecaWalletProvider {
 
             // Block and State Queries
             case "eth_blockNumber":
-                return await this.getBlockNumber();
+                return await this.#getBlockNumber();
 
             case "eth_getBalance":
-                if (!params || params.length < 1) throw new Error("eth_getBalance requires an address");
-                return await this.getBalance(params[0]);
+                if (!params || !params?.length) throw new Error("eth_getBalance requires an address");
+                return await this.#getBalance(params[0]);
 
             case "eth_getTransactionCount":
-                if (!params || params.length < 1) throw new Error("eth_getTransactionCount requires an address");
-                return await this.getTransactionCount(params[0]);
+                if (!params || !params?.length) throw new Error("eth_getTransactionCount requires an address");
+                return await this.#getTransactionCount(params[0]);
 
             case "eth_getCode":
-                if (!params || params.length < 1) throw new Error("eth_getCode requires an address");
-                return await this.getCode(params[0]);
+                if (!params || !params?.length) throw new Error("eth_getCode requires an address");
+                return await this.#getCode(params[0]);
 
             case "wallet_addEthereumChain":
-                if (!params || params.length === 0) throw new Error("No chain parameters provided");
-                return await promise(method, this.confirm(method, objectToUrlParams(Array.isArray(params) ? params[0] : params))
+                const chain = params && (Array.isArray(params) ? params[0] : params);
+                if (!chain) throw new Error("No chain parameters provided");
+                return await promise(
+                    method,
+                    this.#confirm(method),
+                    chain
                 ).then(async (result: any) => {
-                    if (result) this.switchEthereumChain(result);
-                    else await this.addEthereumChain(result);
+                    if (result) this.#switchEthereumChain(result);
+                    else await this.#addEthereumChain(result);
                     return result;
                 })
             case "wallet_switchEthereumChain":
-                if (!params || params.length === 0) throw new Error("No chain parameters provided");
-                return await promise(method, this.confirm(method, objectToUrlParams(Array.isArray(params) ? params[0] : params))
-                ).then(async (result: any) => {
-                    await this.switchEthereumChain(result);
-                    return result;
-                })
+                const data = params && (Array.isArray(params) ? params[0] : params);
+                if (!data) throw new Error("No chain parameters provided");
+                const chains = this.#storage?.get(`${this.#session?.get("key")}:chains`);
+                if (chains) {
+                    const exist = chains?.find((c: any) => (((
+                        (c?.chainId || c?.id) && typeof data?.chainId === 'string')
+                        && formatChainId(c?.chainId || c?.id) === data?.chainId?.toLowerCase())))
+                    if (exist) return await promise(
+                        method,
+                        this.#confirm(method),
+                        data
+                    ).then(async (result: any) => {
+                        await this.#switchEthereumChain(result);
+                        return result;
+                    })
+                }
+                return new Error("No chain information registered yet.")
+
 
             case "wallet_watchAsset":
-                if (!params || params.length === 0) throw new Error("No asset parameters provided");
-                return await this.watchAsset(params[0]);
+                if (!params || !params?.length) throw new Error("No asset parameters provided");
+                return await this.#watchAsset(params[0]);
 
             // Custom or Unsupported Methods
             default:
@@ -303,13 +366,17 @@ export class CoinmecaWalletProvider {
         return typeof window !== "undefined" && (window as any)?.telegram;
     }
 
-    private confirm(method: string, params: string) {
-        if (window.location.hostname?.includes("wallet.coinmeca.net")) window.location.href = `${window.location.origin}/request/${method}?${params}`;
-        else return openWindow(`https://wallet.coinmeca.net/request/${method}?${params}`);
+    #confirm(method: string) {
+        if (window.location.hostname?.includes("wallet.coinmeca.net")) {
+            window.location.href = `${window.location.origin}/request/${method}`;
+            return window;
+        }
+        // else return openWindow(`https://wallet.coinmeca.net/request/${method}?${params}`);
+        else return openWindow(`${window.location.origin}/request/${method}`);
     }
 
-    private hashDomain(domain: EIP712Domain) {
-        return this.hashStruct("EIP712Domain", domain, {
+    #hashDomain(domain: EIP712Domain) {
+        return this.#hashStruct("EIP712Domain", domain, {
             EIP712Domain: [
                 { name: "name", type: "string" },
                 { name: "version", type: "string" },
@@ -320,32 +387,32 @@ export class CoinmecaWalletProvider {
         });
     }
 
-    private encodeType(primaryType: string, types: EIP712Types) {
+    #encodeType(primaryType: string, types: EIP712Types) {
         let result = `${primaryType}(${types[primaryType].map(({ name, type }) => `${type} ${name}`).join(",")})`;
         const uniqueTypes = new Set<string>();
 
         for (const field of types[primaryType] || []) {
             if (!uniqueTypes.has(field.type) && types[field.type]) {
                 uniqueTypes.add(field.type);
-                result += this.encodeType(field.type, types);
+                result += this.#encodeType(field.type, types);
             }
         }
         return result;
     }
 
-    private typeHash(primaryType: string, types: EIP712Types) {
-        return keccak256(Buffer.from(this.encodeType(primaryType, types)));
+    #typeHash(primaryType: string, types: EIP712Types) {
+        return keccak256(Buffer.from(this.#encodeType(primaryType, types)));
     }
 
-    private encodeData(type: string, data: any, types: EIP712Types) {
+    #encodeData(type: string, data: any, types: EIP712Types) {
         const encodedTypes = ["bytes32"];
-        const encodedValues = [this.typeHash(type, types)];
+        const encodedValues = [this.#typeHash(type, types)];
 
         for (const field of types[type]) {
             const value = data[field.name];
             if (types[field.type]) {
                 encodedTypes.push("bytes32");
-                encodedValues.push(this.hashStruct(field.type, value, types));
+                encodedValues.push(this.#hashStruct(field.type, value, types));
             } else if (field.type === "string" || field.type === "bytes") {
                 encodedTypes.push("bytes32");
                 encodedValues.push(keccak256(Buffer.from(value)));
@@ -357,78 +424,132 @@ export class CoinmecaWalletProvider {
         return Buffer.concat(encodedValues.map((v) => toBuffer(v)));
     }
 
-    private hashStruct(primaryType: string, data: any, types: EIP712Types) {
-        return keccak256(this.encodeData(primaryType, data, types));
+    #hashStruct(primaryType: string, data: any, types: EIP712Types) {
+        return keccak256(this.#encodeData(primaryType, data, types));
     }
 
-    private async sendTransaction(txParams: any) {
-        if (!this.wallet) return new Error("Account doesn't setup yet.");
-        const tx = new Transaction(txParams);
-        tx.sign(this.wallet.getPrivateKey());
-        return await this.broadcastTransaction(tx.serialize());
+    async #app() {
+        return {
+            appName: (document.querySelector('meta[property="og:site_name"]') as HTMLMetaElement)?.content || document.title?.split(" ")[0],
+            appUrl: window.location.host,
+            appLogo: await getFaviconUri(),
+        }
     }
 
-    private async estimateGas(txParams: any) {
-        return await this.sendRpcRequest("eth_estimateGas", [txParams]);
+    async #requestAccounts() {
+        const method = 'eth_requestAccounts';
+        return await promise(
+            method,
+            this.#confirm(method),
+            await this.#app()
+        ).then(result => result)
     }
 
-    private async getGasPrice() {
-        return await this.sendRpcRequest("eth_gasPrice");
+    async #estimateGas(txParams: any) {
+        return await this.#sendRpcRequest("eth_estimateGas", [txParams]);
     }
 
-    private async signMessage(address: string, message: string) {
-        if (!this.wallet || !this.address) return new Error("Account doesn't setup yet.");
+    async #getGasPrice() {
+        return await this.#sendRpcRequest("eth_gasPrice");
+    }
+
+    async #signMessage(address: string, message: string) {
+        if (!this.#wallet || !this.address) return new Error("Account doesn't setup yet.");
         if (address.toLowerCase() !== this.address.toLowerCase()) throw new Error("Address does not match selected wallet address");
         const buffer = toBuffer(message);
         const hash = hashPersonalMessage(buffer);
-        const signature = ecsign(hash, this.wallet.getPrivateKey());
+        const signature = ecsign(hash, this.#wallet.getPrivateKey());
         return bufferToHex(Buffer.concat([signature.r, signature.s, Buffer.from([signature.v])]));
     }
 
-    private async signPersonalMessage(message: string, address: string) {
-        return await this.signMessage(address, message);
+    async #signPersonalMessage(message: string, address: string) {
+        return await this.#signMessage(address, message);
     }
 
-    private async signTransaction(txParams: any) {
-        if (!this.wallet) return new Error("Account doesn't setup yet.");
-        const tx = new Transaction(txParams);
-        tx.sign(this.wallet.getPrivateKey());
-        return `0x${tx.serialize().toString("hex")}`;
-    }
-
-    private async signTypedData(address: string, typedData: EIP712Message) {
-        if (!this.wallet || !this.address) return new Error("Account doesn't setup yet.");
+    async #signTypedData(address: string, typedData: EIP712Message) {
+        if (!this.#wallet || !this.address) return new Error("Account doesn't setup yet.");
         if (address.toLowerCase() !== this.address.toLowerCase()) throw new Error("Address does not match selected wallet address");
 
-        const domain = this.hashDomain(typedData.domain);
-        const message = this.hashStruct(typedData.primaryType, typedData.message, typedData.types);
+        const domain = this.#hashDomain(typedData.domain);
+        const message = this.#hashStruct(typedData.primaryType, typedData.message, typedData.types);
         const data = keccak256(Buffer.concat([toBuffer("0x1901"), domain, message]));
-        const signature = ecsign(data, this.wallet.getPrivateKey());
+        const signature = ecsign(data, this.#wallet.getPrivateKey());
         return bufferToHex(Buffer.concat([signature.r, signature.s, Buffer.from([signature.v])]));
     }
 
-    private async getBlockNumber() {
-        return await this.sendRpcRequest("eth_blockNumber");
+    async #signTransaction(txParams: any) {
+        const app = this.#storage?.get(`app:${window.location.host}`);
+        if (app) {
+            const from = txParams?.from?.toLowerCase();
+            const exist = app?.address?.find((a: string) => a?.toLowerCase() === from?.toLowerCase());
+            if (exist) {
+                const account = this.#storage?.get(from);
+                if (!account) return new Error("Account information is something wrong.");
+
+                const method = 'eth_signTransaction';
+                return await promise(
+                    method,
+                    this.#confirm(method),
+                    [txParams, await this.#app()]
+                ).then(async (result: any) => {
+                    if (result) {
+                        const tx = new Transaction(txParams);
+                        tx.sign((this.#storage?.get(`${this.#session?.get("key")}:wallets`))[exist.index]);
+                        return `0x${tx.serialize().toString("hex")}`;
+                    }
+                })
+            } else return new Error("Account doesn't approved this app.");
+        } return new Error("Account have to be connected to the app first.");
     }
 
-    private async getBalance(address: string) {
-        return await this.sendRpcRequest("eth_getBalance", [address, "latest"]);
+    async #sendTransaction(txParams: any) {
+        const app = this.#storage?.get(`app:${window.location.host}`);
+        if (app) {
+            const from = txParams?.from?.toLowerCase();
+            const exist = app?.address?.find((a: string) => a?.toLowerCase() === from?.toLowerCase());
+            if (exist) {
+                const account = this.#storage?.get(from);
+                if (!account) return new Error("Account information is something wrong.");
+
+                const method = 'eth_sendTransaction';
+                return await promise(
+                    method,
+                    this.#confirm(method),
+                    [txParams, await this.#app()]
+                ).then(async (result: any) => {
+                    if (result) {
+                        sendNotification();
+                        const tx = new Transaction(txParams);
+                        tx.sign((this.#storage?.get(`${this.#session?.get("key")}:wallets`))[exist.index]);
+                        return await this.#broadcastTransaction(tx.serialize());
+                    }
+                })
+            } else return new Error("Account doesn't approved this app.");
+        } return new Error("Account have to be connected to the app first.");
     }
 
-    private async getTransactionCount(address: string) {
-        return await this.sendRpcRequest("eth_getTransactionCount", [address, "latest"]);
+    async #getBlockNumber() {
+        return await this.#sendRpcRequest("eth_blockNumber");
     }
 
-    private async getCode(address: string) {
-        return await this.sendRpcRequest("eth_getCode", [address, "latest"]);
+    async #getBalance(address: string) {
+        return await this.#sendRpcRequest("eth_getBalance", [address, "latest"]);
     }
 
-    private async broadcastTransaction(serializedTx: Buffer) {
-        return await this.sendRpcRequest("eth_sendRawTransaction", [`0x${serializedTx.toString("hex")}`]);
+    async #getTransactionCount(address: string) {
+        return await this.#sendRpcRequest("eth_getTransactionCount", [address, "latest"]);
     }
 
-    private async sendRpcRequest(method: string, params: any[] = []) {
-        const rpc = await this.rpcUrl();
+    async #getCode(address: string) {
+        return await this.#sendRpcRequest("eth_getCode", [address, "latest"]);
+    }
+
+    async #broadcastTransaction(serializedTx: Buffer) {
+        return await this.#sendRpcRequest("eth_sendRawTransaction", [`0x${serializedTx.toString("hex")}`]);
+    }
+
+    async #sendRpcRequest(method: string, params: any[] = []) {
+        const rpc = await this.#rpcUrl();
         if (!rpc) return new Error("Provider URL was not setup yet.");
         const response = await axios.post(rpc, {
             jsonrpc: "2.0",
@@ -441,7 +562,7 @@ export class CoinmecaWalletProvider {
         return response.data.result;
     }
 
-    private async addEthereumChain(chain: Chain) {
+    async #addEthereumChain(chain: Chain) {
         // Check for required chain parameters
         const { chainId, chainName, rpcUrls, nativeCurrency } = chain;
         if (!chainId || !rpcUrls || rpcUrls.length === 0 || !nativeCurrency.decimals)
@@ -452,7 +573,7 @@ export class CoinmecaWalletProvider {
         return { message: `Chain ${chainName} with chainId ${chainId} added successfully.` };
     }
 
-    private async switchEthereumChain(chain: Chain) {
+    async #switchEthereumChain(chain: Chain) {
         // Check for required chain parameters
         const { chainId, chainName, rpcUrls, nativeCurrency } = chain;
         if (!chainId || !rpcUrls || rpcUrls.length === 0 || !nativeCurrency.decimals)
@@ -462,7 +583,7 @@ export class CoinmecaWalletProvider {
         return { message: `Chain ${chainName} with chainId ${chainId} added successfully.` };
     }
 
-    private async watchAsset(asset: Asset<"ERC20" | "ERC721" | "ERC1155">) {
+    async #watchAsset(asset: Asset<"ERC20" | "ERC721" | "ERC1155">) {
         const { type, options } = asset;
         if (type !== "ERC20") throw new Error("Unsupported asset type. Only ERC20 tokens are supported.");
 
@@ -479,7 +600,7 @@ export class CoinmecaWalletProvider {
         return { success: true, message: `Asset ${symbol} at ${address} added to watch list.` };
     }
 
-    private async rpcUrl() {
+    async #rpcUrl() {
         const urls = (
             typeof this.chain?.rpcUrls === "object" ? Object.values(this.chain.rpcUrls) : Array.isArray(this.chain?.rpcUrls) ? this.chain.rpcUrls : []
         ).filter((url) => url?.startsWith("http"));
@@ -511,7 +632,7 @@ export class CoinmecaWalletProvider {
     }
 
     async balance() {
-        if (this.address) return await this.sendRpcRequest("eth_getBalance", [this.address, "latest"]);
+        if (this.address) return await this.#sendRpcRequest("eth_getBalance", [this.address, "latest"]);
         else return 0;
     }
 
@@ -532,8 +653,8 @@ export class CoinmecaWalletProvider {
 
     // Trigger account and chain change events
     changeAccount(privateKey: string): void {
-        this.wallet = Wallet.fromPrivateKey(Buffer.from(privateKey.substring(0, 64), "hex"));
-        this.address = this.wallet.getAddressString();
+        this.#wallet = Wallet.fromPrivateKey(Buffer.from(privateKey.substring(0, 64), "hex"));
+        this.address = this.#wallet.getAddressString();
         this.emit("accountsChanged", [this.address]);
     }
 

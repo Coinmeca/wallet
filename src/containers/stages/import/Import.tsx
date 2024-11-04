@@ -25,14 +25,14 @@ export default function Import({ setStage }: Stage) {
         const wallets: string[] = storage?.get(`${key}:wallets`) || [];
 
         let info;
-        if (wallets.find((w: string) => w?.toLowerCase() === seed?.toLowerCase())) info = storage?.get(address);
+        if (wallets.find((w: string) => w?.toLowerCase() === seed?.toLowerCase())) info = storage?.get(address?.toLowerCase());
         else {
             info = { address, name: `Wallet ${wallets.length + 1}`, index: wallets.length };
-            storage?.set("last:wallet", `${wallets.length}`);
+            storage?.set("last:wallet", wallets.length);
             wallets.push(seed);
 
             storage?.set(`${key}:wallets`, wallets);
-            storage?.set(`${address}`, info);
+            storage?.set(address?.toLowerCase(), info);
         }
 
         setAccount(info);
@@ -57,7 +57,7 @@ export default function Import({ setStage }: Stage) {
                             <Layouts.Col gap={0} align={"center"} fill>
                                 <Layouts.Col align={"center"} style={{ padding: "4em" }} fill>
                                     <Layouts.Col gap={4} align={"center"} fit>
-                                        <Elements.Text type={"h2"}> Import </Elements.Text>
+                                        <Elements.Text type={"h3"}> Import </Elements.Text>
                                         <Elements.Text weight={"bold"} opacity={0.6}>
                                             Please enter a private key of the wallet that be imported.
                                         </Elements.Text>

@@ -52,12 +52,12 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const key = session?.get("key");
         const wallets = storage?.get(`${key}:wallets`);
 
-        if (typeof info === "number") info = storage?.get(wallet(wallets?.[info] || "").address) as Account;
-        else if (typeof info === "string") info = storage?.get(info) as Account;
+        if (typeof info === "number") info = storage?.get(wallet(wallets?.[info] || "").address?.toLowerCase()) as Account;
+        else if (typeof info === "string") info = storage?.get(info?.toLowerCase()) as Account;
         if (!info) return;
         if (info?.address?.toLowerCase() !== account?.address?.toLowerCase()) {
             provider?.changeAccount(wallets[info.index]);
-            storage?.set((info as Account).address, info);
+            storage?.set((info as Account).address?.toLowerCase(), info);
             storage?.set("last:wallet", info.index);
             setAccount(info);
         }
@@ -83,6 +83,7 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
     }, [provider]);
 
-
-    return <AccountContext.Provider value={{ account, setAccount: updateAccount, resetAccount, chain, setChain: updateChain }}>{children}</AccountContext.Provider>;
+    return (
+        <AccountContext.Provider value={{ account, setAccount: updateAccount, resetAccount, chain, setChain: updateChain }}>{children}</AccountContext.Provider>
+    );
 };

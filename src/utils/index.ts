@@ -45,10 +45,10 @@ export const getFaviconUri = async () => {
     }
 };
 
-export const openWindow = (target: string, size?: { width?: number; height?: number }) => {
+export const openWindow = (target: string, args?: { width?: number; height?: number, method?: string, params?: any }) => {
     if (typeof window === 'undefined') return;
-    const width = size?.width || 360;
-    const height = size?.height || 640;
+    const width = args?.width || 360;
+    const height = args?.height || 640;
     const origin = {
         width: window.innerWidth,
         height: window.innerHeight,
@@ -72,6 +72,8 @@ export const openWindow = (target: string, size?: { width?: number; height?: num
         newWindow.coinmeca = {
             isPopup: true,
             popupId,
+            method: args?.method,
+            params: args?.params,
         }
     });
 

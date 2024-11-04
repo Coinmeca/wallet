@@ -9,29 +9,11 @@ import { parseChainId } from "utils";
 import { Chain } from "wallet/provider";
 
 /*
-await window.ethereum.providerMap.get("CoinmecaWallet").request({method:"wallet_addEthereumChain", params:[{
-            chainId: '0x13e31',
-            chainName: "Blast",
-            rpcUrls: [
-                "https://rpc.blast.io",
-                "https://rpc.ankr.com/blast",
-                "https://blast.din.dev/rpc",
-                "https://blastl2-mainnet.public.blastapi.io",
-                "https://blast.blockpi.network/v1/rpc/public",
-                "https://blast.gasswap.org",
-                "wss://blast.gasswap.org",
-            ],
-            blockExplorerUrls: ["https://blastscan.io"],
-            nativeCurrency: {
-                name: "Ethereum",
-                symbol: "ETH",
-                decimals: 18,
-            }
-        }]})
+await window.ethereum.providerMap.get("CoinmecaWallet").request({method:"wallet_addEthereumChain", params:[{chainId: '0x13e31'}]})
 */
 
-export default function wallet_addEthereumChain({ params }: { params: any }) {
-    const method = "wallet_addEthereumChain";
+export default function wallet_switchEthereumChain({ params }: { params: any }) {
+    const method = "wallet_switchEthereumChain";
     const router = useRouter();
 
     const { telegram } = useTelegram();
@@ -46,31 +28,19 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
     useLayoutEffect(() => {
         setSelectedChain(chain);
         if ((window as any)?.coinmeca) {
-            const params = (window as any)?.coinmeca?.params;
+            const params = (window as any)?.coinmeca?.params?.chainId || (window as any)?.coinmeca?.params?.id;
             if (params) {
-                const decimals = params?.nativeCurrency?.decimals;
-                const c = {
-                    chainId: params?.chainId || params?.id,
-                    chainName: params?.chainName || params?.name,
-                    rpcUrls: params?.rpcUrls || params?.rpc,
-                    blockExplorerUrls: params?.blockExplorerUrls || params?.explorer,
-                    nativeCurrency: {
-                        ...params?.nativeCurrency,
-                        decimals: decimals && decimals !== "" ? parseInt(decimals) : null,
-                    },
-                };
-                const { chainId, chainName, rpcUrls, nativeCurrency } = c;
-                if (
-                    chainId &&
-                    chainName &&
-                    nativeCurrency &&
-                    nativeCurrency.name &&
-                    nativeCurrency.symbol &&
-                    nativeCurrency.decimals &&
-                    rpcUrls &&
-                    rpcUrls.length > 0
-                )
-                    setNewChain(c as Chain);
+                const chainId = parseChainId(params);
+                const chains = session?.get(`${session?.get("key")}:chains`);
+                const exist = chains?.find((c: any) => c?.id === chainId);
+                if (exist)
+                    setNewChain({
+                        chainId: exist?.id,
+                        chainName: exist?.name,
+                        rpcUrls: exist?.rpc,
+                        blockExplorerUrls: exist?.explorer,
+                        nativeCurrency: exist?.nativeCurrency,
+                    });
             }
         }
     }, []);
@@ -90,41 +60,15 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
             );
     };
 
-    const handleAddChain = () => {
-        if (!newChain) return;
-
-        const key = session?.get("key");
-        const chains = storage?.get(`${key}:chains`) || [];
-
-        if (chains) {
-            if (chains?.find((c: any) => c?.id === newChain?.chainId)) chains.map((c: Chain) => (c?.chainId === newChain?.chainId ? newChain : c));
-            else
-                storage?.set(`${key}:chains`, [
-                    ...chains,
-                    {
-                        id: newChain.chainId,
-                        name: newChain.chainName,
-                        nativeCurrency: newChain.nativeCurrency,
-                        rpc: newChain.rpcUrls,
-                        explorer: newChain.blockExplorerUrls,
-                    },
-                ]);
-            setLevel(1);
-        } else {
-            // error
-            window?.opener?.postMessage(
-                {
-                    method,
-                    error: "Invalid chain information",
-                },
-                "*",
-            );
-        }
-    };
-
     const handleSwitchChain = () => {
         if (!newChain) return;
-        setChain(parseChainId(newChain?.chainId));
+        setChain(
+            typeof newChain?.chainId === "string"
+                ? newChain?.chainId?.startsWith("0x")
+                    ? parseChainId(newChain?.chainId)
+                    : parseInt(newChain?.chainId)
+                : newChain?.chainId,
+        );
         window?.opener?.postMessage(
             {
                 method,
@@ -140,102 +84,6 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
             contents={[
                 {
                     active: level === 0,
-                    children: (
-                        <Layouts.Contents.InnerContent scroll={false}>
-                            <Layouts.Col align={"center"} style={{ padding: "4em" }} fill>
-                                <Layouts.Col gap={4} align={"center"} fill>
-                                    <Layouts.Col gap={4} align={"center"} fill>
-                                        <Layouts.Col gap={8} align={"center"} fit>
-                                            <div
-                                                style={{
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                    maxWidth: "max-content",
-                                                    maxHeight: "max-content",
-                                                    padding: "2em",
-                                                    borderRadius: "100%",
-                                                    background: "rgba(var(--white),.15)",
-                                                }}>
-                                                <Image
-                                                    width={0}
-                                                    height={0}
-                                                    src={`https://web3.coinmeca.net/${newChain.chainId}/logo.svg`}
-                                                    alt={newChain.chainName || ""}
-                                                    style={{ width: "8em", height: "8em" }}
-                                                />
-                                            </div>
-                                            <Layouts.Col gap={1}>
-                                                <Elements.Text type={"h6"}>{newChain?.chainName}</Elements.Text>
-                                                <Elements.Text type={"strong"} opacity={0.6}>
-                                                    {newChain?.chainId}
-                                                </Elements.Text>
-                                            </Layouts.Col>
-                                        </Layouts.Col>
-                                    </Layouts.Col>
-                                    <Layouts.Box
-                                        style={{
-                                            "--white": "255,255,255",
-                                            "--black": "0, 0, 0",
-                                            background: "rgba(var(--white),.15)",
-                                            maxHeight: "max-content",
-                                            padding: "clamp(2em, 7.5%, 4em)",
-                                        }}
-                                        fit>
-                                        <Layouts.Col gap={2} align={"left"}>
-                                            <Layouts.Col gap={0.5}>
-                                                <Elements.Text size={1.25} opacity={0.6}>
-                                                    <Elements.Text size={1} opacity={0.6}>
-                                                        Chain RPC URL
-                                                    </Elements.Text>
-                                                    {newChain.rpcUrls.length > 0 && (
-                                                        <>
-                                                            <Elements.Text size={1} opacity={0.6}>
-                                                                s
-                                                            </Elements.Text>{" "}
-                                                            <Elements.Text size={1} opacity={1}>
-                                                                +{newChain.rpcUrls.length}
-                                                            </Elements.Text>
-                                                        </>
-                                                    )}
-                                                </Elements.Text>
-                                                <Elements.Text>{newChain.rpcUrls[0]}</Elements.Text>
-                                            </Layouts.Col>
-                                            <Layouts.Col gap={0.5}>
-                                                <Elements.Text size={1.25} opacity={0.6}>
-                                                    Native Currency Name
-                                                </Elements.Text>
-                                                <Elements.Text>{newChain.nativeCurrency.name}</Elements.Text>
-                                            </Layouts.Col>
-                                            <Layouts.Col gap={0.5}>
-                                                <Elements.Text size={1.25} opacity={0.6}>
-                                                    Native Currency Symbol
-                                                </Elements.Text>
-                                                <Elements.Text>{newChain.nativeCurrency.symbol}</Elements.Text>
-                                            </Layouts.Col>
-                                            <Layouts.Col gap={0.5}>
-                                                <Elements.Text size={1.25} opacity={0.6}>
-                                                    Native Currency Decimals
-                                                </Elements.Text>
-                                                <Elements.Text>{newChain.nativeCurrency.decimals}</Elements.Text>
-                                            </Layouts.Col>
-                                        </Layouts.Col>
-                                    </Layouts.Box>
-                                </Layouts.Col>
-                                <Layouts.Col gap={4} align={"center"} style={{ margin: 0 }}>
-                                    <Layouts.Row gap={2}>
-                                        <Controls.Button onClick={handleClose}>Cancel</Controls.Button>
-                                        <Controls.Button type={"line"} onClick={handleAddChain}>
-                                            Approve
-                                        </Controls.Button>
-                                    </Layouts.Row>
-                                </Layouts.Col>
-                            </Layouts.Col>
-                        </Layouts.Contents.InnerContent>
-                    ),
-                },
-                {
-                    active: level === 1,
                     children: (
                         <Layouts.Contents.InnerContent scroll={false}>
                             <Layouts.Col align={"center"} style={{ padding: "4em" }} fill>
@@ -332,7 +180,7 @@ export default function wallet_addEthereumChain({ params }: { params: any }) {
                     ),
                 },
                 {
-                    active: level === 2,
+                    active: level === 1,
                     children: (
                         <Layouts.Contents.InnerContent scroll={false}>
                             <Layouts.Col align={"center"} style={{ padding: "4em" }} fill>
