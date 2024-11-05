@@ -1,5 +1,4 @@
-﻿
-import CryptoJS from "crypto-js";
+﻿import CryptoJS from "crypto-js";
 import EventEmitter from "eventemitter3";
 import Wallet from "ethereumjs-wallet";
 import { Transaction } from "ethereumjs-tx";
@@ -125,7 +124,7 @@ const storage = (storage?: CloudStorage | Storage | any) => {
                 }).toString(),
             );
     }
-}
+};
 
 const promise = async (method: string, popup: any, params?: any) => {
     return new Promise((resolve, reject) => {
@@ -134,7 +133,7 @@ const promise = async (method: string, popup: any, params?: any) => {
                 if (event.data.result) resolve(event.data.result);
                 else {
                     if (event.data.error) reject(new Error(event.data.error));
-                    else reject(new Error('Request something wrong.'))
+                    else reject(new Error("Request something wrong."));
                 }
                 window.removeEventListener("message", messageHandler);
             }
@@ -148,11 +147,11 @@ const promise = async (method: string, popup: any, params?: any) => {
 
         if (popup) {
             const onLoad = (e: any) => {
+                console.log({ e, popup });
                 if (popup?.coinmeca) popup.coinmeca = { ...popup.coinmeca, method, params };
                 else popup.coinmeca = { method, params };
-                e.coinmecaPopup = { method, params };
-            }
-            if (params) popup.addEventListener("load", onLoad)
+            };
+            if (params) popup.addEventListener("load", onLoad);
 
             const onClose = setInterval(() => {
                 if (popup.closed) {
@@ -164,7 +163,7 @@ const promise = async (method: string, popup: any, params?: any) => {
             }, 100); // Check every 100ms
         }
     });
-}
+};
 
 const getStorage = () => {
     const isTelegram = !!((window as any)?.Telegram && (window as any)?.Telegram?.WebApp?.initDataUnsafe?.user?.id);
@@ -177,8 +176,8 @@ const getStorage = () => {
             mode: CryptoJS.mode.ECB,
             padding: CryptoJS.pad.Pkcs7,
         }).toString(),
-    )
-}
+    );
+};
 
 const getSession = () => {
     return loadStorage(
@@ -190,8 +189,8 @@ const getSession = () => {
             mode: CryptoJS.mode.ECB,
             padding: CryptoJS.pad.Pkcs7,
         }).toString(),
-    )
-}
+    );
+};
 
 function requestAndSendNotification() {
     // Check if notification permission has been granted
@@ -200,7 +199,7 @@ function requestAndSendNotification() {
         sendNotification();
     } else if (Notification.permission !== "denied") {
         // Permission has not been granted yet, request permission
-        Notification.requestPermission().then(permission => {
+        Notification.requestPermission().then((permission) => {
             if (permission === "granted") {
                 // Permission was granted, send the notification
                 sendNotification();
@@ -256,7 +255,7 @@ export class CoinmecaWalletProvider {
     #proxy() {
         const handler = {
             get: (target: any, prop: string) => {
-                if (typeof target[prop] === 'function') return (...args: any[]) => target[prop](...args);
+                if (typeof target[prop] === "function") return (...args: any[]) => target[prop](...args);
                 return target[prop];
             },
         };
@@ -271,7 +270,7 @@ export class CoinmecaWalletProvider {
                 return [this.address];
 
             case "eth_requestAccounts":
-                return await this.#requestAccounts()
+                return await this.#requestAccounts();
 
             case "eth_coinbase":
                 return this.address;
@@ -336,34 +335,27 @@ export class CoinmecaWalletProvider {
             case "wallet_addEthereumChain":
                 const chain = params && (Array.isArray(params) ? params[0] : params);
                 if (!chain) throw new Error("No chain parameters provided");
-                return await promise(
-                    method,
-                    this.#confirm(method),
-                    chain
-                ).then(async (result: any) => {
+                return await promise(method, this.#confirm(method), chain).then(async (result: any) => {
                     if (result) this.#switchEthereumChain(result);
                     else await this.#addEthereumChain(result);
                     return result;
-                })
+                });
             case "wallet_switchEthereumChain":
                 const data = params && (Array.isArray(params) ? params[0] : params);
                 if (!data) throw new Error("No chain parameters provided");
                 const chains = this.#storage?.get(`${this.#session?.get("key")}:chains`);
                 if (chains) {
-                    const exist = chains?.find((c: any) => (((
-                        (c?.chainId || c?.id) && typeof data?.chainId === 'string')
-                        && formatChainId(c?.chainId || c?.id) === data?.chainId?.toLowerCase())))
-                    if (exist) return await promise(
-                        method,
-                        this.#confirm(method),
-                        data
-                    ).then(async (result: any) => {
-                        await this.#switchEthereumChain(result);
-                        return result;
-                    })
+                    const exist = chains?.find(
+                        (c: any) =>
+                            (c?.chainId || c?.id) && typeof data?.chainId === "string" && formatChainId(c?.chainId || c?.id) === data?.chainId?.toLowerCase(),
+                    );
+                    if (exist)
+                        return await promise(method, this.#confirm(method), data).then(async (result: any) => {
+                            await this.#switchEthereumChain(result);
+                            return result;
+                        });
                 }
-                return new Error("No chain information registered yet.")
-
+                return new Error("No chain information registered yet.");
 
             case "wallet_watchAsset":
                 if (!params || !params?.length) throw new Error("No asset parameters provided");
@@ -450,16 +442,12 @@ export class CoinmecaWalletProvider {
             appName: (document.querySelector('meta[property="og:site_name"]') as HTMLMetaElement)?.content || document.title?.split(" ")[0],
             appUrl: window.location.host,
             appLogo: await getFaviconUri(),
-        }
+        };
     }
 
     async #requestAccounts() {
-        const method = 'eth_requestAccounts';
-        return await promise(
-            method,
-            this.#confirm(method),
-            await this.#app()
-        ).then(result => result)
+        const method = "eth_requestAccounts";
+        return await promise(method, this.#confirm(method), await this.#app()).then((result) => result);
     }
 
     async #estimateGas(txParams: any) {
@@ -503,20 +491,17 @@ export class CoinmecaWalletProvider {
                 const account = this.#storage?.get(from);
                 if (!account) return new Error("Account information is something wrong.");
 
-                const method = 'eth_signTransaction';
-                return await promise(
-                    method,
-                    this.#confirm(method),
-                    [txParams, await this.#app()]
-                ).then(async (result: any) => {
+                const method = "eth_signTransaction";
+                return await promise(method, this.#confirm(method), [txParams, await this.#app()]).then(async (result: any) => {
                     if (result) {
                         const tx = new Transaction(txParams);
                         tx.sign((this.#storage?.get(`${this.#session?.get("key")}:wallets`))[exist.index]);
                         return `0x${tx.serialize().toString("hex")}`;
                     }
-                })
+                });
             } else return new Error("Account doesn't approved this app.");
-        } return new Error("Account have to be connected to the app first.");
+        }
+        return new Error("Account have to be connected to the app first.");
     }
 
     async #sendTransaction(txParams: any) {
@@ -528,21 +513,18 @@ export class CoinmecaWalletProvider {
                 const account = this.#storage?.get(from);
                 if (!account) return new Error("Account information is something wrong.");
 
-                const method = 'eth_sendTransaction';
-                return await promise(
-                    method,
-                    this.#confirm(method),
-                    [txParams, await this.#app()]
-                ).then(async (result: any) => {
+                const method = "eth_sendTransaction";
+                return await promise(method, this.#confirm(method), [txParams, await this.#app()]).then(async (result: any) => {
                     if (result) {
                         requestAndSendNotification();
                         const tx = new Transaction(txParams);
                         tx.sign((this.#storage?.get(`${this.#session?.get("key")}:wallets`))[exist.index]);
                         return await this.#broadcastTransaction(tx.serialize());
                     }
-                })
+                });
             } else return new Error("Account doesn't approved this app.");
-        } return new Error("Account have to be connected to the app first.");
+        }
+        return new Error("Account have to be connected to the app first.");
     }
 
     async #getBlockNumber() {

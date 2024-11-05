@@ -15,7 +15,7 @@ export default function eth_requestAccounts({ params }: { params: any }) {
     const method = "eth_requestAccounts";
     const router = useRouter();
 
-    const { storage, session } = useStorage();
+    const { storage } = useStorage();
     const { isPopup } = usePopupChecker();
     const { telegram } = useTelegram();
     const { account } = useAccount();
