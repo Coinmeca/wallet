@@ -64,15 +64,13 @@ export default function eth_sendTransaction({ params }: { params: any }) {
     }, []);
 
     const handleSign = () => {
-        const key = storage?.get(`${session?.get("key")}:wallets`)?.[storage?.get(tx?.from?.toLowerCase()!)?.index];
+        const result = storage?.get(`${session?.get("key")}:wallets`)?.[storage?.get(tx?.from?.toLowerCase()!)?.index];
         
-        if(key) {
-            const result = new Transaction(tx as any);
-            result.sign(Buffer.from(key.substring(0, 64), "hex"))
+        if(result) {
             window?.opener?.postMessage(
                 {
                     method,
-                    result: result.serialize()
+                    result,
                 },
                 "*"
             );

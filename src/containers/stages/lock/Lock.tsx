@@ -95,7 +95,7 @@ export default function Lock({ onUnlock }: {onUnlock:Function}) {
                                         <Layouts.Contents.InnerContent scroll={false}>
                                             <Layouts.Col gap={0} style={{ background: "rgba(var(--black),.45)", padding: "2em" }} fill>
                                                 <Layouts.Col fill>
-                                                    <Parts.Numberpad type="code" value={code} onChange={(e: any, v: any) => handleNumberClick(v)} />
+                                                    <Parts.Numberpad type="code" value={code} onChange={(e: any, v: any) => handleNumberClick(v)} shuffle />
                                                 </Layouts.Col>
                                                 <Controls.Button onClick={() => storage?.clear()} style={{ margin: "2em", marginTop: 0 }}>
                                                     Clear

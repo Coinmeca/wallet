@@ -499,6 +499,8 @@ export class CoinmecaWalletProvider {
                 return await __promise(method, this.#confirm(method), [txParams, await this.#app()]).then(async (result: any) => {
                     if (result) {
                         notify();
+                        const tx = new Transaction(txParams);
+                        tx.sign(Buffer.from(result?.substring(0, 64), "hex"));
                         return await this.#broadcastTransaction(result);
                     }
                 });
