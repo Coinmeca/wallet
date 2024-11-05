@@ -38,10 +38,10 @@ export const StorageProvider: React.FC<{ children: React.ReactNode }> = ({ child
                         "coinmeca:wallet",
                         storage,
                         !!(telegram && user?.id),
-                        CryptoJS.AES.encrypt(JSON.stringify(client), CryptoJS.SHA256(JSON.stringify(client)), {
-                            mode: CryptoJS.mode.ECB,
-                            padding: CryptoJS.pad.Pkcs7,
-                        }).toString(),
+                        // CryptoJS.AES.encrypt(JSON.stringify(client), CryptoJS.SHA256(JSON.stringify(client)), {
+                        //     mode: CryptoJS.mode.ECB,
+                        //     padding: CryptoJS.pad.Pkcs7,
+                        // }).toString(),
                     );
             }
         },

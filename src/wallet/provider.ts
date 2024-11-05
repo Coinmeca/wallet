@@ -108,25 +108,22 @@ export interface CoinmecaWalletProviderConfig {
     chain?: Chain;
 }
 
-const storage = (storage?: CloudStorage | Storage | any) => {
-    if (typeof window !== "undefined") {
-        const telegram = typeof window !== "undefined" ? (window as any).Telegram?.WebApp : undefined;
-        const user = telegram?.initDataUnsafe?.user;
-        const client = window?.navigator?.userAgent;
-        if (client)
-            return loadStorage(
-                "coinmeca:wallet",
-                storage,
-                !!(telegram && user?.id),
-                CryptoJS.AES.encrypt(JSON.stringify(client), CryptoJS.SHA256(JSON.stringify(client)), {
-                    mode: CryptoJS.mode.ECB,
-                    padding: CryptoJS.pad.Pkcs7,
-                }).toString(),
-            );
+const __load = (storage?: CloudStorage | Storage | any, isTelegram?: boolean) => {
+    const client = window?.navigator?.userAgent;
+    if (client) {
+        return loadStorage(
+            "coinmeca:wallet",
+            storage,
+            isTelegram,
+            // CryptoJS.AES.encrypt(JSON.stringify(client), CryptoJS.SHA256(JSON.stringify(client)), {
+            //     mode: CryptoJS.mode.ECB,
+            //     padding: CryptoJS.pad.Pkcs7,
+            // }).toString(),
+        );
     }
 };
 
-const promise = async (method: string, popup: any, params?: any) => {
+const __promise = async (method: string, popup: any, params?: any) => {
     return new Promise((resolve, reject) => {
         const messageHandler = (event: any) => {
             if (event.data.method === method) {
@@ -166,44 +163,45 @@ const promise = async (method: string, popup: any, params?: any) => {
     });
 };
 
-const getStorage = () => {
-    const isTelegram = !!((window as any)?.Telegram && (window as any)?.Telegram?.WebApp?.initDataUnsafe?.user?.id);
-    return loadStorage(
-        "coinmeca:wallet",
-        isTelegram ? ((window as any)?.WebApp || (window as any)?.WebView)?.CloudStorage : localStorage,
-        isTelegram,
-        // fixme;
-        CryptoJS.AES.encrypt(JSON.stringify(window?.navigator?.userAgent), CryptoJS.SHA256(JSON.stringify(window?.navigator?.userAgent)), {
-            mode: CryptoJS.mode.ECB,
-            padding: CryptoJS.pad.Pkcs7,
-        }).toString(),
-    );
+const __storage = () => {
+    if (typeof window !== "undefined") {
+        const telegram = typeof window !== "undefined" ? (window as any).Telegram?.WebApp : undefined;
+        const user = telegram?.initDataUnsafe?.user;
+        return __load(!!(telegram && user?.id) ? telegram?.CloudStorage : localStorage);
+    }
 };
 
-const getSession = () => {
-    return loadStorage(
-        "coinmeca:wallet",
-        sessionStorage,
-        false,
-        // fixme;
-        CryptoJS.AES.encrypt(JSON.stringify(window?.navigator?.userAgent), CryptoJS.SHA256(JSON.stringify(window?.navigator?.userAgent)), {
-            mode: CryptoJS.mode.ECB,
-            padding: CryptoJS.pad.Pkcs7,
-        }).toString(),
-    );
+const __session = () => {
+    return __load(sessionStorage);
 };
 
-function requestAndSendNotification() {
+function notify(message?: { icon?: string; title?: string; body?: string; onClick?: Function; onClose?: Function }) {
+    function push() {
+        const notification = new Notification("Hello!", {
+            body: "This is a notification from your browser.",
+            icon: "icon.png", // Optional: URL of an icon to display in the notification
+        });
+
+        // Optional: add event listeners
+        notification.onclick = () => {
+            console.log("Notification clicked!");
+            window.focus();
+        };
+
+        notification.onclose = () => {
+            console.log("Notification closed!");
+        };
+    }
     // Check if notification permission has been granted
     if (Notification.permission === "granted") {
         // Permission is already granted, send the notification directly
-        sendNotification();
+        push();
     } else if (Notification.permission !== "denied") {
         // Permission has not been granted yet, request permission
         Notification.requestPermission().then((permission) => {
             if (permission === "granted") {
                 // Permission was granted, send the notification
-                sendNotification();
+                push();
             } else {
                 console.log("Notification permission denied.");
             }
@@ -213,27 +211,9 @@ function requestAndSendNotification() {
         console.log("Notification permission is denied. Please enable it in your browser settings.");
     }
 }
-
-function sendNotification() {
-    const notification = new Notification("Hello!", {
-        body: "This is a notification from your browser.",
-        icon: "icon.png", // Optional: URL of an icon to display in the notification
-    });
-
-    // Optional: add event listeners
-    notification.onclick = () => {
-        console.log("Notification clicked!");
-        window.focus();
-    };
-
-    notification.onclose = () => {
-        console.log("Notification closed!");
-    };
-}
-
 export class CoinmecaWalletProvider {
-    #storage = getStorage();
-    #session = getSession();
+    #storage = __storage();
+    #session = __session();
     #wallet?: Wallet;
 
     private events: EventEmitter;
@@ -319,6 +299,7 @@ export class CoinmecaWalletProvider {
 
             // Block and State Queries
             case "eth_blockNumber":
+                console.log("request");
                 return await this.#getBlockNumber();
 
             case "eth_getBalance":
@@ -336,7 +317,7 @@ export class CoinmecaWalletProvider {
             case "wallet_addEthereumChain":
                 const chain = params && (Array.isArray(params) ? params[0] : params);
                 if (!chain) throw new Error("No chain parameters provided");
-                return await promise(method, this.#confirm(method), chain).then(async (result: any) => {
+                return await __promise(method, this.#confirm(method), chain).then(async (result: any) => {
                     if (result) this.#switchEthereumChain(result);
                     else await this.#addEthereumChain(result);
                     return result;
@@ -351,7 +332,7 @@ export class CoinmecaWalletProvider {
                             (c?.chainId || c?.id) && typeof data?.chainId === "string" && formatChainId(c?.chainId || c?.id) === data?.chainId?.toLowerCase(),
                     );
                     if (exist)
-                        return await promise(method, this.#confirm(method), data).then(async (result: any) => {
+                        return await __promise(method, this.#confirm(method), data).then(async (result: any) => {
                             await this.#switchEthereumChain(result);
                             return result;
                         });
@@ -448,7 +429,7 @@ export class CoinmecaWalletProvider {
 
     async #requestAccounts() {
         const method = "eth_requestAccounts";
-        return await promise(method, this.#confirm(method), await this.#app()).then((result) => result);
+        return await __promise(method, this.#confirm(method), await this.#app()).then((result) => result);
     }
 
     async #estimateGas(txParams: any) {
@@ -493,7 +474,7 @@ export class CoinmecaWalletProvider {
                 if (!account) return new Error("Account information is something wrong.");
 
                 const method = "eth_signTransaction";
-                return await promise(method, this.#confirm(method), [txParams, await this.#app()]).then(async (result: any) => {
+                return await __promise(method, this.#confirm(method), [txParams, await this.#app()]).then(async (result: any) => {
                     if (result) {
                         const tx = new Transaction(txParams);
                         tx.sign((this.#storage?.get(`${this.#session?.get("key")}:wallets`))[exist.index]);
@@ -515,12 +496,10 @@ export class CoinmecaWalletProvider {
                 if (!account) return new Error("Account information is something wrong.");
 
                 const method = "eth_sendTransaction";
-                return await promise(method, this.#confirm(method), [txParams, await this.#app()]).then(async (result: any) => {
+                return await __promise(method, this.#confirm(method), [txParams, await this.#app()]).then(async (result: any) => {
                     if (result) {
-                        requestAndSendNotification();
-                        const tx = new Transaction(txParams);
-                        tx.sign((this.#storage?.get(`${this.#session?.get("key")}:wallets`))[exist.index]);
-                        return await this.#broadcastTransaction(tx.serialize());
+                        notify();
+                        return await this.#broadcastTransaction(result);
                     }
                 });
             } else return new Error("Account doesn't approved this app.");
@@ -529,6 +508,7 @@ export class CoinmecaWalletProvider {
     }
 
     async #getBlockNumber() {
+        console.log("getBlockNumber");
         return await this.#sendRpcRequest("eth_blockNumber");
     }
 
@@ -549,7 +529,9 @@ export class CoinmecaWalletProvider {
     }
 
     async #sendRpcRequest(method: string, params: any[] = []) {
+        console.log("sendRpcRequest");
         const rpc = await this.#rpcUrl();
+        console.log({ rpc });
         if (!rpc) return new Error("Provider URL was not setup yet.");
         const response = await axios.post(rpc, {
             jsonrpc: "2.0",
