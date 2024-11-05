@@ -31,6 +31,7 @@ export const StorageProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     const modules = useCallback(
         (storage?: CloudStorage | Storage | any) => {
+            if (!storage) return;
             if (typeof window !== "undefined") {
                 const client = window?.navigator?.userAgent;
                 if (client)

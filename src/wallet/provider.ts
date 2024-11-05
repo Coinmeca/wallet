@@ -358,12 +358,12 @@ export class CoinmecaWalletProvider {
     }
 
     #confirm(method: string) {
+        // window.location.href = `${window.location.origin}/request/${method}`;
+        // return window;
         if (window.location.hostname?.includes("wallet.coinmeca.net")) {
             window.location.href = `${window.location.origin}/request/${method}`;
             return window;
-        }
-        // else return openWindow(`https://wallet.coinmeca.net/request/${method}?${params}`);
-        else return openWindow(`${window.location.origin}/request/${method}`);
+        } else return openWindow(`${window.location.origin}/request/${method}`);
     }
 
     #hashDomain(domain: EIP712Domain) {
@@ -636,6 +636,7 @@ export class CoinmecaWalletProvider {
     }
 
     // Trigger account and chain change events
+    // encrypt
     changeAccount(privateKey: string): void {
         this.#wallet = Wallet.fromPrivateKey(Buffer.from(privateKey.substring(0, 64), "hex"));
         this.address = this.#wallet.getAddressString();
