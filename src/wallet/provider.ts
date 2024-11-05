@@ -145,6 +145,7 @@ const promise = async (method: string, popup: any, params?: any) => {
         };
         window.addEventListener("message", messageHandler);
 
+        console.log("beforeload", popup);
         if (popup) {
             const onLoad = (e: any) => {
                 console.log({ e, popup });
