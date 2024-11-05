@@ -58,7 +58,7 @@ export default function Reset() {
             },
             {
                 active: stage.name === "init",
-                children: <Stages.Init stage={stage} setStage={setStage} exit={'lock'} onConfirm={handleConfirm} />,
+                children: <Stages.Init stage={stage} setStage={setStage} exit={'lock'} onConfirm={handleConfirm} reset/>,
             },
         ]}
     />
