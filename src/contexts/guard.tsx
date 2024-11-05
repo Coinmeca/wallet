@@ -40,7 +40,7 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 const queryString = window.location.search;
 
                 if (!check.init) {
-                    if (!path?.startsWith("/welcome")) target = "/welcome";
+                    // if (!path?.startsWith("/welcome")) target = "/welcome";
                 } else {
                     setIsInit(true);
                     if (!check.access) {

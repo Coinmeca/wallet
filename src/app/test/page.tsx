@@ -94,7 +94,7 @@ export default function Home() {
             <div>{telegram ? `Success, Platform: ${telegram.platform}` : "Fail"}</div>
             <Controls.Button onClick={handleAddEthereumChain}>Add Ethereum Chain</Controls.Button>
             <Controls.Button onClick={handleRequestAccounts}>Request Accounts</Controls.Button>
-            <Controls.Button onClick={handleSendTransaction}>Request Accounts</Controls.Button>
+            <Controls.Button onClick={handleSendTransaction}>Send Transaction</Controls.Button>
             <Controls.Button onClick={handleSendData}>Send Data</Controls.Button>
             <Controls.Button onClick={handleExpand}>Expand</Controls.Button>
             <Controls.Button onClick={handleShowConfirm}>Show Confirm</Controls.Button>
