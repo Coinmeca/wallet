@@ -360,10 +360,11 @@ export class CoinmecaWalletProvider {
     #confirm(method: string) {
         // window.location.href = `${window.location.origin}/request/${method}`;
         // return window;
-        if (window.location.hostname?.includes("wallet.coinmeca.net")) {
-            window.location.href = `${window.location.origin}/request/${method}`;
-            return window;
-        } else return openWindow(`${window.location.origin}/request/${method}`);
+        // if (window.location.hostname?.includes("wallet.coinmeca.net")) {
+        // window.location.href = `${window.location.origin}/request/${method}`;
+        // return window;
+        // } else return openWindow(`${window.location.origin}/request/${method}`);
+        return openWindow(`${window.location.origin}/request/${method}`);
     }
 
     #hashDomain(domain: EIP712Domain) {
