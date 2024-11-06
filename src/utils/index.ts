@@ -93,8 +93,8 @@ export function formatChainId(chain: number | string | Chain): string {
             ? chain
             : formatChainId(parseInt(chain))
         : typeof chain === "number"
-        ? `0x${chain?.toString(16)}`
-        : formatChainId(chain?.id);
+            ? `0x${chain?.toString(16)}`
+            : formatChainId(chain?.id);
 }
 
 export const isMobile = () => {
@@ -109,7 +109,7 @@ export const isMobile = () => {
     );
 };
 
-const encrypt = (data?: string, salt?: string): string | undefined => {
+export const encrypt = (data?: string, salt?: string): string | undefined => {
     if (!data || !salt) return data;
     return CryptoJS.AES.encrypt(data, CryptoJS.SHA256(salt), {
         mode: CryptoJS.mode.ECB,
@@ -117,8 +117,8 @@ const encrypt = (data?: string, salt?: string): string | undefined => {
     }).toString();
 };
 
-const decrypt = (data?: string, salt?: string): string | undefined => {
-    if (!data || !salt) return data;
+export const decrypt = (data?: string | null, salt?: string): string | undefined => {
+    if (!data || !salt) return undefined;
     return CryptoJS.AES.decrypt(data, CryptoJS.SHA256(salt), {
         mode: CryptoJS.mode.ECB,
         padding: CryptoJS.pad.Pkcs7,
@@ -179,7 +179,7 @@ export const loadStorage = (prefix: string, storage?: CloudStorage | Storage, is
         } else {
             if ((storage as Storage)?.length)
                 for (let i = 0; i < (storage as Storage).length; i++) {
-                    const key = (storage as Storage)?.key(i);
+                    const key = decrypt((storage as Storage)?.key(i), salt);
                     if (key && key.startsWith(`${prefix}:`)) {
                         const value = storage?.getItem(key) as string;
                         if (value) values[key.replace(`${prefix}:`, "")] = parse(decrypt(value, salt));

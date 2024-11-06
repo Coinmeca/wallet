@@ -3,8 +3,9 @@ import EventEmitter from "eventemitter3";
 import Wallet from "ethereumjs-wallet";
 import { Transaction } from "ethereumjs-tx";
 import { bufferToHex, ecsign, hashPersonalMessage, keccak256, toBuffer } from "ethereumjs-util";
-import { formatChainId, getFaviconUri, loadStorage, openWindow } from "utils";
+import { decrypt, encrypt, format, formatChainId, getFaviconUri, loadStorage, openWindow, parse } from "utils";
 import axios from "axios";
+import { Account } from "types";
 
 export type ChainBase = "evm" | "svm";
 export type ChainType = "mainnet" | "mainnet-beta" | "testnet" | "devnet";
@@ -108,20 +109,7 @@ export interface CoinmecaWalletProviderConfig {
     chain?: Chain;
 }
 
-const __load = (storage?: CloudStorage | Storage | any, isTelegram?: boolean) => {
-    const client = window?.navigator?.userAgent;
-    if (client) {
-        return loadStorage(
-            "coinmeca:wallet",
-            storage,
-            isTelegram,
-            // CryptoJS.AES.encrypt(JSON.stringify(client), CryptoJS.SHA256(JSON.stringify(client)), {
-            //     mode: CryptoJS.mode.ECB,
-            //     padding: CryptoJS.pad.Pkcs7,
-            // }).toString(),
-        );
-    }
-};
+
 
 const __promise = async (method: string, popup: any, params?: any) => {
     return new Promise((resolve, reject) => {
@@ -163,17 +151,6 @@ const __promise = async (method: string, popup: any, params?: any) => {
     });
 };
 
-const __storage = () => {
-    if (typeof window !== "undefined") {
-        const telegram = typeof window !== "undefined" ? (window as any).Telegram?.WebApp : undefined;
-        const user = telegram?.initDataUnsafe?.user;
-        return __load(!!(telegram && user?.id) ? telegram?.CloudStorage : localStorage);
-    }
-};
-
-const __session = () => {
-    return __load(sessionStorage);
-};
 
 function notify(message?: { icon?: string; title?: string; body?: string; onClick?: Function; onClose?: Function }) {
     function push() {
@@ -211,25 +188,29 @@ function notify(message?: { icon?: string; title?: string; body?: string; onClic
         console.log("Notification permission is denied. Please enable it in your browser settings.");
     }
 }
+
 export class CoinmecaWalletProvider {
-    #storage = __storage();
-    #session = __session();
-    #wallet?: Wallet;
+    #codename = "coinmeca:wallet";
+    #__data?: string;
 
     private events: EventEmitter;
 
-    public chain?: Chain;
-    public address?: string;
+    public address: string;
     public isCoinmecaWallet = true;
 
     constructor(config?: CoinmecaWalletProviderConfig) {
+        const data = this.#load();
+
+        const { chain } = config || {};
+        if (chain) data.set("last:chain", chain);
+
+        this.address = this.#load()?.get("last:account")
         this.events = new EventEmitter();
 
-        // Check if the config object is provided before destructuring
-        const { privateKey, chain } = config || {};
-        if (privateKey) this.changeAccount(privateKey);
-        if (chain) this.chain = chain;
 
+        localStorage.clear = () => {
+            console.error("Attempted to clear localStorage! This action is prevented.");
+        };
         return this.#proxy();
     }
 
@@ -242,6 +223,140 @@ export class CoinmecaWalletProvider {
         };
 
         return new Proxy(this, handler);
+    }
+
+    #key?: string;
+
+    #safe(fn: Function) {
+        const key = this.#key;
+        if (key) return fn(key);
+        return new Error("Cannot access to the information of accounts.")
+    }
+
+    #hash?: string;
+    #data?: { [x: string]: any };
+
+    get #store() {
+        return this.#safe((salt: string) => {
+            return {
+                set: (key: string, value: any) => this.#data = {
+                    ...this.#data,
+                    [`${encrypt(format(key)), salt}`]: encrypt(format(value), salt),
+                },
+                get: (key: string) => parse(decrypt(this.#data?.[`${encrypt(format(key), salt)}`], salt))
+            }
+        })
+    }
+
+    /*
+    {
+        wallet: storage
+    }
+    */
+
+    get #userId() {
+        this.#key = ""
+        const userId = CryptoJS.SHA256((window as any)?.Telegram?.WebApp?.initDataUnsafe?.user).toString() || this.#store?.get(`${this.#codename}:userId`);
+        this.#key = undefined;
+        return userId;
+    }
+
+    unlock(hashKey: string) {
+        this.#data = parse(decrypt(this.#__data, this.#userId))
+        const data = this.#store?.get(CryptoJS.SHA256(`${this.#userId}:${hashKey}`).toString());
+        if (key === CryptoJS.SHA256(key).toString()) {
+            this.#key = key;
+            const accounts = this.accounts;
+
+            if (!accounts || !accounts?.length) this.#load()?.remove("init");
+            else {
+                const last: any = this.address || this.#storage?.get("last:account") || this.accounts?.[0] ? this.#wallet(this.accounts?.[0])?.getAddressString() : undefined;
+                const info: any = this.#storage?.get(last?.toLowerCase());
+                if (info) return info;
+            }
+        } else new Error("Invalid key entered.")
+    }
+
+
+    #load(_?: { key?: string; storage?: CloudStorage | Storage; }) {
+        const telegram = typeof window !== "undefined" ? (window as any).Telegram?.WebApp : undefined;
+        const user = telegram?.initDataUnsafe?.user;
+        const isTelegram = !!(telegram && user?.id);
+        return loadStorage(
+            this.#codename,
+            _?.storage || isTelegram ? telegram?.CloudStorage : localStorage,
+            _?.storage ? false : isTelegram,
+            _?.key,
+        );
+    };
+
+    #wallet(privateKey: string) {
+        return Wallet.fromPrivateKey(Buffer.from(privateKey?.substring(0, 64), "hex"));
+    }
+
+    get #storage() {
+        return this.#safe((key: string) => {
+            return this.#load({ key })
+        })
+    };
+
+    get #session() {
+        return this.#safe((key: string) => {
+            return this.#load({ key, storage: sessionStorage })
+        })
+    };
+
+    get #account() {
+        return this.#safe((key: string) => {
+            return this.#storage?.get("last:account")
+        })
+    }
+
+    changeAccount(index: number): void {
+        return this.#safe((key: string) => {
+            const wallets = this.#storage?.get(`${key}:wallets`);
+            if (wallets && wallets?.length) {
+                if (wallets?.[index]) {
+                    return wallets?.[index]
+                } else return new Error("There is no accounts that setup yet.")
+            } else return new Error("There is no accounts that setup yet.")
+        })
+    }
+
+    get isInitialized() {
+        return !!this.#load()?.get("init");
+    }
+
+    get isLocked() {
+        return !!this.#key;
+    }
+
+    get isTelegram() {
+        return typeof window !== "undefined" && (window as any)?.telegram;
+    }
+
+    get accounts() {
+        return this.#safe((key: string) => {
+            const wallets = this.#storage?.get(`${key}:wallets`);
+            if (wallets && wallets?.length) return wallets?.map((k: string) => this.#storage?.get(this.#wallet(k)?.getAddressString()?.toLowerCase()));
+            else return new Error("There is no accounts that setup yet.")
+        })
+    }
+
+    get chain() {
+        return this.#load()?.get("last:chain");
+    }
+
+    get chainId() {
+        return this.chain?.chainId ? formatChainId(this.chain.chainId) : undefined;
+    }
+
+    changeChain(chain: Chain): void {
+        const chainId = formatChainId(chain.chainId);
+        if (this.chainId !== chainId) {
+            if (window) window.ethereum.chainId = chainId;
+            this.emit("chainChanged", chainId);
+        }
     }
 
     async request({ method, params }: { method: string; params?: any[] }) {
@@ -347,14 +462,6 @@ export class CoinmecaWalletProvider {
             default:
                 throw new Error(`Method '${method}' not supported`);
         }
-    }
-
-    get chainId() {
-        return typeof this.chain?.chainId === "number" ? formatChainId(this.chain.chainId) : this.chain?.chainId;
-    }
-
-    get isTelegram() {
-        return typeof window !== "undefined" && (window as any)?.telegram;
     }
 
     #confirm(method: string) {
@@ -633,21 +740,5 @@ export class CoinmecaWalletProvider {
 
     emit(event: string, ...args: any[]): void {
         this.events.emit(event, ...args);
-    }
-
-    // Trigger account and chain change events
-    // encrypt
-    changeAccount(privateKey: string): void {
-        this.#wallet = Wallet.fromPrivateKey(Buffer.from(privateKey.substring(0, 64), "hex"));
-        this.address = this.#wallet.getAddressString();
-        this.emit("accountsChanged", [this.address]);
-    }
-
-    changeChain(chain: Chain): void {
-        const chainId = formatChainId(chain.chainId);
-        if (this.chainId !== chainId) {
-            if (window) window.ethereum.chainId = chainId;
-            this.emit("chainChanged", chainId);
-        }
     }
 }

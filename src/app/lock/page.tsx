@@ -2,13 +2,14 @@
 
 import { Stages } from "containers";
 import CryptoJS from "crypto-js";
-import { useAccount, useStorage } from "hooks";
+import { useAccount, useGuard, useStorage } from "hooks";
 import { useRouter } from "next/navigation";
 import { wallet } from "wallet";
 
 export default function Lock({ params }: { params: any }) {
     const router = useRouter();
     const { storage, session } = useStorage();
+    const { setIsAccess } = useGuard();
     const { setAccount } = useAccount();
 
     const handleUnlock = (code: string) => {
@@ -26,7 +27,8 @@ export default function Lock({ params }: { params: any }) {
 
             const target = new URLSearchParams(window.location.search).get("target");
             if (target) router.push(target === "" || target === "%2F" || target?.startsWith("/welcome") ? "/" : (target?.startsWith("/") ? "" : "/") + target);
-            else router.push("/");
+            else setIsAccess(true);
+            // else router.push("/");
         }
     };
 
