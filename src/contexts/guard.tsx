@@ -32,13 +32,14 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 init: !!storage?.get("init"),
                 access: !!session?.get("key"),
             };
-
+            
             if (typeof check.init !== "undefined" && typeof check.access !== "undefined") {
                 let target;
-
+                
                 const fullPath = window.location.pathname;
                 const queryString = window.location.search;
-
+                
+                console.log("check", storage, storage?.get("init"), check.init, !check.init);
                 if (!check.init) {
                     if (!path?.startsWith("/welcome")) target = "/welcome";
                 } else {
@@ -48,7 +49,7 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                             target = `/lock?target=${encodeURIComponent(fullPath + queryString)}`;
                     } else setIsAccess(true);
                 }
-
+                
                 if (target) setTarget(target);
                 setCheck(check);
             }
@@ -84,7 +85,7 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         else if (!check.init && path?.startsWith("/welcome")) return true;
         else if (!check.access && path?.startsWith("/lock")) return true;
         return false;
-    }, [path, check]);
+    }, [check]);
 
     return <GuardContext.Provider value={{ isInit, isAccess, isLoad }}>{children}</GuardContext.Provider>;
 };
