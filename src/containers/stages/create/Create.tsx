@@ -2,14 +2,14 @@
 import Image from "next/image";
 import MECA from "assets/graphics/meca.png";
 
-import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useWallet } from "hooks";
 import { useRouter } from "next/navigation";
+import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
+import { useCoinmecaWallet } from "@coinmeca/wallet-sdk/context";
 import { Stage } from "..";
 
 export default function Create({ setStage }: Stage) {
     const router = useRouter();
-    const { provider } = useWallet();
+    const { provider } = useCoinmecaWallet();
 
     const handleCreateWallet = () => {
         provider?.create();
