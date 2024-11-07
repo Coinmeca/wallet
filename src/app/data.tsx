@@ -69,7 +69,7 @@ export default function Data() {
                         provider?.changeChain(c as any);
                         setMobileMenu("");
                     },
-                    style: { padding: "2em clamp(2em, 5%, 8em)", ...(chain?.id === c?.id && { opacity: 0.3, pointerEvents: "none" }) },
+                    style: { padding: "2em clamp(2em, 5%, 8em)", ...(provider?.chain?.id === c?.id && { opacity: 0.3, pointerEvents: "none" }) },
                     children: [
                         [
                             {
