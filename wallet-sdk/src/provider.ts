@@ -3,91 +3,10 @@ import EventEmitter from "eventemitter3";
 import Wallet from "ethereumjs-wallet";
 import { Transaction } from "ethereumjs-tx";
 import { bufferToHex, ecsign, hashPersonalMessage, keccak256, toBuffer } from "ethereumjs-util";
-import { formatChainId, getFaviconUri, loadStorage, openWindow } from "utils";
+import { formatChainId, getFaviconUri, loadStorage, openWindow, parse, parseChainId } from "./utils";
+import type { Asset, Chain, EIP712Domain, EIP712Message, EIP712Types } from "./types";
 import axios from "axios";
-
-export type ChainBase = "evm" | "svm";
-export type ChainType = "mainnet" | "mainnet-beta" | "testnet" | "devnet";
-
-export interface Chain {
-    base?: ChainBase;
-    type?: ChainType;
-    chainName?: string;
-    chainId: number | string;
-    nativeCurrency: NativeCurrency;
-    rpcUrls: string[];
-    blockExplorerUrls?: string[];
-    iconUrls?: string[];
-}
-
-export interface RequestParams {
-    method: string;
-    params?: any[];
-}
-
-export interface TransactionParams {
-    from: string;
-    to: string;
-    value: string;
-    gas: string;
-    gasPrice: string;
-    data?: string;
-}
-
-export interface EIP712Domain {
-    name?: string;
-    version?: string;
-    chainId?: number;
-    verifyingContract?: string;
-    salt?: string;
-}
-
-export interface EIP712Types {
-    [key: string]: { name: string; type: string }[];
-}
-
-export interface EIP712Message {
-    types: EIP712Types;
-    domain: EIP712Domain;
-    primaryType: string;
-    message: any;
-}
-
-export interface NativeCurrency {
-    name: string;
-    symbol: string;
-    decimals: number;
-}
-
-export type ERC20Options = {
-    address: string;
-    symbol?: string;
-    decimals?: number;
-    image?: string;
-};
-
-export type ERC721Options = {
-    address: string;
-    symbol?: string;
-    decimals?: number;
-    image?: string;
-    tokenId?: string;
-};
-
-export type ERC1155Options = {
-    address: string;
-    symbol?: string;
-    decimals?: number;
-    image?: string;
-    tokenId?: string;
-};
-
-export type AssetOptions<Name> = Name extends "ERC20" ? ERC20Options : Name extends "ERC721" ? ERC721Options : Name extends "ERC1155" ? ERC1155Options : never;
-
-export interface Asset<Name extends "ERC20" | "ERC721" | "ERC1155"> {
-    type: Name;
-    options: AssetOptions<Name>;
-}
+import { getChainsByType } from "./chains";
 
 // Create a custom Axios instance
 const axiosQuiet = axios.create({
@@ -102,26 +21,6 @@ axiosQuiet.interceptors.response.use(
         return Promise.resolve({ error });
     },
 );
-
-export interface CoinmecaWalletProviderConfig {
-    privateKey?: string;
-    chain?: Chain;
-}
-
-const __load = (storage?: CloudStorage | Storage | any, isTelegram?: boolean) => {
-    const client = window?.navigator?.userAgent;
-    if (client) {
-        return loadStorage(
-            "coinmeca:wallet",
-            storage,
-            isTelegram,
-            // CryptoJS.AES.encrypt(JSON.stringify(client), CryptoJS.SHA256(JSON.stringify(client)), {
-            //     mode: CryptoJS.mode.ECB,
-            //     padding: CryptoJS.pad.Pkcs7,
-            // }).toString(),
-        );
-    }
-};
 
 const __promise = async (method: string, popup: any, params?: any) => {
     return new Promise((resolve, reject) => {
@@ -163,18 +62,6 @@ const __promise = async (method: string, popup: any, params?: any) => {
     });
 };
 
-const __storage = () => {
-    if (typeof window !== "undefined") {
-        const telegram = typeof window !== "undefined" ? (window as any).Telegram?.WebApp : undefined;
-        const user = telegram?.initDataUnsafe?.user;
-        return __load(!!(telegram && user?.id) ? telegram?.CloudStorage : localStorage);
-    }
-};
-
-const __session = () => {
-    return __load(sessionStorage);
-};
-
 function notify(message?: { icon?: string; title?: string; body?: string; onClick?: Function; onClose?: Function }) {
     function push() {
         const notification = new Notification("Hello!", {
@@ -211,29 +98,92 @@ function notify(message?: { icon?: string; title?: string; body?: string; onClic
         console.log("Notification permission is denied. Please enable it in your browser settings.");
     }
 }
+
+export interface CoinmecaWalletProviderConfig {
+    key?: string;
+    chain?: Chain;
+}
+
 export class CoinmecaWalletProvider {
-    #storage = __storage();
-    #session = __session();
-    #wallet?: Wallet;
+    #codename = "coinmeca:wallet";
+    #key?: string;
 
     private events: EventEmitter;
-
-    public chain?: Chain;
-    public address?: string;
     public isCoinmecaWallet = true;
 
     constructor(config?: CoinmecaWalletProviderConfig) {
+        const data = this.#data();
+
+        const { key, chain } = config || {};
+        this.#key = key;
+        if (chain) data.set("last:chain", chain);
         this.events = new EventEmitter();
 
-        // Check if the config object is provided before destructuring
-        const { privateKey, chain } = config || {};
-        if (privateKey) this.changeAccount(privateKey);
-        if (chain) this.chain = chain;
+        localStorage.clear = () => {
+            console.error("Attempted to clear localStorage! This action is prevented.");
+        };
 
-        return this.#proxy();
+        return this.#announce(this.#proxy);
     }
 
-    #proxy() {
+    #announce(provider: any) {
+        window.ethereum = { ...window.ethereum, ...provider };
+        window.ethereum.providers = window.ethereum.providers || [];
+        if (!window.ethereum.providers.find((p: any) => p?.isCoinmecaWallet)) window.ethereum.providers.push(provider);
+
+        if (!window.ethereum.providerMap) window.ethereum.providerMap = new Map<string, any>(); // Ensure providerMap is initialized
+        window.ethereum.providerMap.set("CoinmecaWallet", provider);
+
+        new CustomEvent("eip6963:announceProvider", {
+            detail: {
+                info: {
+                    name: "Coinmeca Wallet",
+                    icon: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAFT0lEQVR4AbVWBWxbVxQ975ND3+GkzBBORmVmZqYxB8bMvBXGaQdWmSHpmJkXLDMF1YBaq3O5Z35WubYbPNKR7E/vwrmAqsLeeF3okeavTSlvOsJW3CYxa39is7I9XcJP7xkaePrAjIDyg0/5Z9kXB3x0/F//ydxuhqGuUG5ujyryX23bYNxxaL3SnrMQwBRonCwUjhSCoxTBqarg/T6C74ULftdDcM+L6mH7j8b8438Y8agp/sJf1h2WrTN/UtMdr6E7RyKE7aAzCIIWgKqTylnK3/JaiADjFHCaLzg/HtzxmuJw5Bozy7bBRHWQZZRH/aRtynsdz7IfYhgBX2oQBFAl6k42U8DpAeDnw8GKb5S849uNKFQF/+j/3bBc2VoyAw+zJVpQh0oANaJFgDcY4PsJYPEqpfREiX4DvGGN0/M56o7S/niUoWhM4cXrqlJxsq0GzmwHFq9WSugpErawMvNxy4G8G/AKrWhKnD28LijOGpGeAFZ8q+RW/AUrLkdySNnMeLGcJuKueriqqgwMDGTjxo0l5W957aqRkOn4fAToyDdm4mKMb1UQn+SX4wgQYyhgePyIj48PR4wYwYyMDBYWFvLo0aMuFhQUcN26dRw2bBgtFotXTUw3wZ1vKI7j5Rel4trWRfMD1HepioYeX27atCkzMzN56tQpesLJkyddxjVs6OU7Kjg/ATzyu2GDxHWT7WFhTTYe1sQ4AprHw7Ozs1kVnDlzhqmpqV5LdJofuO9V7RALzVBETq6crJuZFKK9+7BZLNJztwdJjyXl73PX5s2bRz8/P696iFPB73oJHs+1ToE5rugjYbxOIMjtw8OHD3cdcjH27dvHlJQUxsbGMi4ujsnJydy9ezfT09OvejjOdsx3IwXtS/xt8Bm9K0to9xAw3Kpdiuti7N27lzExMRTiQqXI3yEhITQMo2oNysn7fQUPPu2fBWPs5nKhjifcdDxZXlLhF4f93nvvrXVfUJ2cqgkW3GyWQZ+afxraMHe1L2tcltnFKpdhr5PuKKfo3uFBzrPv8GxAo0aN6s0AOcr3dAt3nv3IpjJYJhJQ3KZANpyLUyDFJ4SodQomC5X7k5qXQ5uzLQsByVUWoawAKUIAl4gwNDS0yiI0nEyBweK2iVnQ1++1oclMQgl2+7BsvbL7XW6ELL1zZZiWluYqw7lz51apDOVSM0uYrGw++kMYWwumYEAGoUV76v+yvdZpI2oHg+uVKDpavDEZsNtDldezDyFgktdWnJOTw6rgrE48Hq5BcCRCudFy12G2+zEMEvofu21ITCe0xlcdRtJjT5CpkprxNowi4MfX0YNF/hnzcQ5G+d4o8dpfDlgnEcL7OJatWaZENqjLx7G8520ca1DZH7H8WZ3nOBJcEI+LoW3eMxNDVhCWa+tlIREQbIUWfAPPc49l10xcgYqdVuXrTXmIn03orep0JQOEa8e8EY/wN217XhnKTLiDYS+OUlbklaDti3VohKAVzTgAj3OlsqN0u3E8Ct6glx+4QVmRW+qKhM+1bjRRdQoYtCKeHfEq31J3leTqJ25AVSBFqXyzOQ9DVxCBk89Wh1aNwzXXemeKsUxQVvAp36Lcr03peXVQts2UwnRVR1I6YU4i9GhCCTobFcVJcZbyt0GIINdmpTkPNtX3mOSf50gNqZy5JKTCiprCqCyI13/fNV+ZmX1YDMwgms0irMmEz0TCGEahS4538h4qljdoWDMZ3nTToWvbHrTd1M4ehbqCaS8OM7YWTdY/3feh/ta2LOcULdfvzD+tT99w2jJhS5nvmN1ZzvXO1mhq5ZQOM+yhqCL+B+AWe5nrKa3ZAAAAAElFTkSuQmCC",
+                    uuid: crypto.randomUUID(),
+                    rdns: "net.coinmeca.wallet",
+                },
+                provider,
+            },
+        });
+
+        return provider;
+    }
+
+    #safe(fn: Function) {
+        const key = this.#key;
+        if (key) return fn(key);
+        return new Error("Cannot access to the information of accounts.");
+    }
+
+    #getKey(key: string) {
+        key = CryptoJS.SHA256(`${this.#userId}:${key}`).toString();
+        return this.#data({ key }).get(key);
+    }
+
+    #data(_?: { key?: string; storage?: CloudStorage | Storage }) {
+        const telegram = typeof window !== "undefined" ? (window as any).Telegram?.WebApp : undefined;
+        const user = telegram?.initDataUnsafe?.user;
+        const isTelegram = !!(telegram && user?.id);
+        return loadStorage(this.#codename, _?.storage || isTelegram ? telegram?.CloudStorage : localStorage, _?.storage ? false : isTelegram, _?.key);
+    }
+
+    #wallet(privateKey: string) {
+        return Wallet.fromPrivateKey(Buffer.from(privateKey.toString().trim().substring(0, 64), "hex"));
+    }
+
+    #getPrivateKey(index: number | string) {
+        if (typeof index === "string") index = this.#storage?.get(index)?.index;
+        return this.#safe((key: string) => {
+            const wallets = this.#storage?.get(`${key}:accounts`);
+            if (wallets && wallets?.length) {
+                const key = wallets[index];
+                if (key) return key;
+                else new Error("Not found account info");
+            } else new Error("Wallet is not setup yet.");
+        });
+    }
+
+    get #proxy() {
         const handler = {
             get: (target: any, prop: string) => {
                 if (typeof target[prop] === "function") return (...args: any[]) => target[prop](...args);
@@ -242,6 +192,231 @@ export class CoinmecaWalletProvider {
         };
 
         return new Proxy(this, handler);
+    }
+
+    get #userId() {
+        return this.#data()?.get("userId");
+    }
+
+    get #storage() {
+        return this.#safe((key: string) => {
+            return this.#data({ key });
+        });
+    }
+
+    get #session() {
+        return this.#safe((key: string) => {
+            return this.#data({ key, storage: sessionStorage });
+        });
+    }
+
+    get isInitialized() {
+        return !!this.#userId;
+    }
+
+    get isLocked() {
+        return !this.#key;
+    }
+
+    get isTelegram() {
+        return typeof window !== "undefined" && (window as any)?.telegram;
+    }
+
+    get address() {
+        return this.#data()?.get("last:account");
+    }
+
+    get account() {
+        return this.#storage?.get?.(this.address?.toLowerCase());
+    }
+
+    get accounts() {
+        return this.#safe((key: string) => {
+            const accounts = this.#storage?.get(`${key}:accounts`);
+            if (accounts) return accounts?.map((k: any) => k && this.#storage?.get(this.#wallet(k).getAddressString().toLowerCase())).filter((a: any) => a);
+        });
+    }
+
+    get chain() {
+        const chainId = this.#data()?.get("last:chain");
+        return this.chains?.find((c: Chain) => c?.chainId === chainId);
+    }
+
+    get chainId() {
+        const id = this.#data()?.get("last:chain");
+        return id ? formatChainId(id) : undefined;
+    }
+
+    get chains() {
+        return this.#data().get("chains")
+    }
+
+
+    init(hash: string) {
+        if (this.#userId) new Error("Wallet already initialized.");
+        const userId = this.isTelegram ? (window as any)?.Telegram?.WebApp?.initDataUnsafe?.user : crypto.randomUUID();
+        if (!userId) new Error("Wallet already initialized.");
+
+        this.#data()?.set("userId", userId);
+        const key = CryptoJS.SHA256(`${userId}:${hash}`).toString();
+        this.#key = key;
+        this.#storage?.set(key, key);
+
+        const chains = getChainsByType("mainnet");
+        this.#data()?.set("chains", chains);
+        this.changeChain(chains[0].chainId)
+    }
+
+    lock() {
+        this.#data()?.set("last:account", this.account?.address);
+        this.#key = undefined;
+    }
+
+    check(key: string) {
+        const k = this.#getKey(key)?.toLowerCase();
+        return k && k === CryptoJS.SHA256(`${this.#userId}:${key}`).toString().toLowerCase();
+    }
+
+    unlock(hash: string) {
+        const key = this.#getKey(hash);
+        if (this.check(hash)) {
+            this.#key = key;
+            const accounts = this.accounts;
+
+            if (accounts || accounts?.length) {
+                const last: any = this.address || this.#storage?.get("last:account") || this.accounts?.[0]?.address;
+                const info: any = last && this.#storage?.get(last?.toLowerCase());
+                if (info) {
+                    this.emit("unlock", info);
+                    return info;
+                }
+            } else return new Error("Not found account info.");
+        } else return new Error("Invalid key entered.");
+    }
+
+    create() {
+        return this.#safe((key: string) => {
+            const accounts = this.accounts || [];
+            const index = accounts?.length;
+
+            const seed = CryptoJS.SHA256(`${key}:${index}`).toString();
+            const address = this.#wallet(seed)?.getAddressString();
+
+            if (address) {
+                if (!this.#storage?.get(address?.toLowerCase())) {
+                    this.#storage?.set(address?.toLowerCase(), { address, index, name: `Wallet ${index + 1}` });
+                    this.#storage?.set(`${key}:accounts`, [...(this.#storage?.get(`${key}:accounts`) || []), seed]);
+                }
+                this.changeAccount(index);
+                return true;
+            } else return false;
+        });
+    }
+
+    import(privateKey: string) {
+        return this.#safe((key: string) => {
+            const accounts = this.accounts || [];
+            const index = accounts?.length;
+
+            const address = this.#wallet(privateKey).getAddressString();
+            if (address) {
+
+                if (!this.#storage?.get(address?.toLowerCase())) {
+                    this.#storage?.set(address?.toLowerCase(), { address, index, name: `Wallet ${index + 1}` });
+                    this.#storage?.set(`${key}:accounts`, [...(this.#storage?.get(`${key}:accounts`) || []), privateKey])
+                };
+                this.changeAccount(index);
+                return true;
+            } else return false;
+        })
+    }
+
+    change(key: string, newHash: string) {
+        const old = CryptoJS.SHA256(`${this.#userId}:${key}`).toString();
+        this.#data({ key }).set(CryptoJS.SHA256(`${this.#userId}:${newHash}`).toString(), this.#getKey(key));
+        this.#data({ key }).remove(old);
+    }
+
+    changeAccount(index: number): void {
+        return this.#safe(() => {
+            const account = this.accounts?.[index];
+            if (!account) return new Error("There is no accounts that setup yet.");
+            this.#data().set("last:account", account?.address);
+            this.emit("accountChanged", account?.address);
+        });
+    }
+
+    changeChain(chainId: number | string) {
+        chainId = (typeof chainId === 'string' ? chainId?.startsWith("0x") ? parseChainId(chainId) : parseInt(chainId) : chainId) as number;
+        const chains = this.chains;
+        console.log({ chain: chains?.find((c: Chain) => c?.chainId === chainId) })
+        if (chains?.length && chains?.find((c: Chain) => c?.chainId === chainId)) {
+            if (typeof window !== 'undefined') (window as any).ethereum = { chainId };
+            this.#data().set("last:chain", chainId);
+            this.emit("chainChanged", formatChainId(chainId));
+        } else return new Error("There is no any chain registered.");
+    }
+
+    #confirm(method: string) {
+        // window.location.href = `${window.location.origin}/request/${method}`;
+        // return window;
+        if (window.location.hostname?.includes("wallet.coinmeca.net")) {
+            window.location.href = `${window.location.origin}/request/${method}`;
+            return window;
+        } else return openWindow(`${window.location.origin}/request/${method}`);
+    }
+
+    #hashDomain(domain: EIP712Domain) {
+        return this.#hashStruct("EIP712Domain", domain, {
+            EIP712Domain: [
+                { name: "name", type: "string" },
+                { name: "version", type: "string" },
+                { name: "chainId", type: "uint256" },
+                { name: "verifyingContract", type: "address" },
+                { name: "salt", type: "bytes32" },
+            ],
+        });
+    }
+
+    #encodeType(primaryType: string, types: EIP712Types) {
+        let result = `${primaryType}(${types[primaryType].map(({ name, type }) => `${type} ${name}`).join(",")})`;
+        const uniqueTypes = new Set<string>();
+
+        for (const field of types[primaryType] || []) {
+            if (!uniqueTypes.has(field.type) && types[field.type]) {
+                uniqueTypes.add(field.type);
+                result += this.#encodeType(field.type, types);
+            }
+        }
+        return result;
+    }
+
+    #typeHash(primaryType: string, types: EIP712Types) {
+        return keccak256(Buffer.from(this.#encodeType(primaryType, types)));
+    }
+
+    #encodeData(type: string, data: any, types: EIP712Types) {
+        const encodedTypes = ["bytes32"];
+        const encodedValues = [this.#typeHash(type, types)];
+
+        for (const field of types[type]) {
+            const value = data[field.name];
+            if (types[field.type]) {
+                encodedTypes.push("bytes32");
+                encodedValues.push(this.#hashStruct(field.type, value, types));
+            } else if (field.type === "string" || field.type === "bytes") {
+                encodedTypes.push("bytes32");
+                encodedValues.push(keccak256(Buffer.from(value)));
+            } else {
+                encodedTypes.push(field.type);
+                encodedValues.push(value);
+            }
+        }
+        return Buffer.concat(encodedValues.map((v) => toBuffer(v)));
+    }
+
+    #hashStruct(primaryType: string, data: any, types: EIP712Types) {
+        return keccak256(this.#encodeData(primaryType, data, types));
     }
 
     async request({ method, params }: { method: string; params?: any[] }) {
@@ -349,77 +524,6 @@ export class CoinmecaWalletProvider {
         }
     }
 
-    get chainId() {
-        return typeof this.chain?.chainId === "number" ? formatChainId(this.chain.chainId) : this.chain?.chainId;
-    }
-
-    get isTelegram() {
-        return typeof window !== "undefined" && (window as any)?.telegram;
-    }
-
-    #confirm(method: string) {
-        // window.location.href = `${window.location.origin}/request/${method}`;
-        // return window;
-        // if (window.location.hostname?.includes("wallet.coinmeca.net")) {
-        // window.location.href = `${window.location.origin}/request/${method}`;
-        // return window;
-        // } else return openWindow(`${window.location.origin}/request/${method}`);
-        return openWindow(`${window.location.origin}/request/${method}`);
-    }
-
-    #hashDomain(domain: EIP712Domain) {
-        return this.#hashStruct("EIP712Domain", domain, {
-            EIP712Domain: [
-                { name: "name", type: "string" },
-                { name: "version", type: "string" },
-                { name: "chainId", type: "uint256" },
-                { name: "verifyingContract", type: "address" },
-                { name: "salt", type: "bytes32" },
-            ],
-        });
-    }
-
-    #encodeType(primaryType: string, types: EIP712Types) {
-        let result = `${primaryType}(${types[primaryType].map(({ name, type }) => `${type} ${name}`).join(",")})`;
-        const uniqueTypes = new Set<string>();
-
-        for (const field of types[primaryType] || []) {
-            if (!uniqueTypes.has(field.type) && types[field.type]) {
-                uniqueTypes.add(field.type);
-                result += this.#encodeType(field.type, types);
-            }
-        }
-        return result;
-    }
-
-    #typeHash(primaryType: string, types: EIP712Types) {
-        return keccak256(Buffer.from(this.#encodeType(primaryType, types)));
-    }
-
-    #encodeData(type: string, data: any, types: EIP712Types) {
-        const encodedTypes = ["bytes32"];
-        const encodedValues = [this.#typeHash(type, types)];
-
-        for (const field of types[type]) {
-            const value = data[field.name];
-            if (types[field.type]) {
-                encodedTypes.push("bytes32");
-                encodedValues.push(this.#hashStruct(field.type, value, types));
-            } else if (field.type === "string" || field.type === "bytes") {
-                encodedTypes.push("bytes32");
-                encodedValues.push(keccak256(Buffer.from(value)));
-            } else {
-                encodedTypes.push(field.type);
-                encodedValues.push(value);
-            }
-        }
-        return Buffer.concat(encodedValues.map((v) => toBuffer(v)));
-    }
-
-    #hashStruct(primaryType: string, data: any, types: EIP712Types) {
-        return keccak256(this.#encodeData(primaryType, data, types));
-    }
-
     async #app() {
         return {
             appName: (document.querySelector('meta[property="og:site_name"]') as HTMLMetaElement)?.content || document.title?.split(" ")[0],
@@ -442,12 +546,13 @@ export class CoinmecaWalletProvider {
     }
 
     async #signMessage(address: string, message: string) {
-        if (!this.#wallet || !this.address) return new Error("Account doesn't setup yet.");
-        if (address.toLowerCase() !== this.address.toLowerCase()) throw new Error("Address does not match selected wallet address");
-        const buffer = toBuffer(message);
-        const hash = hashPersonalMessage(buffer);
-        const signature = ecsign(hash, this.#wallet.getPrivateKey());
-        return bufferToHex(Buffer.concat([signature.r, signature.s, Buffer.from([signature.v])]));
+        return this.#safe(() => {
+            if (address.toLowerCase() !== this.address.toLowerCase()) throw new Error("Address does not match selected wallet address");
+            const buffer = toBuffer(message);
+            const hash = hashPersonalMessage(buffer);
+            const signature = ecsign(hash, this.#getPrivateKey(address));
+            return bufferToHex(Buffer.concat([signature.r, signature.s, Buffer.from([signature.v])]));
+        });
     }
 
     async #signPersonalMessage(message: string, address: string) {
@@ -461,7 +566,7 @@ export class CoinmecaWalletProvider {
         const domain = this.#hashDomain(typedData.domain);
         const message = this.#hashStruct(typedData.primaryType, typedData.message, typedData.types);
         const data = keccak256(Buffer.concat([toBuffer("0x1901"), domain, message]));
-        const signature = ecsign(data, this.#wallet.getPrivateKey());
+        const signature = ecsign(data, this.#getPrivateKey(address));
         return bufferToHex(Buffer.concat([signature.r, signature.s, Buffer.from([signature.v])]));
     }
 
@@ -478,7 +583,7 @@ export class CoinmecaWalletProvider {
                 return await __promise(method, this.#confirm(method), [txParams, await this.#app()]).then(async (result: any) => {
                     if (result) {
                         const tx = new Transaction(txParams);
-                        tx.sign((this.#storage?.get(`${this.#session?.get("key")}:wallets`))[exist.index]);
+                        tx.sign((this.#storage?.get(`${this.#session?.get("key")}:accounts`))[exist.index]);
                         return `0x${tx.serialize().toString("hex")}`;
                     }
                 });
@@ -564,7 +669,7 @@ export class CoinmecaWalletProvider {
         if (!chainId || !rpcUrls || rpcUrls.length === 0 || !nativeCurrency.decimals)
             throw new Error("Invalid chain parameters. `chainId` and at least one `rpcUrl` are required.");
 
-        this.changeChain(chain);
+        this.changeChain(chainId);
         return { message: `Chain ${chainName} with chainId ${chainId} added successfully.` };
     }
 
@@ -588,7 +693,7 @@ export class CoinmecaWalletProvider {
     async #rpcUrl() {
         const urls = (
             typeof this.chain?.rpcUrls === "object" ? Object.values(this.chain.rpcUrls) : Array.isArray(this.chain?.rpcUrls) ? this.chain.rpcUrls : []
-        ).filter((url) => url?.startsWith("http"));
+        ).filter((url?: string) => url?.startsWith("http"));
 
         if (urls.length === 0) return null;
         const availableUrls = await Promise.all(
@@ -634,21 +739,5 @@ export class CoinmecaWalletProvider {
 
     emit(event: string, ...args: any[]): void {
         this.events.emit(event, ...args);
-    }
-
-    // Trigger account and chain change events
-    // encrypt
-    changeAccount(privateKey: string): void {
-        this.#wallet = Wallet.fromPrivateKey(Buffer.from(privateKey.substring(0, 64), "hex"));
-        this.address = this.#wallet.getAddressString();
-        this.emit("accountsChanged", [this.address]);
-    }
-
-    changeChain(chain: Chain): void {
-        const chainId = formatChainId(chain.chainId);
-        if (this.chainId !== chainId) {
-            if (window) window.ethereum.chainId = chainId;
-            this.emit("chainChanged", chainId);
-        }
     }
 }

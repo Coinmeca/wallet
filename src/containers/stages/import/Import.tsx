@@ -1,45 +1,17 @@
 ﻿"use client";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useAccount, useStorage, useTelegram } from "hooks";
-import { wallet } from "wallet";
 import { Stage } from "..";
 import { useRouter } from "next/navigation";
+import { useCoinmecaWallet } from "@coinmeca/wallet-sdk/context";
 
 export default function Import({ setStage }: Stage) {
     const router = useRouter();
-    const { storage, session } = useStorage();
-    const { setAccount, setChain } = useAccount();
+    const { provider } = useCoinmecaWallet();
 
     const handleImportWallet = (seed: string) => {
-        // error
-        if (seed.length !== 64) return;
-
-        const key = session?.get("key");
-        // error
-        if (!key || key === "") return;
-
-        const address = wallet(seed).address;
-        // error
-        if (!address) return;
-
-        const wallets: string[] = storage?.get(`${key}:wallets`) || [];
-
-        let info;
-        if (wallets.find((w: string) => w?.toLowerCase() === seed?.toLowerCase())) info = storage?.get(address?.toLowerCase());
-        else {
-            info = { address, name: `Wallet ${wallets.length + 1}`, index: wallets.length };
-            storage?.set("last:wallet", wallets.length);
-            wallets.push(seed);
-
-            storage?.set(`${key}:wallets`, wallets);
-            storage?.set(address?.toLowerCase(), info);
-        }
-
-        setAccount(info);
-
-        storage?.set("init", "complete");
-        router.push("/");
-        // setStage({ name: "wallet", level: 0 });
+        console.log({ seed });
+        if (seed.length === 64 && provider?.import(seed)) router.push("/");
+        else new Error("Something wrong while in importing address");
     };
 
     return (
@@ -69,6 +41,7 @@ export default function Import({ setStage }: Stage) {
                                     left={{ children: <Elements.Icon icon={"wallet"} /> }}
                                     style={{ padding: "2em" }}
                                     onChange={(e: any, v: string) => handleImportWallet(v)}
+                                    clearable
                                 />
                                 <Controls.Button style={{ margin: "4em", marginTop: "2em" }} onClick={() => setStage({ name: "create", level: 0 })}>
                                     Cancel

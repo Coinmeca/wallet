@@ -1,10 +1,12 @@
-﻿import { useStorage } from "hooks";
+﻿import { useCoinmecaWallet } from "@coinmeca/wallet-sdk/context";
 import { usePathname, useRouter } from "next/navigation";
-import React, { createContext, useContext, useLayoutEffect, useMemo, useState } from "react";
+import React, { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { Account } from "viem";
 
 interface GuardContextProps {
     isInit: boolean;
     isAccess: boolean;
+    setIsAccess: React.Dispatch<React.SetStateAction<boolean>>;
     isLoad: boolean;
 }
 
@@ -19,7 +21,7 @@ export const useGuard = () => {
 export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const path = usePathname();
     const router = useRouter();
-    const { storage, session } = useStorage();
+    const { provider } = useCoinmecaWallet();
 
     const [isInit, setIsInit] = useState<boolean>(false);
     const [isAccess, setIsAccess] = useState<boolean>(false);
@@ -27,34 +29,41 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const [target, setTarget] = useState<string>();
 
     useLayoutEffect(() => {
-        if (storage && session) {
-            const check = {
-                init: !!storage?.get("init"),
-                access: !!session?.get("key"),
-            };
-            
-            if (typeof check.init !== "undefined" && typeof check.access !== "undefined") {
-                let target;
-                
-                const fullPath = window.location.pathname;
-                const queryString = window.location.search;
-                
-                console.log("check", storage, storage?.get("init"), check.init, !check.init);
-                if (!check.init) {
-                    if (!path?.startsWith("/welcome")) target = "/welcome";
-                } else {
-                    setIsInit(true);
-                    if (!check.access) {
-                        if (!path.startsWith("/lock") && path !== "/lock?" && path !== "/lock?target=")
-                            target = `/lock?target=${encodeURIComponent(fullPath + queryString)}`;
-                    } else setIsAccess(true);
+        if (provider) {
+            const handleCheck = (info?: Account) => {
+                const check = {
+                    init: provider?.isInitialized,
+                    access: info ? true : !provider?.isLocked,
+                };
+
+                if (typeof check.init !== "undefined" && typeof check.access !== "undefined") {
+                    let target;
+
+                    const fullPath = window.location.pathname;
+                    const queryString = window.location.search;
+
+                    if (!check.init) {
+                        if (path?.startsWith("/welcome")) setIsAccess(true);
+                        else target = "/welcome";
+                    } else {
+                        setIsInit(true);
+                        setIsAccess(check.access);
+                        // console.log({ access: check.access });
+                        // if (!check.access) {
+                        // if (!path.startsWith("/lock") && path !== "/lock?" && path !== "/lock?target=")
+                        //     target = `/lock?target=${encodeURIComponent(fullPath + queryString)}`;
+                        // } else setIsAccess(true);
+                    }
+
+                    if (target) setTarget(target);
+                    setCheck(check);
                 }
-                
-                if (target) setTarget(target);
-                setCheck(check);
-            }
+            };
+
+            handleCheck();
+            provider?.on("unlock", handleCheck);
         }
-    }, [path, storage, session]);
+    }, [path, provider]);
 
     useLayoutEffect(() => {
         if (target) router.push(target);
@@ -81,11 +90,11 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const isLoad = useMemo(() => {
         if (typeof check?.init !== "boolean" && typeof check?.access !== "boolean") return false;
-        if (check.init && check.access) return true;
-        else if (!check.init && path?.startsWith("/welcome")) return true;
-        else if (!check.access && path?.startsWith("/lock")) return true;
+        else if (check?.init === false && path?.startsWith("/welcome")) return true;
+        else return true;
+        // else if (!check.access && path?.startsWith("/lock")) return true;
         return false;
     }, [check]);
 
-    return <GuardContext.Provider value={{ isInit, isAccess, isLoad }}>{children}</GuardContext.Provider>;
+    return <GuardContext.Provider value={{ isInit, isAccess, isLoad, setIsAccess }}>{children}</GuardContext.Provider>;
 };

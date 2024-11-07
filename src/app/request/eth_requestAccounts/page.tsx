@@ -1,11 +1,13 @@
 ﻿"use client";
 
-import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useAccount, usePopupChecker, useStorage, useTelegram } from "hooks";
 import Image from "next/image";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
-import { App } from "types";
+
+import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
+import { useCoinmecaWallet } from "@coinmeca/wallet-sdk/context";
+import { App } from "@coinmeca/wallet-sdk/types";
+import { useStorage, useTelegram } from "hooks";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({method: 'eth_requestAccounts'})
@@ -16,9 +18,8 @@ export default function eth_requestAccounts({ params }: { params: any }) {
     const router = useRouter();
 
     const { storage } = useStorage();
-    const { isPopup } = usePopupChecker();
     const { telegram } = useTelegram();
-    const { account } = useAccount();
+    const { account, isPopup } = useCoinmecaWallet();
 
     const [app, setApp] = useState<App>();
     const [level, setLevel] = useState(0);

@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "baseUrl": "src",
+        "baseUrl": "./src",
         "outDir": ".next",
         "target": "esnext",
         "module": "esnext",
@@ -30,11 +30,11 @@
             "": ["./src/*"],
             "~/*": ["./src/*"],
             "@coinmeca/ui/*": ["../ui-kit/dist/*"],
-            "@coinmeca/wallet-core/*": ["wallet-core/*"]
+            "@coinmeca/wallet-sdk/*": ["../wallet-sdk/src/*"]
         },
         "downlevelIteration": false,
         "typeRoots": ["src/types", "node_modules/@types"]
     },
-    "include": ["src", "next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+    "include": ["src", "next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "wallet-sdk"],
     "exclude": ["node_modules", "packages", "ui-kit"]
 }

@@ -4,7 +4,7 @@ import Init from "./init/Init";
 import Welcome from "./welcome/Welcome";
 import Lock from "./lock/Lock";
 
-import { Dispatch, SetStateAction } from "react";
+import type { Dispatch, SetStateAction } from "react";
 interface Stage {
     stage: { name: string; level: number };
     setStage: Dispatch<

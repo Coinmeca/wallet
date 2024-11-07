@@ -1,12 +1,14 @@
 ﻿"use client";
 
-import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useAccount, usePopupChecker, useStorage, useTelegram } from "hooks";
-import Image from "next/image";
-import { useRouter, useSearchParams } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
-import { parseChainId } from "utils";
-import { Chain } from "wallet/provider";
+import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
+
+import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
+import { Chain } from "@coinmeca/wallet-sdk/types";
+import { useCoinmecaWallet } from "@coinmeca/wallet-sdk/context";
+
+import { useTelegram } from "hooks";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({method:"wallet_addEthereumChain", params:[{chainId: '0x13e31'}]})
@@ -17,32 +19,32 @@ export default function wallet_switchEthereumChain({ params }: { params: any }) 
     const router = useRouter();
 
     const { telegram } = useTelegram();
-    const { isPopup } = usePopupChecker();
-    const { storage, session } = useStorage();
-    const { chain, setChain } = useAccount();
+    const { isPopup } = useCoinmecaWallet();
+    // const { storage, session } = useStorage();
+    // const { chain, setChain } = useAccount();
 
     const [selectedChain, setSelectedChain] = useState<any>();
     const [newChain, setNewChain] = useState<Chain>();
     const [level, setLevel] = useState(0);
 
     useLayoutEffect(() => {
-        setSelectedChain(chain);
-        if ((window as any)?.coinmeca) {
-            const params = (window as any)?.coinmeca?.params?.chainId || (window as any)?.coinmeca?.params?.id;
-            if (params) {
-                const chainId = parseChainId(params);
-                const chains = session?.get(`${session?.get("key")}:chains`);
-                const exist = chains?.find((c: any) => c?.id === chainId);
-                if (exist)
-                    setNewChain({
-                        chainId: exist?.id,
-                        chainName: exist?.name,
-                        rpcUrls: exist?.rpc,
-                        blockExplorerUrls: exist?.explorer,
-                        nativeCurrency: exist?.nativeCurrency,
-                    });
-            }
-        }
+        // setSelectedChain(chain);
+        // if ((window as any)?.coinmeca) {
+        //     const params = (window as any)?.coinmeca?.params?.chainId || (window as any)?.coinmeca?.params?.id;
+        //     if (params) {
+        //         const chainId = parseChainId(params);
+        //         const chains = session?.get(`${session?.get("key")}:chains`);
+        //         const exist = chains?.find((c: any) => c?.id === chainId);
+        //         if (exist)
+        //             setNewChain({
+        //                 chainId: exist?.id,
+        //                 chainName: exist?.name,
+        //                 rpcUrls: exist?.rpc,
+        //                 blockExplorerUrls: exist?.explorer,
+        //                 nativeCurrency: exist?.nativeCurrency,
+        //             });
+        //     }
+        // }
     }, []);
 
     const handleClose = () => {
@@ -62,13 +64,13 @@ export default function wallet_switchEthereumChain({ params }: { params: any }) 
 
     const handleSwitchChain = () => {
         if (!newChain) return;
-        setChain(
-            typeof newChain?.chainId === "string"
-                ? newChain?.chainId?.startsWith("0x")
-                    ? parseChainId(newChain?.chainId)
-                    : parseInt(newChain?.chainId)
-                : newChain?.chainId,
-        );
+        // setChain(
+        //     typeof newChain?.chainId === "string"
+        //         ? newChain?.chainId?.startsWith("0x")
+        //             ? parseChainId(newChain?.chainId)
+        //             : parseInt(newChain?.chainId)
+        //         : newChain?.chainId,
+        // );
         window?.opener?.postMessage(
             {
                 method,
@@ -158,7 +160,7 @@ export default function wallet_switchEthereumChain({ params }: { params: any }) 
                                             <Elements.Text type={"h3"}>Switch</Elements.Text>
                                             <Elements.Text size={1} weight={"bold"}>
                                                 <Elements.Text opacity={0.6}>This is will switch the chain from </Elements.Text>{" "}
-                                                <Elements.Text>{chain?.name}</Elements.Text> <Elements.Text opacity={0.6}>to</Elements.Text>{" "}
+                                                {/* <Elements.Text>{chain?.name}</Elements.Text> <Elements.Text opacity={0.6}>to</Elements.Text>{" "} */}
                                                 <Elements.Text>{` ${newChain?.chainName}`}</Elements.Text>
                                                 <Elements.Text opacity={0.6}>.</Elements.Text>
                                             </Elements.Text>
