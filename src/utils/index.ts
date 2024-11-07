@@ -1,5 +1,5 @@
 ﻿import CryptoJS from "crypto-js";
-import { Chain } from "types";
+import { Chain } from "@coinmeca/wallet-sdk/types";
 
 export const objectToUrlParams = (obj: { [x: string | number | symbol]: any }) => {
     const params = new URLSearchParams();
@@ -83,7 +83,7 @@ export const openWindow = (target: string, args?: { width?: number; height?: num
 
 export function parseChainId(chain: number | string | Chain): number {
     if (!chain) return 0;
-    return typeof chain === "string" ? (chain.startsWith("0x") ? Number(chain) : parseInt(chain)) : typeof chain === "number" ? chain : parseChainId(chain?.id);
+    return typeof chain === "string" ? (chain.startsWith("0x") ? Number(chain) : parseInt(chain)) : typeof chain === "number" ? chain : parseChainId(chain?.chainId);
 }
 
 export function formatChainId(chain: number | string | Chain): string {
@@ -93,8 +93,8 @@ export function formatChainId(chain: number | string | Chain): string {
             ? chain
             : formatChainId(parseInt(chain))
         : typeof chain === "number"
-        ? `0x${chain?.toString(16)}`
-        : formatChainId(chain?.id);
+            ? `0x${chain?.toString(16)}`
+            : formatChainId(chain?.chainId);
 }
 
 export const isMobile = () => {
