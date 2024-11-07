@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { usePortal } from "@coinmeca/ui/hooks";
 import { Modal } from "@coinmeca/ui/containers";
 
-export default function Lock({ onUnlock }: {onUnlock:Function}) {
+export default function Lock(props?: {onUnlock?:Function}) {
     const length = 6;
     const router = useRouter();
 
@@ -23,11 +23,11 @@ export default function Lock({ onUnlock }: {onUnlock:Function}) {
 
         setCode(code);
         if (code?.length === length) {
-            const key = storage?.get(`${storage?.get("userId")}:${CryptoJS.SHA256(code).toString()}`);
-            if (key) {
-                if (typeof onUnlock === 'function') onUnlock(code);
-                setCode("");
-            } else setError({ state: true, message: "The entered passcode was wrong." });
+            try {
+                props?.onUnlock?.(CryptoJS.SHA256(code).toString());
+            } catch (message:any) {
+                setError({ state: true, message, });
+            } 
         } else setError({ state: false, message: "" });
     };
 

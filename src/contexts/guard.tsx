@@ -31,10 +31,9 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     useLayoutEffect(() => {
         if (provider) {
             const check = {
-                init: provider?.is(),
-                access: provider?.isLocked,
+                init: provider?.isInitialized,
+                access: !provider?.isLocked,
             };
-            console.log({ key: session?.get("key") });
 
             if (typeof check.init !== "undefined" && typeof check.access !== "undefined") {
                 let target;
@@ -42,16 +41,18 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 const fullPath = window.location.pathname;
                 const queryString = window.location.search;
 
-                console.log("check", storage, storage?.get("init"), check);
+                console.log("check", check);
                 if (!check.init) {
                     if (!path?.startsWith("/welcome")) target = "/welcome";
+                    else setIsAccess(true);
                 } else {
                     setIsInit(true);
-                    console.log({ access: check.access });
-                    if (!check.access) {
+                    setIsAccess(check.access);
+                    // console.log({ access: check.access });
+                    // if (!check.access) {
                         // if (!path.startsWith("/lock") && path !== "/lock?" && path !== "/lock?target=")
                         //     target = `/lock?target=${encodeURIComponent(fullPath + queryString)}`;
-                    } else setIsAccess(true);
+                    // } else setIsAccess(true);
                 }
 
                 if (target) setTarget(target);
@@ -82,12 +83,6 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             }
         }
     }, [path]);
-
-    useEffect(() => {
-        const clear = () => session?.remove("key");
-        window.addEventListener("beforeunload", clear);
-        return () => window.removeEventListener("beforeunload", clear);
-    }, []);
 
     const isLoad = useMemo(() => {
         if (typeof check?.init !== "boolean" && typeof check?.access !== "boolean") return false;

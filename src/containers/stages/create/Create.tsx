@@ -1,7 +1,7 @@
 ﻿"use client";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import MECA from "assets/graphics/meca.png";
-import { useAccount, useStorage } from "hooks";
+import { useAccount, useStorage, useWallet } from "hooks";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -14,33 +14,38 @@ export default function Create({ setStage }: Stage) {
     const { setAccount } = useAccount();
     const [create, setCreate] = useState(false);
 
+    const { provider } = useWallet();
+
     const handleCreateWallet = () => {
-        if (create) return router.push("/");
+        // if (create) return router.push("/");
 
-        const key = session?.get("key");
-        // error
-        if (!key || key === "") return;
+        // const key = session?.get("key");
+        // // error
+        // if (!key || key === "") return;
 
-        const wallets: string[] = storage?.get(`${key}:wallets`) || [];
-        const { privateKey, address } = wallet().create(`${key}:${wallets.length}`);
+        // const wallets: string[] = storage?.get(`${key}:wallets`) || [];
+        // const { privateKey, address } = wallet().create(`${key}:${wallets.length}`);
 
-        let info: any;
-        if (wallets.find((w: string) => w?.toLowerCase() === privateKey?.toLowerCase())) {
-            info = storage?.get(address?.toLowerCase());
-        } else {
-            info = { address, name: `Wallet ${wallets.length + 1}`, index: wallets.length };
-            storage?.set("last:wallet", wallets.length);
-            wallets.push(privateKey);
+        // let info: any;
+        // if (wallets.find((w: string) => w?.toLowerCase() === privateKey?.toLowerCase())) {
+        //     info = storage?.get(address?.toLowerCase());
+        // } else {
+        //     info = { address, name: `Wallet ${wallets.length + 1}`, index: wallets.length };
+        //     storage?.set("last:wallet", wallets.length);
+        //     wallets.push(privateKey);
 
-            storage?.set(`${key}:wallets`, wallets);
-            storage?.set(address?.toLowerCase(), info);
-        }
+        //     storage?.set(`${key}:wallets`, wallets);
+        //     storage?.set(address?.toLowerCase(), info);
+        // }
 
-        setAccount(info);
+        // setAccount(info);
 
-        storage?.set("init", "complete");
-        router.push("/");
-        setCreate(false);
+        // storage?.set("init", "complete");
+        // router.push("/");
+        // setCreate(false);
+
+        provider?.createAccount();
+        if (provider?.accounts?.length) router.push('/');
     };
 
     return (

@@ -1,22 +1,18 @@
 ﻿"use client";
 
-import { useLayoutEffect } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { Frames } from "@coinmeca/ui/containers";
 import { Contents, Layouts } from "@coinmeca/ui/components";
 import { AnimatePresence } from "framer-motion";
 
-import { useGuard, useStorage } from "hooks";
+import { useGuard, useStorage, useWallet } from "hooks";
 import { Containers } from "index";
 import Data from "./data";
 import Lock from "./lock/page";
 
 export default function RootTemplate({ children, params }: { children: any; params: any }) {
-    const { isLoad, isAccess } = useGuard();
-    const { session } = useStorage();
     const { header, toastlist } = Data();
-
-
-    console.log({ isLoad });
+    const { isLoad,isAccess } = useGuard();
 
     return (
         <Frames.Frame

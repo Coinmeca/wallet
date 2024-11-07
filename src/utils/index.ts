@@ -93,8 +93,8 @@ export function formatChainId(chain: number | string | Chain): string {
             ? chain
             : formatChainId(parseInt(chain))
         : typeof chain === "number"
-            ? `0x${chain?.toString(16)}`
-            : formatChainId(chain?.id);
+        ? `0x${chain?.toString(16)}`
+        : formatChainId(chain?.id);
 }
 
 export const isMobile = () => {
@@ -118,7 +118,8 @@ export const encrypt = (data?: string, salt?: string): string | undefined => {
 };
 
 export const decrypt = (data?: string | null, salt?: string): string | undefined => {
-    if (!data || !salt) return undefined;
+    if (!data) return undefined;
+    else if (!salt) return data;
     return CryptoJS.AES.decrypt(data, CryptoJS.SHA256(salt), {
         mode: CryptoJS.mode.ECB,
         padding: CryptoJS.pad.Pkcs7,
