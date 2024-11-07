@@ -172,7 +172,8 @@ export default function Data() {
                                 children: (
                                     <Layouts.Row gap={2}>
                                         <Layouts.Row gap={1} fit>
-                                            <Avatar img={`https://web3.coinmeca.net/${c?.chainId}/logo.svg`} />
+                                            <Avatar img={chain?.logo || ""} />
+                                            {/* <Avatar img={`https://web3.coinmeca.net/${c?.chainId}/logo.svg`} /> */}
                                         </Layouts.Row>
                                         <Elements.Text size={1.5}>{c?.chainName}</Elements.Text>
                                     </Layouts.Row>
