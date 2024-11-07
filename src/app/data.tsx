@@ -3,13 +3,14 @@
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useNotification } from "@coinmeca/ui/hooks";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useLayoutEffect, useState } from "react";
+import { useCallback, useLayoutEffect, useMemo, useState } from "react";
 
 import { Avatar } from "@coinmeca/ui/components/elements";
 import Coinmeca from "assets/coinmeca.svg";
 import { useAccount, useStorage, useWallet } from "hooks";
 import { Account, Chain } from "types";
 import { wallet } from "wallet";
+import { parse } from "utils";
 
 export default function Data() {
     const router = useRouter();
@@ -22,7 +23,7 @@ export default function Data() {
     const [active, setActive] = useState(false);
     const [mobileMenu, setMobileMenu] = useState("");
 
-    const [chains, setChains] = useState<Chain[]>();
+    // const [chains, setChains] = useState<Chain[]>();
     const [accounts, setAccounts] = useState<Account[]>();
 
     const { toasts, addToast } = useNotification();
@@ -55,34 +56,39 @@ export default function Data() {
         },
     ];
 
-    // const chainlist = useCallback(
-    //     (chains: Chain[] = []) => {
-    //         if (chains?.length) {
-    //             return chains.map((c: Chain) => ({
-    //                 onClick: () => {
-    //                     setChain(c);
-    //                     setMobileMenu("");
-    //                 },
-    //                 style: { padding: "2em clamp(2em, 5%, 8em)", ...(chain?.id === c?.id && { opacity: 0.3, pointerEvents: "none" }) },
-    //                 children: [
-    //                     [
-    //                         {
-    //                             children: (
-    //                                 <Layouts.Row gap={2}>
-    //                                     <Layouts.Row gap={1} fit>
-    //                                         <Avatar img={`https://web3.coinmeca.net/${c?.id}/logo.svg`} />
-    //                                     </Layouts.Row>
-    //                                     <Elements.Text size={1.5}>{c?.name}</Elements.Text>
-    //                                 </Layouts.Row>
-    //                             ),
-    //                         },
-    //                     ],
-    //                 ],
-    //             }));
-    //         }
-    //     },
-    //     [chain, chains],
-    // );
+    const chains = useMemo(() => {
+        const c = localStorage.getItem('coinmeca:wallet:chains');
+        return c && parse(c);
+    },[])
+
+    const chainlist = useCallback(
+        (chains: Chain[] = []) => {
+            if (chains?.length) {
+                return chains.map((c: Chain) => ({
+                    onClick: () => {
+                        provider?.changeChain(c as any);
+                        setMobileMenu("");
+                    },
+                    style: { padding: "2em clamp(2em, 5%, 8em)", ...(chain?.id === c?.id && { opacity: 0.3, pointerEvents: "none" }) },
+                    children: [
+                        [
+                            {
+                                children: (
+                                    <Layouts.Row gap={2}>
+                                        <Layouts.Row gap={1} fit>
+                                            <Avatar img={`https://web3.coinmeca.net/${c?.id}/logo.svg`} />
+                                        </Layouts.Row>
+                                        <Elements.Text size={1.5}>{c?.name}</Elements.Text>
+                                    </Layouts.Row>
+                                ),
+                            },
+                        ],
+                    ],
+                }));
+            }
+        },
+        [provider?.chain, chains],
+    );
 
     const handleAccountChange = (account: Account) => {
         provider?.changeAccount(account?.index);
@@ -324,8 +330,7 @@ export default function Data() {
                             left={{ children: <Elements.Icon icon={"search"} style={{ marginRight: "0.5em" }} /> }}
                             style={{ padding: "2em clamp(0em, 3.75%, 6em)" }}
                         />
-                        <Layouts.List list={chains} />
-                        {/* <Layouts.List list={chains} formatter={chainlist} /> */}
+                        <Layouts.List list={chains} formatter={chainlist} />
                         <Layouts.Col style={{ padding: "4em", paddingTop: "0" }} fit>
                             <Controls.Button
                                 type={"line"}

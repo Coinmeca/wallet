@@ -393,7 +393,15 @@ export class CoinmecaWalletProvider {
         return this.#safe((key: string) => {
             const wallets = this.#storage?.get(`${key}:wallets`);
             if (wallets && wallets?.length)
-                return wallets?.map((k: string) => this.#storage?.get(this.#wallet(CryptoJS.SHA256(k).toString())?.getAddressString()?.toLowerCase()));
+                return wallets
+                    ?.map((k: string, i: number) =>
+                        this.#storage?.get(
+                            this.#wallet(CryptoJS.SHA256(`${key}:${i}`).toString())
+                                ?.getAddressString()
+                                ?.toLowerCase(),
+                        ),
+                    )
+                    .filter((a) => a);
             else [];
         });
     }
