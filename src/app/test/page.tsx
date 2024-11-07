@@ -1,6 +1,6 @@
 "use client";
 import { Controls, Layouts } from "@coinmeca/ui/components";
-import { getChainById } from "chains";
+import { getChainById } from "@coinmeca/wallet-sdk/src/chains";
 import { useTelegram, useWallet } from "hooks";
 import { useState } from "react";
 

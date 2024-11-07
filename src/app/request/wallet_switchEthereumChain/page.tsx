@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
 import { parseChainId } from "utils";
-import { Chain } from "wallet/provider";
+import { Chain } from "@coinmeca/wallet-sdk/src";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({method:"wallet_addEthereumChain", params:[{chainId: '0x13e31'}]})

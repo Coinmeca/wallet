@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useAccount, usePopupChecker, useStorage, useTelegram } from "hooks";
+import { usePopupChecker, useStorage, useTelegram, useWallet } from "hooks";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
@@ -18,7 +18,7 @@ export default function eth_requestAccounts({ params }: { params: any }) {
     const { storage } = useStorage();
     const { isPopup } = usePopupChecker();
     const { telegram } = useTelegram();
-    const { account } = useAccount();
+    const { account } = useWallet();
 
     const [app, setApp] = useState<App>();
     const [level, setLevel] = useState(0);

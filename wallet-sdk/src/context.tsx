@@ -1,6 +1,6 @@
 ﻿import React, { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
-import { Account } from "types";
-import { Chain, CoinmecaWalletProvider } from "wallet/provider";
+import { Chain, Account } from "./types";
+import { CoinmecaWalletProvider as WalletProvider } from "./provider";
 
 // Inject the provider into window.ethereum
 declare global {
@@ -11,27 +11,27 @@ declare global {
     }
 }
 
-interface WalletProviderContextProps {
-    provider: CoinmecaWalletProvider | undefined;
+interface CoinmecaWalletProviderContextProps {
+    provider: WalletProvider | undefined;
     account: Account | undefined;
     chain: Chain | undefined;
 }
 
-const WalletProviderContext = createContext<WalletProviderContextProps | undefined>(undefined);
+const CoinmecaWalletProviderContext = createContext<CoinmecaWalletProviderContextProps | undefined>(undefined);
 
-export const useWallet = () => {
-    const context = useContext(WalletProviderContext);
+export const useCoinmecaWallet = () => {
+    const context = useContext(CoinmecaWalletProviderContext);
     if (!context) throw new Error("InjectedWalletContext for useInjectedWallet doesn't initialized yet.");
     return context;
 };
 
-export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const CoinmecaWalletProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [account, setAccount] = useState<Account>();
     const [chain, setChain] = useState();
-    const [provider, setProvider] = useState<CoinmecaWalletProvider>();
+    const [provider, setProvider] = useState<WalletProvider>();
 
     useLayoutEffect(() => {
-        setProvider(new CoinmecaWalletProvider());
+        setProvider(new WalletProvider());
     }, []);
 
     useEffect(() => {
@@ -53,5 +53,5 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         };
     }, [provider]);
 
-    return <WalletProviderContext.Provider value={{ provider, account, chain }}>{children}</WalletProviderContext.Provider>;
+    return <CoinmecaWalletProviderContext.Provider value={{ provider, account, chain }}>{children}</CoinmecaWalletProviderContext.Provider>;
 };

@@ -6,7 +6,7 @@ import { Layouts } from "@coinmeca/ui/components";
 
 import { Stages } from "containers";
 import { useWallet } from "hooks";
-import { getChainsByType } from "chains";
+import { getChainsByType } from "@coinmeca/wallet-sdk/src/chains";
 import { format, parse } from "utils";
 export default function Welcome() {
     const { provider } = useWallet();

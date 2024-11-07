@@ -1,5 +1,5 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
-import { wallet } from "wallet";
+import { wallet } from "@coinmeca/wallet-sdk/src";
 
 // message of body
 // {

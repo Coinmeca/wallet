@@ -7,7 +7,7 @@ import { usePopupChecker, useTelegram } from "hooks";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
-import { TransactionParams } from "wallet/provider";
+import { TransactionParams } from "@coinmeca/wallet-sdk/src";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({

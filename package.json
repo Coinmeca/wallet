@@ -4,7 +4,7 @@
     "keywords": [
         "coinmeca",
         "interface",
-        "ui"
+        "wallet"
     ],
     "license": "MIT",
     "repository": {
@@ -13,22 +13,28 @@
     },
     "author": "Coinmeca Team <dev@coinmeca.net>",
     "workspaces": [
-        "ui-kit"
+        "ui-kit",
+        "wallet-sdk"
     ],
     "scripts": {
         "setup": "git submodule update --init --recursive && cd ui-kit && git fetch origin && git checkout main && git pull origin main && cd .. && git submodule update --init --recursive",
         "lint": "next lint",
         "install:ui": "yarn workspace @coinmeca/ui install",
+        "install:wallet": "yarn workspace @coinmeca/wallet-sdk install",
         "dev": "next dev",
         "dev:ui": "yarn workspace @coinmeca/ui dev",
+        "dev:wallet": "yarn workspace @coinmeca/wallet-sdk dev",
         "start": "next start",
         "build": "next build",
         "build:ui": "yarn workspace @coinmeca/ui build",
+        "build:wallet": "yarn workspace @coinmeca/wallet-sdk build",
         "deploy": "next build && npx vercel --prod",
         "deploy:ui": "yarn workspace @coinmeca/ui deploy",
+        "deploy:wallet": "yarn workspace @coinmeca/wallet-sdk deploy",
         "dist": "npx vercel --prod",
         "clean": "rm -rf ./dist ./build ./.next ./tsconfig.tsbuildinfo ./node_modules/.cache",
         "clean:ui": "yarn workspace @coinmeca/ui clean",
+        "clean:wallet": "yarn workspace @coinmeca/wallet-sdk clean",
         "discord": "tsx ./src/app/api/discord/register"
     },
     "dependencies": {

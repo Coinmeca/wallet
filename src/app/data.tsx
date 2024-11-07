@@ -1,14 +1,14 @@
 ﻿"use client";
 
+import { useCallback, useMemo, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useNotification } from "@coinmeca/ui/hooks";
-import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
-
 import { Avatar } from "@coinmeca/ui/components/elements";
+import { Account, Chain } from "@coinmeca/wallet-sdk/types";
+
 import Coinmeca from "assets/coinmeca.svg";
 import { useWallet } from "hooks";
-import { Account, Chain } from "types";
 
 export default function Data() {
     const router = useRouter();
