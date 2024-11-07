@@ -338,7 +338,7 @@ export class CoinmecaWalletProvider {
 
             if (exist) this.changeAccount(this.#storage?.get(address?.toLowerCase())?.index);
             else {
-                this.#storage?.set(address?.toLowerCase(), { name: `Wallet ${nonce + 1}`, index: nonce });
+                this.#storage?.set(address?.toLowerCase(), { address, name: `Wallet ${nonce + 1}`, index: nonce });
                 this.#storage?.set(`${key}:wallets`, [...(this.#storage?.get(`${key}:wallets`) || []), seed]);
                 this.changeAccount(nonce);
             }

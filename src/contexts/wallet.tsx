@@ -1,6 +1,4 @@
-﻿import { getChainById } from "chains";
-import { useStorage } from "hooks";
-import React, { createContext, useContext, useEffect, useLayoutEffect, useState } from "react";
+﻿import React, { createContext, useContext, useEffect, useLayoutEffect, useState } from "react";
 import { Account } from "types";
 import { CoinmecaWalletProvider } from "wallet/provider";
 
@@ -34,13 +32,13 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         const provider = new CoinmecaWalletProvider();
         setProvider(provider);
 
-        const updateAccount = () => {
-            setAccount(provider?.account);
+        const updateAccount = (info:Account) => {
+            setAccount(info);
         }
         
-        provider?.on("accountChanged", updateAccount);
+        provider?.on("unlock", updateAccount);
         return () => {
-            provider?.off("accountChanged", updateAccount);
+            provider?.off("unlock", updateAccount);
         }
     }, []);
 

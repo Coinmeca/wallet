@@ -110,6 +110,7 @@ export default function Data() {
 
     const accountlist = useCallback(
         (accounts: Account[] = []) => {
+            console.log(accounts);
             if (accounts?.length) {
                 return accounts.map((a: Account) => {
                     const selected = account?.address?.toLowerCase() === a?.address?.toLowerCase();
@@ -300,7 +301,7 @@ export default function Data() {
                             left={{ children: <Elements.Icon icon={"search"} style={{ marginRight: "0.5em" }} /> }}
                             style={{ padding: "2em clamp(0em, 3.75%, 6em)" }}
                         />
-                        <Layouts.List list={accounts} formatter={accountlist} />
+                        <Layouts.List list={provider?.accounts} formatter={accountlist} />
                         <Layouts.Col style={{ padding: "4em", paddingTop: "0" }} fit>
                             <Controls.Button
                                 type={"line"}

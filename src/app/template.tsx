@@ -1,11 +1,10 @@
 ﻿"use client";
 
-import { useEffect, useLayoutEffect, useState } from "react";
 import { Frames } from "@coinmeca/ui/containers";
 import { Contents, Layouts } from "@coinmeca/ui/components";
 import { AnimatePresence } from "framer-motion";
 
-import { useGuard, useStorage, useWallet } from "hooks";
+import { useGuard } from "hooks";
 import { Containers } from "index";
 import Data from "./data";
 import Lock from "./lock/page";
