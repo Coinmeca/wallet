@@ -6,15 +6,15 @@ import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useNotification } from "@coinmeca/ui/hooks";
 import { Avatar } from "@coinmeca/ui/components/elements";
 import { Account, Chain } from "@coinmeca/wallet-sdk/types";
+import { useCoinmecaWallet } from "@coinmeca/wallet-sdk/context";
 
 import Coinmeca from "assets/coinmeca.svg";
-import { useWallet } from "hooks";
 
 export default function Data() {
     const router = useRouter();
     const path = usePathname();
 
-    const { provider, account } = useWallet();
+    const { provider, account } = useCoinmecaWallet();
 
     const [value, setValue] = useState<number>(0);
     const [tab, setTab] = useState<string>("icon");
@@ -69,16 +69,16 @@ export default function Data() {
                         provider?.changeChain(c as any);
                         setMobileMenu("");
                     },
-                    style: { padding: "2em clamp(2em, 5%, 8em)", ...(provider?.chain?.id === c?.id && { opacity: 0.3, pointerEvents: "none" }) },
+                    style: { padding: "2em clamp(2em, 5%, 8em)", ...(provider?.chain?.chainId === c?.chainId && { opacity: 0.3, pointerEvents: "none" }) },
                     children: [
                         [
                             {
                                 children: (
                                     <Layouts.Row gap={2}>
                                         <Layouts.Row gap={1} fit>
-                                            <Avatar img={`https://web3.coinmeca.net/${c?.id}/logo.svg`} />
+                                            <Avatar img={`https://web3.coinmeca.net/${c?.chainId}/logo.svg`} />
                                         </Layouts.Row>
-                                        <Elements.Text size={1.5}>{c?.name}</Elements.Text>
+                                        <Elements.Text size={1.5}>{c?.chainName}</Elements.Text>
                                     </Layouts.Row>
                                 ),
                             },
