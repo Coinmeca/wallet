@@ -1,13 +1,12 @@
 ﻿"use client";
 
+import { useCoinmecaWallet } from "@coinmeca/wallet-sdk/context";
 import { Stages } from "containers";
-import { useWallet } from "hooks";
 import { useRouter } from "next/navigation";
 
 export default function Lock({ params }: { params: any }) {
     const router = useRouter();
-    const { provider } = useWallet();
-
+    const { provider } = useCoinmecaWallet();
 
     const handleUnlock = (code: string) => {
         if (provider?.unlock(code)) router.push("/");

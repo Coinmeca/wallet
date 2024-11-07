@@ -4,12 +4,13 @@ import CryptoJS from "crypto-js";
 import { useLayoutEffect, useState } from "react";
 import { Layouts } from "@coinmeca/ui/components";
 
+import { getChainsByType } from "@coinmeca/wallet-sdk/chains";
+import { format, parse } from "@coinmeca/wallet-sdk/utils";
+import { useCoinmecaWallet } from "@coinmeca/wallet-sdk/context";
 import { Stages } from "containers";
-import { useWallet } from "hooks";
-import { getChainsByType } from "@coinmeca/wallet-sdk/src/chains";
-import { format, parse } from "utils";
+
 export default function Welcome() {
-    const { provider } = useWallet();
+    const { provider } = useCoinmecaWallet();
     const [stage, setStage] = useState({ name: "welcome", level: 0 });
 
     useLayoutEffect(() => {

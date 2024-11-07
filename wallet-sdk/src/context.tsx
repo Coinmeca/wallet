@@ -1,6 +1,6 @@
 ﻿import React, { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { Chain, Account } from "./types";
-import { CoinmecaWalletProvider as WalletProvider } from "./provider";
+import { CoinmecaWalletProvider } from "./provider";
 
 // Inject the provider into window.ethereum
 declare global {
@@ -12,26 +12,40 @@ declare global {
 }
 
 interface CoinmecaWalletProviderContextProps {
-    provider: WalletProvider | undefined;
+    provider: CoinmecaWalletProvider | undefined;
     account: Account | undefined;
     chain: Chain | undefined;
+    isPopup: boolean;
+    popupId?: number;
 }
 
-const CoinmecaWalletProviderContext = createContext<CoinmecaWalletProviderContextProps | undefined>(undefined);
+const CoinmecaWalletContext = createContext<CoinmecaWalletProviderContextProps | undefined>(undefined);
 
 export const useCoinmecaWallet = () => {
-    const context = useContext(CoinmecaWalletProviderContext);
+    const context = useContext(CoinmecaWalletContext);
     if (!context) throw new Error("InjectedWalletContext for useInjectedWallet doesn't initialized yet.");
     return context;
 };
 
-export const CoinmecaWalletProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const CoinmecaWalletContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const [provider, setProvider] = useState<CoinmecaWalletProvider>();
+
     const [account, setAccount] = useState<Account>();
     const [chain, setChain] = useState();
-    const [provider, setProvider] = useState<WalletProvider>();
+
+    const [popupId, setPopupId] = useState<number>();
+    const [isPopup, setIsPopup] = useState(false);
 
     useLayoutEffect(() => {
-        setProvider(new WalletProvider());
+        if (typeof window !== "undefined") {
+            const check = !!(window as any)?.coinmeca?.isPopup;
+            if (check) {
+                setIsPopup(check);
+                const id = (window as any)?.coinmeca?.popupId;
+                if (id) setPopupId(id);
+            }
+        }
+        setProvider(new CoinmecaWalletProvider());
     }, []);
 
     useEffect(() => {
@@ -53,5 +67,5 @@ export const CoinmecaWalletProvider: React.FC<{ children: React.ReactNode }> = (
         };
     }, [provider]);
 
-    return <CoinmecaWalletProviderContext.Provider value={{ provider, account, chain }}>{children}</CoinmecaWalletProviderContext.Provider>;
+    return <CoinmecaWalletContext.Provider value={{ provider, account, chain, popupId, isPopup }}>{children}</CoinmecaWalletContext.Provider>;
 };

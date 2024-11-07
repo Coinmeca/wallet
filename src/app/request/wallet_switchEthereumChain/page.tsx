@@ -1,12 +1,14 @@
 ﻿"use client";
 
-import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { usePopupChecker, useTelegram } from "hooks";
-import Image from "next/image";
-import { useRouter, useSearchParams } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
-import { parseChainId } from "utils";
-import { Chain } from "@coinmeca/wallet-sdk/src";
+import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
+
+import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
+import { Chain } from "@coinmeca/wallet-sdk/types";
+import { useCoinmecaWallet } from "@coinmeca/wallet-sdk/context";
+
+import { useTelegram } from "hooks";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({method:"wallet_addEthereumChain", params:[{chainId: '0x13e31'}]})
@@ -17,7 +19,7 @@ export default function wallet_switchEthereumChain({ params }: { params: any }) 
     const router = useRouter();
 
     const { telegram } = useTelegram();
-    const { isPopup } = usePopupChecker();
+    const { isPopup } = useCoinmecaWallet();
     // const { storage, session } = useStorage();
     // const { chain, setChain } = useAccount();
 

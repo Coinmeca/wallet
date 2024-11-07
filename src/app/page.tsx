@@ -1,8 +1,9 @@
 "use client";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { format } from "@coinmeca/ui/lib/utils";
+import { useCoinmecaWallet } from "@coinmeca/wallet-sdk/context";
 import { AnimatePresence } from "framer-motion";
-import { usePageLoader, useWallet } from "hooks";
+import { usePageLoader } from "hooks";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -12,7 +13,7 @@ export default function Home() {
 
     const { isLoad } = usePageLoader();
 
-    const { provider, account, chain } = useWallet();
+    const { provider, account, chain } = useCoinmecaWallet();
 
     const [balance, setBalance] = useState(0);
     const [tab, setTab] = useState("token");

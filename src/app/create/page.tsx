@@ -1,15 +1,15 @@
 ﻿"use client";
 
-import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Stages } from "containers";
+import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
+import { useCoinmecaWallet } from "@coinmeca/wallet-sdk/context";
 import { AnimatePresence } from "framer-motion";
-import { useWallet } from "hooks";
+import { Stages } from "containers";
 
 export default function Welcome() {
     const router = useRouter();
-    const { provider, account } = useWallet();
+    const { provider, account } = useCoinmecaWallet();
 
     const [load, setLoad] = useState(false);
     const [stage, setStage] = useState({ name: "create", level: 0 });

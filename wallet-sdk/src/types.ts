@@ -88,6 +88,19 @@ export type ERC1155Options = {
     tokenId?: string;
 };
 
+export interface NativeCurrency {
+    name: string;
+    symbol: string;
+    decimals: number;
+}
+
+export interface App {
+    name?: string;
+    url?: string;
+    logo?: string;
+    address?: string[];
+}
+
 export type AssetOptions<Name> = Name extends "ERC20" ? ERC20Options : Name extends "ERC721" ? ERC721Options : Name extends "ERC1155" ? ERC1155Options : never;
 
 export interface Asset<Name extends "ERC20" | "ERC721" | "ERC1155"> {
