@@ -1,4 +1,4 @@
-﻿import { useWallet } from "hooks";
+﻿import { useCoinmecaWallet } from "@coinmeca/wallet-sdk/context";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { Account } from "viem";
@@ -21,7 +21,7 @@ export const useGuard = () => {
 export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const path = usePathname();
     const router = useRouter();
-    const { provider } = useWallet();
+    const { provider } = useCoinmecaWallet();
 
     const [isInit, setIsInit] = useState<boolean>(false);
     const [isAccess, setIsAccess] = useState<boolean>(false);

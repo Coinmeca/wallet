@@ -2,11 +2,11 @@
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { Stage } from "..";
 import { useRouter } from "next/navigation";
-import { useWallet } from "hooks";
+import { useCoinmecaWallet } from "@coinmeca/wallet-sdk/context";
 
 export default function Import({ setStage }: Stage) {
     const router = useRouter();
-    const { provider } = useWallet();
+    const { provider } = useCoinmecaWallet();
 
     const handleImportWallet = (seed: string) => {
         console.log({ seed });
