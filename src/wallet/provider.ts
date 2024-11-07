@@ -188,6 +188,7 @@ function notify(message?: { icon?: string; title?: string; body?: string; onClic
 
 export class CoinmecaWalletProvider {
     #codename = "coinmeca:wallet";
+    #key?: string;
 
     private events: EventEmitter;
     public isCoinmecaWallet = true;
@@ -204,7 +205,7 @@ export class CoinmecaWalletProvider {
             console.error("Attempted to clear localStorage! This action is prevented.");
         };
 
-        return this.#announce(this.#proxy());
+        return this.#announce(this.#proxy);
     }
 
     #announce(provider: any) {
@@ -230,70 +231,15 @@ export class CoinmecaWalletProvider {
         return provider;
     }
 
-    #proxy() {
-        const handler = {
-            get: (target: any, prop: string) => {
-                if (typeof target[prop] === "function") return (...args: any[]) => target[prop](...args);
-                return target[prop];
-            },
-        };
-
-        return new Proxy(this, handler);
-    }
-
-    #key?: string;
-
     #safe(fn: Function) {
         const key = this.#key;
         if (key) return fn(key);
         return new Error("Cannot access to the information of accounts.");
     }
 
-    get address() {
-        return this.#data()?.get("last:account");
-    }
-
-    get #userId() {
-        return this.#data()?.get("userId");
-    }
-
-    init(hash: string) {
-        if (this.#userId) new Error("Wallet already initialized.");
-        const userId = this.isTelegram ? (window as any)?.Telegram?.WebApp?.initDataUnsafe?.user : crypto.randomUUID();
-        if (!userId) new Error("Wallet already initialized.");
-
-        this.#data()?.set("userId", userId);
-        const key = CryptoJS.SHA256(`${userId}:${hash}`).toString();
-        this.#key = key;
-        this.#storage?.set(key, key);
-    }
-
     #getKey(key: string) {
         key = CryptoJS.SHA256(`${this.#userId}:${key}`).toString();
         return this.#data({ key }).get(key);
-    }
-
-    changePasscode(key: string, newHash: string) {
-        const old = CryptoJS.SHA256(`${this.#userId}:${key}`).toString();
-        this.#data({ key }).set(CryptoJS.SHA256(`${this.#userId}:${newHash}`).toString(), this.#getKey(key));
-        this.#data({ key }).remove(old);
-    }
-
-    unlock(hash: string) {
-        const key = this.#getKey(hash);
-        if (key) {
-            this.#key = key;
-            const accounts = this.accounts;
-
-            if (accounts || accounts?.length) {
-                const last: any = this.address || this.#storage?.get("last:account") || this.accounts?.[0]?.address;
-                const info: any = last && this.#storage?.get(last?.toLowerCase());
-                if (info) {
-                    this.emit("unlock", info);
-                    return info;
-                }
-            } else return new Error("Not found account info.");
-        } else return new Error("Invalid key entered.");
     }
 
     #data(_?: { key?: string; storage?: CloudStorage | Storage }) {
@@ -305,6 +251,33 @@ export class CoinmecaWalletProvider {
 
     #wallet(privateKey: string) {
         return Wallet.fromPrivateKey(Buffer.from(privateKey.toString().trim().substring(0, 64), "hex"));
+    }
+
+    #getPrivateKey(index: number | string) {
+        if (typeof index === "string") index = this.#storage?.get(index)?.index;
+        return this.#safe((key: string) => {
+            const wallets = this.#storage?.get(`${key}:accounts`);
+            if (wallets && wallets?.length) {
+                const key = wallets[index];
+                if (key) return key;
+                else new Error("Not found account info");
+            } else new Error("Wallet is not setup yet.");
+        });
+    }
+
+    get #proxy() {
+        const handler = {
+            get: (target: any, prop: string) => {
+                if (typeof target[prop] === "function") return (...args: any[]) => target[prop](...args);
+                return target[prop];
+            },
+        };
+
+        return new Proxy(this, handler);
+    }
+
+    get #userId() {
+        return this.#data()?.get("userId");
     }
 
     get #storage() {
@@ -319,8 +292,77 @@ export class CoinmecaWalletProvider {
         });
     }
 
+    get isInitialized() {
+        return !!this.#userId;
+    }
+
+    get isLocked() {
+        return !this.#key;
+    }
+
+    get isTelegram() {
+        return typeof window !== "undefined" && (window as any)?.telegram;
+    }
+
+    get address() {
+        return this.#data()?.get("last:account");
+    }
+
     get account() {
         return this.#storage?.get?.(this.address?.toLowerCase());
+    }
+
+    get accounts() {
+        return this.#safe((key: string) => {
+            const accounts = this.#storage?.get(`${key}:accounts`);
+            if (accounts) return accounts?.map((k: any) => k && this.#storage?.get(this.#wallet(k).getAddressString().toLowerCase())).filter((a: any) => a);
+        });
+    }
+
+    get chain() {
+        return this.#data()?.get("last:chain");
+    }
+
+    get chainId() {
+        return this.chain?.chainId ? formatChainId(this.chain.chainId) : undefined;
+    }
+
+    init(hash: string) {
+        if (this.#userId) new Error("Wallet already initialized.");
+        const userId = this.isTelegram ? (window as any)?.Telegram?.WebApp?.initDataUnsafe?.user : crypto.randomUUID();
+        if (!userId) new Error("Wallet already initialized.");
+
+        this.#data()?.set("userId", userId);
+        const key = CryptoJS.SHA256(`${userId}:${hash}`).toString();
+        this.#key = key;
+        this.#storage?.set(key, key);
+    }
+
+    lock() {
+        this.#data()?.set("last:account", this.account?.address);
+        this.#key = undefined;
+    }
+
+    check(key: string) {
+        const k = this.#getKey(key)?.toLowerCase();
+        return k && k === CryptoJS.SHA256(`${this.#userId}:${key}`).toString().toLowerCase();
+    }
+
+    unlock(hash: string) {
+        const key = this.#getKey(hash);
+        if (this.check(hash)) {
+            this.#key = key;
+            const accounts = this.accounts;
+
+            if (accounts || accounts?.length) {
+                const last: any = this.address || this.#storage?.get("last:account") || this.accounts?.[0]?.address;
+                const info: any = last && this.#storage?.get(last?.toLowerCase());
+                if (info) {
+                    this.emit("unlock", info);
+                    return info;
+                }
+            } else return new Error("Not found account info.");
+        } else return new Error("Invalid key entered.");
     }
 
     create() {
@@ -360,6 +402,12 @@ export class CoinmecaWalletProvider {
         })
     }
 
+    change(key: string, newHash: string) {
+        const old = CryptoJS.SHA256(`${this.#userId}:${key}`).toString();
+        this.#data({ key }).set(CryptoJS.SHA256(`${this.#userId}:${newHash}`).toString(), this.#getKey(key));
+        this.#data({ key }).remove(old);
+    }
+
     changeAccount(index: number): void {
         return this.#safe(() => {
             const account = this.accounts?.[index];
@@ -367,50 +415,6 @@ export class CoinmecaWalletProvider {
             this.#data().set("last:account", account?.address);
             this.emit("accountChanged", account?.address);
         });
-    }
-
-    get isInitialized() {
-        return !!this.#userId;
-    }
-
-    get isLocked() {
-        return !this.#key;
-    }
-
-    get isTelegram() {
-        return typeof window !== "undefined" && (window as any)?.telegram;
-    }
-
-    lock() {
-        this.#data()?.set("last:account", this.account?.address);
-        this.#key = undefined;
-    }
-
-    #getPrivateKey(index: number | string) {
-        if (typeof index === "string") index = this.#storage?.get(index)?.index;
-        return this.#safe((key: string) => {
-            const wallets = this.#storage?.get(`${key}:accounts`);
-            if (wallets && wallets?.length) {
-                const key = wallets[index];
-                if (key) return key;
-                else new Error("Not found account info");
-            } else new Error("Wallet is not setup yet.");
-        });
-    }
-
-    get accounts() {
-        return this.#safe((key: string) => {
-            const accounts = this.#storage?.get(`${key}:accounts`);
-            if (accounts) return accounts?.map((k: any) => k && this.#storage?.get(this.#wallet(k).getAddressString().toLowerCase())).filter((a: any) => a);
-        });
-    }
-
-    get chain() {
-        return this.#data()?.get("last:chain");
-    }
-
-    get chainId() {
-        return this.chain?.chainId ? formatChainId(this.chain.chainId) : undefined;
     }
 
     changeChain(chain: Chain): void {
