@@ -51,35 +51,6 @@ export default function Data() {
         },
     ];
 
-    const chainlist = useCallback(
-        (chains: Chain[] = []) => {
-            if (chains?.length) {
-                return chains.map((c: Chain) => ({
-                    onClick: () => {
-                        provider?.changeChain(c as any);
-                        setMobileMenu("");
-                    },
-                    style: { padding: "2em clamp(2em, 5%, 8em)", ...(provider?.chain?.chainId === c?.chainId && { opacity: 0.3, pointerEvents: "none" }) },
-                    children: [
-                        [
-                            {
-                                children: (
-                                    <Layouts.Row gap={2}>
-                                        <Layouts.Row gap={1} fit>
-                                            <Avatar img={`https://web3.coinmeca.net/${c?.chainId}/logo.svg`} />
-                                        </Layouts.Row>
-                                        <Elements.Text size={1.5}>{c?.chainName}</Elements.Text>
-                                    </Layouts.Row>
-                                ),
-                            },
-                        ],
-                    ],
-                }));
-            }
-        },
-        [chain],
-    );
-
     const handleAccountChange = (account: Account) => {
         provider?.changeAccount(account?.index);
         setMobileMenu("");
@@ -183,7 +154,36 @@ export default function Data() {
                 });
             }
         },
-        [account],
+        [account, accounts],
+    );
+
+    const chainlist = useCallback(
+        (chains: Chain[] = []) => {
+            if (chains?.length) {
+                return chains.map((c: Chain) => ({
+                    onClick: () => {
+                        provider?.changeChain(c?.chainId);
+                        setMobileMenu("");
+                    },
+                    style: { padding: "2em clamp(2em, 5%, 8em)", ...(provider?.chain?.chainId === c?.chainId && { opacity: 0.3, pointerEvents: "none" }) },
+                    children: [
+                        [
+                            {
+                                children: (
+                                    <Layouts.Row gap={2}>
+                                        <Layouts.Row gap={1} fit>
+                                            <Avatar img={`https://web3.coinmeca.net/${c?.chainId}/logo.svg`} />
+                                        </Layouts.Row>
+                                        <Elements.Text size={1.5}>{c?.chainName}</Elements.Text>
+                                    </Layouts.Row>
+                                ),
+                            },
+                        ],
+                    ],
+                }));
+            }
+        },
+        [chain, chains],
     );
 
     const header = {
@@ -272,8 +272,7 @@ export default function Data() {
                             {mobileMenu === "chains" ? (
                                 <Elements.Icon icon={"x"} scale={0.666} />
                             ) : (
-                                <Elements.Avatar scale={0.666} size={2.5} img={`https://web3.coinmeca.net/1/logo.svg`} />
-                                // <Elements.Avatar scale={0.666} size={2.5} img={`https://web3.coinmeca.net/${chain?.id}/logo.svg`} />
+                                <Elements.Avatar scale={0.666} size={2.5} img={`https://web3.coinmeca.net/${chain?.chainId}/logo.svg`} />
                             )}
                         </Controls.Tab>
                         <Controls.Tab

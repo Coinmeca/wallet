@@ -238,16 +238,19 @@ export class CoinmecaWalletProvider {
     }
 
     get chain() {
-        return this.#data()?.get("last:chain");
+        const chainId = this.#data()?.get("last:chain");
+        return this.chains?.find((c: Chain) => c?.chainId === chainId);
+    }
+
+    get chainId() {
+        const id = this.#data()?.get("last:chain");
+        return id ? formatChainId(id) : undefined;
     }
 
     get chains() {
         return this.#data().get("chains")
     }
 
-    get chainId() {
-        return this.chain?.chainId ? formatChainId(this.chain.chainId) : undefined;
-    }
 
     init(hash: string) {
         if (this.#userId) new Error("Wallet already initialized.");
@@ -343,13 +346,77 @@ export class CoinmecaWalletProvider {
         });
     }
 
-    changeChain(chainId: number | string): void {
-        chainId = typeof chainId === 'number' ? chainId : typeof chainId?.startsWith("0x") ? parseChainId(chainId) : parseInt(chainId);
-        if (this.chains.filter((c: Chain) => c?.chainId === chainId)) {
+    changeChain(chainId: number | string) {
+        chainId = (typeof chainId === 'string' ? chainId?.startsWith("0x") ? parseChainId(chainId) : parseInt(chainId) : chainId) as number;
+        const chains = this.chains;
+        console.log({ chain: chains?.find((c: Chain) => c?.chainId === chainId) })
+        if (chains?.length && chains?.find((c: Chain) => c?.chainId === chainId)) {
+            if (typeof window !== 'undefined') (window as any).ethereum = { chainId };
             this.#data().set("last:chain", chainId);
             this.emit("chainChanged", formatChainId(chainId));
-            if (typeof window !== 'undefined') (window as any).ethereum = { chainId };
+        } else return new Error("There is no any chain registered.");
+    }
+
+    #confirm(method: string) {
+        // window.location.href = `${window.location.origin}/request/${method}`;
+        // return window;
+        if (window.location.hostname?.includes("wallet.coinmeca.net")) {
+            window.location.href = `${window.location.origin}/request/${method}`;
+            return window;
+        } else return openWindow(`${window.location.origin}/request/${method}`);
+    }
+
+    #hashDomain(domain: EIP712Domain) {
+        return this.#hashStruct("EIP712Domain", domain, {
+            EIP712Domain: [
+                { name: "name", type: "string" },
+                { name: "version", type: "string" },
+                { name: "chainId", type: "uint256" },
+                { name: "verifyingContract", type: "address" },
+                { name: "salt", type: "bytes32" },
+            ],
+        });
+    }
+
+    #encodeType(primaryType: string, types: EIP712Types) {
+        let result = `${primaryType}(${types[primaryType].map(({ name, type }) => `${type} ${name}`).join(",")})`;
+        const uniqueTypes = new Set<string>();
+
+        for (const field of types[primaryType] || []) {
+            if (!uniqueTypes.has(field.type) && types[field.type]) {
+                uniqueTypes.add(field.type);
+                result += this.#encodeType(field.type, types);
+            }
         }
+        return result;
+    }
+
+    #typeHash(primaryType: string, types: EIP712Types) {
+        return keccak256(Buffer.from(this.#encodeType(primaryType, types)));
+    }
+
+    #encodeData(type: string, data: any, types: EIP712Types) {
+        const encodedTypes = ["bytes32"];
+        const encodedValues = [this.#typeHash(type, types)];
+
+        for (const field of types[type]) {
+            const value = data[field.name];
+            if (types[field.type]) {
+                encodedTypes.push("bytes32");
+                encodedValues.push(this.#hashStruct(field.type, value, types));
+            } else if (field.type === "string" || field.type === "bytes") {
+                encodedTypes.push("bytes32");
+                encodedValues.push(keccak256(Buffer.from(value)));
+            } else {
+                encodedTypes.push(field.type);
+                encodedValues.push(value);
+            }
+        }
+        return Buffer.concat(encodedValues.map((v) => toBuffer(v)));
+    }
+
+    #hashStruct(primaryType: string, data: any, types: EIP712Types) {
+        return keccak256(this.#encodeData(primaryType, data, types));
     }
 
     async request({ method, params }: { method: string; params?: any[] }) {
@@ -455,68 +522,6 @@ export class CoinmecaWalletProvider {
             default:
                 throw new Error(`Method '${method}' not supported`);
         }
-    }
-
-    #confirm(method: string) {
-        // window.location.href = `${window.location.origin}/request/${method}`;
-        // return window;
-        if (window.location.hostname?.includes("wallet.coinmeca.net")) {
-            window.location.href = `${window.location.origin}/request/${method}`;
-            return window;
-        } else return openWindow(`${window.location.origin}/request/${method}`);
-    }
-
-    #hashDomain(domain: EIP712Domain) {
-        return this.#hashStruct("EIP712Domain", domain, {
-            EIP712Domain: [
-                { name: "name", type: "string" },
-                { name: "version", type: "string" },
-                { name: "chainId", type: "uint256" },
-                { name: "verifyingContract", type: "address" },
-                { name: "salt", type: "bytes32" },
-            ],
-        });
-    }
-
-    #encodeType(primaryType: string, types: EIP712Types) {
-        let result = `${primaryType}(${types[primaryType].map(({ name, type }) => `${type} ${name}`).join(",")})`;
-        const uniqueTypes = new Set<string>();
-
-        for (const field of types[primaryType] || []) {
-            if (!uniqueTypes.has(field.type) && types[field.type]) {
-                uniqueTypes.add(field.type);
-                result += this.#encodeType(field.type, types);
-            }
-        }
-        return result;
-    }
-
-    #typeHash(primaryType: string, types: EIP712Types) {
-        return keccak256(Buffer.from(this.#encodeType(primaryType, types)));
-    }
-
-    #encodeData(type: string, data: any, types: EIP712Types) {
-        const encodedTypes = ["bytes32"];
-        const encodedValues = [this.#typeHash(type, types)];
-
-        for (const field of types[type]) {
-            const value = data[field.name];
-            if (types[field.type]) {
-                encodedTypes.push("bytes32");
-                encodedValues.push(this.#hashStruct(field.type, value, types));
-            } else if (field.type === "string" || field.type === "bytes") {
-                encodedTypes.push("bytes32");
-                encodedValues.push(keccak256(Buffer.from(value)));
-            } else {
-                encodedTypes.push(field.type);
-                encodedValues.push(value);
-            }
-        }
-        return Buffer.concat(encodedValues.map((v) => toBuffer(v)));
-    }
-
-    #hashStruct(primaryType: string, data: any, types: EIP712Types) {
-        return keccak256(this.#encodeData(primaryType, data, types));
     }
 
     async #app() {

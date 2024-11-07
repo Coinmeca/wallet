@@ -12,7 +12,6 @@ export default function Home() {
     const router = useRouter();
 
     const { isLoad } = usePageLoader();
-
     const { provider, account, chain } = useCoinmecaWallet();
 
     const [balance, setBalance] = useState(0);
@@ -20,7 +19,7 @@ export default function Home() {
 
     useEffect(() => {
         (async () => await provider?.balance())().then((balance: any) => {
-            setBalance(Number(balance) / (10 ^ (chain?.nativeCurrency.decimals || 1)));
+            setBalance(Number(balance) / (10 ^ (chain?.nativeCurrency?.decimals || 1)));
         });
     }, [chain, account]);
 
@@ -53,7 +52,7 @@ export default function Home() {
                                         fix: 3,
                                     })}
                                 </Elements.Text>
-                                <Elements.Text type={"h6"}>{chain?.nativeCurrency.symbol}</Elements.Text>
+                                <Elements.Text type={"h6"}>{chain?.nativeCurrency?.symbol}</Elements.Text>
                             </Layouts.Col>
                         </Layouts.Col>
                         <Layouts.Box padding={[2, "", "", ""]} fit>
