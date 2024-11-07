@@ -14,7 +14,7 @@ export default function Data() {
     const router = useRouter();
     const path = usePathname();
 
-    const { provider, account } = useCoinmecaWallet();
+    const { provider, account, accounts, chain, chains } = useCoinmecaWallet();
 
     const [value, setValue] = useState<number>(0);
     const [tab, setTab] = useState<string>("icon");
@@ -51,16 +51,6 @@ export default function Data() {
         },
     ];
 
-    const chains = useMemo(() => {
-        return [];
-        // if (window) {
-        // const c = localStorage.getItem("coinmeca:wallet:chains");
-        // return c && parse(c);
-        // } else {
-        // return [];
-        // }
-    }, []);
-
     const chainlist = useCallback(
         (chains: Chain[] = []) => {
             if (chains?.length) {
@@ -87,7 +77,7 @@ export default function Data() {
                 }));
             }
         },
-        [provider?.chain, chains],
+        [chain],
     );
 
     const handleAccountChange = (account: Account) => {
@@ -308,7 +298,7 @@ export default function Data() {
                             left={{ children: <Elements.Icon icon={"search"} style={{ marginRight: "0.5em" }} /> }}
                             style={{ padding: "2em clamp(0em, 3.75%, 6em)" }}
                         />
-                        <Layouts.List list={provider?.accounts} formatter={accountlist} />
+                        <Layouts.List list={accounts} formatter={accountlist} />
                         <Layouts.Col style={{ padding: "4em", paddingTop: "0" }} fit>
                             <Controls.Button
                                 type={"line"}

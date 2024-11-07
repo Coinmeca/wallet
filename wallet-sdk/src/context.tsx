@@ -14,7 +14,9 @@ declare global {
 interface CoinmecaWalletProviderContextProps {
     provider: CoinmecaWalletProvider | undefined;
     account: Account | undefined;
+    accounts: Account[] | undefined;
     chain: Chain | undefined;
+    chains: Chain[] | undefined;
     isPopup: boolean;
     popupId?: number;
 }
@@ -54,18 +56,27 @@ export const CoinmecaWalletContextProvider: React.FC<{ children: React.ReactNode
         };
 
         const updateChain = () => {
-            if (provider?.chain) setChain(provider?.chain);
+            setChain(provider?.chain);
         };
 
-        provider?.on("unlock", updateAccount);
+        const update = () => {
+            updateAccount();
+            updateChain();
+        };
+
+        provider?.on("unlock", update);
         provider?.on("accountChanged", updateAccount);
         provider?.on("chainChanged", updateChain);
         return () => {
-            provider?.off("unlock", updateAccount);
+            provider?.off("unlock", update);
             provider?.off("accountChanged", updateAccount);
             provider?.off("chainChanged", updateChain);
         };
     }, [provider]);
 
-    return <CoinmecaWalletContext.Provider value={{ provider, account, chain, popupId, isPopup }}>{children}</CoinmecaWalletContext.Provider>;
+    return (
+        <CoinmecaWalletContext.Provider value={{ provider, account, chain, accounts: provider?.accounts, chains: provider?.chains, popupId, isPopup }}>
+            {children}
+        </CoinmecaWalletContext.Provider>
+    );
 };

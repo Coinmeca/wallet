@@ -3,9 +3,10 @@ import EventEmitter from "eventemitter3";
 import Wallet from "ethereumjs-wallet";
 import { Transaction } from "ethereumjs-tx";
 import { bufferToHex, ecsign, hashPersonalMessage, keccak256, toBuffer } from "ethereumjs-util";
-import { formatChainId, getFaviconUri, loadStorage, openWindow, parse } from "./utils";
+import { formatChainId, getFaviconUri, loadStorage, openWindow, parse, parseChainId } from "./utils";
 import type { Asset, Chain, EIP712Domain, EIP712Message, EIP712Types } from "./types";
 import axios from "axios";
+import { getChainsByType } from "./chains";
 
 // Create a custom Axios instance
 const axiosQuiet = axios.create({
@@ -240,6 +241,10 @@ export class CoinmecaWalletProvider {
         return this.#data()?.get("last:chain");
     }
 
+    get chains() {
+        return this.#data().get("chains")
+    }
+
     get chainId() {
         return this.chain?.chainId ? formatChainId(this.chain.chainId) : undefined;
     }
@@ -253,6 +258,10 @@ export class CoinmecaWalletProvider {
         const key = CryptoJS.SHA256(`${userId}:${hash}`).toString();
         this.#key = key;
         this.#storage?.set(key, key);
+
+        const chains = getChainsByType("mainnet");
+        this.#data()?.set("chains", chains);
+        this.changeChain(chains[0].chainId)
     }
 
     lock() {
@@ -334,12 +343,12 @@ export class CoinmecaWalletProvider {
         });
     }
 
-    changeChain(chain: Chain): void {
-        const chainId = formatChainId(chain.chainId);
-        if (this.chainId !== chainId) {
-            // (window as any)?.ethereum = { chainId };
-            this.#data().set("last:chain", chain);
-            this.emit("chainChanged", chainId);
+    changeChain(chainId: number | string): void {
+        chainId = typeof chainId === 'number' ? chainId : typeof chainId?.startsWith("0x") ? parseChainId(chainId) : parseInt(chainId);
+        if (this.chains.filter((c: Chain) => c?.chainId === chainId)) {
+            this.#data().set("last:chain", chainId);
+            this.emit("chainChanged", formatChainId(chainId));
+            if (typeof window !== 'undefined') (window as any).ethereum = { chainId };
         }
     }
 
@@ -655,7 +664,7 @@ export class CoinmecaWalletProvider {
         if (!chainId || !rpcUrls || rpcUrls.length === 0 || !nativeCurrency.decimals)
             throw new Error("Invalid chain parameters. `chainId` and at least one `rpcUrl` are required.");
 
-        this.changeChain(chain);
+        this.changeChain(chainId);
         return { message: `Chain ${chainName} with chainId ${chainId} added successfully.` };
     }
 
