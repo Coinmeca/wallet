@@ -3,7 +3,7 @@
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { x64 } from "crypto-js";
 import { Transaction } from "ethereumjs-tx";
-import { useAccount, usePopupChecker, useStorage, useTelegram } from "hooks";
+import { usePopupChecker, useTelegram } from "hooks";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
@@ -31,7 +31,7 @@ export default function eth_sendTransaction({ params }: { params: any }) {
 
     const { telegram } = useTelegram();
     const { isPopup } = usePopupChecker();
-    const { storage, session } = useStorage();
+    // const { storage, session } = useStorage();
 
     const [app, setApp] = useState<any>();
     const [tx, setTx] = useState<TransactionParams>();
@@ -64,26 +64,26 @@ export default function eth_sendTransaction({ params }: { params: any }) {
     }, []);
 
     const handleSign = () => {
-        const result = storage?.get(`${session?.get("key")}:wallets`)?.[storage?.get(tx?.from?.toLowerCase()!)?.index];
-        
-        if(result) {
-            window?.opener?.postMessage(
-                {
-                    method,
-                    result,
-                },
-                "*"
-            );
-        } else {
-            window?.opener?.postMessage(
-                {
-                    method,
-                    error: "Failed to signning"
-                },
-                "*",
-            );
-        }
-        
+        // const result = storage?.get(`${session?.get("key")}:wallets`)?.[storage?.get(tx?.from?.toLowerCase()!)?.index];
+
+        // if (result) {
+        //     window?.opener?.postMessage(
+        //         {
+        //             method,
+        //             result,
+        //         },
+        //         "*",
+        //     );
+        // } else {
+        //     window?.opener?.postMessage(
+        //         {
+        //             method,
+        //             error: "Failed to signning",
+        //         },
+        //         "*",
+        //     );
+        // }
+
         setLevel(1);
     };
 
@@ -159,7 +159,9 @@ export default function eth_sendTransaction({ params }: { params: any }) {
                                                 </div>
                                                 <Layouts.Col gap={0} align={"center"}>
                                                     <Elements.Text type={"h6"} height={0} align={"left"}>
-                                                        {(tx?.to?.startsWith("0x") ? tx?.to?.substring(0, 8) : tx?.to?.substring(0, 6)) + " ... " + tx?.to?.substring(tx?.to?.length - 6, tx?.to?.length)}
+                                                        {(tx?.to?.startsWith("0x") ? tx?.to?.substring(0, 8) : tx?.to?.substring(0, 6)) +
+                                                            " ... " +
+                                                            tx?.to?.substring(tx?.to?.length - 6, tx?.to?.length)}
                                                     </Elements.Text>
                                                     <Elements.Text type={"strong"} height={0} align={"left"} opacity={0.6}>
                                                         {tx?.value}

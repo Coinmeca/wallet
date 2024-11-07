@@ -12,8 +12,8 @@ export default function Create({ setStage }: Stage) {
     const { provider } = useWallet();
 
     const handleCreateWallet = () => {
-        provider?.createAccount();
-        if (provider?.accounts?.length) router.push('/');
+        provider?.create();
+        if (provider?.accounts?.length) router.push("/");
     };
 
     return (

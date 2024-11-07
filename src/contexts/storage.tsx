@@ -50,8 +50,12 @@ export const StorageProvider: React.FC<{ children: React.ReactNode }> = ({ child
     );
 
     useLayoutEffect(() => {
+        localStorage.clear = () => {
+            console.error("Attempted to clear localStorage! This action is prevented.");
+        };
+        const storage = telegram && user?.id ? telegram?.CloudStorage : localStorage;
         setSession(sessionStorage);
-        setStorage(telegram && user?.id ? telegram?.CloudStorage : localStorage);
+        setStorage(storage);
     }, []);
 
     return <StorageContext.Provider value={{ storage: modules(storage), session: modules(session) }}>{children}</StorageContext.Provider>;

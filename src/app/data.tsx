@@ -3,14 +3,12 @@
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useNotification } from "@coinmeca/ui/hooks";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useLayoutEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { Avatar } from "@coinmeca/ui/components/elements";
 import Coinmeca from "assets/coinmeca.svg";
-import { useAccount, useStorage, useWallet } from "hooks";
+import { useWallet } from "hooks";
 import { Account, Chain } from "types";
-import { wallet } from "wallet";
-import { parse } from "utils";
 
 export default function Data() {
     const router = useRouter();
@@ -22,9 +20,6 @@ export default function Data() {
     const [tab, setTab] = useState<string>("icon");
     const [active, setActive] = useState(false);
     const [mobileMenu, setMobileMenu] = useState("");
-
-    // const [chains, setChains] = useState<Chain[]>();
-    const [accounts, setAccounts] = useState<Account[]>();
 
     const { toasts, addToast } = useNotification();
 
@@ -57,9 +52,14 @@ export default function Data() {
     ];
 
     const chains = useMemo(() => {
-        const c = localStorage.getItem('coinmeca:wallet:chains');
-        return c && parse(c);
-    },[])
+        return [];
+        // if (window) {
+        // const c = localStorage.getItem("coinmeca:wallet:chains");
+        // return c && parse(c);
+        // } else {
+        // return [];
+        // }
+    }, []);
 
     const chainlist = useCallback(
         (chains: Chain[] = []) => {
@@ -116,7 +116,6 @@ export default function Data() {
 
     const accountlist = useCallback(
         (accounts: Account[] = []) => {
-            console.log(accounts);
             if (accounts?.length) {
                 return accounts.map((a: Account) => {
                     const selected = account?.address?.toLowerCase() === a?.address?.toLowerCase();
@@ -194,7 +193,7 @@ export default function Data() {
                 });
             }
         },
-        [provider],
+        [account],
     );
 
     const header = {
@@ -272,7 +271,9 @@ export default function Data() {
                                         />
                                     )}
                                 </Controls.Tab>
-                                {mobileMenu !== "accounts" && <Controls.Button icon={"copy"} title={"Copy address"} />}
+                                {mobileMenu !== "accounts" && (
+                                    <Controls.Button icon={"copy"} title={"Copy address"} onClick={() => handleCopyAddress(account)} />
+                                )}
                             </Layouts.Row>
                         )}
                     </Layouts.Row>

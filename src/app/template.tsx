@@ -11,7 +11,7 @@ import Lock from "./lock/page";
 
 export default function RootTemplate({ children, params }: { children: any; params: any }) {
     const { header, toastlist } = Data();
-    const { isLoad,isAccess } = useGuard();
+    const { isLoad, isAccess } = useGuard();
 
     return (
         <Frames.Frame

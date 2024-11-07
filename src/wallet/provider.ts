@@ -105,7 +105,7 @@ axiosQuiet.interceptors.response.use(
 );
 
 export interface CoinmecaWalletProviderConfig {
-    privateKey?: string;
+    key?: string;
     chain?: Chain;
 }
 
@@ -189,15 +189,14 @@ function notify(message?: { icon?: string; title?: string; body?: string; onClic
 export class CoinmecaWalletProvider {
     #codename = "coinmeca:wallet";
 
-    private _address?: string;
     private events: EventEmitter;
     public isCoinmecaWallet = true;
 
     constructor(config?: CoinmecaWalletProviderConfig) {
         const data = this.#data();
-        this._address = data?.get("last:account");
 
-        const { chain } = config || {};
+        const { key, chain } = config || {};
+        this.#key = key;
         if (chain) data.set("last:chain", chain);
         this.events = new EventEmitter();
 
@@ -287,16 +286,13 @@ export class CoinmecaWalletProvider {
             const accounts = this.accounts;
 
             if (accounts || accounts?.length) {
-                const last: any =
-                    this.address || this.#storage?.get("last:account") || this.accounts?.[0]
-                        ? this.#wallet(CryptoJS.SHA256(`${key}:${0}`).toString())?.getAddressString()
-                        : undefined;
+                const last: any = this.address || this.#storage?.get("last:account") || this.accounts?.[0]?.address;
                 const info: any = last && this.#storage?.get(last?.toLowerCase());
                 if (info) {
                     this.emit("unlock", info);
                     return info;
-                } else return new Error("Not found account info.");
-            }
+                }
+            } else return new Error("Not found account info.");
         } else return new Error("Invalid key entered.");
     }
 
@@ -324,39 +320,52 @@ export class CoinmecaWalletProvider {
     }
 
     get account() {
-        return this.#storage?.get?.(this.address);
+        return this.#storage?.get?.(this.address?.toLowerCase());
     }
 
-    createAccount() {
+    create() {
         return this.#safe((key: string) => {
-            const accounts = this.accounts;
-            const nonce = accounts?.length || 0;
+            const accounts = this.accounts || [];
+            const index = accounts?.length;
 
-            const seed = CryptoJS.SHA256(`${key}:${nonce}`).toString();
+            const seed = CryptoJS.SHA256(`${key}:${index}`).toString();
             const address = this.#wallet(seed)?.getAddressString();
-            const exist = this.#storage?.get(address?.toLowerCase());
 
-            if (exist) this.changeAccount(this.#storage?.get(address?.toLowerCase())?.index);
-            else {
-                this.#storage?.set(address?.toLowerCase(), { address, name: `Wallet ${nonce + 1}`, index: nonce });
-                this.#storage?.set(`${key}:wallets`, [...(this.#storage?.get(`${key}:wallets`) || []), seed]);
-                this.changeAccount(nonce);
-            }
+            if (address) {
+                if (!this.#storage?.get(address?.toLowerCase())) {
+                    this.#storage?.set(address?.toLowerCase(), { address, index, name: `Wallet ${index + 1}` });
+                    this.#storage?.set(`${key}:accounts`, [...(this.#storage?.get(`${key}:accounts`) || []), seed]);
+                }
+                this.changeAccount(index);
+                return true;
+            } else return false;
         });
     }
 
-    changeAccount(index: number): void {
+    import(privateKey: string) {
         return this.#safe((key: string) => {
-            const wallets = this.#storage?.get(`${key}:wallets`);
-            if (wallets && wallets?.length) {
-                if (wallets?.[index]) {
-                    const address = this.#wallet(CryptoJS.SHA256(`${key}:${wallets.length}`).toString()).getAddressString();
-                    if (address) {
-                        this.#data().set("last:account", address);
-                        return this.emit("accountChanged", address);
-                    } else return new Error("Not found address.");
-                } else return new Error("There is no accounts that setup yet.");
-            } else return new Error("There is no accounts that setup yet.");
+            const accounts = this.accounts || [];
+            const index = accounts?.length;
+
+            const address = this.#wallet(privateKey).getAddressString();
+            if (address) {
+
+                if (!this.#storage?.get(address?.toLowerCase())) {
+                    this.#storage?.set(address?.toLowerCase(), { address, index, name: `Wallet ${index + 1}` });
+                    this.#storage?.set(`${key}:accounts`, [...(this.#storage?.get(`${key}:accounts`) || []), privateKey])
+                };
+                this.changeAccount(index);
+                return true;
+            } else return false;
+        })
+    }
+
+    changeAccount(index: number): void {
+        return this.#safe(() => {
+            const account = this.accounts?.[index];
+            if (!account) return new Error("There is no accounts that setup yet.");
+            this.#data().set("last:account", account?.address);
+            this.emit("accountChanged", account?.address);
         });
     }
 
@@ -380,7 +389,7 @@ export class CoinmecaWalletProvider {
     #getPrivateKey(index: number | string) {
         if (typeof index === "string") index = this.#storage?.get(index)?.index;
         return this.#safe((key: string) => {
-            const wallets = this.#storage?.get(`${key}:wallets`);
+            const wallets = this.#storage?.get(`${key}:accounts`);
             if (wallets && wallets?.length) {
                 const key = wallets[index];
                 if (key) return key;
@@ -391,18 +400,8 @@ export class CoinmecaWalletProvider {
 
     get accounts() {
         return this.#safe((key: string) => {
-            const wallets = this.#storage?.get(`${key}:wallets`);
-            if (wallets && wallets?.length)
-                return wallets
-                    ?.map((k: string, i: number) =>
-                        this.#storage?.get(
-                            this.#wallet(CryptoJS.SHA256(`${key}:${i}`).toString())
-                                ?.getAddressString()
-                                ?.toLowerCase(),
-                        ),
-                    )
-                    .filter((a) => a);
-            else [];
+            const accounts = this.#storage?.get(`${key}:accounts`);
+            if (accounts) return accounts?.map((k: any) => k && this.#storage?.get(this.#wallet(k).getAddressString().toLowerCase())).filter((a: any) => a);
         });
     }
 
@@ -649,7 +648,7 @@ export class CoinmecaWalletProvider {
                 return await __promise(method, this.#confirm(method), [txParams, await this.#app()]).then(async (result: any) => {
                     if (result) {
                         const tx = new Transaction(txParams);
-                        tx.sign((this.#storage?.get(`${this.#session?.get("key")}:wallets`))[exist.index]);
+                        tx.sign((this.#storage?.get(`${this.#session?.get("key")}:accounts`))[exist.index]);
                         return `0x${tx.serialize().toString("hex")}`;
                     }
                 });

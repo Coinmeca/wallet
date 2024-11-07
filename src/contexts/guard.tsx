@@ -1,4 +1,4 @@
-﻿import { useStorage, useWallet } from "hooks";
+﻿import { useWallet } from "hooks";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { Account } from "viem";
@@ -22,7 +22,6 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const path = usePathname();
     const router = useRouter();
     const { provider } = useWallet();
-    const { storage, session } = useStorage();
 
     const [isInit, setIsInit] = useState<boolean>(false);
     const [isAccess, setIsAccess] = useState<boolean>(false);
@@ -32,39 +31,37 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     useLayoutEffect(() => {
         if (provider) {
             const handleCheck = (info?: Account) => {
-                console.log({info});
                 const check = {
                     init: provider?.isInitialized,
                     access: info ? true : !provider?.isLocked,
                 };
-                
+
                 if (typeof check.init !== "undefined" && typeof check.access !== "undefined") {
                     let target;
-                    
+
                     const fullPath = window.location.pathname;
                     const queryString = window.location.search;
-                    
-                    console.log("check", check);
+
                     if (!check.init) {
-                        if (!path?.startsWith("/welcome")) target = "/welcome";
-                        else setIsAccess(true);
+                        if (path?.startsWith("/welcome")) setIsAccess(true);
+                        else target = "/welcome";
                     } else {
                         setIsInit(true);
                         setIsAccess(check.access);
                         // console.log({ access: check.access });
                         // if (!check.access) {
-                            // if (!path.startsWith("/lock") && path !== "/lock?" && path !== "/lock?target=")
-                            //     target = `/lock?target=${encodeURIComponent(fullPath + queryString)}`;
-                            // } else setIsAccess(true);
-                        }
-                        
-                        if (target) setTarget(target);
-                        setCheck(check);
+                        // if (!path.startsWith("/lock") && path !== "/lock?" && path !== "/lock?target=")
+                        //     target = `/lock?target=${encodeURIComponent(fullPath + queryString)}`;
+                        // } else setIsAccess(true);
                     }
-            }
+
+                    if (target) setTarget(target);
+                    setCheck(check);
+                }
+            };
 
             handleCheck();
-            provider?.on("unlock", handleCheck)
+            provider?.on("unlock", handleCheck);
         }
     }, [path, provider]);
 

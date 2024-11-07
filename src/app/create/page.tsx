@@ -4,25 +4,19 @@ import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Stages } from "containers";
-import { useAccount, useStorage } from "hooks";
 import { AnimatePresence } from "framer-motion";
+import { useWallet } from "hooks";
 
 export default function Welcome() {
     const router = useRouter();
-    const { storage, session } = useStorage();
-    const { account } = useAccount();
+    const { provider, account } = useWallet();
 
     const [load, setLoad] = useState(false);
     const [stage, setStage] = useState({ name: "create", level: 0 });
 
     useEffect(() => {
-        const init = storage?.get("init");
-        const userId = storage?.get("userId");
-        if (userId) {
-            if (!init) storage?.set("init", "complete");
-            if (!session?.get("key")) router.push("/lock");
-            else setLoad(true);
-        } else setLoad(true);
+        if (provider?.isLocked) router.push("/lock");
+        else setLoad(true);
     }, []);
 
     return (

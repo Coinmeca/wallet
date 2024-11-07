@@ -1,19 +1,20 @@
-﻿import React, { createContext, useContext, useEffect, useLayoutEffect, useState } from "react";
+﻿import React, { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { Account } from "types";
-import { CoinmecaWalletProvider } from "wallet/provider";
+import { Chain, CoinmecaWalletProvider } from "wallet/provider";
 
 // Inject the provider into window.ethereum
 declare global {
     interface Window {
         ethereum?: any;
         providers?: any;
-        providersMap?: Map<string, any>;
+        providersMaprovider?: Map<string, any>;
     }
 }
 
 interface WalletProviderContextProps {
     provider: CoinmecaWalletProvider | undefined;
     account: Account | undefined;
+    chain: Chain | undefined;
 }
 
 const WalletProviderContext = createContext<WalletProviderContextProps | undefined>(undefined);
@@ -26,21 +27,31 @@ export const useWallet = () => {
 
 export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [account, setAccount] = useState<Account>();
+    const [chain, setChain] = useState();
     const [provider, setProvider] = useState<CoinmecaWalletProvider>();
 
-    useEffect(() => {
-        const provider = new CoinmecaWalletProvider();
-        setProvider(provider);
-
-        const updateAccount = (info:Account) => {
-            setAccount(info);
-        }
-        
-        provider?.on("unlock", updateAccount);
-        return () => {
-            provider?.off("unlock", updateAccount);
-        }
+    useLayoutEffect(() => {
+        setProvider(new CoinmecaWalletProvider());
     }, []);
 
-    return <WalletProviderContext.Provider value={{ provider, account }}>{children}</WalletProviderContext.Provider>;
+    useEffect(() => {
+        const updateAccount = () => {
+            setAccount(provider?.account);
+        };
+
+        const updateChain = () => {
+            if (provider?.chain) setChain(provider?.chain);
+        };
+
+        provider?.on("unlock", updateAccount);
+        provider?.on("accountChanged", updateAccount);
+        provider?.on("chainChanged", updateChain);
+        return () => {
+            provider?.off("unlock", updateAccount);
+            provider?.off("accountChanged", updateAccount);
+            provider?.off("chainChanged", updateChain);
+        };
+    }, [provider]);
+
+    return <WalletProviderContext.Provider value={{ provider, account, chain }}>{children}</WalletProviderContext.Provider>;
 };

@@ -1,7 +1,7 @@
 "use client";
 import { Controls, Layouts } from "@coinmeca/ui/components";
 import { getChainById } from "chains";
-import { useAccount, useTelegram, useWallet } from "hooks";
+import { useTelegram, useWallet } from "hooks";
 import { useState } from "react";
 
 export default function Home() {
@@ -10,8 +10,7 @@ export default function Home() {
     const [requestAccess, setRequestAccess] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    const { provider } = useWallet();
-    const { account } = useAccount();
+    const { provider, account } = useWallet();
 
     const handleExpand = () => {
         expand();
