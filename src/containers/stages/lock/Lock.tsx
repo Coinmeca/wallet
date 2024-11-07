@@ -18,16 +18,12 @@ export default function Lock(props?: {onUnlock?:Function}) {
     const [code, setCode] = useState<string>("");
     const [error, setError] = useState({ state: false, message: "" });
 
-    const handleNumberClick = (code: string) => {
+    const handleNumberClick = async (code: string) => {
         if (code?.length > length) return;
 
         setCode(code);
         if (code?.length === length) {
-            try {
-                props?.onUnlock?.(CryptoJS.SHA256(code).toString());
-            } catch (message:any) {
-                setError({ state: true, message, });
-            } 
+            if(!props?.onUnlock?.(CryptoJS.SHA256(code).toString())) setError({ state: true, message: "The entered passcode was wrong." })
         } else setError({ state: false, message: "" });
     };
 

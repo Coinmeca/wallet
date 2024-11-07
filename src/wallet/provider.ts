@@ -266,7 +266,6 @@ export class CoinmecaWalletProvider {
         this.#data()?.set("userId", userId);
         const key = CryptoJS.SHA256(`${userId}:${hash}`).toString();
         this.#key = key;
-        console.log({ setKey: key });
         this.#storage?.set(key, key);
     }
 
@@ -283,23 +282,21 @@ export class CoinmecaWalletProvider {
 
     unlock(hash: string) {
         const key = this.#getKey(hash);
-        console.log({ key });
         if (key) {
             this.#key = key;
-            console.log(key, this.#key, this.isLocked);
             const accounts = this.accounts;
 
-            // if (!accounts || !accounts?.length) this.#data()?.remove("init");
-            // else {
-            //     const last: any =
-            //         this.address || this.#storage?.get("last:account") || this.accounts?.[0] ? this.#wallet(this.accounts?.[0])?.getAddressString() : undefined;
-            //     const info: any = this.#storage?.get(last?.toLowerCase());
-            //     console.log({ last, info });
-            //     if (info) {
-            //         this.emit("unlock", info);
-            //         return info;
-            //     } else return new Error("Not found account info.");
-            // }
+            if (accounts || accounts?.length) {
+                const last: any =
+                    this.address || this.#storage?.get("last:account") || this.accounts?.[0]
+                        ? this.#wallet(CryptoJS.SHA256(`${key}:${0}`).toString())?.getAddressString()
+                        : undefined;
+                const info: any = last && this.#storage?.get(last?.toLowerCase());
+                if (info) {
+                    this.emit("unlock", info);
+                    return info;
+                } else return new Error("Not found account info.");
+            }
         } else return new Error("Invalid key entered.");
     }
 
@@ -311,7 +308,6 @@ export class CoinmecaWalletProvider {
     }
 
     #wallet(privateKey: string) {
-        console.log(privateKey.toString().trim().substring(0, 64));
         return Wallet.fromPrivateKey(Buffer.from(privateKey.toString().trim().substring(0, 64), "hex"));
     }
 
@@ -328,7 +324,7 @@ export class CoinmecaWalletProvider {
     }
 
     get account() {
-        return this.#storage?.get(this.address);
+        return this.#storage?.get?.(this.address);
     }
 
     createAccount() {
@@ -354,7 +350,7 @@ export class CoinmecaWalletProvider {
             const wallets = this.#storage?.get(`${key}:wallets`);
             if (wallets && wallets?.length) {
                 if (wallets?.[index]) {
-                    const address = this.#wallet(CryptoJS.SHA256(`${key}:${this.#wallet.length}`).toString()).getAddressString();
+                    const address = this.#wallet(CryptoJS.SHA256(`${key}:${wallets.length}`).toString()).getAddressString();
                     if (address) {
                         this.#data().set("last:account", address);
                         return this.emit("accountChanged", address);
@@ -374,6 +370,11 @@ export class CoinmecaWalletProvider {
 
     get isTelegram() {
         return typeof window !== "undefined" && (window as any)?.telegram;
+    }
+
+    lock() {
+        this.#data()?.set("last:account", this.account?.address);
+        this.#key = undefined;
     }
 
     #getPrivateKey(index: number | string) {

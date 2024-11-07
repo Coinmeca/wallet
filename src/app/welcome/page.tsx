@@ -6,7 +6,8 @@ import { Layouts } from "@coinmeca/ui/components";
 
 import { Stages } from "containers";
 import { useWallet } from "hooks";
-
+import { getChainsByType } from "chains";
+import { format, parse } from "utils";
 export default function Welcome() {
     const { provider } = useWallet(); 
     const [stage, setStage] = useState({ name: "welcome", level: 0 });
@@ -17,6 +18,8 @@ export default function Welcome() {
 
     const handleConfirm = (passcode: string) => {
         provider?.init(CryptoJS.SHA256(passcode).toString());
+        const chains = format(getChainsByType("mainnet"));
+        if(chains) localStorage.setItem('coinmeca:wallet:chains', chains);
         return true;
     };
 
