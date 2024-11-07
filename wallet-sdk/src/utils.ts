@@ -1,5 +1,5 @@
 ﻿import CryptoJS from "crypto-js";
-import { Chain } from "types";
+import { Chain } from "./types";
 
 export const objectToUrlParams = (obj: { [x: string | number | symbol]: any }) => {
     const params = new URLSearchParams();
@@ -93,8 +93,8 @@ export function formatChainId(chain: number | string | Chain): string {
             ? chain
             : formatChainId(parseInt(chain))
         : typeof chain === "number"
-        ? `0x${chain?.toString(16)}`
-        : formatChainId(chain?.chainId);
+            ? `0x${chain?.toString(16)}`
+            : formatChainId(chain?.chainId);
 }
 
 export const isMobile = () => {
