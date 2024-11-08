@@ -1,8 +1,3 @@
 {
-<<<<<<< HEAD
     "installCommand": "yarn install"
 }
-=======
-    "installCommand": "yarn install && git submodule update --init --recursive && cd ui-kit && git fetch origin && git checkout main && git pull origin main && cd .. && yarn workspace @coinmeca/ui install && yarn workspace @coinmeca/ui build"
-}
->>>>>>> dev
