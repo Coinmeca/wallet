@@ -1,0 +1,35 @@
+{
+    "compilerOptions": {
+        "rootDir": "src",
+        "baseUrl": "src",
+        "outDir": "dist",
+        "target": "ESNext",
+        "module": "ESNext",
+        "lib": ["dom", "dom.iterable", "esnext"],
+        "skipLibCheck": true,
+        "strict": true,
+        "allowJs": true,
+        "allowSyntheticDefaultImports": true,
+        "forceConsistentCasingInFileNames": true,
+        "noEmit": false,
+        "noImplicitAny": true,
+        "moduleResolution": "node",
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "jsx": "preserve",
+        "incremental": true,
+        "composite": true,
+        "declaration": true,
+        "declarationMap": true,
+        "declarationDir": "dist",
+        "sourceMap": true,
+        "paths": {
+            "": ["./src/*"],
+            "~/*": ["./src/*"]
+        },
+        "typeRoots": ["src/types", "node_modules/@types"]
+    },
+    "include": ["src", "next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+    "exclude": ["node_modules", "packages", "ui-kit"]
+}

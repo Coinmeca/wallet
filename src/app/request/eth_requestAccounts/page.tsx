@@ -1,27 +1,42 @@
 ﻿"use client";
 
-import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useAccount, usePopupChecker, useStorage, useTelegram } from "hooks";
 import Image from "next/image";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
-import { App } from "types";
+
+import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
+import { App } from "@coinmeca/wallet-sdk/types";
+import { useMessageHandler, useStorage, useTelegram } from "hooks";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({method: 'eth_requestAccounts'})
 */
 
-export default function eth_requestAccounts({ params }: { params: any }) {
+export default function eth_requestAccounts() {
     const method = "eth_requestAccounts";
     const router = useRouter();
 
-    const { storage } = useStorage();
-    const { isPopup } = usePopupChecker();
     const { telegram } = useTelegram();
-    const { account } = useAccount();
+    const { provider, account } = useCoinmecaWalletProvider();
+    const { isPopup, params } = useMessageHandler();
 
     const [app, setApp] = useState<App>();
     const [level, setLevel] = useState(0);
+
+    useLayoutEffect(() => {
+        if (params) {
+            const url = params?.appUrl || params?.url;
+            const site = url && decodeURIComponent(url);
+            const origin = site && new URL(site.startsWith("http") ? site : `https://${site}`).host;
+            const app = {
+                name: params?.appName || params?.name || undefined,
+                logo: params?.appLogo || params?.logo || params?.appIcon || params?.icon || undefined,
+                url: origin || undefined,
+            };
+            if (app?.name && app?.name !== "" && app?.url && app?.url !== "") setApp(app);
+        }
+    }, []);
 
     const handleClose = () => {
         if (level === 0)
@@ -38,62 +53,26 @@ export default function eth_requestAccounts({ params }: { params: any }) {
         } else router.push("/");
     };
 
-    const handleConnect = () => {
-        const apps = storage?.get("apps");
-        const url = app?.url?.toLowerCase();
-        let address = [];
-
-        if (apps) {
-            const exist = apps?.find((a: string) => a.toLowerCase() === url);
-            if (exist) {
-                const info = storage?.get(`app:${url}`);
-                if (info) {
-                    address = [account?.address, ...info?.address?.filter((a: string) => a?.toLowerCase() !== account?.address?.toLowerCase())].filter(
-                        (a) => a,
-                    );
-                    storage?.set(`app:${url}`, { ...info, address });
-                } else {
-                    address = [account?.address].filter((a) => a);
-                    storage?.set(`app:${url}`, { address });
-                }
-            } else {
-                address = [account?.address].filter((a) => a);
-                storage?.set("apps", [...apps, url]);
-                storage?.set(`app:${url}`, { address });
-            }
-        } else {
-            address = [account?.address].filter((a) => a);
-            storage?.set("apps", [url]);
-            storage?.set(`app:${url}`, { address });
-        }
-
-        window?.opener?.postMessage(
-            {
-                method,
-                result: address,
-            },
-            "*",
-        );
-
-        setLevel(1);
+    const handleConnect = async () => {
+        await provider?.requestAccounts(app!)
+            .then((result) => {
+                window?.opener?.postMessage(
+                    {
+                        method,
+                        result
+                    },
+                    "*",
+                )
+                setLevel(1);
+            }).catch ((error) => 
+                window?.opener?.postMessage(
+                    {
+                    method,
+                    error,
+                },
+                "*",
+            ))
     };
-
-    useLayoutEffect(() => {
-        if ((window as any)?.coinmeca) {
-            const params = (window as any)?.coinmeca?.params;
-            if (params) {
-                const url = params?.appUrl || params?.url;
-                const site = url && decodeURIComponent(url);
-                const origin = site && new URL(site.startsWith("http") ? site : `https://${site}`).host;
-                const app = {
-                    name: params?.appName || params?.name || undefined,
-                    logo: params?.appLogo || params?.logo || params?.appIcon || params?.icon || undefined,
-                    url: origin || undefined,
-                };
-                if (app?.name && app?.name !== "" && app?.url && app?.url !== "") setApp(app);
-            }
-        }
-    }, []);
 
     return app ? (
         <Layouts.Contents.SlideContainer

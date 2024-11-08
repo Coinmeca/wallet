@@ -3,31 +3,24 @@
 import CryptoJS from "crypto-js";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { Parts } from "@coinmeca/ui/index";
-import { useStorage } from "hooks";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { usePortal } from "@coinmeca/ui/hooks";
 import { Modal } from "@coinmeca/ui/containers";
 
-export default function Lock({ onUnlock }: {onUnlock:Function}) {
+export default function Lock(props?: { onUnlock?: Function }) {
     const length = 6;
     const router = useRouter();
-
-    const { storage } = useStorage();
 
     const [code, setCode] = useState<string>("");
     const [error, setError] = useState({ state: false, message: "" });
 
-    const handleNumberClick = (code: string) => {
+    const handleNumberClick = async (code: string) => {
         if (code?.length > length) return;
 
         setCode(code);
         if (code?.length === length) {
-            const key = storage?.get(`${storage?.get("userId")}:${CryptoJS.SHA256(code).toString()}`);
-            if (key) {
-                if (typeof onUnlock === 'function') onUnlock(code);
-                setCode("");
-            } else setError({ state: true, message: "The entered passcode was wrong." });
+            if (!props?.onUnlock?.(CryptoJS.SHA256(code).toString())) setError({ state: true, message: "The entered passcode was wrong." });
         } else setError({ state: false, message: "" });
     };
 
@@ -97,9 +90,6 @@ export default function Lock({ onUnlock }: {onUnlock:Function}) {
                                                 <Layouts.Col fill>
                                                     <Parts.Numberpad type="code" value={code} onChange={(e: any, v: any) => handleNumberClick(v)} shuffle />
                                                 </Layouts.Col>
-                                                <Controls.Button onClick={() => storage?.clear()} style={{ margin: "2em", marginTop: 0 }}>
-                                                    Clear
-                                                </Controls.Button>
                                             </Layouts.Col>
                                         </Layouts.Contents.InnerContent>
                                     ),

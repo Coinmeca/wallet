@@ -1,8 +1,9 @@
 "use client";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { format } from "@coinmeca/ui/lib/utils";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
 import { AnimatePresence } from "framer-motion";
-import { useAccount, usePageLoader, useWallet } from "hooks";
+import { usePageLoader } from "hooks";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -11,16 +12,14 @@ export default function Home() {
     const router = useRouter();
 
     const { isLoad } = usePageLoader();
-
-    const { chain, account } = useAccount();
-    const { provider } = useWallet();
+    const { provider, account, chain } = useCoinmecaWalletProvider();
 
     const [balance, setBalance] = useState(0);
     const [tab, setTab] = useState("token");
 
     useEffect(() => {
         (async () => await provider?.balance())().then((balance: any) => {
-            setBalance(Number(balance) / (10 ^ (chain?.nativeCurrency.decimals || 1)));
+            setBalance(Number(balance) / (10 ^ (chain?.nativeCurrency?.decimals || 1)));
         });
     }, [chain, account]);
 
@@ -53,7 +52,7 @@ export default function Home() {
                                         fix: 3,
                                     })}
                                 </Elements.Text>
-                                <Elements.Text type={"h6"}>{chain?.nativeCurrency.symbol}</Elements.Text>
+                                <Elements.Text type={"h6"}>{chain?.nativeCurrency?.symbol}</Elements.Text>
                             </Layouts.Col>
                         </Layouts.Col>
                         <Layouts.Box padding={[2, "", "", ""]} fit>

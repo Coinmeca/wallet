@@ -1,5 +1,5 @@
 ﻿import CryptoJS from "crypto-js";
-import { Chain } from "@coinmeca/wallet-sdk/types";
+import { Chain } from "./types";
 
 export const objectToUrlParams = (obj: { [x: string | number | symbol]: any }) => {
     const params = new URLSearchParams();

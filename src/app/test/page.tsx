@@ -1,8 +1,10 @@
 "use client";
-import { Controls, Layouts } from "@coinmeca/ui/components";
-import { getChainById } from "chains";
-import { useAccount, useTelegram, useWallet } from "hooks";
+
 import { useState } from "react";
+import { Controls, Layouts } from "@coinmeca/ui/components";
+import { useCoinmecaWallet, useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
+import { getChainById, getChainsByType } from "@coinmeca/wallet-sdk/chains";
+import { useTelegram } from "hooks";
 
 export default function Home() {
     const { telegram, send, show, expand, exit, bio } = useTelegram();
@@ -10,8 +12,8 @@ export default function Home() {
     const [requestAccess, setRequestAccess] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    const { provider } = useWallet();
-    const { account } = useAccount();
+    const { account, chain } = useCoinmecaWalletProvider();
+    const { adapter } = useCoinmecaWallet();
 
     const handleExpand = () => {
         expand();
@@ -66,15 +68,16 @@ export default function Home() {
     };
 
     const handleAddEthereumChain = async () => {
-        await provider?.request({ method: "wallet_addEthereumChain", params: [getChainById(17000)] });
+        const chains = getChainsByType("mainnet").filter((c) => c?.chainId !== chain?.chainId);
+        console.log(await adapter?.request({ method: "wallet_addEthereumChain", params: [chains[Math.floor(Math.random() * chains.length)]] }));
     };
 
     const handleRequestAccounts = async () => {
-        await provider?.request({ method: "eth_requestAccounts" });
+        console.log(await adapter?.request({ method: "eth_requestAccounts" }));
     };
 
     const handleSendTransaction = async () => {
-        await provider?.request({
+        console.log(await adapter?.request({
             method: "eth_sendTransaction",
             params: [
                 {
@@ -86,7 +89,7 @@ export default function Home() {
                     maxPriorityFeePerGas: "0x3b9aca00",
                 },
             ],
-        });
+        }));
     };
 
     return (

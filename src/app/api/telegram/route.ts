@@ -1,5 +1,4 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
-import { wallet } from "wallet";
 
 // message of body
 // {
@@ -139,14 +138,13 @@ export async function POST(req: NextRequest) {
                 } else if (command.startsWith("/create")) {
                     const mnemonic = command.split(" ");
                     const seed = chat_id + mnemonic[1];
-                    const { address } = wallet(seed);
+                    // const { address } = wallet(seed);
 
                     response.text = `
                         mnemonic: ${mnemonic.toString()},\n
                         mnemonic length:${mnemonic.length},\n
                         mnemonic isBlank:${mnemonic[1] ? mnemonic[1] === "" : "none"},\n
-                        mnemonic code length:${mnemonic[1] ? mnemonic[1].length : "none"},\n
-                        ${chat_id} => ${address}`;
+                        mnemonic code length:${mnemonic[1] ? mnemonic[1].length : "none"},\n`;
                 } else if (command === "/help") {
                     response.text = "Available commands: /start, /help, /info";
                 } else if (command === "/data") {

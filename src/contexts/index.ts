@@ -1,6 +1,5 @@
-﻿import { AccountProvider } from './account';
-import { TelegramProvider } from './telegram';
-import { StorageProvider } from './storage';
-import { WalletProvider } from './wallet';
+﻿import { TelegramProvider } from "./telegram";
+import { StorageProvider } from "./storage";
+import { MessageHandler } from "./message";
 
-export { AccountProvider, TelegramProvider, StorageProvider, WalletProvider };
+export { TelegramProvider, StorageProvider, MessageHandler };

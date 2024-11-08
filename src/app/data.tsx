@@ -1,30 +1,25 @@
 ﻿"use client";
 
+import { useCallback, useMemo, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useNotification } from "@coinmeca/ui/hooks";
-import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useLayoutEffect, useState } from "react";
-
 import { Avatar } from "@coinmeca/ui/components/elements";
+import { Account, Chain } from "@coinmeca/wallet-sdk/types";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
+
 import Coinmeca from "assets/coinmeca.svg";
-import { useAccount, useStorage } from "hooks";
-import { Account, Chain } from "types";
-import { wallet } from "wallet";
 
 export default function Data() {
     const router = useRouter();
     const path = usePathname();
 
-    const { account, setAccount, resetAccount, chain, setChain } = useAccount();
-    const { storage, session } = useStorage();
+    const { provider, account, accounts, chain, chains } = useCoinmecaWalletProvider();
 
     const [value, setValue] = useState<number>(0);
     const [tab, setTab] = useState<string>("icon");
     const [active, setActive] = useState(false);
     const [mobileMenu, setMobileMenu] = useState("");
-
-    const [chains, setChains] = useState<Chain[]>();
-    const [accounts, setAccounts] = useState<Account[]>();
 
     const { toasts, addToast } = useNotification();
 
@@ -56,50 +51,9 @@ export default function Data() {
         },
     ];
 
-    useLayoutEffect(() => {
-        const key = session?.get("key");
-        if (key) {
-            setChains(storage?.get(`${key}:chains`));
-            setAccounts([...(storage?.get(`${key}:wallets`) || [])]?.map((w) => storage?.get(wallet(w).address?.toLowerCase())));
-        }
-    }, [path]);
-
-    const chainlist = useCallback(
-        (chains: Chain[] = []) => {
-            if (chains?.length) {
-                return chains.map((c: Chain) => ({
-                    onClick: () => {
-                        setChain(c);
-                        setMobileMenu("");
-                    },
-                    style: { padding: "2em clamp(2em, 5%, 8em)", ...(chain?.id === c?.id && { opacity: 0.3, pointerEvents: "none" }) },
-                    children: [
-                        [
-                            {
-                                children: (
-                                    <Layouts.Row gap={2}>
-                                        <Layouts.Row gap={1} fit>
-                                            <Avatar img={`https://web3.coinmeca.net/${c?.id}/logo.svg`} />
-                                        </Layouts.Row>
-                                        <Elements.Text size={1.5}>{c?.name}</Elements.Text>
-                                    </Layouts.Row>
-                                ),
-                            },
-                        ],
-                    ],
-                }));
-            }
-        },
-        [chain, chains],
-    );
-
     const handleAccountChange = (account: Account) => {
-        setAccount(account);
+        provider?.changeAccount(account?.index);
         setMobileMenu("");
-        // addToast({
-        //     title: `Account Change`,
-        //     message: `The account changed to ${account.name}.`,
-        // });
     };
 
     const handleCopyAddress = (account: Account) => {
@@ -203,6 +157,36 @@ export default function Data() {
         [account, accounts],
     );
 
+    const chainlist = useCallback(
+        (chains: Chain[] = []) => {
+            if (chains?.length) {
+                return chains.map((c: Chain) => ({
+                    onClick: () => {
+                        provider?.changeChain(c?.chainId);
+                        setMobileMenu("");
+                    },
+                    style: { padding: "2em clamp(2em, 5%, 8em)", ...(provider?.chain?.chainId === c?.chainId && { opacity: 0.3, pointerEvents: "none" }) },
+                    children: [
+                        [
+                            {
+                                children: (
+                                    <Layouts.Row gap={2}>
+                                        <Layouts.Row gap={1} fit>
+                                            <Avatar img={c?.logo || ""} />
+                                            {/* <Avatar img={`https://web3.coinmeca.net/${c?.chainId}/logo.svg`} /> */}
+                                        </Layouts.Row>
+                                        <Elements.Text size={1.5}>{c?.chainName}</Elements.Text>
+                                    </Layouts.Row>
+                                ),
+                            },
+                        ],
+                    ],
+                }));
+            }
+        },
+        [chain, chains],
+    );
+
     const header = {
         color: colorMap,
         logo: !account,
@@ -278,7 +262,9 @@ export default function Data() {
                                         />
                                     )}
                                 </Controls.Tab>
-                                {mobileMenu !== "accounts" && <Controls.Button icon={"copy"} title={"Copy address"} />}
+                                {mobileMenu !== "accounts" && (
+                                    <Controls.Button icon={"copy"} title={"Copy address"} onClick={() => handleCopyAddress(account)} />
+                                )}
                             </Layouts.Row>
                         )}
                     </Layouts.Row>
@@ -287,7 +273,8 @@ export default function Data() {
                             {mobileMenu === "chains" ? (
                                 <Elements.Icon icon={"x"} scale={0.666} />
                             ) : (
-                                <Elements.Avatar scale={0.666} size={2.5} img={`https://web3.coinmeca.net/${chain?.id}/logo.svg`} />
+                                <Elements.Avatar scale={0.666} size={2.5} img={chain?.logo || ""} />
+                                // <Elements.Avatar scale={0.666} size={2.5} img={`https://web3.coinmeca.net/${chain?.chainId}/logo.svg`} />
                             )}
                         </Controls.Tab>
                         <Controls.Tab
@@ -368,8 +355,8 @@ export default function Data() {
                                 scale={1.125}
                                 style={{ padding: "0.5em 1em" }}
                                 onClick={() => {
-                                    session?.remove("key");
-                                    resetAccount();
+                                    provider?.lock();
+                                    // resetAccount();
                                     router.push("/lock");
                                 }}>
                                 Lock
