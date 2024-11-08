@@ -254,8 +254,8 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
                     this.emit("unlock", info);
                     return info;
                 }
-            } else return new Error("Not found account info.");
-        } else return new Error("Invalid key entered.");
+            } else throw new Error("Not found account info.");
+        } else throw new Error("Invalid key entered.");
     }
 
     create() {
@@ -300,12 +300,13 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
         this.#data({ key }).remove(old);
     }
 
-    changeAccount(index: number): void {
+    changeAccount(index: number) {
         return this.#safe(() => {
             const account = this.accounts?.[index];
-            if (!account) return new Error("There is no accounts that setup yet.");
+            if (!account) throw new Error("There is no accounts that setup yet.");
             this.#data().set("last:account", account?.address);
             this.emit("accountChanged", account?.address);
+            return account?.address;
         });
     }
 
@@ -317,7 +318,8 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
             if (typeof window !== "undefined") (window as any).ethereum = { chainId };
             this.#data().set("last:chain", chainId);
             this.emit("chainChanged", formatChainId(chainId));
-        } else return new Error("There is no any chain registered.");
+            return chainId;
+        } else throw new Error("There is no any chain registered.");
     }
 
     #confirm(method: string) {
@@ -476,7 +478,7 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
                             return result;
                         });
                 }
-                return new Error("No chain information registered yet.");
+                throw new Error("No chain information registered yet.");
 
             case "wallet_watchAsset":
                 if (!params || !params?.length) throw new Error("No asset parameters provided");
@@ -519,7 +521,7 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
     }
 
     async #signTypedData(address: string, typedData: EIP712Message) {
-        if (!this.#wallet || !this.address) return new Error("Account doesn't setup yet.");
+        if (!this.#wallet || !this.address) throw new Error("Account doesn't setup yet.");
         if (address.toLowerCase() !== this.address.toLowerCase()) throw new Error("Address does not match selected wallet address");
 
         const domain = this.#hashDomain(typedData.domain);
@@ -536,7 +538,7 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
             const exist = app?.address?.find((a: string) => a?.toLowerCase() === from);
             if (exist) {
                 const account = this.#storage?.get(from);
-                if (!account) return new Error("Account information is something wrong.");
+                if (!account) throw new Error("Account information is something wrong.");
 
                 const method = "eth_signTransaction";
                 return await __promise(method, this.#confirm(method), [txParams, await this.#app()]).then(async (result: any) => {
@@ -546,9 +548,9 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
                         return `0x${tx.serialize().toString("hex")}`;
                     }
                 });
-            } else return new Error("Account doesn't approved this app.");
+            } else throw new Error("Account doesn't approved this app.");
         }
-        return new Error("Account have to be connected to the app first.");
+        throw new Error("Account have to be connected to the app first.");
     }
 
     async #sendTransaction(txParams: any) {
@@ -558,7 +560,7 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
             const exist = app?.address?.find((a: string) => a?.toLowerCase() === from);
             if (exist) {
                 const account = this.#storage?.get(from);
-                if (!account) return new Error("Account information is something wrong.");
+                if (!account) throw new Error("Account information is something wrong.");
 
                 const method = "eth_sendTransaction";
                 return await __promise(method, this.#confirm(method), [txParams, await this.#app()]).then(async (result: any) => {
@@ -569,9 +571,9 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
                         return await this.#broadcastTransaction(result);
                     }
                 });
-            } else return new Error("Account doesn't approved this app.");
+            } else throw new Error("Account doesn't approved this app.");
         }
-        return new Error("Account have to be connected to the app first.");
+        throw new Error("Account have to be connected to the app first.");
     }
 
     async #getBlockNumber() {
@@ -599,7 +601,7 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
         console.log("sendRpcRequest");
         const rpc = await this.#rpcUrl();
         console.log({ rpc });
-        if (!rpc) return new Error("Provider URL was not setup yet.");
+        if (!rpc) throw new Error("Provider URL was not setup yet.");
         const response = await axios.post(rpc, {
             jsonrpc: "2.0",
             id: new Date().getTime(),
@@ -612,20 +614,23 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
     }
 
     async addEthereumChain(chain: Chain) {
-        const { chainId, rpcUrls, nativeCurrency } = chain;
+        const { chainId, rpcUrls, nativeCurrency, base } = chain;
+        if (base !== "evm") throw new Error("Chain base doesn't EVM based.");
         if (!chainId || !rpcUrls || !rpcUrls.length || !nativeCurrency.decimals)
             throw new Error("Invalid chain parameters. `chainId` and at least one `rpcUrls` are required.");
 
-        const chains = this.#data()?.get("chains") || [];
-        this.#data()?.set("chains", [chain, ...chains?.filter((c: Chain) => c?.chainId !== chainId)]);
-
+        const chains: Chain[] = this.#data()?.get("chains") || [];
+        const exist = chains?.find((c) => c?.chainId === chain.chainId);
+        this.#data()?.set("chains", [{ ...exist, ...chain }, ...chains?.filter((c: Chain) => c?.chainId !== chainId)]);
         return true;
     }
 
     async switchEthereumChain(chainId: number | string) {
         chainId = (typeof chainId === "string" ? (chainId?.startsWith("0x") ? parseChainId(chainId) : parseInt(chainId)) : chainId) as number;
         const chains = this.#data()?.get("chains") || [];
-        if (chains?.find((c: Chain) => c?.chainId === chainId)) this.changeChain(chainId);
+        if (chains?.find((c: Chain) => c?.chainId === chainId)) {
+            return this.changeChain(chainId);
+        }
     }
 
     async requestAccounts(app: App, address?: string) {

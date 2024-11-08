@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Controls, Layouts } from "@coinmeca/ui/components";
 import { useCoinmecaWallet, useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
-import { getChainById } from "@coinmeca/wallet-sdk/chains";
+import { getChainById, getChainsByType } from "@coinmeca/wallet-sdk/chains";
 import { useTelegram } from "hooks";
 
 export default function Home() {
@@ -12,7 +12,7 @@ export default function Home() {
     const [requestAccess, setRequestAccess] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    const { provider, account } = useCoinmecaWalletProvider();
+    const { account, chain } = useCoinmecaWalletProvider();
     const { adapter } = useCoinmecaWallet();
 
     const handleExpand = () => {
@@ -68,7 +68,8 @@ export default function Home() {
     };
 
     const handleAddEthereumChain = async () => {
-        await adapter?.request({ method: "wallet_addEthereumChain", params: [getChainById(17000)] });
+        const chains = getChainsByType("mainnet").filter((c) => c?.chainId !== chain?.chainId);
+        console.log(await adapter?.request({ method: "wallet_addEthereumChain", params: [chains[Math.floor(Math.random() * chains.length)]] }));
     };
 
     const handleRequestAccounts = async () => {
@@ -76,7 +77,7 @@ export default function Home() {
     };
 
     const handleSendTransaction = async () => {
-        await adapter?.request({
+        console.log(await adapter?.request({
             method: "eth_sendTransaction",
             params: [
                 {
@@ -88,7 +89,7 @@ export default function Home() {
                     maxPriorityFeePerGas: "0x3b9aca00",
                 },
             ],
-        });
+        }));
     };
 
     return (

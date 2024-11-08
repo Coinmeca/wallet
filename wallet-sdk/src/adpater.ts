@@ -28,11 +28,10 @@ const __promise = async (method: string, params?: any) => {
     return new Promise((resolve, reject) => {
         const messageHandler = (event: any) => {
             if (event.data.method === method) {
-                if (event.data.result) resolve(event.data.result);
-                else {
-                    if (event.data.error) reject(new Error(event.data.error));
-                    else reject(new Error("Request something wrong."));
-                }
+                if (typeof event.data.result !== "undefined") resolve(event.data.result);
+                else if (typeof event.data.error !== "undefined") reject(new Error(event.data.error));
+                // else reject(new Error("Request something wrong."));
+
                 window.removeEventListener("message", messageHandler);
             }
 
@@ -46,11 +45,9 @@ const __promise = async (method: string, params?: any) => {
         const popup = __confirm(method);
         if (!!popup) {
             const onLoad = (e: any) => {
-                console.log({ e, popup });
                 if (popup?.coinmeca) popup.coinmeca = { ...popup.coinmeca, request: { method, params } };
                 else popup.coinmeca = { request: { method, params } };
             };
-            console.log(!!params);
             if (params) popup.addEventListener("load", onLoad);
 
             const onClose = setInterval(() => {
@@ -166,10 +163,8 @@ export class CoinmecaWalletAdapter extends CoinmecaWalletBase {
             case "wallet_addEthereumChain":
                 const chain = params && (Array.isArray(params) ? params[0] : params);
                 if (!chain) throw new Error("No chain parameters provided");
-                return await __promise(method, chain).then(async (result: any) => {
-                    if (result) this.#switchEthereumChain(result);
-                    else this.emit("chainChanged", chain);
-                    return result;
+                return await __promise(method, chain).then((result) => {
+                    if (result) this.emit("chainChanged", chain?.chainId);
                 });
 
             case "wallet_switchEthereumChain":

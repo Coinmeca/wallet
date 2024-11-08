@@ -45,18 +45,7 @@ export default function wallet_addEthereumChain() {
     useLayoutEffect(() => {
         setSelectedChain(chain);
         if (params) {
-            const decimals = params?.nativeCurrency?.decimals;
-            const c = {
-                chainId: params?.chainId || params?.chainId,
-                chainName: params?.chainName || params?.chainName,
-                rpcUrls: params?.rpcUrls || params?.rpc,
-                blockExplorerUrls: params?.blockExplorerUrls || params?.explorer,
-                nativeCurrency: {
-                    ...params?.nativeCurrency,
-                    decimals: decimals && decimals !== "" ? parseInt(decimals) : null,
-                },
-            };
-            const { chainId, chainName, rpcUrls, nativeCurrency } = c;
+            const { chainId, chainName, rpcUrls, nativeCurrency } = params;
             if (
                 chainId &&
                 chainName &&
@@ -67,7 +56,7 @@ export default function wallet_addEthereumChain() {
                 rpcUrls &&
                 rpcUrls.length > 0
             )
-            setNewChain(c as Chain);
+            setNewChain(params as Chain);
         }
     }, []);
 
@@ -89,20 +78,20 @@ export default function wallet_addEthereumChain() {
     const handleAddChain = async () => {
         if (!newChain) return;
         await provider?.addEthereumChain(newChain)
-            .then(() => {
+            .then((result) => {
                 window?.opener?.postMessage(
                     {
                         method,
-                        result:true
+                        result
                     },
                     "*",
                 )
                 setLevel(1)
-            }).catch (() => 
+            }).catch ((error) => 
                 window?.opener?.postMessage(
                     {
                         method,
-                        error: "Invalid chain information",
+                        error,
                     },
                     "*",
                 )
@@ -112,20 +101,20 @@ export default function wallet_addEthereumChain() {
     const handleSwitchChain = async () => {
         if (!newChain) return;
         await provider?.switchEthereumChain(newChain?.chainId)
-            .then(() => {
+            .then((result) => {
                 window?.opener?.postMessage(
                     {
                         method,
-                        result:true
+                        result
                     },
                     "*",
                 )
                 setLevel(2)
-            }).catch (() => 
+            }).catch ((error) => 
                 window?.opener?.postMessage(
                     {
                     method,
-                    result: newChain,
+                    error,
                 },
                 "*",
             ))
@@ -158,7 +147,7 @@ export default function wallet_addEthereumChain() {
                                                     height={0}
                                                     src={newChain?.logo || `https://web3.coinmeca.net/${newChain.chainId}/logo.svg`}
                                                     alt={newChain?.chainName || ""}
-                                                    style={{ width: "8em", height: "8em" }}
+                                                    style={{ width: "8em", height: "8em", borderRadius: "100%" }}
                                                 />
                                             </div>
                                             <Layouts.Col gap={1}>
@@ -254,7 +243,7 @@ export default function wallet_addEthereumChain() {
                                                     width={0}
                                                     height={0}
                                                     alt={selectedChain?.chainName || ""}
-                                                    style={{ width: "4em", height: "4em" }}
+                                                    style={{ width: "4em", height: "4em", borderRadius: "100%" }}
                                                 />
                                             </div>
                                             <Layouts.Col gap={0} align={"center"} fill>
@@ -286,7 +275,7 @@ export default function wallet_addEthereumChain() {
                                                     width={0}
                                                     height={0}
                                                     alt={newChain?.chainName || ""}
-                                                    style={{ width: "4em", height: "4em" }}
+                                                    style={{ width: "4em", height: "4em", borderRadius: "100%" }}
                                                 />
                                             </div>
                                             <Layouts.Col gap={0} align={"center"}>
@@ -351,7 +340,7 @@ export default function wallet_addEthereumChain() {
                                                     width={0}
                                                     height={0}
                                                     alt={newChain.chainName || ""}
-                                                    style={{ width: "12em", height: "12em" }}
+                                                    style={{ width: "12em", height: "12em",borderRadius: "100%" }}
                                                 />
                                             </div>
                                             <Layouts.Col gap={0} align={"center"}>
