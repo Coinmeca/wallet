@@ -72,6 +72,11 @@ export default function Home() {
         console.log(await adapter?.request({ method: "wallet_addEthereumChain", params: [chains[Math.floor(Math.random() * chains.length)]] }));
     };
 
+    const switchEthereumChain = async () => {
+        const chains = getChainsByType("mainnet").filter((c) => c?.chainId !== chain?.chainId);
+        console.log(await adapter?.request({ method: "wallet_switchEthereumChain", params: [{chainId: chains[Math.floor(Math.random() * chains.length)]?.chainId}] }));
+    };
+
     const handleRequestAccounts = async () => {
         console.log(await adapter?.request({ method: "eth_requestAccounts" }));
     };
@@ -96,6 +101,7 @@ export default function Home() {
         <Layouts.Col>
             <div>{telegram ? `Success, Platform: ${telegram.platform}` : "Fail"}</div>
             <Controls.Button onClick={handleAddEthereumChain}>Add Ethereum Chain</Controls.Button>
+            <Controls.Button onClick={switchEthereumChain}>Switch Ethereum Chain</Controls.Button>
             <Controls.Button onClick={handleRequestAccounts}>Request Accounts</Controls.Button>
             <Controls.Button onClick={handleSendTransaction}>Send Transaction</Controls.Button>
             <Controls.Button onClick={handleSendData}>Send Data</Controls.Button>

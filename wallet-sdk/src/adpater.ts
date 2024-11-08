@@ -161,14 +161,18 @@ export class CoinmecaWalletAdapter extends CoinmecaWalletBase {
                 return;
 
             case "wallet_addEthereumChain":
-                const chain = params && (Array.isArray(params) ? params[0] : params);
-                if (!chain) throw new Error("No chain parameters provided");
-                return await __promise(method, chain).then((result) => {
-                    if (result) this.emit("chainChanged", chain?.chainId);
+                const params1 = (Array.isArray(params) ? params[0] : params) as any;
+                if (!params1) throw new Error("No chain parameters provided");
+                return await __promise(method, params1).then((result) => {
+                    if (result) this.emit("chainChanged", params1.chainId);
                 });
 
             case "wallet_switchEthereumChain":
-                return;
+                const params2 = (Array.isArray(params) ? params[0] : params) as any;
+                if (!params2?.chainId) throw new Error("No chain parameters provided");
+                return await __promise(method, params2.chainId).then((result) => {
+                    if (result) this.emit("chainChanged", params2.chainId);
+                });
 
             case "wallet_watchAsset":
                 return;
