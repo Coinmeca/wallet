@@ -6,11 +6,11 @@ import { Layouts } from "@coinmeca/ui/components";
 
 import { getChainsByType } from "@coinmeca/wallet-sdk/chains";
 import { format, parse } from "@coinmeca/wallet-sdk/utils";
-import { useCoinmecaWallet } from "@coinmeca/wallet-sdk/context";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
 import { Stages } from "containers";
 
 export default function Welcome() {
-    const { provider } = useCoinmecaWallet();
+    const { provider } = useCoinmecaWalletProvider();
     const [stage, setStage] = useState({ name: "welcome", level: 0 });
 
     useLayoutEffect(() => {

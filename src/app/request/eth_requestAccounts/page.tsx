@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
 
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useCoinmecaWallet } from "@coinmeca/wallet-sdk/context";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
 import { App } from "@coinmeca/wallet-sdk/types";
 import { useStorage, useTelegram } from "hooks";
 
@@ -19,7 +19,7 @@ export default function eth_requestAccounts({ params }: { params: any }) {
 
     const { storage } = useStorage();
     const { telegram } = useTelegram();
-    const { account, isPopup } = useCoinmecaWallet();
+    const { account, isPopup } = useCoinmecaWalletProvider();
 
     const [app, setApp] = useState<App>();
     const [level, setLevel] = useState(0);

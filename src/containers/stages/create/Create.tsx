@@ -4,12 +4,12 @@ import MECA from "assets/graphics/meca.png";
 
 import { useRouter } from "next/navigation";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useCoinmecaWallet } from "@coinmeca/wallet-sdk/context";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
 import { Stage } from "..";
 
 export default function Create({ setStage }: Stage) {
     const router = useRouter();
-    const { provider } = useCoinmecaWallet();
+    const { provider } = useCoinmecaWalletProvider();
 
     const handleCreateWallet = () => {
         provider?.create();

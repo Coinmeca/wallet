@@ -1,5 +1,4 @@
 ﻿import CryptoJS from "crypto-js";
-import EventEmitter from "eventemitter3";
 import Wallet from "ethereumjs-wallet";
 import { Transaction } from "ethereumjs-tx";
 import { bufferToHex, ecsign, hashPersonalMessage, keccak256, toBuffer } from "ethereumjs-util";
@@ -7,6 +6,7 @@ import { formatChainId, getFaviconUri, loadStorage, openWindow, parse, parseChai
 import type { Asset, Chain, EIP712Domain, EIP712Message, EIP712Types } from "./types";
 import axios from "axios";
 import { getChainsByType } from "./chains";
+import { CoinmecaWalletBase } from "./core";
 
 // Create a custom Axios instance
 const axiosQuiet = axios.create({
@@ -62,7 +62,7 @@ const __promise = async (method: string, popup: any, params?: any) => {
     });
 };
 
-function notify(message?: { icon?: string; title?: string; body?: string; onClick?: Function; onClose?: Function }) {
+const __notify = (message?: { icon?: string; title?: string; body?: string; onClick?: Function; onClose?: Function }) => {
     function push() {
         const notification = new Notification("Hello!", {
             body: "This is a notification from your browser.",
@@ -94,59 +94,35 @@ function notify(message?: { icon?: string; title?: string; body?: string; onClic
             }
         });
     } else {
-        // If permission is explicitly denied, do nothing or notify the user
+        // If permission is explicitly denied, do nothing or __notify the user
         console.log("Notification permission is denied. Please enable it in your browser settings.");
     }
-}
+};
 
 export interface CoinmecaWalletProviderConfig {
     key?: string;
+    address?: string;
     chain?: Chain;
 }
 
-export class CoinmecaWalletProvider {
-    #codename = "coinmeca:wallet";
+export class CoinmecaWalletProvider extends CoinmecaWalletBase {
     #key?: string;
 
-    private events: EventEmitter;
-    public isCoinmecaWallet = true;
-
     constructor(config?: CoinmecaWalletProviderConfig) {
+        super();
+
         const data = this.#data();
 
-        const { key, chain } = config || {};
+        const { key, address, chain } = config || {};
         this.#key = key;
+        if (address) this.#data()?.get("last:account");
         if (chain) data.set("last:chain", chain);
-        this.events = new EventEmitter();
 
         localStorage.clear = () => {
             console.error("Attempted to clear localStorage! This action is prevented.");
         };
 
-        return this.#announce(this.#proxy);
-    }
-
-    #announce(provider: any) {
-        window.ethereum = { ...window.ethereum, ...provider };
-        window.ethereum.providers = window.ethereum.providers || [];
-        if (!window.ethereum.providers.find((p: any) => p?.isCoinmecaWallet)) window.ethereum.providers.push(provider);
-
-        if (!window.ethereum.providerMap) window.ethereum.providerMap = new Map<string, any>(); // Ensure providerMap is initialized
-        window.ethereum.providerMap.set("CoinmecaWallet", provider);
-
-        new CustomEvent("eip6963:announceProvider", {
-            detail: {
-                info: {
-                    name: "Coinmeca Wallet",
-                    icon: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAFT0lEQVR4AbVWBWxbVxQ975ND3+GkzBBORmVmZqYxB8bMvBXGaQdWmSHpmJkXLDMF1YBaq3O5Z35WubYbPNKR7E/vwrmAqsLeeF3okeavTSlvOsJW3CYxa39is7I9XcJP7xkaePrAjIDyg0/5Z9kXB3x0/F//ydxuhqGuUG5ujyryX23bYNxxaL3SnrMQwBRonCwUjhSCoxTBqarg/T6C74ULftdDcM+L6mH7j8b8438Y8agp/sJf1h2WrTN/UtMdr6E7RyKE7aAzCIIWgKqTylnK3/JaiADjFHCaLzg/HtzxmuJw5Bozy7bBRHWQZZRH/aRtynsdz7IfYhgBX2oQBFAl6k42U8DpAeDnw8GKb5S849uNKFQF/+j/3bBc2VoyAw+zJVpQh0oANaJFgDcY4PsJYPEqpfREiX4DvGGN0/M56o7S/niUoWhM4cXrqlJxsq0GzmwHFq9WSugpErawMvNxy4G8G/AKrWhKnD28LijOGpGeAFZ8q+RW/AUrLkdySNnMeLGcJuKueriqqgwMDGTjxo0l5W957aqRkOn4fAToyDdm4mKMb1UQn+SX4wgQYyhgePyIj48PR4wYwYyMDBYWFvLo0aMuFhQUcN26dRw2bBgtFotXTUw3wZ1vKI7j5Rel4trWRfMD1HepioYeX27atCkzMzN56tQpesLJkyddxjVs6OU7Kjg/ATzyu2GDxHWT7WFhTTYe1sQ4AprHw7Ozs1kVnDlzhqmpqV5LdJofuO9V7RALzVBETq6crJuZFKK9+7BZLNJztwdJjyXl73PX5s2bRz8/P696iFPB73oJHs+1ToE5rugjYbxOIMjtw8OHD3cdcjH27dvHlJQUxsbGMi4ujsnJydy9ezfT09OvejjOdsx3IwXtS/xt8Bm9K0to9xAw3Kpdiuti7N27lzExMRTiQqXI3yEhITQMo2oNysn7fQUPPu2fBWPs5nKhjifcdDxZXlLhF4f93nvvrXVfUJ2cqgkW3GyWQZ+afxraMHe1L2tcltnFKpdhr5PuKKfo3uFBzrPv8GxAo0aN6s0AOcr3dAt3nv3IpjJYJhJQ3KZANpyLUyDFJ4SodQomC5X7k5qXQ5uzLQsByVUWoawAKUIAl4gwNDS0yiI0nEyBweK2iVnQ1++1oclMQgl2+7BsvbL7XW6ELL1zZZiWluYqw7lz51apDOVSM0uYrGw++kMYWwumYEAGoUV76v+yvdZpI2oHg+uVKDpavDEZsNtDldezDyFgktdWnJOTw6rgrE48Hq5BcCRCudFy12G2+zEMEvofu21ITCe0xlcdRtJjT5CpkprxNowi4MfX0YNF/hnzcQ5G+d4o8dpfDlgnEcL7OJatWaZENqjLx7G8520ca1DZH7H8WZ3nOBJcEI+LoW3eMxNDVhCWa+tlIREQbIUWfAPPc49l10xcgYqdVuXrTXmIn03orep0JQOEa8e8EY/wN217XhnKTLiDYS+OUlbklaDti3VohKAVzTgAj3OlsqN0u3E8Ct6glx+4QVmRW+qKhM+1bjRRdQoYtCKeHfEq31J3leTqJ25AVSBFqXyzOQ9DVxCBk89Wh1aNwzXXemeKsUxQVvAp36Lcr03peXVQts2UwnRVR1I6YU4i9GhCCTobFcVJcZbyt0GIINdmpTkPNtX3mOSf50gNqZy5JKTCiprCqCyI13/fNV+ZmX1YDMwgms0irMmEz0TCGEahS4538h4qljdoWDMZ3nTToWvbHrTd1M4ehbqCaS8OM7YWTdY/3feh/ta2LOcULdfvzD+tT99w2jJhS5nvmN1ZzvXO1mhq5ZQOM+yhqCL+B+AWe5nrKa3ZAAAAAElFTkSuQmCC",
-                    uuid: crypto.randomUUID(),
-                    rdns: "net.coinmeca.wallet",
-                },
-                provider,
-            },
-        });
-
-        return provider;
+        (window as any).coinmeca = { wallet: this };
     }
 
     #safe(fn: Function) {
@@ -164,7 +140,7 @@ export class CoinmecaWalletProvider {
         const telegram = typeof window !== "undefined" ? (window as any).Telegram?.WebApp : undefined;
         const user = telegram?.initDataUnsafe?.user;
         const isTelegram = !!(telegram && user?.id);
-        return loadStorage(this.#codename, _?.storage || isTelegram ? telegram?.CloudStorage : localStorage, _?.storage ? false : isTelegram, _?.key);
+        return loadStorage(this.codename, _?.storage || isTelegram ? telegram?.CloudStorage : localStorage, _?.storage ? false : isTelegram, _?.key);
     }
 
     #wallet(privateKey: string) {
@@ -181,17 +157,6 @@ export class CoinmecaWalletProvider {
                 else new Error("Not found account info");
             } else new Error("Wallet is not setup yet.");
         });
-    }
-
-    get #proxy() {
-        const handler = {
-            get: (target: any, prop: string) => {
-                if (typeof target[prop] === "function") return (...args: any[]) => target[prop](...args);
-                return target[prop];
-            },
-        };
-
-        return new Proxy(this, handler);
     }
 
     get #userId() {
@@ -248,9 +213,8 @@ export class CoinmecaWalletProvider {
     }
 
     get chains() {
-        return this.#data().get("chains")
+        return this.#data().get("chains");
     }
-
 
     init(hash: string) {
         if (this.#userId) new Error("Wallet already initialized.");
@@ -264,7 +228,7 @@ export class CoinmecaWalletProvider {
 
         const chains = getChainsByType("mainnet");
         this.#data()?.set("chains", chains);
-        this.changeChain(chains[0].chainId)
+        this.changeChain(chains[0].chainId);
     }
 
     lock() {
@@ -320,15 +284,14 @@ export class CoinmecaWalletProvider {
 
             const address = this.#wallet(privateKey).getAddressString();
             if (address) {
-
                 if (!this.#storage?.get(address?.toLowerCase())) {
                     this.#storage?.set(address?.toLowerCase(), { address, index, name: `Wallet ${index + 1}` });
-                    this.#storage?.set(`${key}:accounts`, [...(this.#storage?.get(`${key}:accounts`) || []), privateKey])
-                };
+                    this.#storage?.set(`${key}:accounts`, [...(this.#storage?.get(`${key}:accounts`) || []), privateKey]);
+                }
                 this.changeAccount(index);
                 return true;
             } else return false;
-        })
+        });
     }
 
     change(key: string, newHash: string) {
@@ -347,11 +310,11 @@ export class CoinmecaWalletProvider {
     }
 
     changeChain(chainId: number | string) {
-        chainId = (typeof chainId === 'string' ? chainId?.startsWith("0x") ? parseChainId(chainId) : parseInt(chainId) : chainId) as number;
+        chainId = (typeof chainId === "string" ? (chainId?.startsWith("0x") ? parseChainId(chainId) : parseInt(chainId)) : chainId) as number;
         const chains = this.chains;
-        console.log({ chain: chains?.find((c: Chain) => c?.chainId === chainId) })
+        console.log({ chain: chains?.find((c: Chain) => c?.chainId === chainId) });
         if (chains?.length && chains?.find((c: Chain) => c?.chainId === chainId)) {
-            if (typeof window !== 'undefined') (window as any).ethereum = { chainId };
+            if (typeof window !== "undefined") (window as any).ethereum = { chainId };
             this.#data().set("last:chain", chainId);
             this.emit("chainChanged", formatChainId(chainId));
         } else return new Error("There is no any chain registered.");
@@ -604,7 +567,7 @@ export class CoinmecaWalletProvider {
                 const method = "eth_sendTransaction";
                 return await __promise(method, this.#confirm(method), [txParams, await this.#app()]).then(async (result: any) => {
                     if (result) {
-                        notify();
+                        __notify();
                         const tx = new Transaction(txParams);
                         tx.sign(Buffer.from(result?.substring(0, 64), "hex"));
                         return await this.#broadcastTransaction(result);
@@ -724,20 +687,5 @@ export class CoinmecaWalletProvider {
     async balance() {
         if (this.address) return await this.#sendRpcRequest("eth_getBalance", [this.address, "latest"]);
         else return 0;
-    }
-
-    // Event handling with EventEmitter3
-    on(event: string, listener: (...args: any[]) => void, context?: any): this {
-        this.events.on(event, listener);
-        return this;
-    }
-
-    off(event: string, listener: (...args: any[]) => void, context?: any): this {
-        this.events.off(event, listener);
-        return this;
-    }
-
-    emit(event: string, ...args: any[]): void {
-        this.events.emit(event, ...args);
     }
 }

@@ -3,13 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useCoinmecaWallet } from "@coinmeca/wallet-sdk/context";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
 import { AnimatePresence } from "framer-motion";
 import { Stages } from "containers";
 
 export default function Welcome() {
     const router = useRouter();
-    const { provider, account } = useCoinmecaWallet();
+    const { provider, account } = useCoinmecaWalletProvider();
 
     const [load, setLoad] = useState(false);
     const [stage, setStage] = useState({ name: "create", level: 0 });

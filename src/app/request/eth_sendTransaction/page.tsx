@@ -8,7 +8,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
 import { TransactionParams } from "@coinmeca/wallet-sdk/types";
-import { useCoinmecaWallet } from "@coinmeca/wallet-sdk/context";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({
@@ -31,7 +31,7 @@ export default function eth_sendTransaction({ params }: { params: any }) {
     const router = useRouter();
 
     const { telegram } = useTelegram();
-    const { isPopup } = useCoinmecaWallet();
+    const { isPopup } = useCoinmecaWalletProvider();
     // const { storage, session } = useStorage();
 
     const [app, setApp] = useState<any>();

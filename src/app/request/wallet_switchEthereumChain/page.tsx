@@ -6,7 +6,7 @@ import Image from "next/image";
 
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { Chain } from "@coinmeca/wallet-sdk/types";
-import { useCoinmecaWallet } from "@coinmeca/wallet-sdk/context";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
 
 import { useTelegram } from "hooks";
 
@@ -19,7 +19,7 @@ export default function wallet_switchEthereumChain({ params }: { params: any }) 
     const router = useRouter();
 
     const { telegram } = useTelegram();
-    const { isPopup } = useCoinmecaWallet();
+    const { isPopup } = useCoinmecaWalletProvider();
     // const { storage, session } = useStorage();
     // const { chain, setChain } = useAccount();
 

@@ -6,7 +6,7 @@ import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useNotification } from "@coinmeca/ui/hooks";
 import { Avatar } from "@coinmeca/ui/components/elements";
 import { Account, Chain } from "@coinmeca/wallet-sdk/types";
-import { useCoinmecaWallet } from "@coinmeca/wallet-sdk/context";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
 
 import Coinmeca from "assets/coinmeca.svg";
 
@@ -14,7 +14,7 @@ export default function Data() {
     const router = useRouter();
     const path = usePathname();
 
-    const { provider, account, accounts, chain, chains } = useCoinmecaWallet();
+    const { provider, account, accounts, chain, chains } = useCoinmecaWalletProvider();
 
     const [value, setValue] = useState<number>(0);
     const [tab, setTab] = useState<string>("icon");

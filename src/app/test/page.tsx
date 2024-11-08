@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Controls, Layouts } from "@coinmeca/ui/components";
-import { useCoinmecaWallet } from "@coinmeca/wallet-sdk/context";
+import { useCoinmecaWallet, useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
 import { getChainById } from "@coinmeca/wallet-sdk/chains";
 import { useTelegram } from "hooks";
 
@@ -12,7 +12,8 @@ export default function Home() {
     const [requestAccess, setRequestAccess] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    const { provider, account } = useCoinmecaWallet();
+    const { provider, account } = useCoinmecaWalletProvider();
+    const { adapter } = useCoinmecaWallet();
 
     const handleExpand = () => {
         expand();
@@ -67,15 +68,15 @@ export default function Home() {
     };
 
     const handleAddEthereumChain = async () => {
-        await provider?.request({ method: "wallet_addEthereumChain", params: [getChainById(17000)] });
+        await adapter?.request({ method: "wallet_addEthereumChain", params: [getChainById(17000)] });
     };
 
     const handleRequestAccounts = async () => {
-        await provider?.request({ method: "eth_requestAccounts" });
+        await adapter?.request({ method: "eth_requestAccounts" });
     };
 
     const handleSendTransaction = async () => {
-        await provider?.request({
+        await adapter?.request({
             method: "eth_sendTransaction",
             params: [
                 {
