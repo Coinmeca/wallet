@@ -35,7 +35,7 @@ export default function wallet_addEthereumChain() {
     const router = useRouter();
 
     const { telegram } = useTelegram();
-    const { chain } = useCoinmecaWalletProvider();
+    const { provider, chain } = useCoinmecaWalletProvider();
     const { isPopup, params } = useMessageHandler();
 
     const [selectedChain, setSelectedChain] = useState<any>();
@@ -47,8 +47,8 @@ export default function wallet_addEthereumChain() {
         if (params) {
             const decimals = params?.nativeCurrency?.decimals;
             const c = {
-                chainId: params?.chainId || params?.id,
-                chainName: params?.chainName || params?.name,
+                chainId: params?.chainId || params?.chainId,
+                chainName: params?.chainName || params?.chainName,
                 rpcUrls: params?.rpcUrls || params?.rpc,
                 blockExplorerUrls: params?.blockExplorerUrls || params?.explorer,
                 nativeCurrency: {
@@ -61,7 +61,7 @@ export default function wallet_addEthereumChain() {
                 chainId &&
                 chainName &&
                 nativeCurrency &&
-                nativeCurrency.name &&
+                nativeCurrency?.name &&
                 nativeCurrency.symbol &&
                 nativeCurrency.decimals &&
                 rpcUrls &&
@@ -86,49 +86,49 @@ export default function wallet_addEthereumChain() {
             );
     };
 
-    const handleAddChain = () => {
+    const handleAddChain = async () => {
         if (!newChain) return;
-
-        // const key = session?.get("key");
-        // const chains = storage?.get(`${key}:chains`) || [];
-
-        // if (chains) {
-        //     if (chains?.find((c: any) => c?.id === newChain?.chainId)) chains.map((c: Chain) => (c?.chainId === newChain?.chainId ? newChain : c));
-        //     else
-        //         storage?.set(`${key}:chains`, [
-        //             ...chains,
-        //             {
-        //                 id: newChain.chainId,
-        //                 name: newChain.chainName,
-        //                 nativeCurrency: newChain.nativeCurrency,
-        //                 rpc: newChain.rpcUrls,
-        //                 explorer: newChain.blockExplorerUrls,
-        //             },
-        //         ]);
-        //     setLevel(1);
-        // } else {
-        // error
-        window?.opener?.postMessage(
-            {
-                method,
-                error: "Invalid chain information",
-            },
-            "*",
-        );
-        // }
+        await provider?.addEthereumChain(newChain)
+            .then(() => {
+                window?.opener?.postMessage(
+                    {
+                        method,
+                        result:true
+                    },
+                    "*",
+                )
+                setLevel(1)
+            }).catch (() => 
+                window?.opener?.postMessage(
+                    {
+                        method,
+                        error: "Invalid chain information",
+                    },
+                    "*",
+                )
+            )
     };
 
-    const handleSwitchChain = () => {
+    const handleSwitchChain = async () => {
         if (!newChain) return;
-        // setChain(parseChainId(newChain?.chainId));
-        window?.opener?.postMessage(
-            {
-                method,
-                result: newChain,
-            },
-            "*",
-        );
-        setLevel(2);
+        await provider?.switchEthereumChain(newChain?.chainId)
+            .then(() => {
+                window?.opener?.postMessage(
+                    {
+                        method,
+                        result:true
+                    },
+                    "*",
+                )
+                setLevel(2)
+            }).catch (() => 
+                window?.opener?.postMessage(
+                    {
+                    method,
+                    result: newChain,
+                },
+                "*",
+            ))
     };
 
     return newChain ? (
@@ -156,8 +156,8 @@ export default function wallet_addEthereumChain() {
                                                 <Image
                                                     width={0}
                                                     height={0}
-                                                    src={`https://web3.coinmeca.net/${newChain.chainId}/logo.svg`}
-                                                    alt={newChain.chainName || ""}
+                                                    src={newChain?.logo || `https://web3.coinmeca.net/${newChain.chainId}/logo.svg`}
+                                                    alt={newChain?.chainName || ""}
                                                     style={{ width: "8em", height: "8em" }}
                                                 />
                                             </div>
@@ -201,7 +201,7 @@ export default function wallet_addEthereumChain() {
                                                 <Elements.Text size={1.25} opacity={0.6}>
                                                     Native Currency Name
                                                 </Elements.Text>
-                                                <Elements.Text>{newChain.nativeCurrency.name}</Elements.Text>
+                                                <Elements.Text>{newChain.nativeCurrency?.name}</Elements.Text>
                                             </Layouts.Col>
                                             <Layouts.Col gap={0.5}>
                                                 <Elements.Text size={1.25} opacity={0.6}>
@@ -250,7 +250,7 @@ export default function wallet_addEthereumChain() {
                                                     background: "rgba(var(--white),.15)",
                                                 }}>
                                                 <Image
-                                                    src={`https://web3.coinmeca.net/${selectedChain?.id}/logo.svg`}
+                                                    src={selectedChain?.logo || `https://web3.coinmeca.net/${selectedChain?.chainId}/logo.svg`}
                                                     width={0}
                                                     height={0}
                                                     alt={selectedChain?.chainName || ""}
@@ -259,10 +259,10 @@ export default function wallet_addEthereumChain() {
                                             </div>
                                             <Layouts.Col gap={0} align={"center"} fill>
                                                 <Elements.Text type={"h6"} height={0} align={"left"}>
-                                                    {selectedChain?.name}
+                                                    {selectedChain?.chainName}
                                                 </Elements.Text>
                                                 <Elements.Text type={"strong"} height={0} align={"left"} opacity={0.6}>
-                                                    {selectedChain?.id}
+                                                    {selectedChain?.chainId}
                                                 </Elements.Text>
                                             </Layouts.Col>
                                         </Layouts.Row>
@@ -282,10 +282,10 @@ export default function wallet_addEthereumChain() {
                                                     background: "rgba(var(--white),.15)",
                                                 }}>
                                                 <Image
-                                                    src={`https://web3.coinmeca.net/${newChain?.chainId}/logo.svg`}
+                                                    src={newChain?.logo || `https://web3.coinmeca.net/${newChain?.chainId}/logo.svg`}
                                                     width={0}
                                                     height={0}
-                                                    alt={newChain.chainName || ""}
+                                                    alt={newChain?.chainName || ""}
                                                     style={{ width: "4em", height: "4em" }}
                                                 />
                                             </div>
@@ -306,7 +306,7 @@ export default function wallet_addEthereumChain() {
                                             <Elements.Text type={"h3"}>Switch</Elements.Text>
                                             <Elements.Text size={1} weight={"bold"}>
                                                 <Elements.Text opacity={0.6}>This is will switch the chain from </Elements.Text>{" "}
-                                                {/* <Elements.Text>{chain?.name}</Elements.Text> <Elements.Text opacity={0.6}>to</Elements.Text>{" "} */}
+                                                {/* <Elements.Text>{chain?.chainName}</Elements.Text> <Elements.Text opacity={0.6}>to</Elements.Text>{" "} */}
                                                 <Elements.Text>{` ${newChain?.chainName}`}</Elements.Text>
                                                 <Elements.Text opacity={0.6}>.</Elements.Text>
                                             </Elements.Text>
@@ -371,7 +371,7 @@ export default function wallet_addEthereumChain() {
                                             <Elements.Text type={"h3"}>Complete</Elements.Text>
                                             <Elements.Text size={1} weight={"bold"}>
                                                 <Elements.Text opacity={0.6}>Selected chain was switched from</Elements.Text>{" "}
-                                                <Elements.Text>{selectedChain?.name}</Elements.Text> <Elements.Text opacity={0.6}>to</Elements.Text>{" "}
+                                                <Elements.Text>{selectedChain?.chainName}</Elements.Text> <Elements.Text opacity={0.6}>to</Elements.Text>{" "}
                                                 <Elements.Text>{` ${newChain?.chainName}`}</Elements.Text>
                                                 <Elements.Text opacity={0.6}>.</Elements.Text>
                                             </Elements.Text>

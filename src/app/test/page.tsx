@@ -72,7 +72,7 @@ export default function Home() {
     };
 
     const handleRequestAccounts = async () => {
-        await adapter?.request({ method: "eth_requestAccounts" });
+        console.log(await adapter?.request({ method: "eth_requestAccounts" }));
     };
 
     const handleSendTransaction = async () => {

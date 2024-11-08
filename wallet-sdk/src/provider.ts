@@ -3,7 +3,7 @@ import Wallet from "ethereumjs-wallet";
 import { Transaction } from "ethereumjs-tx";
 import { bufferToHex, ecsign, hashPersonalMessage, keccak256, toBuffer } from "ethereumjs-util";
 import { formatChainId, getFaviconUri, loadStorage, openWindow, parse, parseChainId } from "./utils";
-import type { Asset, Chain, EIP712Domain, EIP712Message, EIP712Types } from "./types";
+import type { App, Asset, Chain, EIP712Domain, EIP712Message, EIP712Types } from "./types";
 import axios from "axios";
 import { getChainsByType } from "./chains";
 import { CoinmecaWalletBase } from "./core";
@@ -389,7 +389,8 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
                 return [this.address];
 
             case "eth_requestAccounts":
-                return await this.#requestAccounts();
+                // return await this.#requestAccounts();
+                return;
 
             case "eth_coinbase":
                 return this.address;
@@ -456,8 +457,8 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
                 const chain = params && (Array.isArray(params) ? params[0] : params);
                 if (!chain) throw new Error("No chain parameters provided");
                 return await __promise(method, this.#confirm(method), chain).then(async (result: any) => {
-                    if (result) this.#switchEthereumChain(result);
-                    else await this.#addEthereumChain(result);
+                    if (result) this.switchEthereumChain(result);
+                    // else await this.#addEthereumChain(result);
                     return result;
                 });
             case "wallet_switchEthereumChain":
@@ -471,7 +472,7 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
                     );
                     if (exist)
                         return await __promise(method, this.#confirm(method), data).then(async (result: any) => {
-                            await this.#switchEthereumChain(result);
+                            await this.switchEthereumChain(result);
                             return result;
                         });
                 }
@@ -493,11 +494,6 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
             appUrl: window.location.host,
             appLogo: await getFaviconUri(),
         };
-    }
-
-    async #requestAccounts() {
-        const method = "eth_requestAccounts";
-        return await __promise(method, this.#confirm(method), await this.#app()).then((result) => result);
     }
 
     async #estimateGas(txParams: any) {
@@ -615,25 +611,38 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
         return response.data.result;
     }
 
-    async #addEthereumChain(chain: Chain) {
-        // Check for required chain parameters
-        const { chainId, chainName, rpcUrls, nativeCurrency } = chain;
-        if (!chainId || !rpcUrls || rpcUrls.length === 0 || !nativeCurrency.decimals)
-            throw new Error("Invalid chain parameters. `chainId` and at least one `rpcUrl` are required.");
+    async addEthereumChain(chain: Chain) {
+        const { chainId, rpcUrls, nativeCurrency } = chain;
+        if (!chainId || !rpcUrls || !rpcUrls.length || !nativeCurrency.decimals)
+            throw new Error("Invalid chain parameters. `chainId` and at least one `rpcUrls` are required.");
 
-        // fixme:
+        const chains = this.#data()?.get("chains") || [];
+        this.#data()?.set("chains", [chain, ...chains?.filter((c: Chain) => c?.chainId !== chainId)]);
 
-        return { message: `Chain ${chainName} with chainId ${chainId} added successfully.` };
+        return true;
     }
 
-    async #switchEthereumChain(chain: Chain) {
-        // Check for required chain parameters
-        const { chainId, chainName, rpcUrls, nativeCurrency } = chain;
-        if (!chainId || !rpcUrls || rpcUrls.length === 0 || !nativeCurrency.decimals)
-            throw new Error("Invalid chain parameters. `chainId` and at least one `rpcUrl` are required.");
+    async switchEthereumChain(chainId: number | string) {
+        chainId = (typeof chainId === "string" ? (chainId?.startsWith("0x") ? parseChainId(chainId) : parseInt(chainId)) : chainId) as number;
+        const chains = this.#data()?.get("chains") || [];
+        if (chains?.find((c: Chain) => c?.chainId === chainId)) this.changeChain(chainId);
+    }
 
-        this.changeChain(chainId);
-        return { message: `Chain ${chainName} with chainId ${chainId} added successfully.` };
+    async requestAccounts(app: App, address?: string) {
+        address = address || this.address;
+        if (address) {
+            const apps: App[] = this.#data().get("apps") || [];
+            if (app?.url) {
+                const exist: App = { ...apps?.find((a: App) => a?.url?.toLowerCase() === app?.url?.toLowerCase()), ...app };
+                const accounts = [address, ...(exist?.accounts || [])?.filter((a) => a?.toLowerCase() !== address?.toLowerCase())].filter((a) => a);
+                app = {
+                    ...exist,
+                    accounts,
+                };
+                this.#data().set("apps", [app, ...apps?.filter((a) => a?.url?.toLowerCase() !== app?.url?.toLowerCase())]);
+                return accounts;
+            } else throw new Error("Invalid app information.");
+        } else throw new Error("Couldn't found a current account information.");
     }
 
     async #watchAsset(asset: Asset<"ERC20" | "ERC721" | "ERC1155">) {

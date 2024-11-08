@@ -1,4 +1,5 @@
-﻿import React, { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
+﻿import { usePathname } from "next/navigation";
+import React, { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
 
 interface MessageProps{
     method: string|undefined;
@@ -20,6 +21,8 @@ export const useMessageHandler = () => {
 };
 
 export const MessageHandler: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const path = usePathname();
+
     const [popupId, setPopupId] = useState<number>();
     const [isPopup, setIsPopup] = useState(false);
     const [message, setMessage] = useState<any>();
@@ -39,6 +42,10 @@ export const MessageHandler: React.FC<{ children: React.ReactNode }> = ({ childr
             }
         }
     }, []);
+
+    useLayoutEffect(() => {
+        if (isPopup) window.close();
+    }, [path])
 
     return <MessageHandlerContext.Provider value={{ ...message, isPopup, popupId, message }}>{children}</MessageHandlerContext.Provider>;
 };

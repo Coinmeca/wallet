@@ -168,7 +168,7 @@ export class CoinmecaWalletAdapter extends CoinmecaWalletBase {
                 if (!chain) throw new Error("No chain parameters provided");
                 return await __promise(method, chain).then(async (result: any) => {
                     if (result) this.#switchEthereumChain(result);
-                    else await this.#addEthereumChain(result);
+                    else this.emit("chainChanged", chain);
                     return result;
                 });
 

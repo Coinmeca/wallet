@@ -1,5 +1,4 @@
-﻿
-export type ChainBase = "evm" | "svm";
+﻿export type ChainBase = "evm" | "svm";
 export type ChainType = "mainnet" | "mainnet-beta" | "testnet" | "devnet";
 
 export interface Chain {
@@ -98,7 +97,7 @@ export interface App {
     name?: string;
     url?: string;
     logo?: string;
-    address?: string[];
+    accounts?: string[];
 }
 
 export type AssetOptions<Name> = Name extends "ERC20" ? ERC20Options : Name extends "ERC721" ? ERC721Options : Name extends "ERC1155" ? ERC1155Options : never;
