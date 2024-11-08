@@ -1,50 +1,34 @@
 ﻿"use client";
 
 import { useLayoutEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { Chain } from "@coinmeca/wallet-sdk/types";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
-
-import { useTelegram } from "hooks";
+import { useMessageHandler, useTelegram } from "hooks";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({method:"wallet_addEthereumChain", params:[{chainId: '0x13e31'}]})
 */
 
-export default function wallet_switchEthereumChain({ params }: { params: any }) {
+export default function wallet_switchEthereumChain() {
     const method = "wallet_switchEthereumChain";
     const router = useRouter();
 
     const { telegram } = useTelegram();
-    const { isPopup } = useCoinmecaWalletProvider();
-    // const { storage, session } = useStorage();
-    // const { chain, setChain } = useAccount();
+    const { provider, chain, chains } = useCoinmecaWalletProvider();
+    const { isPopup, params } = useMessageHandler();
 
     const [selectedChain, setSelectedChain] = useState<any>();
     const [newChain, setNewChain] = useState<Chain>();
     const [level, setLevel] = useState(0);
 
     useLayoutEffect(() => {
-        // setSelectedChain(chain);
-        // if ((window as any)?.coinmeca) {
-        //     const params = (window as any)?.coinmeca?.params?.chainId || (window as any)?.coinmeca?.params?.id;
-        //     if (params) {
-        //         const chainId = parseChainId(params);
-        //         const chains = session?.get(`${session?.get("key")}:chains`);
-        //         const exist = chains?.find((c: any) => c?.id === chainId);
-        //         if (exist)
-        //             setNewChain({
-        //                 chainId: exist?.id,
-        //                 chainName: exist?.name,
-        //                 rpcUrls: exist?.rpc,
-        //                 blockExplorerUrls: exist?.explorer,
-        //                 nativeCurrency: exist?.nativeCurrency,
-        //             });
-        //     }
-        // }
+        setSelectedChain(chain);
+        console.log(params);
+        if (params) setNewChain(chains?.find(c => c?.chainId === params));
     }, []);
 
     const handleClose = () => {
@@ -62,23 +46,26 @@ export default function wallet_switchEthereumChain({ params }: { params: any }) 
             );
     };
 
-    const handleSwitchChain = () => {
+    const handleSwitchChain = async () => {
         if (!newChain) return;
-        // setChain(
-        //     typeof newChain?.chainId === "string"
-        //         ? newChain?.chainId?.startsWith("0x")
-        //             ? parseChainId(newChain?.chainId)
-        //             : parseInt(newChain?.chainId)
-        //         : newChain?.chainId,
-        // );
-        window?.opener?.postMessage(
-            {
-                method,
-                result: newChain,
-            },
-            "*",
-        );
-        setLevel(2);
+        await provider?.switchEthereumChain(newChain?.chainId)
+            .then((result) => {
+                window?.opener?.postMessage(
+                    {
+                        method,
+                        result
+                    },
+                    "*",
+                )
+                setLevel(1)
+            }).catch ((error) => 
+                window?.opener?.postMessage(
+                    {
+                    method,
+                    error,
+                },
+                "*",
+            ))
     };
 
     return newChain ? (
@@ -104,19 +91,19 @@ export default function wallet_switchEthereumChain({ params }: { params: any }) 
                                                     background: "rgba(var(--white),.15)",
                                                 }}>
                                                 <Image
-                                                    src={`https://web3.coinmeca.net/${selectedChain?.id}/logo.svg`}
+                                                    src={selectedChain?.logo || `https://web3.coinmeca.net/${selectedChain?.id}/logo.svg`}
                                                     width={0}
                                                     height={0}
                                                     alt={selectedChain.chainName || ""}
-                                                    style={{ width: "4em", height: "4em" }}
+                                                    style={{ width: "4em", height: "4em", borderRadius:"100%" }}
                                                 />
                                             </div>
                                             <Layouts.Col gap={0} align={"center"} fill>
                                                 <Elements.Text type={"h6"} height={0} align={"left"}>
-                                                    {selectedChain?.name}
+                                                    {selectedChain?.chainName}
                                                 </Elements.Text>
                                                 <Elements.Text type={"strong"} height={0} align={"left"} opacity={0.6}>
-                                                    {selectedChain?.id}
+                                                    {selectedChain?.chainId}
                                                 </Elements.Text>
                                             </Layouts.Col>
                                         </Layouts.Row>
@@ -136,11 +123,11 @@ export default function wallet_switchEthereumChain({ params }: { params: any }) 
                                                     background: "rgba(var(--white),.15)",
                                                 }}>
                                                 <Image
-                                                    src={`https://web3.coinmeca.net/${newChain?.chainId}/logo.svg`}
+                                                    src={newChain?.logo || `https://web3.coinmeca.net/${newChain?.chainId}/logo.svg`}
                                                     width={0}
                                                     height={0}
                                                     alt={newChain.chainName || ""}
-                                                    style={{ width: "4em", height: "4em" }}
+                                                    style={{ width: "4em", height: "4em", borderRadius:"100%" }}
                                                 />
                                             </div>
                                             <Layouts.Col gap={0} align={"center"}>

@@ -628,9 +628,7 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
     async switchEthereumChain(chainId: number | string) {
         chainId = (typeof chainId === "string" ? (chainId?.startsWith("0x") ? parseChainId(chainId) : parseInt(chainId)) : chainId) as number;
         const chains = this.#data()?.get("chains") || [];
-        if (chains?.find((c: Chain) => c?.chainId === chainId)) {
-            return this.changeChain(chainId);
-        }
+        if (chains?.find((c: Chain) => c?.chainId === chainId)) return this.changeChain(chainId);
     }
 
     async requestAccounts(app: App, address?: string) {

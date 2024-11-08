@@ -1,9 +1,7 @@
 "use client";
 
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { x64 } from "crypto-js";
-import { Transaction } from "ethereumjs-tx";
-import { useTelegram } from "hooks";
+import { useMessageHandler, useTelegram } from "hooks";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
@@ -31,7 +29,7 @@ export default function eth_sendTransaction({ params }: { params: any }) {
     const router = useRouter();
 
     const { telegram } = useTelegram();
-    const { isPopup } = useCoinmecaWalletProvider();
+    const { isPopup } = useMessageHandler();
     // const { storage, session } = useStorage();
 
     const [app, setApp] = useState<any>();
