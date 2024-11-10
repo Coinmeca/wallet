@@ -26,11 +26,10 @@ const __promise = async (method: string, popup: any, params?: any) => {
     return new Promise((resolve, reject) => {
         const messageHandler = (event: any) => {
             if (event.data.method === method) {
-                if (event.data.result) resolve(event.data.result);
-                else {
-                    if (event.data.error) reject(new Error(event.data.error));
-                    else reject(new Error("Request something wrong."));
-                }
+                if (typeof event.data.result !== "undefined") resolve(event.data.result);
+                if (typeof event.data.error !== "undefined") reject(new Error(event.data.error));
+                // else reject(new Error("Request something wrong."));
+
                 window.removeEventListener("message", messageHandler);
             }
 
@@ -111,17 +110,17 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
     constructor(config?: CoinmecaWalletProviderConfig) {
         super();
 
-        const data = this.#data();
-
         const { key, address, chain } = config || {};
         this.#key = key;
-        if (address) this.#data()?.get("last:account");
+
+        const data = this.#data();
+        if (address) data?.set("last:account", address);
         if (chain) data.set("last:chain", chain);
 
         localStorage.clear = () => {
             console.error("Attempted to clear localStorage! This action is prevented.");
         };
-
+        Object.freeze(loadStorage);
         (window as any).coinmeca = { wallet: this };
     }
 
@@ -313,7 +312,6 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
     changeChain(chainId: number | string) {
         chainId = (typeof chainId === "string" ? (chainId?.startsWith("0x") ? parseChainId(chainId) : parseInt(chainId)) : chainId) as number;
         const chains = this.chains;
-        console.log({ chain: chains?.find((c: Chain) => c?.chainId === chainId) });
         if (chains?.length && chains?.find((c: Chain) => c?.chainId === chainId)) {
             if (typeof window !== "undefined") (window as any).ethereum = { chainId };
             this.#data().set("last:chain", chainId);

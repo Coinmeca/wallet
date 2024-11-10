@@ -25,12 +25,6 @@ export default function wallet_switchEthereumChain() {
     const [newChain, setNewChain] = useState<Chain>();
     const [level, setLevel] = useState(0);
 
-    useLayoutEffect(() => {
-        setSelectedChain(chain);
-        console.log(params);
-        if (params) setNewChain(chains?.find(c => c?.chainId === params));
-    }, []);
-
     const handleClose = () => {
         if (isPopup) {
             if (telegram) telegram?.close();
@@ -48,25 +42,33 @@ export default function wallet_switchEthereumChain() {
 
     const handleSwitchChain = async () => {
         if (!newChain) return;
-        await provider?.switchEthereumChain(newChain?.chainId)
+        await provider
+            ?.switchEthereumChain(newChain?.chainId)
             .then((result) => {
                 window?.opener?.postMessage(
                     {
                         method,
-                        result
+                        result,
                     },
                     "*",
-                )
-                setLevel(1)
-            }).catch ((error) => 
+                );
+                setLevel(1);
+            })
+            .catch((error) =>
                 window?.opener?.postMessage(
                     {
-                    method,
-                    error,
-                },
-                "*",
-            ))
+                        method,
+                        error,
+                    },
+                    "*",
+                ),
+            );
     };
+
+    useLayoutEffect(() => {
+        setSelectedChain(chain);
+        if (params) setNewChain(chains?.find((c) => c?.chainId === params));
+    }, []);
 
     return newChain ? (
         <Layouts.Contents.SlideContainer
@@ -94,8 +96,8 @@ export default function wallet_switchEthereumChain() {
                                                     src={selectedChain?.logo || `https://web3.coinmeca.net/${selectedChain?.id}/logo.svg`}
                                                     width={0}
                                                     height={0}
-                                                    alt={selectedChain.chainName || ""}
-                                                    style={{ width: "4em", height: "4em", borderRadius:"100%" }}
+                                                    alt={selectedChain?.chainName || ""}
+                                                    style={{ width: "4em", height: "4em", borderRadius: "100%" }}
                                                 />
                                             </div>
                                             <Layouts.Col gap={0} align={"center"} fill>
@@ -127,7 +129,7 @@ export default function wallet_switchEthereumChain() {
                                                     width={0}
                                                     height={0}
                                                     alt={newChain.chainName || ""}
-                                                    style={{ width: "4em", height: "4em", borderRadius:"100%" }}
+                                                    style={{ width: "4em", height: "4em", borderRadius: "100%" }}
                                                 />
                                             </div>
                                             <Layouts.Col gap={0} align={"center"}>

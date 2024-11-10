@@ -24,20 +24,6 @@ export default function eth_requestAccounts() {
     const [app, setApp] = useState<App>();
     const [level, setLevel] = useState(0);
 
-    useLayoutEffect(() => {
-        if (params) {
-            const url = params?.appUrl || params?.url;
-            const site = url && decodeURIComponent(url);
-            const origin = site && new URL(site.startsWith("http") ? site : `https://${site}`).host;
-            const app = {
-                name: params?.appName || params?.name || undefined,
-                logo: params?.appLogo || params?.logo || params?.appIcon || params?.icon || undefined,
-                url: origin || undefined,
-            };
-            if (app?.name && app?.name !== "" && app?.url && app?.url !== "") setApp(app);
-        }
-    }, []);
-
     const handleClose = () => {
         if (level === 0)
             window?.opener?.postMessage(
@@ -54,25 +40,42 @@ export default function eth_requestAccounts() {
     };
 
     const handleConnect = async () => {
-        await provider?.requestAccounts(app!)
+        await provider
+            ?.requestAccounts(app!)
             .then((result) => {
                 window?.opener?.postMessage(
                     {
                         method,
-                        result
+                        result,
                     },
                     "*",
-                )
+                );
                 setLevel(1);
-            }).catch ((error) => 
+            })
+            .catch((error) =>
                 window?.opener?.postMessage(
                     {
-                    method,
-                    error,
-                },
-                "*",
-            ))
+                        method,
+                        error,
+                    },
+                    "*",
+                ),
+            );
     };
+
+    useLayoutEffect(() => {
+        if (params) {
+            const url = params?.appUrl || params?.url;
+            const site = url && decodeURIComponent(url);
+            const origin = site && new URL(site.startsWith("http") ? site : `https://${site}`).host;
+            const app = {
+                name: params?.appName || params?.name || undefined,
+                logo: params?.appLogo || params?.logo || params?.appIcon || params?.icon || undefined,
+                url: origin || undefined,
+            };
+            if (app?.name && app?.name !== "" && app?.url && app?.url !== "") setApp(app);
+        }
+    }, []);
 
     return app ? (
         <Layouts.Contents.SlideContainer

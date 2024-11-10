@@ -4,7 +4,7 @@ import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useMessageHandler, useTelegram } from "hooks";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useLayoutEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { Chain } from "@coinmeca/wallet-sdk/types";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
 
@@ -42,6 +42,66 @@ export default function wallet_addEthereumChain() {
     const [newChain, setNewChain] = useState<Chain>();
     const [level, setLevel] = useState(0);
 
+    const result = () => {
+        console.log("level:", level);
+        window?.opener?.postMessage(
+            {
+                method,
+                ...(level === 0 ? { error: "User rejected the request" } : { result: level === 1 ? true : newChain?.chainId }),
+            },
+            "*",
+        );
+    };
+
+    const handleClose = () => {
+        result();
+        if (isPopup) {
+            if (telegram) telegram?.close();
+            window?.close();
+        } else router.push("/");
+    };
+
+    const handleAddChain = async () => {
+        if (!newChain) return;
+        await provider
+            ?.addEthereumChain(newChain)
+            .then(() => setLevel(1))
+            .catch((error) =>
+                window?.opener?.postMessage(
+                    {
+                        method,
+                        error,
+                    },
+                    "*",
+                ),
+            );
+    };
+
+    const handleSwitchChain = async () => {
+        if (!newChain) return;
+        await provider
+            ?.switchEthereumChain(newChain?.chainId)
+            .then((result) => {
+                window?.opener?.postMessage(
+                    {
+                        method,
+                        result,
+                    },
+                    "*",
+                );
+                setLevel(2);
+            })
+            .catch((error) =>
+                window?.opener?.postMessage(
+                    {
+                        method,
+                        error,
+                    },
+                    "*",
+                ),
+            );
+    };
+
     useLayoutEffect(() => {
         setSelectedChain(chain);
         if (params) {
@@ -56,69 +116,16 @@ export default function wallet_addEthereumChain() {
                 rpcUrls &&
                 rpcUrls.length > 0
             )
-            setNewChain(params as Chain);
+                setNewChain(params as Chain);
         }
     }, []);
 
-    const handleClose = () => {
-        if (isPopup) {
-            if (telegram) telegram?.close();
-            window?.close();
-        } else router.push("/");
-        if (level < 2)
-            window?.opener?.postMessage(
-                {
-                    method,
-                    ...(level === 0 ? { error: "User rejected the request" } : {}),
-                },
-                "*",
-            );
-    };
-
-    const handleAddChain = async () => {
-        if (!newChain) return;
-        await provider?.addEthereumChain(newChain)
-            .then((result) => {
-                window?.opener?.postMessage(
-                    {
-                        method,
-                        result
-                    },
-                    "*",
-                )
-                setLevel(1)
-            }).catch ((error) => 
-                window?.opener?.postMessage(
-                    {
-                        method,
-                        error,
-                    },
-                    "*",
-                )
-            )
-    };
-
-    const handleSwitchChain = async () => {
-        if (!newChain) return;
-        await provider?.switchEthereumChain(newChain?.chainId)
-            .then((result) => {
-                window?.opener?.postMessage(
-                    {
-                        method,
-                        result
-                    },
-                    "*",
-                )
-                setLevel(2)
-            }).catch ((error) => 
-                window?.opener?.postMessage(
-                    {
-                    method,
-                    error,
-                },
-                "*",
-            ))
-    };
+    useLayoutEffect(() => {
+        window.addEventListener("beforeunload", result);
+        return () => {
+            window.removeEventListener("beforeunload", result);
+        };
+    }, [level]);
 
     return newChain ? (
         <Layouts.Contents.SlideContainer
@@ -340,7 +347,7 @@ export default function wallet_addEthereumChain() {
                                                     width={0}
                                                     height={0}
                                                     alt={newChain.chainName || ""}
-                                                    style={{ width: "12em", height: "12em",borderRadius: "100%" }}
+                                                    style={{ width: "12em", height: "12em", borderRadius: "100%" }}
                                                 />
                                             </div>
                                             <Layouts.Col gap={0} align={"center"}>

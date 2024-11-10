@@ -1,4 +1,6 @@
-﻿import React, { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
+﻿"use client";
+
+import React, { createContext, useContext, useEffect, useLayoutEffect, useState } from "react";
 import { Chain, Account } from "../types";
 import { CoinmecaWalletProvider } from "../provider";
 

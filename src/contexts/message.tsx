@@ -1,15 +1,17 @@
-﻿import { usePathname } from "next/navigation";
+﻿"use client";
+
+import { usePathname } from "next/navigation";
 import React, { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
 
-interface MessageProps{
-    method: string|undefined;
+interface MessageProps {
+    method: string | undefined;
     params: any;
 }
 
 interface MessageHandlerProps extends MessageProps {
     isPopup: boolean;
     popupId?: number;
-    message: MessageProps | undefined
+    message: MessageProps | undefined;
 }
 
 const MessageHandlerContext = createContext<MessageHandlerProps | undefined>(undefined);
@@ -28,7 +30,7 @@ export const MessageHandler: React.FC<{ children: React.ReactNode }> = ({ childr
     const [message, setMessage] = useState<any>();
 
     useLayoutEffect(() => {
-        if (typeof window !== "undefined") { 
+        if (typeof window !== "undefined") {
             const check = !!(window as any)?.coinmeca?.isPopup;
             if (check) {
                 setIsPopup(check);
@@ -45,7 +47,7 @@ export const MessageHandler: React.FC<{ children: React.ReactNode }> = ({ childr
 
     useLayoutEffect(() => {
         if (isPopup) window.close();
-    }, [path])
+    }, [path]);
 
     return <MessageHandlerContext.Provider value={{ ...message, isPopup, popupId, message }}>{children}</MessageHandlerContext.Provider>;
 };

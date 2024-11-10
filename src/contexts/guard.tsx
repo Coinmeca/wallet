@@ -1,4 +1,6 @@
-﻿import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
+﻿"use client";
+
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { Account } from "viem";

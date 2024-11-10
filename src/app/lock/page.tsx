@@ -2,14 +2,22 @@
 
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
 import { Stages } from "containers";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 export default function Lock({ params }: { params: any }) {
+    const path = usePathname();
     const router = useRouter();
+
     const { provider } = useCoinmecaWalletProvider();
 
     const handleUnlock = (code: string) => {
-        if (!provider?.unlock(code)) return new Error("The entered passcode was wrong.");
+        try {
+            if (provider?.unlock(code)) {
+                if (path?.startsWith("/lock")) router.push("/");
+            }
+        } catch (e) {
+            console.error(e);
+        }
     };
 
     return <Stages.Lock onUnlock={handleUnlock} />;

@@ -1,7 +1,8 @@
 ﻿import { Chain } from "./types";
 import { CoinmecaWalletBase } from "./core";
-import { getFaviconUri, openWindow } from "./utils";
+import { getFaviconUri, loadStorage, openWindow } from "./utils";
 import axios from "axios";
+import { getChainById } from "./chains";
 
 // Create a custom Axios instance
 const axiosQuiet = axios.create({
@@ -29,7 +30,7 @@ const __promise = async (method: string, params?: any) => {
         const messageHandler = (event: any) => {
             if (event.data.method === method) {
                 if (typeof event.data.result !== "undefined") resolve(event.data.result);
-                else if (typeof event.data.error !== "undefined") reject(new Error(event.data.error));
+                if (typeof event.data.error !== "undefined") reject(new Error(event.data.error));
                 // else reject(new Error("Request something wrong."));
 
                 window.removeEventListener("message", messageHandler);
@@ -94,25 +95,22 @@ export class CoinmecaWalletAdapter extends CoinmecaWalletBase {
         });
     }
 
-    get address() {
-        return "0x1";
-    }
-
-    get chain() {
-        return {} as Chain;
-    }
-
-    get chainId() {
-        return "0x1";
-    }
-
     async request({ method, params }: { method: string; params?: any[] }) {
         switch (method) {
             case "eth_accounts":
                 return;
 
             case "eth_requestAccounts":
-                return await __promise(method, await this.#app()).then((result) => result);
+                return await __promise(method, {
+                    appName: (document.querySelector('meta[property="og:site_name"]') as HTMLMetaElement)?.content || document.title?.split(" ")[0],
+                    appUrl: window.location.host,
+                    appLogo: await getFaviconUri(),
+                }).then((result) => {
+                    if (result) {
+                        this.#data()?.set('last:accounts', result)
+                        return result
+                    }
+                });
 
             case "eth_coinbase":
                 return;
@@ -161,17 +159,24 @@ export class CoinmecaWalletAdapter extends CoinmecaWalletBase {
                 return;
 
             case "wallet_addEthereumChain":
-                const params1 = (Array.isArray(params) ? params[0] : params) as any;
-                if (!params1) throw new Error("No chain parameters provided");
-                return await __promise(method, params1).then((result) => {
-                    if (result) this.emit("chainChanged", params1.chainId);
+                const wallet_addEthereumChain = (Array.isArray(params) ? params[0] : params) as any;
+                if (!wallet_addEthereumChain) throw new Error("No chain parameters provided");
+                return await __promise(method, wallet_addEthereumChain).then((result) => {
+                    if (result) {
+                        this.emit("chainChanged", wallet_addEthereumChain.chainId);
+                        return result;
+                    }
                 });
 
             case "wallet_switchEthereumChain":
-                const params2 = (Array.isArray(params) ? params[0] : params) as any;
-                if (!params2?.chainId) throw new Error("No chain parameters provided");
-                return await __promise(method, params2.chainId).then((result) => {
-                    if (result) this.emit("chainChanged", params2.chainId);
+                const wallet_switchEthereumChain = (Array.isArray(params) ? params[0] : params) as any;
+                if (!wallet_switchEthereumChain?.chainId) throw new Error("No chain parameters provided");
+                return await __promise(method, wallet_switchEthereumChain.chainId).then((result) => {
+                    if (result) {
+                        this.#data()?.set('last:chain', getChainById(result as number))
+                        this.emit("chainChanged", wallet_switchEthereumChain.chainId);
+                        return result;
+                    }
                 });
 
             case "wallet_watchAsset":
@@ -182,33 +187,23 @@ export class CoinmecaWalletAdapter extends CoinmecaWalletBase {
         }
     }
 
-    async #app() {
-        return {
-            appName: (document.querySelector('meta[property="og:site_name"]') as HTMLMetaElement)?.content || document.title?.split(" ")[0],
-            appUrl: window.location.host,
-            appLogo: await getFaviconUri(),
-        };
+    #data(_?: { key?: string; storage?: CloudStorage | Storage }) {
+        const telegram = typeof window !== "undefined" ? (window as any).Telegram?.WebApp : undefined;
+        const user = telegram?.initDataUnsafe?.user;
+        const isTelegram = !!(telegram && user?.id);
+        return loadStorage(this.codename, _?.storage || isTelegram ? telegram?.CloudStorage : localStorage, _?.storage ? false : isTelegram, _?.key);
     }
 
-    async #addEthereumChain(chain: Chain) {
-        // Check for required chain parameters
-        const { chainId, chainName, rpcUrls, nativeCurrency } = chain;
-        if (!chainId || !rpcUrls || rpcUrls.length === 0 || !nativeCurrency.decimals)
-            throw new Error("Invalid chain parameters. `chainId` and at least one `rpcUrl` are required.");
-
-        // fixme:
-
-        return { message: `Chain ${chainName} with chainId ${chainId} added successfully.` };
+    get address() {
+        return "0x1";
     }
 
-    async #switchEthereumChain(chain: Chain) {
-        // Check for required chain parameters
-        const { chainId, chainName, rpcUrls, nativeCurrency } = chain;
-        if (!chainId || !rpcUrls || rpcUrls.length === 0 || !nativeCurrency.decimals)
-            throw new Error("Invalid chain parameters. `chainId` and at least one `rpcUrl` are required.");
+    get chain() {
+        return {} as Chain;
+    }
 
-        // this.changeChain(chainId);
-        return { message: `Chain ${chainName} with chainId ${chainId} added successfully.` };
+    get chainId() {
+        return "0x1";
     }
 
     async getAddress() {
