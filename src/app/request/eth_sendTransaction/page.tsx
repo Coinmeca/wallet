@@ -1,6 +1,6 @@
 "use client";
 
-import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
+import { Contents, Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useMessageHandler, useTelegram } from "hooks";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -46,6 +46,7 @@ export default function eth_sendTransaction() {
     const [tx, setTx] = useState<Transaction>();
     const [level, setLevel] = useState(0);
     const [signer, setSigner] = useState<Account>();
+    const [loading, setLoading] = useState(false);
 
     useLayoutEffect(() => {
         console.log({ params, auth, app });
@@ -64,16 +65,22 @@ export default function eth_sendTransaction() {
     }, []);
 
     const handleSign = async () => {
-        const result = await provider?.sign(params, signer!);
-        if (result) {
-            window?.opener?.postMessage(
-                {
-                    method,
-                    result,
-                },
-                "*",
-            );
-        } else {
+        setLevel(1);
+        try {
+            const result = await provider?.sign({ ...params, chainId: chain?.chainId }, signer!);
+            if (result) {
+                window?.opener?.postMessage(
+                    {
+                        method,
+                        result,
+                    },
+                    "*",
+                );
+            } else {
+                throw new Error(result);
+            }
+        } catch (error) {
+            console.log(error?.toString());
             window?.opener?.postMessage(
                 {
                     method,
@@ -81,9 +88,9 @@ export default function eth_sendTransaction() {
                 },
                 "*",
             );
+        } finally {
+            setLevel(2);
         }
-
-        setLevel(1);
     };
 
     const handleClose = () => {
@@ -157,7 +164,7 @@ export default function eth_sendTransaction() {
                                                         borderRadius: "100%",
                                                         background: "rgba(var(--white),.15)",
                                                     }}>
-                                                    <Elements.Avatar character={`${signer?.index + 1}`} hideName />
+                                                    <Elements.Avatar character={`${signer?.index + 1}`} name={`${signer?.index + 1}`} hideName />
                                                 </div>
                                                 <Layouts.Col gap={0} align={"center"}>
                                                     <Elements.Text type={"h6"} height={0} align={"left"}>
@@ -281,6 +288,10 @@ export default function eth_sendTransaction() {
                 },
                 {
                     active: level === 1,
+                    children: <Contents.States.Loading />,
+                },
+                {
+                    active: level === 2,
                     children: (
                         <Layouts.Contents.InnerContent scroll={false}>
                             <Layouts.Col align={"center"} style={{ padding: "4em" }} fill>

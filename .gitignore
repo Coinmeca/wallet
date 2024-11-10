@@ -3,6 +3,7 @@
 # dependencies
 /**/node_modules
 /**/trading-view
+/**/dist
 
 # testing
 /coverage

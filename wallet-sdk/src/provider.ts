@@ -8,20 +8,6 @@ import axios from "axios";
 import { getChainsByType } from "./chains";
 import { CoinmecaWalletBase } from "./core";
 
-// Create a custom Axios instance
-const axiosQuiet = axios.create({
-    timeout: 5000,
-});
-
-// Suppress logging of errors
-axiosQuiet.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        // Return a resolved promise for errors to avoid logging
-        return Promise.resolve({ error });
-    },
-);
-
 const __promise = async (method: string, popup: any, params?: any) => {
     return new Promise((resolve, reject) => {
         const messageHandler = (event: any) => {
@@ -327,12 +313,176 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
         } else throw new Error("There is no any chain registered.");
     }
 
+    async addEthereumChain(chain: Chain) {
+        const { chainId, rpcUrls, nativeCurrency, base } = chain;
+        if (base !== "evm") throw new Error("Chain base doesn't EVM based.");
+        if (!chainId || !rpcUrls || !rpcUrls.length || !nativeCurrency.decimals)
+            throw new Error("Invalid chain parameters. `chainId` and at least one `rpcUrls` are required.");
+
+        const chains: Chain[] = this.#data()?.get("chains") || [];
+        const exist = chains?.find((c) => c?.chainId === chain.chainId);
+        this.#data()?.set("chains", [{ ...exist, ...chain }, ...chains?.filter((c: Chain) => c?.chainId !== chainId)]);
+        return true;
+    }
+
+    async switchEthereumChain(chainId: number | string) {
+        chainId = (typeof chainId === "string" ? (chainId?.startsWith("0x") ? parseChainId(chainId) : parseInt(chainId)) : chainId) as number;
+        const chains = this.#data()?.get("chains") || [];
+        if (chains?.find((c: Chain) => c?.chainId === chainId)) return this.changeChain(chainId);
+    }
+
+    async requestAccounts(app: App, address?: string) {
+        address = address || this.address;
+        if (address) {
+            const apps: App[] = this.#data().get("apps") || [];
+            if (app?.url) {
+                const exist: App = { ...apps?.find((a: App) => a?.url?.toLowerCase() === app?.url?.toLowerCase()), ...app };
+                const accounts = [address, ...(exist?.accounts || [])?.filter((a) => a?.toLowerCase() !== address?.toLowerCase())].filter((a) => a);
+                app = {
+                    ...exist,
+                    accounts,
+                };
+                this.#data().set("apps", [app, ...apps?.filter((a) => a?.url?.toLowerCase() !== app?.url?.toLowerCase())]);
+                return accounts;
+            } else throw new Error("Invalid app information.");
+        } else throw new Error("Couldn't found a current account information.");
+    }
+
+    async estimateGas(txParams: any) {
+        return await this.#sendRpcRequest("eth_estimateGas", [txParams]);
+    }
+
+    async getGasPrice() {
+        return await this.#sendRpcRequest("eth_gasPrice");
+    }
+
     async sign(transaction: TransactionParams, signer: Account | string) {
-        const privateKey = this.#getPrivateKey(typeof signer === 'object' ? signer?.index : this.#storage?.get(signer?.toLowerCase())?.index)
+        const privateKey = this.#getPrivateKey(typeof signer === 'object' ? signer?.index : this.#storage?.get(signer?.toLowerCase())?.index);
         const tx = new Transaction(transaction);
         console.log(transaction, tx);
         tx.sign(Buffer.from(privateKey?.substring(0, 64), "hex"));
-        return await this.#broadcastTransaction(privateKey);
+
+        const txHash = await this.#broadcastTransaction(tx.serialize());
+        console.log('Transaction hash:', txHash);  // Log to verify txHash
+
+        // Await confirmation process
+        const receipt = await this.waitForConfirmation(txHash);  // Ensure this resolves correctly
+
+        if (receipt && receipt.status === 1) {
+            console.log(`Transaction ${txHash} confirmed!`);
+        } else {
+            console.error(`Transaction ${txHash} failed.`);
+        }
+
+        return txHash;  // Now return after confirmation
+    }
+
+    async waitForConfirmation(txHash: string): Promise<any | null> {
+        while (true) {
+            const receipt = await this.getTransactionReceipt(txHash);
+
+            if (!receipt) {
+                // Handle case where receipt is not found (perhaps log and retry)
+                console.warn(`No receipt found for transaction ${txHash}, retrying...`);
+                await new Promise(resolve => setTimeout(resolve, 15000)); // Retry after 15 seconds
+                continue;  // Skip the rest of the loop and try again
+            }
+
+            if (receipt.status === 1) {
+                // Transaction confirmed successfully
+                __notify({ title: "Transaction Confirmed", body: `Your transaction ${txHash} was confirmed.` });
+                break;
+            }
+
+            if (receipt.status === 0) {
+                // Transaction failed
+                __notify({ title: "Transaction Failed", body: `Your transaction ${txHash} failed.` });
+                break;
+            }
+
+            // Continue checking every 15 seconds
+            await new Promise(resolve => setTimeout(resolve, 15000));
+        }
+    }
+
+    async getTransactionReceipt(txHash: string) {
+        const receipt = await this.#sendRpcRequest('eth_getTransactionReceipt', [txHash]);
+        if (receipt) return receipt;  // Return the receipt if it's found
+        return null;  // Return null explicitly if no receipt is found
+    }
+
+    async #sendRpcRequest(method: string, params: any[] = []) {
+        const payload = {
+            jsonrpc: "2.0",
+            id: Date.now(),
+            method,
+            params,
+        };
+
+        for (const url of this.chain?.rpcUrls) {
+            if (url.startsWith("wss://")) {
+                const socket = new WebSocket(url);
+
+                const webSocketResult = await new Promise((resolve, reject) => {
+                    const timeout = setTimeout(() => {
+                        reject(`WebSocket timeout with ${url}`);
+                        socket.close();
+                    }, 10000); // 10 second timeout for WebSocket connection
+
+                    socket.onopen = () => {
+                        socket.send(JSON.stringify(payload));
+                    };
+
+                    socket.onmessage = (event) => {
+                        const response = JSON.parse(event.data);
+                        clearTimeout(timeout); // Clear timeout if we receive a message
+                        if (response.error) reject(`WebSocket Error from ${url}: ${response.error}`);
+                        else resolve(response.result);
+                        socket.close();
+                    };
+
+                    socket.onerror = (error) => {
+                        clearTimeout(timeout);
+                        reject(`WebSocket error with ${url}: ${error}`);
+                        socket.close();
+                    };
+
+                    socket.onclose = () => {
+                        console.log(`WebSocket connection closed with ${url}`);
+                    };
+                });
+
+                return webSocketResult;
+            }
+
+            // Handle HTTP/HTTPS URLs (http:// or https://)
+            try {
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.error) {
+                        console.warn(`RPC Error from ${url}:`, data.error);
+                        continue; // Proceed with the next URL if there's an error
+                    }
+                    return data.result; // Return the result if no errors
+                } else {
+                    console.warn(`Failed request to ${url}: ${response.statusText}`);
+                }
+            } catch (error) {
+                console.warn(`Network error with ${url}:`, error);
+            }
+        }
+
+        throw new Error("All RPC requests failed");
+    }
+
+    async #broadcastTransaction(serializedTx: Buffer) {
+        return await this.#sendRpcRequest("eth_sendRawTransaction", [`0x${serializedTx.toString("hex")}`]);
     }
 
     #confirm(method: string) {
@@ -403,14 +553,6 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
             appUrl: window.location.host,
             appLogo: await getFaviconUri(),
         };
-    }
-
-    async estimateGas(txParams: any) {
-        return await this.#sendRpcRequest("eth_estimateGas", [txParams]);
-    }
-
-    async getGasPrice() {
-        return await this.#sendRpcRequest("eth_gasPrice");
     }
 
     async #signMessage(address: string, message: string) {
@@ -500,60 +642,6 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
         return await this.#sendRpcRequest("eth_getCode", [address, "latest"]);
     }
 
-    async #broadcastTransaction(serializedTx: Buffer) {
-        return await this.#sendRpcRequest("eth_sendRawTransaction", [`0x${serializedTx.toString("hex")}`]);
-    }
-
-    async #sendRpcRequest(method: string, params: any[] = []) {
-        console.log("sendRpcRequest");
-        const rpc = await this.#rpcUrl();
-        console.log({ rpc });
-        if (!rpc) throw new Error("Provider URL was not setup yet.");
-        const response = await axios.post(rpc, {
-            jsonrpc: "2.0",
-            id: new Date().getTime(),
-            method,
-            params,
-        });
-
-        if (response.data.error) throw new Error(`RPC Error: ${response.data.error.message}`);
-        return response.data.result;
-    }
-
-    async addEthereumChain(chain: Chain) {
-        const { chainId, rpcUrls, nativeCurrency, base } = chain;
-        if (base !== "evm") throw new Error("Chain base doesn't EVM based.");
-        if (!chainId || !rpcUrls || !rpcUrls.length || !nativeCurrency.decimals)
-            throw new Error("Invalid chain parameters. `chainId` and at least one `rpcUrls` are required.");
-
-        const chains: Chain[] = this.#data()?.get("chains") || [];
-        const exist = chains?.find((c) => c?.chainId === chain.chainId);
-        this.#data()?.set("chains", [{ ...exist, ...chain }, ...chains?.filter((c: Chain) => c?.chainId !== chainId)]);
-        return true;
-    }
-
-    async switchEthereumChain(chainId: number | string) {
-        chainId = (typeof chainId === "string" ? (chainId?.startsWith("0x") ? parseChainId(chainId) : parseInt(chainId)) : chainId) as number;
-        const chains = this.#data()?.get("chains") || [];
-        if (chains?.find((c: Chain) => c?.chainId === chainId)) return this.changeChain(chainId);
-    }
-
-    async requestAccounts(app: App, address?: string) {
-        address = address || this.address;
-        if (address) {
-            const apps: App[] = this.#data().get("apps") || [];
-            if (app?.url) {
-                const exist: App = { ...apps?.find((a: App) => a?.url?.toLowerCase() === app?.url?.toLowerCase()), ...app };
-                const accounts = [address, ...(exist?.accounts || [])?.filter((a) => a?.toLowerCase() !== address?.toLowerCase())].filter((a) => a);
-                app = {
-                    ...exist,
-                    accounts,
-                };
-                this.#data().set("apps", [app, ...apps?.filter((a) => a?.url?.toLowerCase() !== app?.url?.toLowerCase())]);
-                return accounts;
-            } else throw new Error("Invalid app information.");
-        } else throw new Error("Couldn't found a current account information.");
-    }
 
     async #watchAsset(asset: Asset<"ERC20" | "ERC721" | "ERC1155">) {
         const { type, options } = asset;
@@ -570,33 +658,6 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
         });
 
         return { success: true, message: `Asset ${symbol} at ${address} added to watch list.` };
-    }
-
-    async #rpcUrl() {
-        const urls = (
-            typeof this.chain?.rpcUrls === "object" ? Object.values(this.chain.rpcUrls) : Array.isArray(this.chain?.rpcUrls) ? this.chain.rpcUrls : []
-        ).filter((url?: string) => url?.startsWith("http"));
-
-        if (urls.length === 0) return null;
-        const availableUrls = await Promise.all(
-            urls.map(async (url: string) => {
-                const start = Date.now();
-                try {
-                    await axiosQuiet.get(url); // Making the request
-                    const elapsed = Date.now() - start;
-
-                    // If the request is successful, return the URL and its latency
-                    return { url, latency: elapsed };
-                } catch {
-                    // Return an object indicating failure without logging errors
-                    return { url, latency: Number.MAX_SAFE_INTEGER };
-                }
-            }),
-        );
-
-        // Filter out URLs that resulted in an error
-        const workingUrls = availableUrls.filter((result) => !!result && result.latency !== Number.MAX_SAFE_INTEGER).sort((a, b) => a.latency - b.latency);
-        return workingUrls.length ? workingUrls[0].url : null;
     }
 
     async getAddress() {

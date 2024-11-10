@@ -17,7 +17,8 @@ export default function RootTemplate({ children, params }: { children: any; para
         <Frames.Frame
             header={{ type: "custom", children: <Containers.Header {...header} /> }}
             align={"right"}
-            background={{ img: { src: 2 }, filter: { color: "black", opacity: 0.3 } }}
+            background={{ img: { src: 2 } }}
+            // background={{ img: { src: 2 }, filter: { color: "black", opacity: 0.3 } }}
             side={56}
             toast={toastlist}>
             <Layouts.Page>

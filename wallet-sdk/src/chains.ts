@@ -479,7 +479,7 @@ export const chainlist: Chains = {
                 chainId: 421614,
                 base: "evm",
                 chainName: "Arbitrum Sepolia",
-                logo: "https://coinmeca-web3.vercel.app/42161/logo.svg",
+                logo: "https://coinmeca-web3.vercel.app/421614/logo.svg",
                 rpcUrls: [
                     "https://sepolia-rollup.arbitrum.io/rpc",
                     "https://arbitrum-sepolia.blockpi.network/v1/rpc/public",
