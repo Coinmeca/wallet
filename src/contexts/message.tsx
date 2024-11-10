@@ -38,7 +38,7 @@ export const MessageHandler: React.FC<{ children: React.ReactNode }> = ({ childr
     const [popupId, setPopupId] = useState<number>();
     const [isPopup, setIsPopup] = useState(false);
     const [message, setMessage] = useState<any>();
-    const [auth, setAuth] = useState<boolean | null>(null);
+    const [auth, setAuth] = useState<boolean | undefined>(undefined);
 
     useLayoutEffect(() => {
         if (typeof window !== "undefined") {
@@ -55,7 +55,7 @@ export const MessageHandler: React.FC<{ children: React.ReactNode }> = ({ childr
     }, []);
 
     useLayoutEffect(() => {
-        if (provider && message) {
+        if (provider)
             setAuth(() => {
                 if (message?.params?.from) {
                     if (provider?.allowance(message?.app?.url, message?.params?.from)) return true;
@@ -75,7 +75,6 @@ export const MessageHandler: React.FC<{ children: React.ReactNode }> = ({ childr
                     }
                 } else return false;
             });
-        }
     }, [provider]);
 
     useLayoutEffect(() => {

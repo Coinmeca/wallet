@@ -419,14 +419,15 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
             params,
         };
 
-        for (const url of this.chain?.rpcUrls) {
-            if (url.startsWith("wss://")) {
-                const socket = new WebSocket(url);
-
-                const webSocketResult = await new Promise((resolve, reject) => {
+        // Create an array of promises to handle the different RPC URLs
+        const promises = this.chain?.rpcUrls.map((url: string) => {
+            return new Promise<any>((resolve, reject) => {
+                if (url.startsWith("wss://")) {
+                    // WebSocket handling
+                    const socket = new WebSocket(url);
                     const timeout = setTimeout(() => {
                         reject(`WebSocket timeout with ${url}`);
-                        socket.close();
+                        socket.close(); // Ensure the socket is closed if timed out
                     }, 10000); // 10 second timeout for WebSocket connection
 
                     socket.onopen = () => {
@@ -436,50 +437,83 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
                     socket.onmessage = (event) => {
                         const response = JSON.parse(event.data);
                         clearTimeout(timeout); // Clear timeout if we receive a message
-                        if (response.error) reject(`WebSocket Error from ${url}: ${response.error}`);
-                        else resolve(response.result);
-                        socket.close();
+
+                        if (response.error) {
+                            reject(`WebSocket Error from ${url}: ${response.error}`);
+                        } else if (response.result) {
+                            resolve(response.result); // Return the result
+                        } else {
+                            reject(`WebSocket response does not contain result: ${event.data}`);
+                        }
+                        socket.close(); // Ensure WebSocket closes after processing
                     };
 
                     socket.onerror = (error) => {
                         clearTimeout(timeout);
                         reject(`WebSocket error with ${url}: ${error}`);
-                        socket.close();
+                        socket.close(); // Ensure WebSocket closes on error
                     };
 
                     socket.onclose = () => {
                         console.log(`WebSocket connection closed with ${url}`);
                     };
-                });
-
-                return webSocketResult;
-            }
-
-            // Handle HTTP/HTTPS URLs (http:// or https://)
-            try {
-                const response = await fetch(url, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload),
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.error) {
-                        console.warn(`RPC Error from ${url}:`, data.error);
-                        continue; // Proceed with the next URL if there's an error
-                    }
-                    return data.result; // Return the result if no errors
                 } else {
-                    console.warn(`Failed request to ${url}: ${response.statusText}`);
+                    // HTTP/HTTPS handling
+                    fetch(url, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload),
+                    })
+                        .then((response) => {
+                            if (!response.ok) {
+                                reject(`Failed request to ${url}: ${response.statusText}`);
+                            }
+                            return response.json();
+                        })
+                        .then((data) => {
+                            if (data.error) {
+                                reject(`RPC Error from ${url}: ${data.error}`);
+                            }
+                            if (data.result) {
+                                resolve(data.result); // Return the result
+                            } else {
+                                reject(`RPC response does not contain result from ${url}`);
+                            }
+                        })
+                        .catch((error) => {
+                            reject(`Network error with ${url}: ${error}`);
+                        });
                 }
-            } catch (error) {
-                console.warn(`Network error with ${url}:`, error);
-            }
-        }
+            });
+        }) || [];
 
-        throw new Error("All RPC requests failed");
+        // Use Promise.race to stop immediately on the first successful result
+        const firstSuccess = Promise.race(promises);
+
+        // Use Promise.allSettled to wait for all promises to settle (fail or succeed)
+        const allSettled = Promise.allSettled(promises);
+
+        // Wait for all promises to settle and handle the result
+        try {
+            // First check for success
+            const result = await firstSuccess;
+            return result; // Return the first successful result immediately
+        } catch (error) {
+            // If any promise fails, wait for all promises to settle
+            const results = await allSettled;
+
+            // Log all failed promises
+            for (const result of results) {
+                if (result.status === "rejected") {
+                    console.warn(`RPC request failed: ${result.reason}`);
+                }
+            }
+
+            // Throw error if all requests fail
+            throw new Error("All RPC requests failed");
+        }
     }
+
 
     async #broadcastTransaction(serializedTx: Buffer) {
         return await this.#sendRpcRequest("eth_sendRawTransaction", [`0x${serializedTx.toString("hex")}`]);

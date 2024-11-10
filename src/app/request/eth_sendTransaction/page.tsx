@@ -80,7 +80,7 @@ export default function eth_sendTransaction() {
                 throw new Error(result);
             }
         } catch (error) {
-            console.log(error?.toString());
+            console.log(error);
             window?.opener?.postMessage(
                 {
                     method,

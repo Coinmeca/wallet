@@ -93,11 +93,11 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }, [path]);
 
     const isLoad = useMemo(() => {
-        if (typeof auth !== "undefined" && "boolean" && typeof check?.access !== "boolean") return false;
+        if (typeof auth === "undefined") return false;
+        else if (typeof check?.init !== "boolean" || typeof check?.access !== "boolean") return false;
         else if (check?.init === false && path?.startsWith("/welcome")) return true;
-        else return true;
         // else if (!check.access && path?.startsWith("/lock")) return true;
-        return false;
+        else return true;
     }, [check, auth]);
 
     return <GuardContext.Provider value={{ isInit, isAccess, isLoad, setIsAccess }}>{children}</GuardContext.Provider>;
