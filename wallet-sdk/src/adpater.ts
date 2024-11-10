@@ -26,6 +26,12 @@ const __confirm = (method: string) => {
 };
 
 const __promise = async (method: string, params?: any) => {
+    const app = {
+        name: (document.querySelector('meta[property="og:site_name"]') as HTMLMetaElement)?.content || document.title?.split(" ")[0],
+        url: window.location.host,
+        logo: await getFaviconUri(),
+    }
+
     return new Promise((resolve, reject) => {
         const messageHandler = (event: any) => {
             if (event.data.method === method) {
@@ -46,17 +52,17 @@ const __promise = async (method: string, params?: any) => {
         const popup = __confirm(method);
         if (!!popup) {
             const onLoad = (e: any) => {
-                if (popup?.coinmeca) popup.coinmeca = { ...popup.coinmeca, request: { method, params } };
-                else popup.coinmeca = { request: { method, params } };
+                if (popup?.coinmeca) popup.coinmeca = { ...popup.coinmeca, request: { method, params, app } };
+                else popup.coinmeca = { request: { method, params, app } };
             };
-            if (params) popup.addEventListener("load", onLoad);
+            popup.addEventListener("load", onLoad);
 
             const onClose = setInterval(() => {
                 if (popup.closed) {
                     clearInterval(onClose);
-                    reject(new Error("User closed the window before approving the request."));
+                    window.removeEventListener("load", onLoad);
                     window.removeEventListener("message", messageHandler);
-                    if (params) window.removeEventListener("load", onLoad);
+                    reject(new Error("User closed the window before approving the request."));
                 }
             }, 100); // Check every 100ms
         }
@@ -98,14 +104,10 @@ export class CoinmecaWalletAdapter extends CoinmecaWalletBase {
     async request({ method, params }: { method: string; params?: any[] }) {
         switch (method) {
             case "eth_accounts":
-                return;
+                return this.#data()?.get('last:accounts');
 
             case "eth_requestAccounts":
-                return await __promise(method, {
-                    appName: (document.querySelector('meta[property="og:site_name"]') as HTMLMetaElement)?.content || document.title?.split(" ")[0],
-                    appUrl: window.location.host,
-                    appLogo: await getFaviconUri(),
-                }).then((result) => {
+                return await __promise(method).then((result) => {
                     if (result) {
                         this.#data()?.set('last:accounts', result)
                         return result
@@ -119,9 +121,6 @@ export class CoinmecaWalletAdapter extends CoinmecaWalletBase {
                 return;
 
             case "net_version":
-                return;
-
-            case "eth_sendTransaction":
                 return;
 
             case "eth_estimateGas":
@@ -142,6 +141,13 @@ export class CoinmecaWalletAdapter extends CoinmecaWalletBase {
             case "eth_signTransaction":
                 return;
 
+            case "eth_sendTransaction":
+                params = (Array.isArray(params) ? params[0] : params);
+                if (!params) throw new Error("No transaction data provided");
+                return await __promise(method, params).then((result) => {
+                    if (result) return result
+                });
+
             // Event Subscription
             case "eth_subscribe":
             case "eth_unsubscribe":
@@ -159,22 +165,22 @@ export class CoinmecaWalletAdapter extends CoinmecaWalletBase {
                 return;
 
             case "wallet_addEthereumChain":
-                const wallet_addEthereumChain = (Array.isArray(params) ? params[0] : params) as any;
-                if (!wallet_addEthereumChain) throw new Error("No chain parameters provided");
-                return await __promise(method, wallet_addEthereumChain).then((result) => {
+                params = (Array.isArray(params) ? params[0] : params);
+                if (!params) throw new Error("No chain information provided");
+                return await __promise(method, params).then((result) => {
                     if (result) {
-                        this.emit("chainChanged", wallet_addEthereumChain.chainId);
+                        if (typeof result === 'number') this.emit("chainChanged", result);
                         return result;
                     }
                 });
 
             case "wallet_switchEthereumChain":
-                const wallet_switchEthereumChain = (Array.isArray(params) ? params[0] : params) as any;
-                if (!wallet_switchEthereumChain?.chainId) throw new Error("No chain parameters provided");
-                return await __promise(method, wallet_switchEthereumChain.chainId).then((result) => {
+                params = (Array.isArray(params) ? params[0] : params) as any;
+                if (!(params as any)?.chainId) throw new Error("No chainId provided");
+                return await __promise(method, (params as any)?.chainId).then((result) => {
                     if (result) {
                         this.#data()?.set('last:chain', getChainById(result as number))
-                        this.emit("chainChanged", wallet_switchEthereumChain.chainId);
+                        this.emit("chainChanged", result);
                         return result;
                     }
                 });
@@ -185,6 +191,10 @@ export class CoinmecaWalletAdapter extends CoinmecaWalletBase {
             default:
                 throw new Error(`Method '${method}' not supported`);
         }
+    }
+
+    async #app() {
+        return
     }
 
     #data(_?: { key?: string; storage?: CloudStorage | Storage }) {

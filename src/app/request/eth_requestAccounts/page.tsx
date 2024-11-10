@@ -2,12 +2,11 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useLayoutEffect, useState } from "react";
+import { useState } from "react";
 
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
-import { App } from "@coinmeca/wallet-sdk/types";
-import { useMessageHandler, useStorage, useTelegram } from "hooks";
+import { useMessageHandler, useTelegram } from "hooks";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({method: 'eth_requestAccounts'})
@@ -19,9 +18,8 @@ export default function eth_requestAccounts() {
 
     const { telegram } = useTelegram();
     const { provider, account } = useCoinmecaWalletProvider();
-    const { isPopup, params } = useMessageHandler();
+    const { message, params, app, isPopup } = useMessageHandler();
 
-    const [app, setApp] = useState<App>();
     const [level, setLevel] = useState(0);
 
     const handleClose = () => {
@@ -63,19 +61,22 @@ export default function eth_requestAccounts() {
             );
     };
 
-    useLayoutEffect(() => {
-        if (params) {
-            const url = params?.appUrl || params?.url;
-            const site = url && decodeURIComponent(url);
-            const origin = site && new URL(site.startsWith("http") ? site : `https://${site}`).host;
-            const app = {
-                name: params?.appName || params?.name || undefined,
-                logo: params?.appLogo || params?.logo || params?.appIcon || params?.icon || undefined,
-                url: origin || undefined,
-            };
-            if (app?.name && app?.name !== "" && app?.url && app?.url !== "") setApp(app);
-        }
-    }, []);
+    console.log({ message, params, app });
+
+    // useLayoutEffect(() => {
+    //     if (message?.app) {
+    //         const params = message.app as any;
+    //         const url = params?.appUrl || params?.url;
+    //         const site = url && decodeURIComponent(url);
+    //         const origin = site && new URL(site.startsWith("http") ? site : `https://${site}`).host;
+    //         const app = {
+    //             name: params?.appName || params?.name || undefined,
+    //             logo: params?.appLogo || params?.logo || params?.appIcon || params?.icon || undefined,
+    //             url: origin || undefined,
+    //         };
+    //         if (app?.name && app?.name !== "" && app?.url && app?.url !== "") setApp(app);
+    //     }
+    // }, []);
 
     return app ? (
         <Layouts.Contents.SlideContainer
@@ -84,46 +85,46 @@ export default function eth_requestAccounts() {
                     active: true,
                     children: (
                         <Layouts.Contents.InnerContent scroll={false}>
-                            <Layouts.Col align={"center"} style={{ padding: "4em" }} fill>
-                                <Layouts.Col gap={4} align={"center"} style={{ flex: 1 }} fill>
-                                    <Layouts.Col gap={4} align={"center"} fill>
-                                        <Layouts.Col gap={8} align={"center"} fit>
-                                            <div
-                                                style={{
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                    maxWidth: "max-content",
-                                                    maxHeight: "max-content",
-                                                    padding: "2em",
-                                                    borderRadius: "100%",
-                                                    background: "rgba(var(--white),.15)",
-                                                }}>
-                                                <Image
-                                                    width={0}
-                                                    height={0}
-                                                    src={level === 0 ? app?.logo || "" : require("../../../assets/animation/success.gif")}
-                                                    alt={app.name || "Unknown"}
-                                                    style={{ width: "8em", height: "8em" }}
-                                                />
-                                            </div>
-                                            <Layouts.Col gap={1}>
-                                                <Elements.Text type={"h6"}>{app.name || ""}</Elements.Text>
-                                                <Elements.Text type={"strong"} opacity={0.6}>
-                                                    {app.url}
-                                                </Elements.Text>
+                            <Layouts.Col gap={2} align={"center"} fill>
+                                <Layouts.Contents.InnerContent padding={[4, 4, 0]}>
+                                    <Layouts.Col fill>
+                                        <Layouts.Col align={"center"} style={{ flex: 1 }}>
+                                            <Layouts.Col gap={8} align={"center"} fit>
+                                                <div
+                                                    style={{
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent: "center",
+                                                        maxWidth: "max-content",
+                                                        maxHeight: "max-content",
+                                                        padding: "2em",
+                                                        borderRadius: "100%",
+                                                        background: "rgba(var(--white),.15)",
+                                                    }}>
+                                                    <Image
+                                                        width={0}
+                                                        height={0}
+                                                        src={level === 0 ? app?.logo || "" : require("../../../assets/animation/success.gif")}
+                                                        alt={app.name || "Unknown"}
+                                                        style={{ width: "8em", height: "8em" }}
+                                                    />
+                                                </div>
+                                                <Layouts.Col gap={1}>
+                                                    <Elements.Text type={"h6"}>{app.name || ""}</Elements.Text>
+                                                    <Elements.Text type={"strong"} opacity={0.6}>
+                                                        {app.url}
+                                                    </Elements.Text>
+                                                </Layouts.Col>
                                             </Layouts.Col>
                                         </Layouts.Col>
-                                    </Layouts.Col>
-                                </Layouts.Col>
-                                <Layouts.Col gap={0} align={"center"} style={{ flex: 1 }} fill>
-                                    <Layouts.Contents.SlideContainer
-                                        contents={[
-                                            {
-                                                active: level === 0,
-                                                children: (
-                                                    <Layouts.Contents.InnerContent scroll={false}>
-                                                        <Layouts.Col align={"center"} style={{ flex: 1 }} fill>
+                                        {/* <Layouts.Col gap={8} align={"center"} style={{ flex: 1 }} fill> */}
+                                        <Layouts.Contents.SlideContainer
+                                            style={{ flex: 1 }}
+                                            contents={[
+                                                {
+                                                    active: level === 0,
+                                                    children: (
+                                                        <Layouts.Col gap={0} align={"center"} style={{ height: "100%" }} fill>
                                                             <Layouts.Col gap={4} align={"center"} fit>
                                                                 <Elements.Text type={"h3"}>Connect</Elements.Text>
                                                                 <Elements.Text size={1} weight={"bold"}>
@@ -144,22 +145,12 @@ export default function eth_requestAccounts() {
                                                                 </Elements.Text>
                                                             </Layouts.Col>
                                                         </Layouts.Col>
-                                                        <Layouts.Row gap={2}>
-                                                            <Controls.Button type={"glass"} onClick={handleClose}>
-                                                                Cancel
-                                                            </Controls.Button>
-                                                            <Controls.Button type={"line"} onClick={handleConnect}>
-                                                                Approve
-                                                            </Controls.Button>
-                                                        </Layouts.Row>
-                                                    </Layouts.Contents.InnerContent>
-                                                ),
-                                            },
-                                            {
-                                                active: level === 1,
-                                                children: (
-                                                    <Layouts.Contents.InnerContent scroll={false}>
-                                                        <Layouts.Col align={"center"} style={{ flex: 1 }} fill>
+                                                    ),
+                                                },
+                                                {
+                                                    active: level === 1,
+                                                    children: (
+                                                        <Layouts.Col gap={0} align={"center"} style={{ height: "100%" }} fill>
                                                             <Layouts.Col gap={4} align={"center"} fit>
                                                                 <Elements.Text type={"h3"}>Approved</Elements.Text>
                                                                 <Elements.Text size={1} weight={"bold"}>
@@ -177,12 +168,37 @@ export default function eth_requestAccounts() {
                                                                 </Elements.Text>
                                                             </Layouts.Col>
                                                         </Layouts.Col>
-                                                        <Layouts.Row gap={2}>
-                                                            <Controls.Button type={"glass"} onClick={handleClose}>
-                                                                Close
-                                                            </Controls.Button>
-                                                        </Layouts.Row>
-                                                    </Layouts.Contents.InnerContent>
+                                                    ),
+                                                },
+                                            ]}
+                                        />
+                                        {/* </Layouts.Col> */}
+                                    </Layouts.Col>
+                                </Layouts.Contents.InnerContent>
+                                <Layouts.Col gap={4} align={"center"} style={{ padding: "4em", paddingTop: 0 }}>
+                                    <Layouts.Contents.SlideContainer
+                                        contents={[
+                                            {
+                                                active: level === 0,
+                                                children: (
+                                                    <Layouts.Row gap={2}>
+                                                        <Controls.Button type={"glass"} onClick={handleClose}>
+                                                            Cancel
+                                                        </Controls.Button>
+                                                        <Controls.Button type={"line"} onClick={handleConnect}>
+                                                            Approve
+                                                        </Controls.Button>
+                                                    </Layouts.Row>
+                                                ),
+                                            },
+                                            {
+                                                active: level === 1,
+                                                children: (
+                                                    <Layouts.Row gap={2}>
+                                                        <Controls.Button type={"glass"} onClick={handleClose}>
+                                                            Close
+                                                        </Controls.Button>
+                                                    </Layouts.Row>
                                                 ),
                                             },
                                         ]}
@@ -196,44 +212,46 @@ export default function eth_requestAccounts() {
         />
     ) : (
         <Layouts.Contents.InnerContent scroll={false}>
-            <Layouts.Col align={"center"} style={{ padding: "4em" }} fill>
-                <Layouts.Col gap={4} align={"center"} style={{ flex: 1 }} fill>
-                    <Layouts.Col gap={4} align={"center"} fill>
-                        <Layouts.Col gap={8} align={"center"} fit>
-                            <div
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    maxWidth: "max-content",
-                                    maxHeight: "max-content",
-                                    padding: "2em",
-                                    borderRadius: "100%",
-                                    background: "rgba(var(--white),.15)",
-                                }}>
-                                <Image
-                                    width={0}
-                                    height={0}
-                                    src={require("../../../assets/animation/failure.gif")}
-                                    alt={"Unknown"}
-                                    style={{ width: "8em", height: "8em" }}
-                                />
-                            </div>
+            <Layouts.Col gap={2} align={"center"} fill>
+                <Layouts.Contents.InnerContent padding={[4, 4, 0]}>
+                    <Layouts.Col fill>
+                        <Layouts.Col align={"center"} style={{ flex: 1 }}>
+                            <Layouts.Col gap={8} align={"center"} fit>
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        maxWidth: "max-content",
+                                        maxHeight: "max-content",
+                                        padding: "2em",
+                                        borderRadius: "100%",
+                                        background: "rgba(var(--white),.15)",
+                                    }}>
+                                    <Image
+                                        width={0}
+                                        height={0}
+                                        src={require("../../../assets/animation/failure.gif")}
+                                        alt={"Unknown"}
+                                        style={{ width: "8em", height: "8em" }}
+                                    />
+                                </div>
+                            </Layouts.Col>
+                        </Layouts.Col>
+                        <Layouts.Col gap={8} align={"center"} style={{ flex: 1 }} fill>
+                            <Layouts.Col gap={4} align={"center"} fit>
+                                <Elements.Text type={"h3"}>Invalid Request</Elements.Text>
+                                <Elements.Text weight={"bold"} opacity={0.6}>
+                                    The given app information is something wrong. Couldn't found the information of requested app.
+                                </Elements.Text>
+                            </Layouts.Col>
                         </Layouts.Col>
                     </Layouts.Col>
-                </Layouts.Col>
-                <Layouts.Col gap={0} align={"center"} style={{ flex: 1 }} fill>
-                    <Layouts.Col align={"center"} style={{ flex: 1 }} fill>
-                        <Layouts.Col gap={4} align={"center"} fit>
-                            <Elements.Text type={"h3"}>Invalid Request</Elements.Text>
-                            <Elements.Text weight={"bold"} opacity={0.6}>
-                                The given app information is something wrong. Couldn't found the information of requested app.
-                            </Elements.Text>
-                        </Layouts.Col>
-                    </Layouts.Col>
+                </Layouts.Contents.InnerContent>
+                <Layouts.Col gap={4} align={"center"} style={{ padding: "4em", paddingTop: 0 }}>
                     <Layouts.Row gap={2}>
                         <Controls.Button type={"glass"} onClick={handleClose}>
-                            Cancel
+                            Close
                         </Controls.Button>
                     </Layouts.Row>
                 </Layouts.Col>

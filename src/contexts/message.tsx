@@ -1,17 +1,20 @@
 ﻿"use client";
 
+import { App } from "@coinmeca/wallet-sdk/types";
 import { usePathname } from "next/navigation";
 import React, { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
 
 interface MessageProps {
     method: string | undefined;
     params: any;
+    app: App | undefined;
 }
 
 interface MessageHandlerProps extends MessageProps {
     isPopup: boolean;
     popupId?: number;
     message: MessageProps | undefined;
+    app: App;
 }
 
 const MessageHandlerContext = createContext<MessageHandlerProps | undefined>(undefined);
@@ -40,6 +43,7 @@ export const MessageHandler: React.FC<{ children: React.ReactNode }> = ({ childr
 
             if ((window as any)?.coinmeca) {
                 const request = (window as any)?.coinmeca?.request;
+                console.log({ request });
                 if (request) setMessage(request);
             }
         }
@@ -49,5 +53,5 @@ export const MessageHandler: React.FC<{ children: React.ReactNode }> = ({ childr
         if (isPopup) window.close();
     }, [path]);
 
-    return <MessageHandlerContext.Provider value={{ ...message, isPopup, popupId, message }}>{children}</MessageHandlerContext.Provider>;
+    return <MessageHandlerContext.Provider value={{ ...message, isPopup, popupId, message, app: message?.app }}>{children}</MessageHandlerContext.Provider>;
 };

@@ -6,7 +6,6 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
 import { TransactionParams } from "@coinmeca/wallet-sdk/types";
-import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({
@@ -24,47 +23,31 @@ await window.ethereum.providerMap.get("CoinmecaWallet").request({
       })
 */
 
-export default function eth_sendTransaction({ params }: { params: any }) {
+export default function eth_sendTransaction() {
     const method = "eth_sendTransaction";
     const router = useRouter();
 
     const { telegram } = useTelegram();
-    const { isPopup } = useMessageHandler();
-    // const { storage, session } = useStorage();
+    const { app, params, isPopup } = useMessageHandler();
 
-    const [app, setApp] = useState<any>();
     const [tx, setTx] = useState<TransactionParams>();
     const [level, setLevel] = useState(0);
 
     useLayoutEffect(() => {
-        if ((window as any)?.coinmeca) {
-            const params = (window as any)?.coinmeca?.params || (window as any)?.coinmeca?.params;
-            if (params) {
-                const { value, gasLimit, maxFeePerGas, maxPriorityFeePerGas } = params?.[0];
-                setTx({
-                    ...params?.[0],
-                    value: value && value !== "" ? parseInt(value, 16) : undefined,
-                    gasLimit: gasLimit && gasLimit !== "" ? parseInt(gasLimit, 16) : undefined,
-                    maxFeePerGas: maxFeePerGas && maxFeePerGas !== "" ? parseInt(maxFeePerGas, 16) : undefined,
-                    maxPriorityFeePerGas: maxPriorityFeePerGas && maxPriorityFeePerGas !== "" ? parseInt(maxPriorityFeePerGas, 16) : undefined,
-                });
-
-                const url = params?.[1]?.appUrl || params?.url;
-                const site = url && decodeURIComponent(url);
-                const origin = site && new URL(site.startsWith("http") ? site : `https://${site}`).host;
-                const app = {
-                    name: params?.[1]?.appName || params?.[1]?.name || undefined,
-                    logo: params?.[1]?.appLogo || params?.[1]?.logo || params?.[1]?.appIcon || params?.[1]?.icon || undefined,
-                    url: origin || undefined,
-                };
-                if (app?.name && app?.name !== "" && app?.url && app?.url !== "") setApp(app);
-            }
+        console.log(params);
+        if (params) {
+            const { value, gasLimit, maxFeePerGas, maxPriorityFeePerGas } = params;
+            setTx({
+                ...params,
+                value: value && value !== "" ? parseInt(value, 16) : undefined,
+                gasLimit: gasLimit && gasLimit !== "" ? parseInt(gasLimit, 16) : undefined,
+                maxFeePerGas: maxFeePerGas && maxFeePerGas !== "" ? parseInt(maxFeePerGas, 16) : undefined,
+                maxPriorityFeePerGas: maxPriorityFeePerGas && maxPriorityFeePerGas !== "" ? parseInt(maxPriorityFeePerGas, 16) : undefined,
+            });
         }
     }, []);
 
     const handleSign = () => {
-        // const result = storage?.get(`${session?.get("key")}:wallets`)?.[storage?.get(tx?.from?.toLowerCase()!)?.index];
-
         // if (result) {
         //     window?.opener?.postMessage(
         //         {
@@ -124,7 +107,13 @@ export default function eth_sendTransaction({ params }: { params: any }) {
                                                         borderRadius: "100%",
                                                         background: "rgba(var(--white),.15)",
                                                     }}>
-                                                    <Image src={app?.logo || ""} width={0} height={0} alt={app?.name} style={{ width: "4em", height: "4em" }} />
+                                                    <Image
+                                                        src={app?.logo || ""}
+                                                        width={0}
+                                                        height={0}
+                                                        alt={app?.name || ""}
+                                                        style={{ width: "4em", height: "4em", borderRadius: "100%" }}
+                                                    />
                                                 </div>
                                                 <Layouts.Col gap={0} align={"center"} fill>
                                                     <Elements.Text type={"h6"} height={0} align={"left"}>
@@ -287,44 +276,46 @@ export default function eth_sendTransaction({ params }: { params: any }) {
         />
     ) : (
         <Layouts.Contents.InnerContent scroll={false}>
-            <Layouts.Col align={"center"} style={{ padding: "4em" }} fill>
-                <Layouts.Col gap={4} align={"center"} style={{ flex: 1 }} fill>
-                    <Layouts.Col gap={4} align={"center"} fill>
-                        <Layouts.Col gap={8} align={"center"} fit>
-                            <div
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    maxWidth: "max-content",
-                                    maxHeight: "max-content",
-                                    padding: "2em",
-                                    borderRadius: "100%",
-                                    background: "rgba(var(--white),.15)",
-                                }}>
-                                <Image
-                                    width={0}
-                                    height={0}
-                                    src={require("../../../assets/animation/failure.gif")}
-                                    alt={"Unknown"}
-                                    style={{ width: "8em", height: "8em" }}
-                                />
-                            </div>
+            <Layouts.Col gap={2} align={"center"} fill>
+                <Layouts.Contents.InnerContent padding={[4, 4, 0]}>
+                    <Layouts.Col fill>
+                        <Layouts.Col align={"center"} style={{ flex: 1 }}>
+                            <Layouts.Col gap={8} align={"center"} fit>
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        maxWidth: "max-content",
+                                        maxHeight: "max-content",
+                                        padding: "2em",
+                                        borderRadius: "100%",
+                                        background: "rgba(var(--white),.15)",
+                                    }}>
+                                    <Image
+                                        width={0}
+                                        height={0}
+                                        src={require("../../../assets/animation/failure.gif")}
+                                        alt={"Unknown"}
+                                        style={{ width: "8em", height: "8em" }}
+                                    />
+                                </div>
+                            </Layouts.Col>
+                        </Layouts.Col>
+                        <Layouts.Col gap={8} align={"center"} style={{ flex: 1 }} fill>
+                            <Layouts.Col gap={4} align={"center"} fit>
+                                <Elements.Text type={"h3"}>Invalid Request</Elements.Text>
+                                <Elements.Text weight={"bold"} opacity={0.6}>
+                                    The given transaction information is something wrong. Couldn't found the information of requested chain.
+                                </Elements.Text>
+                            </Layouts.Col>
                         </Layouts.Col>
                     </Layouts.Col>
-                </Layouts.Col>
-                <Layouts.Col gap={0} align={"center"} style={{ flex: 1 }} fill>
-                    <Layouts.Col align={"center"} style={{ flex: 1 }} fill>
-                        <Layouts.Col gap={4} align={"center"} fit>
-                            <Elements.Text type={"h3"}>Invalid Request</Elements.Text>
-                            <Elements.Text weight={"bold"} opacity={0.6}>
-                                The given chain information is something wrong. Couldn't found the information of requested chain.
-                            </Elements.Text>
-                        </Layouts.Col>
-                    </Layouts.Col>
+                </Layouts.Contents.InnerContent>
+                <Layouts.Col gap={4} align={"center"} style={{ padding: "4em", paddingTop: 0 }}>
                     <Layouts.Row gap={2}>
                         <Controls.Button type={"glass"} onClick={handleClose}>
-                            Cancel
+                            Close
                         </Controls.Button>
                     </Layouts.Row>
                 </Layouts.Col>
