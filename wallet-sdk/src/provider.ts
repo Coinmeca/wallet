@@ -423,40 +423,40 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
         const promises = this.chain?.rpcUrls.map((url: string) => {
             return new Promise<any>((resolve, reject) => {
                 if (url.startsWith("wss://")) {
-                    // WebSocket handling
-                    const socket = new WebSocket(url);
-                    const timeout = setTimeout(() => {
-                        reject(`WebSocket timeout with ${url}`);
-                        socket.close(); // Ensure the socket is closed if timed out
-                    }, 10000); // 10 second timeout for WebSocket connection
+                    // // WebSocket handling
+                    // const socket = new WebSocket(url);
+                    // const timeout = setTimeout(() => {
+                    //     reject(`WebSocket timeout with ${url}`);
+                    //     socket.close(); // Ensure the socket is closed if timed out
+                    // }, 10000); // 10 second timeout for WebSocket connection
 
-                    socket.onopen = () => {
-                        socket.send(JSON.stringify(payload));
-                    };
+                    // socket.onopen = () => {
+                    //     socket.send(JSON.stringify(payload));
+                    // };
 
-                    socket.onmessage = (event) => {
-                        const response = JSON.parse(event.data);
-                        clearTimeout(timeout); // Clear timeout if we receive a message
+                    // socket.onmessage = (event) => {
+                    //     const response = JSON.parse(event.data);
+                    //     clearTimeout(timeout); // Clear timeout if we receive a message
 
-                        if (response.error) {
-                            reject(`WebSocket Error from ${url}: ${response.error}`);
-                        } else if (response.result) {
-                            resolve(response.result); // Return the result
-                        } else {
-                            reject(`WebSocket response does not contain result: ${event.data}`);
-                        }
-                        socket.close(); // Ensure WebSocket closes after processing
-                    };
+                    //     if (response.error) {
+                    //         reject(`WebSocket Error from ${url}: ${response.error}`);
+                    //     } else if (response.result) {
+                    //         resolve(response.result); // Return the result
+                    //     } else {
+                    //         reject(`WebSocket response does not contain result: ${event.data}`);
+                    //     }
+                    //     socket.close(); // Ensure WebSocket closes after processing
+                    // };
 
-                    socket.onerror = (error) => {
-                        clearTimeout(timeout);
-                        reject(`WebSocket error with ${url}: ${error}`);
-                        socket.close(); // Ensure WebSocket closes on error
-                    };
+                    // socket.onerror = (error) => {
+                    //     clearTimeout(timeout);
+                    //     reject(`WebSocket error with ${url}: ${error}`);
+                    //     socket.close(); // Ensure WebSocket closes on error
+                    // };
 
-                    socket.onclose = () => {
-                        console.log(`WebSocket connection closed with ${url}`);
-                    };
+                    // socket.onclose = () => {
+                    //     console.log(`WebSocket connection closed with ${url}`);
+                    // };
                 } else {
                     // HTTP/HTTPS handling
                     fetch(url, {
