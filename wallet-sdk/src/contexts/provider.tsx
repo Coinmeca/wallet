@@ -36,35 +36,41 @@ export const CoinmecaWalletContextProvider: React.FC<{ children: React.ReactNode
     const [chain, setChain] = useState();
 
     useLayoutEffect(() => {
-        setProvider(new CoinmecaWalletProvider());
+        setProvider(
+            new CoinmecaWalletProvider({
+                chainId: (window as any)?.coinmeca?.request?.chainId,
+            }),
+        );
     }, []);
 
-    useEffect(() => {
-        const updateAccount = () => {
-            setAccount(provider?.account);
-        };
+    useLayoutEffect(() => {
+        if (provider) {
+            const updateAccount = () => {
+                setAccount(provider?.account());
+            };
 
-        const updateChain = () => {
-            setChain(provider?.chain);
-        };
+            const updateChain = () => {
+                setChain(provider?.chain);
+            };
 
-        const update = () => {
-            updateAccount();
-            updateChain();
-        };
+            const update = () => {
+                updateAccount();
+                updateChain();
+            };
 
-        provider?.on("unlock", update);
-        provider?.on("accountChanged", updateAccount);
-        provider?.on("chainChanged", updateChain);
-        return () => {
-            provider?.off("unlock", update);
-            provider?.off("accountChanged", updateAccount);
-            provider?.off("chainChanged", updateChain);
-        };
+            provider?.on("unlock", update);
+            provider?.on("accountChanged", updateAccount);
+            provider?.on("chainChanged", updateChain);
+            return () => {
+                provider?.off("unlock", update);
+                provider?.off("accountChanged", updateAccount);
+                provider?.off("chainChanged", updateChain);
+            };
+        }
     }, [provider]);
 
     return (
-        <CoinmecaWalletContext.Provider value={{ provider, account, chain, accounts: provider?.accounts, chains: provider?.chains }}>
+        <CoinmecaWalletContext.Provider value={{ provider, account, chain, accounts: provider?.accounts() as Account[], chains: provider?.chains }}>
             {children}
         </CoinmecaWalletContext.Provider>
     );

@@ -1,7 +1,9 @@
 ﻿"use client";
 
-import { App } from "@coinmeca/wallet-sdk/types";
-import { usePathname } from "next/navigation";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
+import { Account, App } from "@coinmeca/wallet-sdk/types";
+import { useTelegram } from "hooks";
+import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
 
 interface MessageProps {
@@ -15,6 +17,7 @@ interface MessageHandlerProps extends MessageProps {
     popupId?: number;
     message: MessageProps | undefined;
     app: App;
+    auth: boolean;
 }
 
 const MessageHandlerContext = createContext<MessageHandlerProps | undefined>(undefined);
@@ -27,10 +30,15 @@ export const useMessageHandler = () => {
 
 export const MessageHandler: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const path = usePathname();
+    const router = useRouter();
+
+    const { telegram } = useTelegram();
+    const { provider } = useCoinmecaWalletProvider();
 
     const [popupId, setPopupId] = useState<number>();
     const [isPopup, setIsPopup] = useState(false);
     const [message, setMessage] = useState<any>();
+    const [auth, setAuth] = useState<boolean | null>(null);
 
     useLayoutEffect(() => {
         if (typeof window !== "undefined") {
@@ -41,17 +49,40 @@ export const MessageHandler: React.FC<{ children: React.ReactNode }> = ({ childr
                 if (id) setPopupId(id);
             }
 
-            if ((window as any)?.coinmeca) {
-                const request = (window as any)?.coinmeca?.request;
-                console.log({ request });
-                if (request) setMessage(request);
-            }
+            const request = (window as any)?.coinmeca?.request;
+            if (request) setMessage(request);
         }
     }, []);
+
+    useLayoutEffect(() => {
+        if (provider && message) {
+            setAuth(() => {
+                if (message?.params?.from) {
+                    if (provider?.allowance(message?.app?.url, message?.params?.from)) return true;
+                    else {
+                        window?.opener?.postMessage(
+                            {
+                                method: message?.method,
+                                error: "The requested account and/or method has not been authorized by the user.",
+                            },
+                            "*",
+                        );
+                        if (isPopup) {
+                            if (telegram) telegram?.close();
+                            window?.close();
+                        } else router.push("/");
+                        return false;
+                    }
+                } else return false;
+            });
+        }
+    }, [provider]);
 
     useLayoutEffect(() => {
         if (isPopup) window.close();
     }, [path]);
 
-    return <MessageHandlerContext.Provider value={{ ...message, isPopup, popupId, message, app: message?.app }}>{children}</MessageHandlerContext.Provider>;
+    return (
+        <MessageHandlerContext.Provider value={{ ...message, isPopup, popupId, message, app: message?.app, auth }}>{children}</MessageHandlerContext.Provider>
+    );
 };

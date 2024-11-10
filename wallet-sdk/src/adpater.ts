@@ -20,63 +20,17 @@ axiosQuiet.interceptors.response.use(
 
 const __confirm = (method: string) => {
     if (window.location.hostname?.includes("wallet.coinmeca.net")) {
-        window.location.href = `${window.location.origin}/request/${method}`;
+        // window.history.pushState({ method }, "", `/request/${method}`);
+        // (window as any).coinmeca = { ...(window as any)?.coinmeca, request: { method } };
+        window.location.href = `/request/${method}`;
         return window;
     } else return openWindow(`${window.location.origin}/request/${method}`);
-};
-
-const __promise = async (method: string, params?: any) => {
-    const app = {
-        name: (document.querySelector('meta[property="og:site_name"]') as HTMLMetaElement)?.content || document.title?.split(" ")[0],
-        url: window.location.host,
-        logo: await getFaviconUri(),
-    }
-
-    return new Promise((resolve, reject) => {
-        const messageHandler = (event: any) => {
-            if (event.data.method === method) {
-                if (typeof event.data.result !== "undefined") resolve(event.data.result);
-                if (typeof event.data.error !== "undefined") reject(new Error(event.data.error));
-                // else reject(new Error("Request something wrong."));
-
-                window.removeEventListener("message", messageHandler);
-            }
-
-            if (event.data.close) {
-                reject(new Error(event.data.error));
-                window.removeEventListener("message", messageHandler);
-            }
-        };
-        window.addEventListener("message", messageHandler);
-
-        const popup = __confirm(method);
-        if (!!popup) {
-            const onLoad = (e: any) => {
-                if (popup?.coinmeca) popup.coinmeca = { ...popup.coinmeca, request: { method, params, app } };
-                else popup.coinmeca = { request: { method, params, app } };
-            };
-            popup.addEventListener("load", onLoad);
-
-            const onClose = setInterval(() => {
-                if (popup.closed) {
-                    clearInterval(onClose);
-                    window.removeEventListener("load", onLoad);
-                    window.removeEventListener("message", messageHandler);
-                    reject(new Error("User closed the window before approving the request."));
-                }
-            }, 100); // Check every 100ms
-        }
-    });
 };
 
 export class CoinmecaWalletAdapter extends CoinmecaWalletBase {
     get isCoinmecaWallet() {
         return true;
     }
-
-    // get chainId {
-    // return
-    // }
 
     constructor() {
         super();
@@ -101,15 +55,60 @@ export class CoinmecaWalletAdapter extends CoinmecaWalletBase {
         });
     }
 
+    #promise = async (method: string, params?: any) => {
+        const chainId = this.chainId
+        const app = {
+            name: (document.querySelector('meta[property="og:site_name"]') as HTMLMetaElement)?.content || document.title?.split(" ")[0],
+            url: window.location.host,
+            logo: await getFaviconUri(),
+        }
+
+        return new Promise((resolve, reject) => {
+            const messageHandler = (event: any) => {
+                if (event.data.method === method) {
+                    if (typeof event.data.result !== "undefined") resolve(event.data.result);
+                    if (typeof event.data.error !== "undefined") reject(new Error(event.data.error));
+                    // else reject(new Error("Request something wrong."));
+
+                    window.removeEventListener("message", messageHandler);
+                }
+
+                if (event.data.close) {
+                    reject(new Error(event.data.error));
+                    window.removeEventListener("message", messageHandler);
+                }
+            };
+            window.addEventListener("message", messageHandler);
+
+            const popup: any = __confirm(method);
+            if (!!popup) {
+                const onLoad = (e: any) => {
+                    if (popup?.coinmeca) popup.coinmeca = { ...popup.coinmeca, request: { method, params, app, chainId } };
+                    else popup.coinmeca = { request: { method, params, app, chainId } };
+                };
+                popup.addEventListener("load", onLoad);
+
+                const onClose = setInterval(() => {
+                    if (popup.closed) {
+                        clearInterval(onClose);
+                        window.removeEventListener("load", onLoad);
+                        window.removeEventListener("message", messageHandler);
+                        reject(new Error("User closed the window before approving the request."));
+                    }
+                }, 100); // Check every 100ms
+            }
+        });
+    };
+
     async request({ method, params }: { method: string; params?: any[] }) {
         switch (method) {
             case "eth_accounts":
-                return this.#data()?.get('last:accounts');
+                return this.#data()?.get('accounts');
 
             case "eth_requestAccounts":
-                return await __promise(method).then((result) => {
+                return await this.#promise(method).then((result) => {
                     if (result) {
-                        this.#data()?.set('last:accounts', result)
+                        this.#data()?.set('accounts', result)
                         return result
                     }
                 });
@@ -144,7 +143,7 @@ export class CoinmecaWalletAdapter extends CoinmecaWalletBase {
             case "eth_sendTransaction":
                 params = (Array.isArray(params) ? params[0] : params);
                 if (!params) throw new Error("No transaction data provided");
-                return await __promise(method, params).then((result) => {
+                return await this.#promise(method, params).then((result) => {
                     if (result) return result
                 });
 
@@ -167,7 +166,7 @@ export class CoinmecaWalletAdapter extends CoinmecaWalletBase {
             case "wallet_addEthereumChain":
                 params = (Array.isArray(params) ? params[0] : params);
                 if (!params) throw new Error("No chain information provided");
-                return await __promise(method, params).then((result) => {
+                return await this.#promise(method, params).then((result) => {
                     if (result) {
                         if (typeof result === 'number') this.emit("chainChanged", result);
                         return result;
@@ -177,9 +176,9 @@ export class CoinmecaWalletAdapter extends CoinmecaWalletBase {
             case "wallet_switchEthereumChain":
                 params = (Array.isArray(params) ? params[0] : params) as any;
                 if (!(params as any)?.chainId) throw new Error("No chainId provided");
-                return await __promise(method, (params as any)?.chainId).then((result) => {
+                return await this.#promise(method, (params as any)?.chainId).then((result) => {
                     if (result) {
-                        this.#data()?.set('last:chain', getChainById(result as number))
+                        this.#data()?.set('chain', getChainById(result as number))
                         this.emit("chainChanged", result);
                         return result;
                     }
@@ -191,10 +190,6 @@ export class CoinmecaWalletAdapter extends CoinmecaWalletBase {
             default:
                 throw new Error(`Method '${method}' not supported`);
         }
-    }
-
-    async #app() {
-        return
     }
 
     #data(_?: { key?: string; storage?: CloudStorage | Storage }) {
@@ -209,11 +204,11 @@ export class CoinmecaWalletAdapter extends CoinmecaWalletBase {
     }
 
     get chain() {
-        return {} as Chain;
+        return this.#data()?.get("chain");
     }
 
     get chainId() {
-        return "0x1";
+        return this.chain?.chainId || "0x1";
     }
 
     async getAddress() {

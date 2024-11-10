@@ -5,7 +5,8 @@ import { useMessageHandler, useTelegram } from "hooks";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
-import { TransactionParams } from "@coinmeca/wallet-sdk/types";
+import { Account, TransactionParams } from "@coinmeca/wallet-sdk/types";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({
@@ -23,48 +24,64 @@ await window.ethereum.providerMap.get("CoinmecaWallet").request({
       })
 */
 
+export interface Transaction {
+    from: string;
+    to: string;
+    value: string;
+    gas: string;
+    gasPrice: string;
+    data?: string;
+    maxFeePerGas?: number;
+    maxPriorityFeePerGas?: number;
+}
+
 export default function eth_sendTransaction() {
     const method = "eth_sendTransaction";
     const router = useRouter();
 
     const { telegram } = useTelegram();
-    const { app, params, isPopup } = useMessageHandler();
+    const { provider, chain } = useCoinmecaWalletProvider();
+    const { auth, app, params, isPopup } = useMessageHandler();
 
-    const [tx, setTx] = useState<TransactionParams>();
+    const [tx, setTx] = useState<Transaction>();
     const [level, setLevel] = useState(0);
+    const [signer, setSigner] = useState<Account>();
 
     useLayoutEffect(() => {
-        console.log(params);
+        console.log({ params, auth, app });
         if (params) {
             const { value, gasLimit, maxFeePerGas, maxPriorityFeePerGas } = params;
-            setTx({
+            const tx = {
                 ...params,
-                value: value && value !== "" ? parseInt(value, 16) : undefined,
-                gasLimit: gasLimit && gasLimit !== "" ? parseInt(gasLimit, 16) : undefined,
-                maxFeePerGas: maxFeePerGas && maxFeePerGas !== "" ? parseInt(maxFeePerGas, 16) : undefined,
-                maxPriorityFeePerGas: maxPriorityFeePerGas && maxPriorityFeePerGas !== "" ? parseInt(maxPriorityFeePerGas, 16) : undefined,
-            });
+                value: Number(value),
+                gasLimit: Number(gasLimit),
+                maxFeePerGas: Number(maxFeePerGas),
+                maxPriorityFeePerGas: Number(maxPriorityFeePerGas),
+            };
+            setTx(tx);
+            setSigner(provider?.account(tx?.from));
         }
     }, []);
 
-    const handleSign = () => {
-        // if (result) {
-        //     window?.opener?.postMessage(
-        //         {
-        //             method,
-        //             result,
-        //         },
-        //         "*",
-        //     );
-        // } else {
-        //     window?.opener?.postMessage(
-        //         {
-        //             method,
-        //             error: "Failed to signning",
-        //         },
-        //         "*",
-        //     );
-        // }
+    const handleSign = async () => {
+        const result = await provider?.sign(params, signer!);
+        if (result) {
+            window?.opener?.postMessage(
+                {
+                    method,
+                    result,
+                },
+                "*",
+            );
+        } else {
+            window?.opener?.postMessage(
+                {
+                    method,
+                    error: "Failed to signning",
+                },
+                "*",
+            );
+        }
 
         setLevel(1);
     };
@@ -84,7 +101,7 @@ export default function eth_sendTransaction() {
             );
     };
 
-    return app && tx ? (
+    return auth && app && signer && tx ? (
         <Layouts.Contents.SlideContainer
             contents={[
                 {
@@ -116,11 +133,42 @@ export default function eth_sendTransaction() {
                                                     />
                                                 </div>
                                                 <Layouts.Col gap={0} align={"center"} fill>
+                                                    <Elements.Text height={0} align={"left"} opacity={0.6}>
+                                                        Requested By
+                                                    </Elements.Text>
                                                     <Elements.Text type={"h6"} height={0} align={"left"}>
                                                         {app?.name}
                                                     </Elements.Text>
                                                     <Elements.Text type={"strong"} height={0} align={"left"} opacity={0.6}>
                                                         {app?.url}
+                                                    </Elements.Text>
+                                                </Layouts.Col>
+                                            </Layouts.Row>
+                                            <Layouts.Divider />
+                                            <Layouts.Row gap={3} align={"center"} fix>
+                                                <div
+                                                    style={{
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent: "center",
+                                                        maxWidth: "max-content",
+                                                        maxHeight: "max-content",
+                                                        padding: "2em",
+                                                        borderRadius: "100%",
+                                                        background: "rgba(var(--white),.15)",
+                                                    }}>
+                                                    <Elements.Avatar character={`${signer?.index + 1}`} hideName />
+                                                </div>
+                                                <Layouts.Col gap={0} align={"center"}>
+                                                    <Elements.Text type={"h6"} height={0} align={"left"}>
+                                                        {signer?.name}
+                                                    </Elements.Text>
+                                                    <Elements.Text type={"strong"} height={0} align={"left"} opacity={0.6}>
+                                                        {(signer?.address.startsWith("0x")
+                                                            ? signer?.address?.substring(0, 8)
+                                                            : signer?.address?.substring(0, 6)) +
+                                                            " ... " +
+                                                            signer?.address?.substring(signer?.address?.length - 6, signer?.address?.length)}
                                                     </Elements.Text>
                                                 </Layouts.Col>
                                             </Layouts.Row>
@@ -141,18 +189,18 @@ export default function eth_sendTransaction() {
                                                     }}>
                                                     <Elements.Avatar
                                                         character={tx?.to?.startsWith("0x") ? tx?.to?.substring(2, 4) : tx?.to?.substring(0, 2)}
-                                                        name={tx?.to}
+                                                        name={"To"}
                                                         hideName
                                                     />
                                                 </div>
                                                 <Layouts.Col gap={0} align={"center"}>
                                                     <Elements.Text type={"h6"} height={0} align={"left"}>
+                                                        To
+                                                    </Elements.Text>
+                                                    <Elements.Text type={"strong"} height={0} align={"left"} opacity={0.6}>
                                                         {(tx?.to?.startsWith("0x") ? tx?.to?.substring(0, 8) : tx?.to?.substring(0, 6)) +
                                                             " ... " +
                                                             tx?.to?.substring(tx?.to?.length - 6, tx?.to?.length)}
-                                                    </Elements.Text>
-                                                    <Elements.Text type={"strong"} height={0} align={"left"} opacity={0.6}>
-                                                        {tx?.value}
                                                     </Elements.Text>
                                                 </Layouts.Col>
                                             </Layouts.Row>
@@ -162,9 +210,7 @@ export default function eth_sendTransaction() {
                                         <Layouts.Col reverse fill>
                                             <Layouts.Box
                                                 style={{
-                                                    "--white": "255,255,255",
-                                                    "--black": "0, 0, 0",
-                                                    background: "rgba(var(--white),.15)",
+                                                    background: "rgba(var(--black),.6)",
                                                     maxHeight: "max-content",
                                                     padding: "clamp(2em, 7.5%, 4em)",
                                                     width: "auto",
@@ -175,23 +221,44 @@ export default function eth_sendTransaction() {
                                                     <Layouts.Col gap={0.5}>
                                                         <Elements.Text size={1.25} opacity={0.6}>
                                                             <Elements.Text size={1} opacity={0.6}>
-                                                                Chain RPC URL
+                                                                Estimated fee
                                                             </Elements.Text>
-                                                            {tx.gas}
                                                         </Elements.Text>
-                                                        <Elements.Text>{tx.gasPrice}</Elements.Text>
+                                                        <Layouts.Box
+                                                            style={{
+                                                                background: "rgba(var(--black),.6)",
+                                                                maxHeight: "max-content",
+                                                                padding: "clamp(2em, 7.5%, 4em)",
+                                                                width: "auto",
+                                                                height: "auto",
+                                                            }}
+                                                            fit>
+                                                            <Layouts.Col gap={2} align={"left"}>
+                                                                <Layouts.Col gap={0.5}>
+                                                                    <Elements.Text size={1.25} opacity={0.6}>
+                                                                        <Elements.Text size={1} opacity={0.6}>
+                                                                            Gas Cost
+                                                                        </Elements.Text>{" "}
+                                                                        <Elements.Text>{`${tx?.gas} ${chain?.nativeCurrency?.symbol}`}</Elements.Text>
+                                                                    </Elements.Text>
+                                                                </Layouts.Col>
+                                                                <Layouts.Col gap={0.5}>
+                                                                    <Elements.Text size={1.25} opacity={0.6}>
+                                                                        <Elements.Text size={1} opacity={0.6}>
+                                                                            Estimated fee
+                                                                        </Elements.Text>{" "}
+                                                                        <Elements.Text>{tx.value + tx?.gas + tx?.gasPrice}</Elements.Text>
+                                                                    </Elements.Text>
+                                                                </Layouts.Col>
+                                                            </Layouts.Col>
+                                                        </Layouts.Box>
+                                                        <Elements.Text>{tx?.gas + tx?.gasPrice}</Elements.Text>
                                                     </Layouts.Col>
                                                     <Layouts.Col gap={0.5}>
                                                         <Elements.Text size={1.25} opacity={0.6}>
-                                                            Estimated Gas
+                                                            Total
                                                         </Elements.Text>
-                                                        {/* <Elements.Text>{tx.gas * tx.gasPrice}</Elements.Text> */}
-                                                    </Layouts.Col>
-                                                    <Layouts.Col gap={0.5}>
-                                                        <Elements.Text size={1.25} opacity={0.6}>
-                                                            Data
-                                                        </Elements.Text>
-                                                        <Elements.Text>{tx.data}</Elements.Text>
+                                                        <Elements.Text>{tx.value + tx?.gas + tx?.gasPrice}</Elements.Text>
                                                     </Layouts.Col>
                                                 </Layouts.Col>
                                             </Layouts.Box>

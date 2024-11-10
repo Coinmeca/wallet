@@ -28,7 +28,7 @@ export interface Header {
         children?: any;
     };
     side?: Side;
-    panels?: Panel[]
+    panels?: Panel[];
     scale?: number;
     height?: number;
     color?: string;
@@ -184,9 +184,15 @@ export default function Header(props: Header) {
                     </Side>
                 )}
             </Layouts.Row>
-            {(props?.panels && props?.panels?.length) && (<Layouts.Panel active={props?.panels?.some(p => p?.active)}>
-                {props?.panels?.map((panel, key) => (<Layouts.Panel {...panel} key={key} fix>{panel?.children}</Layouts.Panel>))}
-            </Layouts.Panel>)}
+            {props?.panels && props?.panels?.length && (
+                <Layouts.Panel active={props?.panels?.some((p) => p?.active)}>
+                    {props?.panels?.map((panel, key) => (
+                        <Layouts.Panel {...panel} key={key} fix>
+                            {panel?.children}
+                        </Layouts.Panel>
+                    ))}
+                </Layouts.Panel>
+            )}
         </Style>
     );
 }

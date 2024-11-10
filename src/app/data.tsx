@@ -9,12 +9,14 @@ import { Account, Chain } from "@coinmeca/wallet-sdk/types";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
 
 import Coinmeca from "assets/coinmeca.svg";
+import { usePageLoader } from "hooks";
 
 export default function Data() {
     const router = useRouter();
     const path = usePathname();
 
     const { provider, account, accounts, chain, chains } = useCoinmecaWalletProvider();
+    const { isLoad } = usePageLoader();
 
     const [value, setValue] = useState<number>(0);
     const [tab, setTab] = useState<string>("icon");
@@ -189,45 +191,50 @@ export default function Data() {
 
     const header = {
         color: colorMap,
-        logo: !account,
-        menu: account && {
-            active: mobileMenu === "menu",
-            onClick: () => (mobileMenu === "menu" ? setMobileMenu("") : setMobileMenu("menu")),
-            children: [
-                {
-                    name: "Activity",
-                    href: "/activity",
-                    onClick: () => setMobileMenu(""),
-                },
-                {
-                    name: "Token",
-                    href: "/token",
-                    onClick: () => setMobileMenu(""),
-                },
-                {
-                    name: "NFT",
-                    href: "/nft",
-                    onClick: () => setMobileMenu(""),
-                },
-                {
-                    name: "Test",
-                    href: "/test",
-                    onClick: () => setMobileMenu(""),
-                },
-            ],
-        },
+        logo: !isLoad || !account,
+        menu:
+            isLoad && account
+                ? {
+                      active: mobileMenu === "menu",
+                      onClick: () => (mobileMenu === "menu" ? setMobileMenu("") : setMobileMenu("menu")),
+                      children: [
+                          {
+                              name: "Activity",
+                              href: "/activity",
+                              onClick: () => setMobileMenu(""),
+                          },
+                          {
+                              name: "Token",
+                              href: "/token",
+                              onClick: () => setMobileMenu(""),
+                          },
+                          {
+                              name: "NFT",
+                              href: "/nft",
+                              onClick: () => setMobileMenu(""),
+                          },
+                          {
+                              name: "Test",
+                              href: "/test",
+                              onClick: () => setMobileMenu(""),
+                          },
+                      ],
+                  }
+                : undefined,
         // option: {
         //     active: true,
         //     children: (
         //     ),
         // },
-        side: account && {
-            width: 48,
-            active: true,
-            // style: { ...(windowWidth <= Root.Device.Tablet && isMobile && { flexDirection: "column-reverse" }) },
-            children: (
-                <>
-                    {/* <Controls.Tab
+        side:
+            isLoad && account
+                ? {
+                      width: 48,
+                      active: true,
+                      // style: { ...(windowWidth <= Root.Device.Tablet && isMobile && { flexDirection: "column-reverse" }) },
+                      children: (
+                          <>
+                              {/* <Controls.Tab
                         onClick={() => {
                             if (!sidebar && mobileMenu !== "") setMobileMenu("");
                             setSidebar(!sidebar);
@@ -238,133 +245,140 @@ export default function Data() {
                         toggle
                         fit
                     /> */}
-                    <Layouts.Row fit>
-                        {account?.address && (
-                            <Layouts.Row gap={0} fit>
-                                <Controls.Tab
-                                    active={mobileMenu === "accounts"}
-                                    onClick={() => setMobileMenu(mobileMenu === "accounts" ? "" : "accounts")}
-                                    toggle>
-                                    {mobileMenu === "accounts" ? (
-                                        <Layouts.Row gap={0.5} align={"middle"}>
-                                            <Elements.Icon icon={"x"} scale={0.666} />
-                                            <Elements.Text size={1}>Close Account List</Elements.Text>
-                                        </Layouts.Row>
-                                    ) : (
-                                        <Elements.Avatar
-                                            // color={colorMap}
-                                            scale={0.666}
-                                            size={2.5}
-                                            display={6}
-                                            ellipsis={" ... "}
-                                            character={`${account?.index + 1}`}
-                                            name={account?.address}
-                                        />
-                                    )}
-                                </Controls.Tab>
-                                {mobileMenu !== "accounts" && (
-                                    <Controls.Button icon={"copy"} title={"Copy address"} onClick={() => handleCopyAddress(account)} />
-                                )}
-                            </Layouts.Row>
-                        )}
-                    </Layouts.Row>
-                    <Layouts.Row gap={0} align={"right"}>
-                        <Controls.Tab active={mobileMenu === "chains"} onClick={() => setMobileMenu(mobileMenu === "chains" ? "" : "chains")} toggle fit>
-                            {mobileMenu === "chains" ? (
-                                <Elements.Icon icon={"x"} scale={0.666} />
-                            ) : (
-                                <Elements.Avatar scale={0.666} size={2.5} img={chain?.logo || ""} />
-                                // <Elements.Avatar scale={0.666} size={2.5} img={`https://web3.coinmeca.net/${chain?.chainId}/logo.svg`} />
-                            )}
-                        </Controls.Tab>
-                        <Controls.Tab
-                            active={mobileMenu === "setting"}
-                            onClick={() => setMobileMenu(mobileMenu === "setting" ? "" : "setting")}
-                            iconLeft={"gear"}
-                            show={"tablet"}
-                            toggle
-                            fit
-                        />
-                    </Layouts.Row>
-                </>
-            ),
-        },
-        panels: [
-            {
-                active: mobileMenu === "accounts",
-                children: (
-                    <Layouts.Col gap={0} fill>
-                        <Controls.Input
-                            placeholder={"Search chain by id or name..."}
-                            left={{ children: <Elements.Icon icon={"search"} style={{ marginRight: "0.5em" }} /> }}
-                            style={{ padding: "2em clamp(0em, 3.75%, 6em)" }}
-                        />
-                        <Layouts.List list={accounts} formatter={accountlist} />
-                        <Layouts.Col style={{ padding: "4em", paddingTop: "0" }} fit>
-                            <Controls.Button
-                                type={"line"}
-                                iconLeft={"plus-small-bold"}
-                                onClick={() => {
-                                    router.push("/create");
-                                }}>
-                                Create or Import wallet
-                            </Controls.Button>
-                        </Layouts.Col>
-                    </Layouts.Col>
-                ),
-            },
-            {
-                active: mobileMenu === "chains",
-                children: (
-                    <Layouts.Col gap={0} fill>
-                        <Controls.Input
-                            placeholder={"Search chain by id or name..."}
-                            left={{ children: <Elements.Icon icon={"search"} style={{ marginRight: "0.5em" }} /> }}
-                            style={{ padding: "2em clamp(0em, 3.75%, 6em)" }}
-                        />
-                        <Layouts.List list={chains} formatter={chainlist} />
-                        <Layouts.Col style={{ padding: "4em", paddingTop: "0" }} fit>
-                            <Controls.Button
-                                type={"line"}
-                                iconLeft={"plus-small-bold"}
-                                onClick={() => {
-                                    // router.push("/create");
-                                }}>
-                                Add new chain
-                            </Controls.Button>
-                        </Layouts.Col>
-                    </Layouts.Col>
-                ),
-            },
-            {
-                active: mobileMenu === "setting",
-                children: (
-                    <Layouts.Col style={{ padding: "4em" }} reverse fill>
-                        <Layouts.Col gap={4}>
-                            <Controls.Button scale={1.125} style={{ padding: "0.5em 1em" }} onClick={() => router.push("/test")}>
-                                Test
-                            </Controls.Button>
-                            <Controls.Button scale={1.125} style={{ padding: "0.5em 1em" }}>
-                                Connected Apps
-                            </Controls.Button>
-                            <Controls.Button scale={1.125} style={{ padding: "0.5em 1em" }} onClick={() => router.push("/reset")}>
-                                Reset Passcode
-                            </Controls.Button>
-                            <Controls.Button
-                                type={"line"}
-                                scale={1.125}
-                                style={{ padding: "0.5em 1em" }}
-                                onClick={() => {
-                                    provider?.lock();
-                                    router.push("/lock");
-                                }}>
-                                Lock
-                            </Controls.Button>
-                        </Layouts.Col>
-                    </Layouts.Col>
-                ),
-            },
-        ],
+                              <Layouts.Row fit>
+                                  {account?.address && (
+                                      <Layouts.Row gap={0} fit>
+                                          <Controls.Tab
+                                              active={mobileMenu === "accounts"}
+                                              onClick={() => setMobileMenu(mobileMenu === "accounts" ? "" : "accounts")}
+                                              toggle>
+                                              {mobileMenu === "accounts" ? (
+                                                  <Layouts.Row gap={0.5} align={"middle"}>
+                                                      <Elements.Icon icon={"x"} scale={0.666} />
+                                                      <Elements.Text size={1}>Close Account List</Elements.Text>
+                                                  </Layouts.Row>
+                                              ) : (
+                                                  <Elements.Avatar
+                                                      // color={colorMap}
+                                                      scale={0.666}
+                                                      size={2.5}
+                                                      display={6}
+                                                      ellipsis={" ... "}
+                                                      character={`${account?.index + 1}`}
+                                                      name={account?.address}
+                                                  />
+                                              )}
+                                          </Controls.Tab>
+                                          {mobileMenu !== "accounts" && (
+                                              <Controls.Button icon={"copy"} title={"Copy address"} onClick={() => handleCopyAddress(account)} />
+                                          )}
+                                      </Layouts.Row>
+                                  )}
+                              </Layouts.Row>
+                              <Layouts.Row gap={0} align={"right"}>
+                                  <Controls.Tab
+                                      active={mobileMenu === "chains"}
+                                      onClick={() => setMobileMenu(mobileMenu === "chains" ? "" : "chains")}
+                                      toggle
+                                      fit>
+                                      {mobileMenu === "chains" ? (
+                                          <Elements.Icon icon={"x"} scale={0.666} />
+                                      ) : (
+                                          <Elements.Avatar scale={0.666} size={2.5} img={chain?.logo || ""} />
+                                          // <Elements.Avatar scale={0.666} size={2.5} img={`https://web3.coinmeca.net/${chain?.chainId}/logo.svg`} />
+                                      )}
+                                  </Controls.Tab>
+                                  <Controls.Tab
+                                      active={mobileMenu === "setting"}
+                                      onClick={() => setMobileMenu(mobileMenu === "setting" ? "" : "setting")}
+                                      iconLeft={"gear"}
+                                      show={"tablet"}
+                                      toggle
+                                      fit
+                                  />
+                              </Layouts.Row>
+                          </>
+                      ),
+                  }
+                : undefined,
+        panels: isLoad
+            ? [
+                  {
+                      active: mobileMenu === "accounts",
+                      children: (
+                          <Layouts.Col gap={0} fill>
+                              <Controls.Input
+                                  placeholder={"Search chain by id or name..."}
+                                  left={{ children: <Elements.Icon icon={"search"} style={{ marginRight: "0.5em" }} /> }}
+                                  style={{ padding: "2em clamp(0em, 3.75%, 6em)" }}
+                              />
+                              <Layouts.List list={accounts} formatter={accountlist} />
+                              <Layouts.Col style={{ padding: "4em", paddingTop: "0" }} fit>
+                                  <Controls.Button
+                                      type={"line"}
+                                      iconLeft={"plus-small-bold"}
+                                      onClick={() => {
+                                          router.push("/create");
+                                      }}>
+                                      Create or Import wallet
+                                  </Controls.Button>
+                              </Layouts.Col>
+                          </Layouts.Col>
+                      ),
+                  },
+                  {
+                      active: mobileMenu === "chains",
+                      children: (
+                          <Layouts.Col gap={0} fill>
+                              <Controls.Input
+                                  placeholder={"Search chain by id or name..."}
+                                  left={{ children: <Elements.Icon icon={"search"} style={{ marginRight: "0.5em" }} /> }}
+                                  style={{ padding: "2em clamp(0em, 3.75%, 6em)" }}
+                              />
+                              <Layouts.List list={chains} formatter={chainlist} />
+                              <Layouts.Col style={{ padding: "4em", paddingTop: "0" }} fit>
+                                  <Controls.Button
+                                      type={"line"}
+                                      iconLeft={"plus-small-bold"}
+                                      onClick={() => {
+                                          // router.push("/create");
+                                      }}>
+                                      Add new chain
+                                  </Controls.Button>
+                              </Layouts.Col>
+                          </Layouts.Col>
+                      ),
+                  },
+                  {
+                      active: mobileMenu === "setting",
+                      children: (
+                          <Layouts.Col style={{ padding: "4em" }} reverse fill>
+                              <Layouts.Col gap={4}>
+                                  <Controls.Button scale={1.125} style={{ padding: "0.5em 1em" }} onClick={() => router.push("/test")}>
+                                      Test
+                                  </Controls.Button>
+                                  <Controls.Button scale={1.125} style={{ padding: "0.5em 1em" }}>
+                                      Connected Apps
+                                  </Controls.Button>
+                                  <Controls.Button scale={1.125} style={{ padding: "0.5em 1em" }} onClick={() => router.push("/reset")}>
+                                      Reset Passcode
+                                  </Controls.Button>
+                                  <Controls.Button
+                                      type={"line"}
+                                      scale={1.125}
+                                      style={{ padding: "0.5em 1em" }}
+                                      onClick={() => {
+                                          provider?.lock();
+                                          router.push("/lock");
+                                      }}>
+                                      Lock
+                                  </Controls.Button>
+                              </Layouts.Col>
+                          </Layouts.Col>
+                      ),
+                  },
+              ]
+            : undefined,
     };
 
     const footer = {

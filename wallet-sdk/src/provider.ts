@@ -3,7 +3,7 @@ import Wallet from "ethereumjs-wallet";
 import { Transaction } from "ethereumjs-tx";
 import { bufferToHex, ecsign, hashPersonalMessage, keccak256, toBuffer } from "ethereumjs-util";
 import { formatChainId, getFaviconUri, loadStorage, openWindow, parse, parseChainId } from "./utils";
-import type { App, Asset, Chain, EIP712Domain, EIP712Message, EIP712Types } from "./types";
+import type { Account, App, Asset, Chain, EIP712Domain, EIP712Message, EIP712Types, TransactionParams } from "./types";
 import axios from "axios";
 import { getChainsByType } from "./chains";
 import { CoinmecaWalletBase } from "./core";
@@ -101,7 +101,7 @@ const __notify = (message?: { icon?: string; title?: string; body?: string; onCl
 export interface CoinmecaWalletProviderConfig {
     key?: string;
     address?: string;
-    chain?: Chain;
+    chainId?: number;
 }
 
 export class CoinmecaWalletProvider extends CoinmecaWalletBase {
@@ -110,12 +110,12 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
     constructor(config?: CoinmecaWalletProviderConfig) {
         super();
 
-        const { key, address, chain } = config || {};
+        const { key, address, chainId } = config || {};
         this.#key = key;
 
         const data = this.#data();
-        if (address) data?.set("last:account", address);
-        if (chain) data.set("last:chain", chain);
+        if (address) data?.set("account", address);
+        if (chainId && data?.get("chains")?.some((c: Chain) => c?.chainId === chainId)) this.changeChain(chainId);
 
         localStorage.clear = () => {
             console.error("Attempted to clear localStorage! This action is prevented.");
@@ -125,9 +125,8 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
     }
 
     #safe(fn: Function) {
-        const key = this.#key;
-        if (key) return fn(key);
-        return new Error("Cannot access to the information of accounts.");
+        if (this.#key) return fn(this.#key);
+        if (!this.isInitialized) return new Error("Cannot access to the information of accounts.");
     }
 
     #getKey(key: string) {
@@ -147,14 +146,14 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
     }
 
     #getPrivateKey(index: number | string) {
-        if (typeof index === "string") index = this.#storage?.get(index)?.index;
+        if (typeof index === "string") index = this.#storage?.get(index?.toLowerCase())?.index;
         return this.#safe((key: string) => {
-            const wallets = this.#storage?.get(`${key}:accounts`);
-            if (wallets && wallets?.length) {
+            const wallets = this.#storage?.get(`${key}:seed`);
+            if (wallets?.length) {
                 const key = wallets[index];
                 if (key) return key;
-                else new Error("Not found account info");
-            } else new Error("Wallet is not setup yet.");
+                else throw new Error("Not found account info");
+            } else throw new Error("Wallet is not setup yet.");
         });
     }
 
@@ -174,40 +173,51 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
         });
     }
 
-    get isInitialized() {
+    get isInitialized(): boolean {
         return !!this.#userId;
     }
 
-    get isLocked() {
+    get isLocked(): boolean {
         return !this.#key;
     }
 
-    get isTelegram() {
+    get isTelegram(): boolean {
         return typeof window !== "undefined" && (window as any)?.telegram;
     }
 
-    get address() {
-        return this.#data()?.get("last:account");
+    get address(): string {
+        return this.#data()?.get("account");
     }
 
-    get account() {
-        return this.#storage?.get?.(this.address?.toLowerCase());
+    account(address?: string): Account {
+        return this.#storage?.get?.((address || this.address)?.toLowerCase());
     }
 
-    get accounts() {
-        return this.#safe((key: string) => {
-            const accounts = this.#storage?.get(`${key}:accounts`);
-            if (accounts) return accounts?.map((k: any) => k && this.#storage?.get(this.#wallet(k).getAddressString().toLowerCase())).filter((a: any) => a);
-        });
+    accounts(url?: string): (string | Account)[] {
+        try {
+            return (
+                (url && url !== ""
+                    ? this.#data()?.get('apps')?.find((a: App) => a?.url?.toLowerCase() === url?.toLowerCase())?.accounts
+                    : this.#safe((key: string) => this.#storage?.get(`${key}:seed`)?.map((s: string) => this.#wallet(s)?.getAddressString()))?.map((a: string) => this.#storage?.get(a?.toLowerCase()))
+                ) || []
+            ).filter((a: any) => a);
+        } catch (e) {
+            return []
+        }
+    }
+
+    allowance(url: string, address?: string) {
+        address = address || this.address;
+        return !!url && url !== "" && !!address && address !== "" && (this.accounts(url) as string[])?.some(a => a?.toLowerCase() === address?.toLowerCase())
     }
 
     get chain() {
-        const chainId = this.#data()?.get("last:chain");
+        const chainId = this.#data()?.get("chain");
         return this.chains?.find((c: Chain) => c?.chainId === chainId);
     }
 
     get chainId() {
-        const id = this.#data()?.get("last:chain");
+        const id = this.#data()?.get("chain");
         return id ? formatChainId(id) : undefined;
     }
 
@@ -231,7 +241,7 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
     }
 
     lock() {
-        this.#data()?.set("last:account", this.account?.address);
+        this.#data()?.set("account", this.account()?.address);
         this.#key = undefined;
     }
 
@@ -244,32 +254,30 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
         const key = this.#getKey(hash);
         if (this.check(hash)) {
             this.#key = key;
-            const accounts = this.accounts;
+            const accounts = this.accounts();
 
-            if (accounts || accounts?.length) {
-                const last: any = this.address || this.#storage?.get("last:account") || this.accounts?.[0]?.address;
+            if (accounts?.length) {
+                const last: any = this.address || this.#storage?.get("account") || (this.accounts()?.[0] as Account)?.address;
                 const info: any = last && this.#storage?.get(last?.toLowerCase());
                 if (info) {
                     this.emit("unlock", info);
                     return info;
                 }
-            } else throw new Error("Not found account info.");
+            }
         } else throw new Error("Invalid key entered.");
     }
 
     create() {
         return this.#safe((key: string) => {
-            const accounts = this.accounts || [];
-            const index = accounts?.length;
+            const keys = this.#storage?.get(`${key}:seed`) || [];
+            const index = keys?.length;
 
             const seed = CryptoJS.SHA256(`${key}:${index}`).toString();
             const address = this.#wallet(seed)?.getAddressString();
 
             if (address) {
-                if (!this.#storage?.get(address?.toLowerCase())) {
-                    this.#storage?.set(address?.toLowerCase(), { address, index, name: `Wallet ${index + 1}` });
-                    this.#storage?.set(`${key}:accounts`, [...(this.#storage?.get(`${key}:accounts`) || []), seed]);
-                }
+                if (!keys?.some((s: string, i: number) => s?.toLowerCase() === seed?.toLowerCase())) this.#storage?.set(`${key}:seed`, [...keys, seed]);
+                if (!this.#data()?.get(address?.toLowerCase())) this.#storage?.set(address?.toLowerCase(), { address, index, name: `Wallet ${index + 1}` });
                 this.changeAccount(index);
                 return true;
             } else return false;
@@ -278,15 +286,14 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
 
     import(privateKey: string) {
         return this.#safe((key: string) => {
-            const accounts = this.accounts || [];
-            const index = accounts?.length;
-
+            const keys = this.#storage?.set(`${key}:seed`) || [];
+            const accounts = this.#data()?.get("accounts") || [];
             const address = this.#wallet(privateKey).getAddressString();
+
+            let index = accounts?.length;
             if (address) {
-                if (!this.#storage?.get(address?.toLowerCase())) {
-                    this.#storage?.set(address?.toLowerCase(), { address, index, name: `Wallet ${index + 1}` });
-                    this.#storage?.set(`${key}:accounts`, [...(this.#storage?.get(`${key}:accounts`) || []), privateKey]);
-                }
+                if (!keys?.some((s: string, i: number) => s?.toLowerCase() === privateKey?.toLowerCase())) this.#storage?.set(`${key}:seed`, [...keys, privateKey]);
+                if (!this.#data()?.get(address?.toLowerCase())) this.#storage?.set(address?.toLowerCase(), { address, index, name: `Wallet ${index + 1}` });
                 this.changeAccount(index);
                 return true;
             } else return false;
@@ -301,9 +308,9 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
 
     changeAccount(index: number) {
         return this.#safe(() => {
-            const account = this.accounts?.[index];
+            const account = this.accounts()?.[index] as Account;
             if (!account) throw new Error("There is no accounts that setup yet.");
-            this.#data().set("last:account", account?.address);
+            this.#data().set("account", account?.address);
             this.emit("accountChanged", account?.address);
             return account?.address;
         });
@@ -314,10 +321,18 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
         const chains = this.chains;
         if (chains?.length && chains?.find((c: Chain) => c?.chainId === chainId)) {
             if (typeof window !== "undefined") (window as any).ethereum = { chainId };
-            this.#data().set("last:chain", chainId);
+            this.#data().set("chain", chainId);
             this.emit("chainChanged", formatChainId(chainId));
             return chainId;
         } else throw new Error("There is no any chain registered.");
+    }
+
+    async sign(transaction: TransactionParams, signer: Account | string) {
+        const privateKey = this.#getPrivateKey(typeof signer === 'object' ? signer?.index : this.#storage?.get(signer?.toLowerCase())?.index)
+        const tx = new Transaction(transaction);
+        console.log(transaction, tx);
+        tx.sign(Buffer.from(privateKey?.substring(0, 64), "hex"));
+        return await this.#broadcastTransaction(privateKey);
     }
 
     #confirm(method: string) {
@@ -382,112 +397,6 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
         return keccak256(this.#encodeData(primaryType, data, types));
     }
 
-    async request({ method, params }: { method: string; params?: any[] }) {
-        switch (method) {
-            // Account Management
-            case "eth_accounts":
-                return [this.address];
-
-            case "eth_requestAccounts":
-                // return await this.#requestAccounts();
-                return;
-
-            case "eth_coinbase":
-                return this.address;
-
-            // Chain and Network
-            case "eth_chainId":
-                return this.chainId;
-
-            case "net_version":
-                return this.chainId?.toString();
-
-            // Transaction and Gas Estimation
-            case "eth_sendTransaction":
-                if (!params || !params?.length) throw new Error("No transaction parameters provided");
-                return this.#sendTransaction(params[0]);
-
-            case "eth_estimateGas":
-                if (!params || !params?.length) throw new Error("No transaction parameters provided");
-                return await this.#estimateGas(params[0]);
-
-            case "eth_gasPrice":
-                return await this.#getGasPrice();
-
-            // Signing Methods
-            case "eth_sign":
-                if (!params || params.length < 2) throw new Error("eth_sign requires address and message");
-                return await this.#signMessage(params[0], params[1]);
-
-            case "eth_signTypedData_v4":
-                if (!params || params.length < 2) throw new Error("eth_signTypedData_v4 requires address and typed data");
-                return await this.#signTypedData(params[0], params[1]);
-
-            case "personal_sign":
-                if (!params || params.length < 2) throw new Error("personal_sign requires message and address");
-                return await this.#signPersonalMessage(params[0], params[1]);
-
-            case "eth_signTransaction":
-                if (!params || !params?.length) throw new Error("No transaction parameters provided");
-                return await this.#signTransaction(params[0]);
-
-            // Event Subscription
-            case "eth_subscribe":
-            case "eth_unsubscribe":
-                throw new Error(`${method} is not supported. Subscription methods are not available in this wallet`);
-
-            // Block and State Queries
-            case "eth_blockNumber":
-                console.log("request");
-                return await this.#getBlockNumber();
-
-            case "eth_getBalance":
-                if (!params || !params?.length) throw new Error("eth_getBalance requires an address");
-                return await this.#getBalance(params[0]);
-
-            case "eth_getTransactionCount":
-                if (!params || !params?.length) throw new Error("eth_getTransactionCount requires an address");
-                return await this.#getTransactionCount(params[0]);
-
-            case "eth_getCode":
-                if (!params || !params?.length) throw new Error("eth_getCode requires an address");
-                return await this.#getCode(params[0]);
-
-            case "wallet_addEthereumChain":
-                const chain = params && (Array.isArray(params) ? params[0] : params);
-                if (!chain) throw new Error("No chain parameters provided");
-                return await __promise(method, this.#confirm(method), chain).then(async (result: any) => {
-                    if (result) this.switchEthereumChain(result);
-                    // else await this.#addEthereumChain(result);
-                    return result;
-                });
-            case "wallet_switchEthereumChain":
-                const data = params && (Array.isArray(params) ? params[0] : params);
-                if (!data) throw new Error("No chain parameters provided");
-                const chains = this.#storage?.get(`${this.#session?.get("key")}:chains`);
-                if (chains) {
-                    const exist = chains?.find(
-                        (c: any) =>
-                            (c?.chainId || c?.id) && typeof data?.chainId === "string" && formatChainId(c?.chainId || c?.id) === data?.chainId?.toLowerCase(),
-                    );
-                    if (exist)
-                        return await __promise(method, this.#confirm(method), data).then(async (result: any) => {
-                            await this.switchEthereumChain(result);
-                            return result;
-                        });
-                }
-                throw new Error("No chain information registered yet.");
-
-            case "wallet_watchAsset":
-                if (!params || !params?.length) throw new Error("No asset parameters provided");
-                return await this.#watchAsset(params[0]);
-
-            // Custom or Unsupported Methods
-            default:
-                throw new Error(`Method '${method}' not supported`);
-        }
-    }
-
     async #app() {
         return {
             appName: (document.querySelector('meta[property="og:site_name"]') as HTMLMetaElement)?.content || document.title?.split(" ")[0],
@@ -496,11 +405,11 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
         };
     }
 
-    async #estimateGas(txParams: any) {
+    async estimateGas(txParams: any) {
         return await this.#sendRpcRequest("eth_estimateGas", [txParams]);
     }
 
-    async #getGasPrice() {
+    async getGasPrice() {
         return await this.#sendRpcRequest("eth_gasPrice");
     }
 
@@ -542,7 +451,7 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
                 return await __promise(method, this.#confirm(method), [txParams, await this.#app()]).then(async (result: any) => {
                     if (result) {
                         const tx = new Transaction(txParams);
-                        tx.sign((this.#storage?.get(`${this.#session?.get("key")}:accounts`))[exist.index]);
+                        tx.sign((this.#storage?.get(`${this.#session?.get("key")}:seed`))[exist.index]);
                         return `0x${tx.serialize().toString("hex")}`;
                     }
                 });
