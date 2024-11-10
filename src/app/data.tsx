@@ -10,6 +10,7 @@ import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
 
 import Coinmeca from "assets/coinmeca.svg";
 import { usePageLoader } from "hooks";
+import { filter } from "@coinmeca/ui/lib/utils";
 
 export default function Data() {
     const router = useRouter();
@@ -24,6 +25,8 @@ export default function Data() {
     const [mobileMenu, setMobileMenu] = useState("");
 
     const { toasts, addToast } = useNotification();
+    const [accountFilter, setAccountFilter] = useState<string>();
+    const [chainFilter, setChainFilter] = useState<string>();
 
     const colorMap = path?.startsWith("/asset") ? "red" : path?.startsWith("/exchange") ? "orange" : path?.startsWith("/treasury") ? "blue" : "var(--rainbow)";
     const languages = [
@@ -309,10 +312,11 @@ export default function Data() {
                           <Layouts.Col gap={0} fill>
                               <Controls.Input
                                   placeholder={"Search chain by id or name..."}
+                                  onChange={(e: any, v: string) => setAccountFilter(v)}
                                   left={{ children: <Elements.Icon icon={"search"} style={{ marginRight: "0.5em" }} /> }}
                                   style={{ padding: "2em clamp(0em, 3.75%, 6em)" }}
                               />
-                              <Layouts.List list={accounts} formatter={accountlist} />
+                              <Layouts.List list={filter(accounts, accountFilter)} formatter={accountlist} />
                               <Layouts.Col style={{ padding: "4em", paddingTop: "0" }} fit>
                                   <Controls.Button
                                       type={"line"}
@@ -332,10 +336,11 @@ export default function Data() {
                           <Layouts.Col gap={0} fill>
                               <Controls.Input
                                   placeholder={"Search chain by id or name..."}
+                                  onChange={(e: any, v: string) => setChainFilter(v)}
                                   left={{ children: <Elements.Icon icon={"search"} style={{ marginRight: "0.5em" }} /> }}
                                   style={{ padding: "2em clamp(0em, 3.75%, 6em)" }}
                               />
-                              <Layouts.List list={chains} formatter={chainlist} />
+                              <Layouts.List list={filter(chains, chainFilter)} formatter={chainlist} />
                               <Layouts.Col style={{ padding: "4em", paddingTop: "0" }} fit>
                                   <Controls.Button
                                       type={"line"}
