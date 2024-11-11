@@ -48,12 +48,9 @@ export default function eth_sendTransaction() {
     const [tx, setTx] = useState<Transaction>();
     const [level, setLevel] = useState(0);
     const [signer, setSigner] = useState<Account>();
-    const [loading, setLoading] = useState(false);
 
     const { data: gasPrice, isLoading: isGasPriceLoading } = GetGasPrice(chain?.rpcUrls[0]);
     const { data: estimateGas, isLoading: isEstimateGasLoading } = GetEstimateGas(chain?.rpcUrls[0], tx);
-
-    console.log(gasPrice, estimateGas);
 
     useLayoutEffect(() => {
         console.log({ params, auth, app });
@@ -129,6 +126,7 @@ export default function eth_sendTransaction() {
                                             <Layouts.Row gap={3} align={"center"} fix>
                                                 <div
                                                     style={{
+                                                        position: "relative",
                                                         display: "flex",
                                                         alignItems: "center",
                                                         justifyContent: "center",
@@ -144,6 +142,20 @@ export default function eth_sendTransaction() {
                                                         height={0}
                                                         alt={app?.name || ""}
                                                         style={{ width: "4em", height: "4em", borderRadius: "100%" }}
+                                                    />
+                                                    <Image
+                                                        src={app?.logo || ""}
+                                                        width={0}
+                                                        height={0}
+                                                        alt={app?.name || ""}
+                                                        style={{
+                                                            position: "absolute",
+                                                            right: "1em",
+                                                            bottom: "1em",
+                                                            width: "1em",
+                                                            height: "1em",
+                                                            borderRadius: "100%",
+                                                        }}
                                                     />
                                                 </div>
                                                 <Layouts.Col gap={0} align={"center"} fill>
@@ -178,9 +190,7 @@ export default function eth_sendTransaction() {
                                                         {signer?.name}
                                                     </Elements.Text>
                                                     <Elements.Text type={"strong"} height={0} align={"left"} opacity={0.6}>
-                                                        {(signer?.address.startsWith("0x")
-                                                            ? signer?.address?.substring(0, 8)
-                                                            : signer?.address?.substring(0, 6)) +
+                                                        {signer?.address?.substring(0, signer?.address.startsWith("0x") ? 8 : 6) +
                                                             " ... " +
                                                             signer?.address?.substring(signer?.address?.length - 6, signer?.address?.length)}
                                                     </Elements.Text>
@@ -212,7 +222,7 @@ export default function eth_sendTransaction() {
                                                         To
                                                     </Elements.Text>
                                                     <Elements.Text type={"strong"} height={0} align={"left"} opacity={0.6}>
-                                                        {(tx?.to?.startsWith("0x") ? tx?.to?.substring(0, 8) : tx?.to?.substring(0, 6)) +
+                                                        {tx?.to?.substring(0, tx?.to?.startsWith("0x") ? 8 : 6) +
                                                             " ... " +
                                                             tx?.to?.substring(tx?.to?.length - 6, tx?.to?.length)}
                                                     </Elements.Text>
@@ -224,7 +234,9 @@ export default function eth_sendTransaction() {
                                         <Layouts.Col reverse fill>
                                             <Layouts.Box
                                                 style={{
-                                                    background: "rgba(var(--black),.6)",
+                                                    "--white": "255,255,255",
+                                                    "--black": "0, 0, 0",
+                                                    background: "rgba(var(--white),.15)",
                                                     maxHeight: "max-content",
                                                     padding: "clamp(2em, 7.5%, 4em)",
                                                     width: "auto",
@@ -233,10 +245,8 @@ export default function eth_sendTransaction() {
                                                 fit>
                                                 <Layouts.Col gap={2} align={"left"}>
                                                     <Layouts.Col gap={0.5}>
-                                                        <Elements.Text size={1.25} opacity={0.6}>
-                                                            <Elements.Text size={1} opacity={0.6}>
-                                                                Gas Price
-                                                            </Elements.Text>
+                                                        <Elements.Text type={"desc"} weight={"bold"} opacity={0.6}>
+                                                            Gas Price
                                                         </Elements.Text>
                                                         <Elements.Text>
                                                             {isGasPriceLoading
@@ -249,10 +259,8 @@ export default function eth_sendTransaction() {
                                                         </Elements.Text>
                                                     </Layouts.Col>
                                                     <Layouts.Col gap={0.5}>
-                                                        <Elements.Text size={1.25} opacity={0.6}>
-                                                            <Elements.Text size={1} opacity={0.6}>
-                                                                Estimated Gas
-                                                            </Elements.Text>
+                                                        <Elements.Text type={"desc"} weight={"bold"} opacity={0.6}>
+                                                            Estimated Gas
                                                         </Elements.Text>
                                                         <Elements.Text>
                                                             {isEstimateGasLoading
@@ -265,7 +273,7 @@ export default function eth_sendTransaction() {
                                                         </Elements.Text>
                                                     </Layouts.Col>
                                                     <Layouts.Col gap={0.5}>
-                                                        <Elements.Text size={1.25} opacity={0.6}>
+                                                        <Elements.Text type={"desc"} weight={"bold"} opacity={0.6}>
                                                             Total
                                                         </Elements.Text>
                                                         <Layouts.Row gap={1} fix>

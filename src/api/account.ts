@@ -3,5 +3,5 @@ import { useQuery } from '@tanstack/react-query';
 import { query } from './query';
 
 export function GetBalance(rpc?: string, address?: string) {
-    return useQuery(query.balance(rpc, address));
+    return useQuery(query.onchain.balance(rpc, address));
 }

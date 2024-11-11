@@ -279,7 +279,7 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
 
     import(privateKey: string) {
         return this.#safe((key: string) => {
-            const keys = this.#storage?.set(`${key}:seed`) || [];
+            const keys = this.#storage?.get(`${key}:seed`) || [];
             const accounts = this.#data()?.get("accounts") || [];
             const address = this.#wallet(privateKey).getAddressString();
 

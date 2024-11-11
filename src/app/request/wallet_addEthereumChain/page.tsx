@@ -181,7 +181,7 @@ export default function wallet_addEthereumChain() {
                                                     fit>
                                                     <Layouts.Col gap={2} align={"left"}>
                                                         <Layouts.Col gap={0.5}>
-                                                            <Elements.Text size={1.25} opacity={0.6}>
+                                                            <Elements.Text type={"desc"} weight={"bold"}>
                                                                 <Elements.Text size={1} opacity={0.6}>
                                                                     Chain RPC URL
                                                                 </Elements.Text>
@@ -199,19 +199,19 @@ export default function wallet_addEthereumChain() {
                                                             <Elements.Text>{newChain.rpcUrls[0]}</Elements.Text>
                                                         </Layouts.Col>
                                                         <Layouts.Col gap={0.5}>
-                                                            <Elements.Text size={1.25} opacity={0.6}>
+                                                            <Elements.Text type={"desc"} weight={"bold"} opacity={0.6}>
                                                                 Native Currency Name
                                                             </Elements.Text>
                                                             <Elements.Text>{newChain.nativeCurrency?.name}</Elements.Text>
                                                         </Layouts.Col>
                                                         <Layouts.Col gap={0.5}>
-                                                            <Elements.Text size={1.25} opacity={0.6}>
+                                                            <Elements.Text type={"desc"} weight={"bold"} opacity={0.6}>
                                                                 Native Currency Symbol
                                                             </Elements.Text>
                                                             <Elements.Text>{newChain.nativeCurrency.symbol}</Elements.Text>
                                                         </Layouts.Col>
                                                         <Layouts.Col gap={0.5}>
-                                                            <Elements.Text size={1.25} opacity={0.6}>
+                                                            <Elements.Text type={"desc"} weight={"bold"} opacity={0.6}>
                                                                 Native Currency Decimals
                                                             </Elements.Text>
                                                             <Elements.Text>{newChain.nativeCurrency.decimals}</Elements.Text>

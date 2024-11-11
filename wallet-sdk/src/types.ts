@@ -139,7 +139,8 @@ export interface Account {
     index: number;
     balance?: number;
     tokens?: {
-        fts?: string[];
-        nfts?: string[];
+        fungibles?: string[];
+        nonFungibles?: string[];
+        multiTokens?: string[];
     };
 }
