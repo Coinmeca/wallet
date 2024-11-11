@@ -239,7 +239,13 @@ export default function eth_sendTransaction() {
                                                             </Elements.Text>
                                                         </Elements.Text>
                                                         <Elements.Text>
-                                                            {isGasPriceLoading ? "~" : format(gasPrice, "currency", { unit: 9, limit: 12, fix: 3 })}
+                                                            {isGasPriceLoading
+                                                                ? "~"
+                                                                : format(gasPrice, "currency", {
+                                                                      unit: 9,
+                                                                      limit: 12,
+                                                                      fix: 9,
+                                                                  })}
                                                         </Elements.Text>
                                                     </Layouts.Col>
                                                     <Layouts.Col gap={0.5}>
@@ -249,24 +255,32 @@ export default function eth_sendTransaction() {
                                                             </Elements.Text>
                                                         </Elements.Text>
                                                         <Elements.Text>
-                                                            {isEstimateGasLoading ? "~" : format(estimateGas, "currency", { unit: 9, limit: 12, fix: 3 })}
+                                                            {isEstimateGasLoading
+                                                                ? "~"
+                                                                : format(estimateGas, "currency", {
+                                                                      unit: 9,
+                                                                      limit: 12,
+                                                                      fix: 9,
+                                                                  })}
                                                         </Elements.Text>
                                                     </Layouts.Col>
                                                     <Layouts.Col gap={0.5}>
                                                         <Elements.Text size={1.25} opacity={0.6}>
                                                             Total
                                                         </Elements.Text>
-                                                        <Layouts.Row gap={1}>
-                                                            <Elements.Text>
+                                                        <Layouts.Row gap={1} fix>
+                                                            <Elements.Text style={{ flex: "initial" }} fix>
                                                                 {isGasPriceLoading || isEstimateGasLoading
                                                                     ? "~"
-                                                                    : format((gasPrice ? gasPrice / 1e18 : 0) * (estimateGas || 0), "currency", {
+                                                                    : format((gasPrice || 0) * (estimateGas || 0), "currency", {
                                                                           unit: 9,
                                                                           limit: 12,
-                                                                          fix: 3,
+                                                                          fix: 9,
                                                                       })}
                                                             </Elements.Text>
-                                                            <Elements.Text opacity={0.6}>{chain?.nativeCurrency?.symbol}</Elements.Text>
+                                                            <Elements.Text opacity={0.6} fit>
+                                                                {chain?.nativeCurrency?.symbol}
+                                                            </Elements.Text>
                                                         </Layouts.Row>
                                                     </Layouts.Col>
                                                 </Layouts.Col>

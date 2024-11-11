@@ -14,7 +14,7 @@ export default function Home() {
 
     const { isLoad } = usePageLoader();
     const { account, chain } = useCoinmecaWalletProvider();
-    const { data: balance } = GetBalance(chain?.rpcUrls?.[0], account?.address);
+    const { data: balance, isLoading } = GetBalance(chain?.rpcUrls?.[0], account?.address);
 
     const [tab, setTab] = useState("token");
 
@@ -41,11 +41,13 @@ export default function Home() {
                             fill>
                             <Layouts.Col gap={2}>
                                 <Elements.Text type={"h3"}>
-                                    {format(balance, "currency", {
-                                        limit: 10,
-                                        unit: 12,
-                                        fix: 3,
-                                    })}
+                                    {isLoading
+                                        ? "~"
+                                        : format(balance, "currency", {
+                                              unit: 9,
+                                              limit: 12,
+                                              fix: 9,
+                                          })}
                                 </Elements.Text>
                                 <Elements.Text type={"h6"}>{chain?.nativeCurrency?.symbol}</Elements.Text>
                             </Layouts.Col>

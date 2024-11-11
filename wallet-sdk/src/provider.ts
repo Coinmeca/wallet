@@ -269,8 +269,8 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
             const address = this.#wallet(seed)?.getAddressString();
 
             if (address) {
-                if (!keys?.some((s: string, i: number) => s?.toLowerCase() === seed?.toLowerCase())) this.#storage?.set(`${key}:seed`, [...keys, seed]);
-                if (!this.#data()?.get(address?.toLowerCase())) this.#storage?.set(address?.toLowerCase(), { address, index, name: `Wallet ${index + 1}` });
+                if (!keys?.some((s: string) => s?.toLowerCase() === seed?.toLowerCase())) this.#storage?.set(`${key}:seed`, [...keys, seed]);
+                if (!this.#data()?.get(address?.toLowerCase())) this.#storage?.set(address?.toLowerCase(), { address, index, name: `Account ${index + 1}` });
                 this.changeAccount(index);
                 return true;
             } else return false;
@@ -285,9 +285,14 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
 
             let index = accounts?.length;
             if (address) {
-                if (!keys?.some((s: string, i: number) => s?.toLowerCase() === privateKey?.toLowerCase()))
-                    this.#storage?.set(`${key}:seed`, [...keys, privateKey]);
-                if (!this.#data()?.get(address?.toLowerCase())) this.#storage?.set(address?.toLowerCase(), { address, index, name: `Wallet ${index + 1}` });
+                if (!keys?.some((s: string, i: number) => {
+                    const check = s?.toLowerCase() === privateKey?.toLowerCase()
+                    if (check) {
+                        index = i;
+                        return check;
+                    }
+                })) this.#storage?.set(`${key}:seed`, [...keys, privateKey]);
+                if (!this.#data()?.get(address?.toLowerCase())) this.#storage?.set(address?.toLowerCase(), { address, index, name: `Account ${index + 1}` });
                 this.changeAccount(index);
                 return true;
             } else return false;
