@@ -184,11 +184,11 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
             return (
                 (url && url !== ""
                     ? this.#data()
-                          ?.get("apps")
-                          ?.find((a: App) => a?.url?.toLowerCase() === url?.toLowerCase())?.accounts
+                        ?.get("apps")
+                        ?.find((a: App) => a?.url?.toLowerCase() === url?.toLowerCase())?.accounts
                     : this.#safe((key: string) => this.#storage?.get(`${key}:seed`)?.map((s: string) => this.#wallet(s)?.getAddressString()))?.map(
-                          (a: string) => this.#storage?.get(a?.toLowerCase()),
-                      )) || []
+                        (a: string) => this.#storage?.get(a?.toLowerCase()),
+                    )) || []
             ).filter((a: any) => a);
         } catch (e) {
             return [];
@@ -421,7 +421,7 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
         return await this.#sendRpcRequest("eth_sendRawTransaction", [`0x${serializedTx.toString("hex")}`]);
     }
 
-    async #sendRpcRequest(method: string, params: any[] = []) {
+    async #sendRpcRequest(method: string, params?: any) {
         console.log("sendRpcRequest");
         const rpc = await this.chain.rpcUrls[0];
         console.log({ rpc });

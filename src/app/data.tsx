@@ -14,6 +14,7 @@ import { filter } from "@coinmeca/ui/lib/utils";
 import { Modal } from "@coinmeca/ui/containers";
 import { Root } from "@coinmeca/ui/lib/style";
 import Image from "next/image";
+import { GetBalance } from "api/account";
 
 export default function Data() {
     const router = useRouter();

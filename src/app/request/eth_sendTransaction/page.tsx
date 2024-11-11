@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
 import { Account, TransactionParams } from "@coinmeca/wallet-sdk/types";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
+import { GetEstimateGas, GetGasPrice } from "api/onchain";
+import { format } from "@coinmeca/ui/lib/utils";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({
@@ -47,6 +49,11 @@ export default function eth_sendTransaction() {
     const [level, setLevel] = useState(0);
     const [signer, setSigner] = useState<Account>();
     const [loading, setLoading] = useState(false);
+
+    const { data: gasPrice, isLoading: isGasPriceLoading } = GetGasPrice(chain?.rpcUrls[0]);
+    const { data: estimateGas, isLoading: isEstimateGasLoading } = GetEstimateGas(chain?.rpcUrls[0], tx);
+
+    console.log(gasPrice, estimateGas);
 
     useLayoutEffect(() => {
         console.log({ params, auth, app });
@@ -228,44 +235,39 @@ export default function eth_sendTransaction() {
                                                     <Layouts.Col gap={0.5}>
                                                         <Elements.Text size={1.25} opacity={0.6}>
                                                             <Elements.Text size={1} opacity={0.6}>
-                                                                Estimated fee
+                                                                Gas Price
                                                             </Elements.Text>
                                                         </Elements.Text>
-                                                        <Layouts.Box
-                                                            style={{
-                                                                background: "rgba(var(--black),.6)",
-                                                                maxHeight: "max-content",
-                                                                padding: "clamp(2em, 7.5%, 4em)",
-                                                                width: "auto",
-                                                                height: "auto",
-                                                            }}
-                                                            fit>
-                                                            <Layouts.Col gap={2} align={"left"}>
-                                                                <Layouts.Col gap={0.5}>
-                                                                    <Elements.Text size={1.25} opacity={0.6}>
-                                                                        <Elements.Text size={1} opacity={0.6}>
-                                                                            Gas Cost
-                                                                        </Elements.Text>{" "}
-                                                                        <Elements.Text>{`${tx?.gas} ${chain?.nativeCurrency?.symbol}`}</Elements.Text>
-                                                                    </Elements.Text>
-                                                                </Layouts.Col>
-                                                                <Layouts.Col gap={0.5}>
-                                                                    <Elements.Text size={1.25} opacity={0.6}>
-                                                                        <Elements.Text size={1} opacity={0.6}>
-                                                                            Estimated fee
-                                                                        </Elements.Text>{" "}
-                                                                        <Elements.Text>{tx.value + tx?.gas + tx?.gasPrice}</Elements.Text>
-                                                                    </Elements.Text>
-                                                                </Layouts.Col>
-                                                            </Layouts.Col>
-                                                        </Layouts.Box>
-                                                        <Elements.Text>{tx?.gas + tx?.gasPrice}</Elements.Text>
+                                                        <Elements.Text>
+                                                            {isGasPriceLoading ? "~" : format(gasPrice, "currency", { unit: 9, limit: 12, fix: 3 })}
+                                                        </Elements.Text>
+                                                    </Layouts.Col>
+                                                    <Layouts.Col gap={0.5}>
+                                                        <Elements.Text size={1.25} opacity={0.6}>
+                                                            <Elements.Text size={1} opacity={0.6}>
+                                                                Estimated Gas
+                                                            </Elements.Text>
+                                                        </Elements.Text>
+                                                        <Elements.Text>
+                                                            {isEstimateGasLoading ? "~" : format(estimateGas, "currency", { unit: 9, limit: 12, fix: 3 })}
+                                                        </Elements.Text>
                                                     </Layouts.Col>
                                                     <Layouts.Col gap={0.5}>
                                                         <Elements.Text size={1.25} opacity={0.6}>
                                                             Total
                                                         </Elements.Text>
-                                                        <Elements.Text>{tx.value + tx?.gas + tx?.gasPrice}</Elements.Text>
+                                                        <Layouts.Row gap={1}>
+                                                            <Elements.Text>
+                                                                {isGasPriceLoading || isEstimateGasLoading
+                                                                    ? "~"
+                                                                    : format((gasPrice ? gasPrice / 1e18 : 0) * (estimateGas || 0), "currency", {
+                                                                          unit: 9,
+                                                                          limit: 12,
+                                                                          fix: 3,
+                                                                      })}
+                                                            </Elements.Text>
+                                                            <Elements.Text opacity={0.6}>{chain?.nativeCurrency?.symbol}</Elements.Text>
+                                                        </Layouts.Row>
                                                     </Layouts.Col>
                                                 </Layouts.Col>
                                             </Layouts.Box>

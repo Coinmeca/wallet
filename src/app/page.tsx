@@ -2,6 +2,7 @@
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { format } from "@coinmeca/ui/lib/utils";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
+import { GetBalance } from "api/account";
 import { AnimatePresence } from "framer-motion";
 import { usePageLoader } from "hooks";
 import { usePathname, useRouter } from "next/navigation";
@@ -12,16 +13,10 @@ export default function Home() {
     const router = useRouter();
 
     const { isLoad } = usePageLoader();
-    const { provider, account, chain } = useCoinmecaWalletProvider();
+    const { account, chain } = useCoinmecaWalletProvider();
+    const { data: balance } = GetBalance(chain?.rpcUrls?.[0], account?.address);
 
-    const [balance, setBalance] = useState(0);
     const [tab, setTab] = useState("token");
-
-    useEffect(() => {
-        (async () => await provider?.balance())().then((balance: any) => {
-            setBalance(Number(balance) / (10 ^ (chain?.nativeCurrency?.decimals || 1)));
-        });
-    }, [chain, account]);
 
     useEffect(() => {
         // fixme:
