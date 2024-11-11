@@ -31,12 +31,38 @@ export interface RequestParams {
 }
 
 export interface TransactionParams {
+    // Basic Transaction Fields
     from: string;
     to: string;
     value: string;
-    gas: string;
-    gasPrice: string;
+    gas?: string;
+    gasPrice?: string;
     data?: string;
+    nonce?: string;
+    chainId?: number;
+
+    // EIP-1559 Specific Fields
+    maxFeePerGas?: string;
+    maxPriorityFeePerGas?: string;
+
+    // Optional fields for specific transaction types and networks
+    type?: string;
+    // Access list for EIP-2930 and EIP-1559 transactions
+    accessList?: Array<{
+        address: string;
+        storageKeys: string[];
+    }>;
+
+    // Token Transfer Fields (ERC20/ERC721)
+    tokenAddress?: string;
+    tokenAmount?: string;
+    tokenData?: string;
+
+    // Advanced Fields for Complex Transactions
+    validUntil?: string;
+    replayProtection?: boolean;
+    chainReference?: string;
+    signature?: string;
 }
 
 export interface EIP712Domain {

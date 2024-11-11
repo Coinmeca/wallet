@@ -366,49 +366,46 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
 
     async sign(transaction: TransactionParams, signer: Account | string) {
         const privateKey = this.#getPrivateKey(typeof signer === "object" ? signer?.index : this.#storage?.get(signer?.toLowerCase())?.index);
+        if (!transaction.nonce)
+            transaction.nonce = `0x${parseInt(await this.#sendRpcRequest("eth_getTransactionCount", [transaction?.from, "latest"])).toString(16)}`;
+        console.log({ nonce: transaction?.nonce });
+        if (!transaction.chainId) transaction.chainId = this.chain.chainId;
         const tx = new Transaction(transaction);
-        console.log(transaction, tx);
         tx.sign(Buffer.from(privateKey?.substring(0, 64), "hex"));
 
-        const txHash = await this.#broadcastTransaction(tx.serialize());
-        console.log("Transaction hash:", txHash); // Log to verify txHash
+        // Log sender address after signing
+        console.log("Sender Address after signing:", tx.getSenderAddress().toString());
 
-        // Await confirmation process
-        const receipt = await this.waitForConfirmation(txHash); // Ensure this resolves correctly
+        const signedTx = tx.serialize();
+        console.log("Signed Transaction:", signedTx.toString("hex"));
 
-        if (receipt && receipt.status === 1) {
-            console.log(`Transaction ${txHash} confirmed!`);
-        } else {
-            console.error(`Transaction ${txHash} failed.`);
-        }
+        const txFrom = `0x${signedTx.slice(0, 20).toString("hex")}`;
+        console.log("Extracted Sender Address from Signed Tx:", txFrom);
 
-        return txHash; // Now return after confirmation
+        return await this.#broadcastTransaction(tx.serialize());
     }
 
-    async waitForConfirmation(txHash: string): Promise<any | null> {
+    // Background confirmation process without blocking the main flow
+    async waitForConfirmation(txHash: string): Promise<void> {
         while (true) {
             const receipt = await this.getTransactionReceipt(txHash);
 
             if (!receipt) {
-                // Handle case where receipt is not found (perhaps log and retry)
                 console.warn(`No receipt found for transaction ${txHash}, retrying...`);
-                await new Promise((resolve) => setTimeout(resolve, 15000)); // Retry after 15 seconds
-                continue; // Skip the rest of the loop and try again
+                await new Promise((resolve) => setTimeout(resolve, 15000)); // Retry every 15 seconds
+                continue;
             }
 
             if (receipt.status === 1) {
-                // Transaction confirmed successfully
                 __notify({ title: "Transaction Confirmed", body: `Your transaction ${txHash} was confirmed.` });
                 break;
             }
 
             if (receipt.status === 0) {
-                // Transaction failed
                 __notify({ title: "Transaction Failed", body: `Your transaction ${txHash} failed.` });
                 break;
             }
 
-            // Continue checking every 15 seconds
             await new Promise((resolve) => setTimeout(resolve, 15000));
         }
     }
@@ -419,107 +416,25 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
         return null; // Return null explicitly if no receipt is found
     }
 
-    async #sendRpcRequest(method: string, params: any[] = []) {
-        const payload = {
-            jsonrpc: "2.0",
-            id: Date.now(),
-            method,
-            params,
-        };
-
-        // Create an array of promises to handle the different RPC URLs
-        const promises =
-            this.chain?.rpcUrls.map((url: string) => {
-                return new Promise<any>((resolve, reject) => {
-                    if (url.startsWith("wss://")) {
-                        // // WebSocket handling
-                        // const socket = new WebSocket(url);
-                        // const timeout = setTimeout(() => {
-                        //     reject(`WebSocket timeout with ${url}`);
-                        //     socket.close(); // Ensure the socket is closed if timed out
-                        // }, 10000); // 10 second timeout for WebSocket connection
-                        // socket.onopen = () => {
-                        //     socket.send(JSON.stringify(payload));
-                        // };
-                        // socket.onmessage = (event) => {
-                        //     const response = JSON.parse(event.data);
-                        //     clearTimeout(timeout); // Clear timeout if we receive a message
-                        //     if (response.error) {
-                        //         reject(`WebSocket Error from ${url}: ${response.error}`);
-                        //     } else if (response.result) {
-                        //         resolve(response.result); // Return the result
-                        //     } else {
-                        //         reject(`WebSocket response does not contain result: ${event.data}`);
-                        //     }
-                        //     socket.close(); // Ensure WebSocket closes after processing
-                        // };
-                        // socket.onerror = (error) => {
-                        //     clearTimeout(timeout);
-                        //     reject(`WebSocket error with ${url}: ${error}`);
-                        //     socket.close(); // Ensure WebSocket closes on error
-                        // };
-                        // socket.onclose = () => {
-                        //     console.log(`WebSocket connection closed with ${url}`);
-                        // };
-                    } else {
-                        // HTTP/HTTPS handling
-                        fetch(url, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify(payload),
-                        })
-                            .then((response) => {
-                                if (!response.ok) {
-                                    reject(`Failed request to ${url}: ${response.statusText}`);
-                                }
-                                return response.json();
-                            })
-                            .then((data) => {
-                                if (data.error) {
-                                    reject(`RPC Error from ${url}: ${data.error}`);
-                                }
-                                if (data.result) {
-                                    resolve(data.result); // Return the result
-                                } else {
-                                    reject(`RPC response does not contain result from ${url}`);
-                                }
-                            })
-                            .catch((error) => {
-                                reject(`Network error with ${url}: ${error}`);
-                            });
-                    }
-                });
-            }) || [];
-
-        // Use Promise.race to stop immediately on the first successful result
-        const firstSuccess = Promise.race(promises);
-
-        // Use Promise.allSettled to wait for all promises to settle (fail or succeed)
-        const allSettled = Promise.allSettled(promises);
-
-        // Wait for all promises to settle and handle the result
-        try {
-            // First check for success
-            const result = await firstSuccess;
-            return result; // Return the first successful result immediately
-        } catch (error) {
-            // If any promise fails, wait for all promises to settle
-            const results = await allSettled;
-
-            // Log all failed promises
-            for (const result of results) {
-                if (result.status === "rejected") {
-                    console.warn(`RPC request failed: ${result.reason}`);
-                }
-            }
-
-            // Throw error if all requests fail
-            throw new Error("All RPC requests failed");
-        }
+    async #broadcastTransaction(serializedTx: Buffer) {
+        console.log("serializedTx", serializedTx, [`0x${serializedTx.toString("hex")}`]);
+        return await this.#sendRpcRequest("eth_sendRawTransaction", [`0x${serializedTx.toString("hex")}`]);
     }
 
-    async #broadcastTransaction(serializedTx: Buffer) {
-        return await this.#sendRpcRequest("eth_sendRawTransaction", [`0x${serializedTx.toString("hex")}`]);
+    async #sendRpcRequest(method: string, params: any[] = []) {
+        console.log("sendRpcRequest");
+        const rpc = await this.chain.rpcUrls[0];
+        console.log({ rpc });
+        if (!rpc) return new Error("Provider URL was not setup yet.");
+        const response = await axios.post(rpc, {
+            jsonrpc: "2.0",
+            id: new Date().getTime(),
+            method,
+            params,
+        });
+
+        if (response.data.error) throw new Error(`RPC Error: ${response.data.error.message}`);
+        return response.data.result;
     }
 
     #confirm(method: string) {
