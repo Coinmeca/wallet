@@ -3,30 +3,38 @@
 import { useCallback, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useNotification } from "@coinmeca/ui/hooks";
+import { useNotification, usePortal, useWindowSize } from "@coinmeca/ui/hooks";
 import { Avatar } from "@coinmeca/ui/components/elements";
-import { Account, Chain } from "@coinmeca/wallet-sdk/types";
+import { Account, App, Chain } from "@coinmeca/wallet-sdk/types";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
 
 import Coinmeca from "assets/coinmeca.svg";
 import { usePageLoader } from "hooks";
 import { filter } from "@coinmeca/ui/lib/utils";
+import { Modal } from "@coinmeca/ui/containers";
+import { Root } from "@coinmeca/ui/lib/style";
+import Image from "next/image";
 
 export default function Data() {
     const router = useRouter();
     const path = usePathname();
 
-    const { provider, account, accounts, chain, chains } = useCoinmecaWalletProvider();
+    const { windowSize } = useWindowSize();
     const { isLoad } = usePageLoader();
+    const { provider, account, accounts, chain, chains, apps } = useCoinmecaWalletProvider();
+    const { toasts, addToast } = useNotification();
 
     const [value, setValue] = useState<number>(0);
     const [tab, setTab] = useState<string>("icon");
     const [active, setActive] = useState(false);
     const [mobileMenu, setMobileMenu] = useState("");
+    const [setting, setSetting] = useState("");
 
-    const { toasts, addToast } = useNotification();
     const [accountFilter, setAccountFilter] = useState<string>();
     const [chainFilter, setChainFilter] = useState<string>();
+    const [appFilter, setAppFilter] = useState<string>();
+
+    const responsive = windowSize.width <= Root.Device.Tablet;
 
     const colorMap = path?.startsWith("/asset") ? "red" : path?.startsWith("/exchange") ? "orange" : path?.startsWith("/treasury") ? "blue" : "var(--rainbow)";
     const languages = [
@@ -80,6 +88,11 @@ export default function Data() {
             });
     };
 
+    const AccountModal = (props:any) => {
+        return <Modal {...props} onClose={closeAccountModal}/>
+    }
+    const [openAccountModal, closeAccountModal] = usePortal((props: any) => <AccountModal {...props} />)
+
     const accountlist = useCallback(
         (accounts: Account[] = []) => {
             if (accounts?.length) {
@@ -87,7 +100,7 @@ export default function Data() {
                     const selected = account?.address?.toLowerCase() === a?.address?.toLowerCase();
                     return {
                         onClick: !selected && (() => {}),
-                        style: { padding: "2em clamp(2em, 5%, 8em)", ...(selected && { background: "transparent", pointerEvents: "none" }) },
+                        style: { padding: "2.5em clamp(2em, 5%, 8em)", ...(selected && { background: "transparent", pointerEvents: "none" }) },
                         children: [
                             [
                                 [
@@ -140,13 +153,25 @@ export default function Data() {
                                             {
                                                 gap: 0,
                                                 fit: true,
-                                                style: { pointerEvents: "initial" },
+                                                style: { pointerEvents: "initial", maxWitdth: "max-content" },
                                                 children: [
                                                     <>
                                                         <Controls.Button icon={"copy"} onClick={() => handleCopyAddress(a)} />
                                                     </>,
                                                     <>
-                                                        <Controls.Button icon={"more"} />
+                                                        <Controls.Dropdown
+                                                            type={"more"}
+                                                            options={[
+                                                                { icon: "copy", value: "Edit" },
+                                                                { icon: "power", value: "Delete" },
+                                                            ]}
+                                                            onClickItem={(e: any, v: any, k: number) => {console.log(k)}}
+                                                            responsive={responsive}
+                                                            chevron={false}
+                                                            fix
+                                                            fit
+                                                        />
+                                                        {/* <Controls.Button icon={"more"} /> */}
                                                     </>,
                                                 ],
                                             },
@@ -162,6 +187,99 @@ export default function Data() {
         [account, accounts],
     );
 
+    const applist = useCallback(
+        (apps: Account[] = []) => {
+            if (apps?.length) {
+                return apps.map((app:App) => {
+                    return {
+                        onClick: (() => {}),
+                        style: { padding: "2.5em clamp(2em, 5%, 8em)" },
+                        children: [
+                            [
+                                [
+                                    {
+                                        style: { overflow: "hidden" },
+                                        children: [
+                                            {
+                                                gap: 2,
+                                                // style: selected ? { opacity: 0.3 } : {},
+                                                // onClick: () => handleAccountChange(a),
+                                                children: [
+                                                    {
+                                                        fit: true,
+                                                        children: (
+                                                            <Image
+                                                                width={32}
+                                                                height={32}
+                                                                // color={colorMap}
+                                                                // scale={1.25}
+                                                                // size={2.5}
+                                                                // display={6}
+                                                                // ellipsis={" ... "}
+                                                                src={app?.logo || ''}
+                                                                alt={app?.name || ''}
+                                                            />
+                                                        ),
+                                                    },
+                                                    {
+                                                        gap: 0,
+                                                        children: [
+                                                            <>
+                                                                <Elements.Text size={1.5} height={1.5} title={app?.name} fix>
+                                                                    {app?.name}
+                                                                </Elements.Text>
+                                                            </>,
+                                                            <>
+                                                                <Elements.Text size={1.375} height={1.5} weight={"light"} opacity={0.6} title={app?.url} fix>
+                                                                    {app?.url}
+                                                                </Elements.Text>
+                                                            </>,
+                                                        ],
+                                                    },
+                                                ],
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        fit: true,
+                                        children: [
+                                            {
+                                                gap: 0,
+                                                fit: true,
+                                                style: { pointerEvents: "initial", maxWitdth: "max-content" },
+                                                children: [
+                                                    <>
+                                                        {/* <Controls.Button icon={"copy"} onClick={() => handleCopyAddress(a)} /> */}
+                                                    </>,
+                                                    <>
+                                                        <Controls.Dropdown
+                                                            type={"more"}
+                                                            options={[
+                                                                { icon: "copy", value: "Edit" },
+                                                                { icon: "power", value: "Delete" },
+                                                            ]}
+                                                            onClickItem={(e: any, v: any, k: number) => {console.log(k)}}
+                                                            responsive={responsive}
+                                                            chevron={false}
+                                                            fix
+                                                            fit
+                                                        />
+                                                        {/* <Controls.Button icon={"more"} /> */}
+                                                    </>,
+                                                ],
+                                            },
+                                        ],
+                                    },
+                                ],
+                            ],
+                        ],
+                    };
+                });
+            }
+        },
+        [apps],
+    );
+
     const chainlist = useCallback(
         (chains: Chain[] = []) => {
             if (chains?.length) {
@@ -170,7 +288,7 @@ export default function Data() {
                         provider?.changeChain(c?.chainId);
                         setMobileMenu("");
                     },
-                    style: { padding: "2em clamp(2em, 5%, 8em)", ...(provider?.chain?.chainId === c?.chainId && { opacity: 0.3, pointerEvents: "none" }) },
+                    style: { padding: "2.5em clamp(2em, 5%, 8em)", ...(provider?.chain?.chainId === c?.chainId && { opacity: 0.3, pointerEvents: "none" }) },
                     children: [
                         [
                             {
@@ -191,6 +309,7 @@ export default function Data() {
         },
         [chain, chains],
     );
+
 
     const header = {
         color: colorMap,
@@ -313,8 +432,9 @@ export default function Data() {
                               <Controls.Input
                                   placeholder={"Search chain by id or name..."}
                                   onChange={(e: any, v: string) => setAccountFilter(v)}
-                                  left={{ children: <Elements.Icon icon={"search"} style={{ marginRight: "0.5em" }} /> }}
-                                  style={{ padding: "2em clamp(0em, 3.75%, 6em)" }}
+                                  left={{ children: <Elements.Icon icon={"search"} style={{ marginRight: "0.5em", padding:"0.333em 0" }} /> }}
+                                  style={{ padding: "1.5em clamp(0em, 3.75%, 6em)" }}
+                                  clearable
                               />
                               <Layouts.List list={filter(accounts, accountFilter)} formatter={accountlist} />
                               <Layouts.Col style={{ padding: "4em", paddingTop: "0" }} fit>
@@ -337,8 +457,9 @@ export default function Data() {
                               <Controls.Input
                                   placeholder={"Search chain by id or name..."}
                                   onChange={(e: any, v: string) => setChainFilter(v)}
-                                  left={{ children: <Elements.Icon icon={"search"} style={{ marginRight: "0.5em" }} /> }}
-                                  style={{ padding: "2em clamp(0em, 3.75%, 6em)" }}
+                                  left={{ children: <Elements.Icon icon={"search"} style={{ marginRight: "0.5em",padding:"0.333em 0" }} /> }}
+                                  style={{ padding: "1.5em clamp(0em, 3.75%, 6em)" }}
+                                  clearable
                               />
                               <Layouts.List list={filter(chains, chainFilter)} formatter={chainlist} />
                               <Layouts.Col style={{ padding: "4em", paddingTop: "0" }} fit>
@@ -357,29 +478,63 @@ export default function Data() {
                   {
                       active: mobileMenu === "setting",
                       children: (
-                          <Layouts.Col style={{ padding: "4em" }} reverse fill>
-                              <Layouts.Col gap={4}>
-                                  <Controls.Button scale={1.125} style={{ padding: "0.5em 1em" }} onClick={() => router.push("/test")}>
-                                      Test
-                                  </Controls.Button>
-                                  <Controls.Button scale={1.125} style={{ padding: "0.5em 1em" }}>
-                                      Connected Apps
-                                  </Controls.Button>
-                                  <Controls.Button scale={1.125} style={{ padding: "0.5em 1em" }} onClick={() => router.push("/reset")}>
-                                      Reset Passcode
-                                  </Controls.Button>
-                                  <Controls.Button
-                                      type={"line"}
-                                      scale={1.125}
-                                      style={{ padding: "0.5em 1em" }}
-                                      onClick={() => {
-                                          provider?.lock();
-                                          router.push("/lock");
-                                      }}>
-                                      Lock
-                                  </Controls.Button>
-                              </Layouts.Col>
-                          </Layouts.Col>
+                          <Layouts.Contents.SlideContainer 
+                              contents={[
+                                  {
+                                    active: setting ==="",
+                                    children: (
+                                        <Layouts.Col style={{ padding: "4em" }} reverse fill>
+                                            <Layouts.Col gap={4}>
+                                                <Controls.Button scale={1.125} style={{ padding: "0.5em 1em" }} onClick={() => router.push("/test")}>
+                                                    Test
+                                                </Controls.Button>
+                                                <Controls.Button scale={1.125} style={{ padding: "0.5em 1em" }} onClick={() => setSetting("apps")}>
+                                                    Connected Apps
+                                                </Controls.Button>
+                                                <Controls.Button scale={1.125} style={{ padding: "0.5em 1em" }} onClick={() => router.push("/reset")}>
+                                                    Reset Passcode
+                                                </Controls.Button>
+                                                <Controls.Button
+                                                    type={"line"}
+                                                    scale={1.125}
+                                                    style={{ padding: "0.5em 1em" }}
+                                                    onClick={() => {
+                                                        provider?.lock();
+                                                        router.push("/lock");
+                                                    }}>
+                                                    Lock
+                                                </Controls.Button>
+                                            </Layouts.Col>
+                                        </Layouts.Col>
+                                    )
+                                },
+                                {
+                                    active: setting === "apps",
+                                    children: (
+                                        <Layouts.Contents.InnerContent scroll={false}>
+                                            <Layouts.Col gap={0} fill>
+                                                <Controls.Input
+                                                    placeholder={"Search chain by id or name..."}
+                                                    onChange={(e: any, v: string) => setAppFilter(v)}
+                                                    left={{ children: <Elements.Icon icon={"search"} style={{ marginRight: "0.5em", padding:"0.333em 0" }} /> }}
+                                                    style={{ padding: "1.5em clamp(0em, 3.75%, 6em)" }}
+                                                    clearable
+                                                />
+                                                <Layouts.List
+                                                    list={filter(apps,appFilter)}
+                                                    formatter={applist}
+                                                />
+                                            </Layouts.Col>
+                                            <Layouts.Col gap={0} style={{padding:"4em", paddingTop:"2em"}}>
+                                                <Layouts.Row>
+                                                    <Controls.Button type={'glass'} onClick={() => setSetting("")}>Back</Controls.Button>
+                                                </Layouts.Row>
+                                            </Layouts.Col>
+                                        </Layouts.Contents.InnerContent>
+                                    )
+                                  }
+                              ]}
+                          />
                       ),
                   },
               ]

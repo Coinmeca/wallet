@@ -78,7 +78,20 @@ export const MessageHandler: React.FC<{ children: React.ReactNode }> = ({ childr
     }, [provider]);
 
     useLayoutEffect(() => {
-        if (isPopup) window.close();
+        if (!path?.startsWith("/lock")) {
+            const handleUnload = () => {
+                window?.opener?.postMessage(
+                    {
+                        close: true,
+                        error: "User rejected the request",
+                    },
+                    "*",
+                );
+            };
+            if (isPopup) window.close();
+            window.addEventListener("beforeunload", handleUnload);
+            return () => window.removeEventListener("beforeunload", handleUnload);
+        }
     }, [path]);
 
     return (

@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import React, { createContext, useContext, useEffect, useLayoutEffect, useState } from "react";
-import { Chain, Account } from "../types";
+import { Chain, Account, App } from "../types";
 import { CoinmecaWalletProvider } from "../provider";
 
 // Inject the provider into window.ethereum
@@ -19,6 +19,7 @@ interface CoinmecaWalletProviderContextProps {
     accounts: Account[] | undefined;
     chain: Chain | undefined;
     chains: Chain[] | undefined;
+    apps: App[] | undefined;
 }
 
 const CoinmecaWalletContext = createContext<CoinmecaWalletProviderContextProps | undefined>(undefined);
@@ -70,7 +71,7 @@ export const CoinmecaWalletContextProvider: React.FC<{ children: React.ReactNode
     }, [provider]);
 
     return (
-        <CoinmecaWalletContext.Provider value={{ provider, account, chain, accounts: provider?.accounts() as Account[], chains: provider?.chains }}>
+        <CoinmecaWalletContext.Provider value={{ provider, account, chain, accounts: provider?.accounts() as Account[], chains: provider?.chains, apps:provider?.apps }}>
             {children}
         </CoinmecaWalletContext.Provider>
     );

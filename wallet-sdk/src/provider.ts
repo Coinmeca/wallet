@@ -183,18 +183,21 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
         try {
             return (
                 (url && url !== ""
-                    ? this.#data()?.get('apps')?.find((a: App) => a?.url?.toLowerCase() === url?.toLowerCase())?.accounts
-                    : this.#safe((key: string) => this.#storage?.get(`${key}:seed`)?.map((s: string) => this.#wallet(s)?.getAddressString()))?.map((a: string) => this.#storage?.get(a?.toLowerCase()))
-                ) || []
+                    ? this.#data()
+                          ?.get("apps")
+                          ?.find((a: App) => a?.url?.toLowerCase() === url?.toLowerCase())?.accounts
+                    : this.#safe((key: string) => this.#storage?.get(`${key}:seed`)?.map((s: string) => this.#wallet(s)?.getAddressString()))?.map(
+                          (a: string) => this.#storage?.get(a?.toLowerCase()),
+                      )) || []
             ).filter((a: any) => a);
         } catch (e) {
-            return []
+            return [];
         }
     }
 
     allowance(url: string, address?: string) {
         address = address || this.address;
-        return !!url && url !== "" && !!address && address !== "" && (this.accounts(url) as string[])?.some(a => a?.toLowerCase() === address?.toLowerCase())
+        return !!url && url !== "" && !!address && address !== "" && (this.accounts(url) as string[])?.some((a) => a?.toLowerCase() === address?.toLowerCase());
     }
 
     get chain() {
@@ -209,6 +212,10 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
 
     get chains() {
         return this.#data().get("chains");
+    }
+
+    get apps() {
+        return this.#data().get("apps");
     }
 
     init(hash: string) {
@@ -278,7 +285,8 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
 
             let index = accounts?.length;
             if (address) {
-                if (!keys?.some((s: string, i: number) => s?.toLowerCase() === privateKey?.toLowerCase())) this.#storage?.set(`${key}:seed`, [...keys, privateKey]);
+                if (!keys?.some((s: string, i: number) => s?.toLowerCase() === privateKey?.toLowerCase()))
+                    this.#storage?.set(`${key}:seed`, [...keys, privateKey]);
                 if (!this.#data()?.get(address?.toLowerCase())) this.#storage?.set(address?.toLowerCase(), { address, index, name: `Wallet ${index + 1}` });
                 this.changeAccount(index);
                 return true;
@@ -357,16 +365,16 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
     }
 
     async sign(transaction: TransactionParams, signer: Account | string) {
-        const privateKey = this.#getPrivateKey(typeof signer === 'object' ? signer?.index : this.#storage?.get(signer?.toLowerCase())?.index);
+        const privateKey = this.#getPrivateKey(typeof signer === "object" ? signer?.index : this.#storage?.get(signer?.toLowerCase())?.index);
         const tx = new Transaction(transaction);
         console.log(transaction, tx);
         tx.sign(Buffer.from(privateKey?.substring(0, 64), "hex"));
 
         const txHash = await this.#broadcastTransaction(tx.serialize());
-        console.log('Transaction hash:', txHash);  // Log to verify txHash
+        console.log("Transaction hash:", txHash); // Log to verify txHash
 
         // Await confirmation process
-        const receipt = await this.waitForConfirmation(txHash);  // Ensure this resolves correctly
+        const receipt = await this.waitForConfirmation(txHash); // Ensure this resolves correctly
 
         if (receipt && receipt.status === 1) {
             console.log(`Transaction ${txHash} confirmed!`);
@@ -374,7 +382,7 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
             console.error(`Transaction ${txHash} failed.`);
         }
 
-        return txHash;  // Now return after confirmation
+        return txHash; // Now return after confirmation
     }
 
     async waitForConfirmation(txHash: string): Promise<any | null> {
@@ -384,8 +392,8 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
             if (!receipt) {
                 // Handle case where receipt is not found (perhaps log and retry)
                 console.warn(`No receipt found for transaction ${txHash}, retrying...`);
-                await new Promise(resolve => setTimeout(resolve, 15000)); // Retry after 15 seconds
-                continue;  // Skip the rest of the loop and try again
+                await new Promise((resolve) => setTimeout(resolve, 15000)); // Retry after 15 seconds
+                continue; // Skip the rest of the loop and try again
             }
 
             if (receipt.status === 1) {
@@ -401,14 +409,14 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
             }
 
             // Continue checking every 15 seconds
-            await new Promise(resolve => setTimeout(resolve, 15000));
+            await new Promise((resolve) => setTimeout(resolve, 15000));
         }
     }
 
     async getTransactionReceipt(txHash: string) {
-        const receipt = await this.#sendRpcRequest('eth_getTransactionReceipt', [txHash]);
-        if (receipt) return receipt;  // Return the receipt if it's found
-        return null;  // Return null explicitly if no receipt is found
+        const receipt = await this.#sendRpcRequest("eth_getTransactionReceipt", [txHash]);
+        if (receipt) return receipt; // Return the receipt if it's found
+        return null; // Return null explicitly if no receipt is found
     }
 
     async #sendRpcRequest(method: string, params: any[] = []) {
@@ -420,72 +428,68 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
         };
 
         // Create an array of promises to handle the different RPC URLs
-        const promises = this.chain?.rpcUrls.map((url: string) => {
-            return new Promise<any>((resolve, reject) => {
-                if (url.startsWith("wss://")) {
-                    // // WebSocket handling
-                    // const socket = new WebSocket(url);
-                    // const timeout = setTimeout(() => {
-                    //     reject(`WebSocket timeout with ${url}`);
-                    //     socket.close(); // Ensure the socket is closed if timed out
-                    // }, 10000); // 10 second timeout for WebSocket connection
-
-                    // socket.onopen = () => {
-                    //     socket.send(JSON.stringify(payload));
-                    // };
-
-                    // socket.onmessage = (event) => {
-                    //     const response = JSON.parse(event.data);
-                    //     clearTimeout(timeout); // Clear timeout if we receive a message
-
-                    //     if (response.error) {
-                    //         reject(`WebSocket Error from ${url}: ${response.error}`);
-                    //     } else if (response.result) {
-                    //         resolve(response.result); // Return the result
-                    //     } else {
-                    //         reject(`WebSocket response does not contain result: ${event.data}`);
-                    //     }
-                    //     socket.close(); // Ensure WebSocket closes after processing
-                    // };
-
-                    // socket.onerror = (error) => {
-                    //     clearTimeout(timeout);
-                    //     reject(`WebSocket error with ${url}: ${error}`);
-                    //     socket.close(); // Ensure WebSocket closes on error
-                    // };
-
-                    // socket.onclose = () => {
-                    //     console.log(`WebSocket connection closed with ${url}`);
-                    // };
-                } else {
-                    // HTTP/HTTPS handling
-                    fetch(url, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(payload),
-                    })
-                        .then((response) => {
-                            if (!response.ok) {
-                                reject(`Failed request to ${url}: ${response.statusText}`);
-                            }
-                            return response.json();
+        const promises =
+            this.chain?.rpcUrls.map((url: string) => {
+                return new Promise<any>((resolve, reject) => {
+                    if (url.startsWith("wss://")) {
+                        // // WebSocket handling
+                        // const socket = new WebSocket(url);
+                        // const timeout = setTimeout(() => {
+                        //     reject(`WebSocket timeout with ${url}`);
+                        //     socket.close(); // Ensure the socket is closed if timed out
+                        // }, 10000); // 10 second timeout for WebSocket connection
+                        // socket.onopen = () => {
+                        //     socket.send(JSON.stringify(payload));
+                        // };
+                        // socket.onmessage = (event) => {
+                        //     const response = JSON.parse(event.data);
+                        //     clearTimeout(timeout); // Clear timeout if we receive a message
+                        //     if (response.error) {
+                        //         reject(`WebSocket Error from ${url}: ${response.error}`);
+                        //     } else if (response.result) {
+                        //         resolve(response.result); // Return the result
+                        //     } else {
+                        //         reject(`WebSocket response does not contain result: ${event.data}`);
+                        //     }
+                        //     socket.close(); // Ensure WebSocket closes after processing
+                        // };
+                        // socket.onerror = (error) => {
+                        //     clearTimeout(timeout);
+                        //     reject(`WebSocket error with ${url}: ${error}`);
+                        //     socket.close(); // Ensure WebSocket closes on error
+                        // };
+                        // socket.onclose = () => {
+                        //     console.log(`WebSocket connection closed with ${url}`);
+                        // };
+                    } else {
+                        // HTTP/HTTPS handling
+                        fetch(url, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(payload),
                         })
-                        .then((data) => {
-                            if (data.error) {
-                                reject(`RPC Error from ${url}: ${data.error}`);
-                            }
-                            if (data.result) {
-                                resolve(data.result); // Return the result
-                            } else {
-                                reject(`RPC response does not contain result from ${url}`);
-                            }
-                        })
-                        .catch((error) => {
-                            reject(`Network error with ${url}: ${error}`);
-                        });
-                }
-            });
-        }) || [];
+                            .then((response) => {
+                                if (!response.ok) {
+                                    reject(`Failed request to ${url}: ${response.statusText}`);
+                                }
+                                return response.json();
+                            })
+                            .then((data) => {
+                                if (data.error) {
+                                    reject(`RPC Error from ${url}: ${data.error}`);
+                                }
+                                if (data.result) {
+                                    resolve(data.result); // Return the result
+                                } else {
+                                    reject(`RPC response does not contain result from ${url}`);
+                                }
+                            })
+                            .catch((error) => {
+                                reject(`Network error with ${url}: ${error}`);
+                            });
+                    }
+                });
+            }) || [];
 
         // Use Promise.race to stop immediately on the first successful result
         const firstSuccess = Promise.race(promises);
@@ -513,7 +517,6 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
             throw new Error("All RPC requests failed");
         }
     }
-
 
     async #broadcastTransaction(serializedTx: Buffer) {
         return await this.#sendRpcRequest("eth_sendRawTransaction", [`0x${serializedTx.toString("hex")}`]);
@@ -675,7 +678,6 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
     async #getCode(address: string) {
         return await this.#sendRpcRequest("eth_getCode", [address, "latest"]);
     }
-
 
     async #watchAsset(asset: Asset<"ERC20" | "ERC721" | "ERC1155">) {
         const { type, options } = asset;
