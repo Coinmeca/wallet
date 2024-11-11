@@ -374,7 +374,7 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
         tx.sign(Buffer.from(privateKey?.substring(0, 64), "hex"));
 
         // Log sender address after signing
-        console.log("Sender Address after signing:", tx.getSenderAddress().toString());
+        console.log("Sender Address after signing:", tx.getSenderAddress().toString("hex"));
 
         const signedTx = tx.serialize();
         console.log("Signed Transaction:", signedTx.toString("hex"));
