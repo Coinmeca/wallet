@@ -31,7 +31,6 @@ export default function Home() {
 
     const [showAddFungible, closeAddFungible] = usePortal(() => <Modals.Add.Fungible onClose={closeAddFungible} />);
 
-    console.log({ tokens });
     const fungibles = GetErc20(chain?.rpcUrls?.[0], tokens?.fungibles, account?.address);
     const fungiblesList = useCallback(
         (tokens?: Asset[]) => {

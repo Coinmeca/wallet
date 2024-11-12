@@ -2,7 +2,7 @@
 import Wallet from "ethereumjs-wallet";
 import { Transaction } from "ethereumjs-tx";
 import { bufferToHex, ecsign, hashPersonalMessage, keccak256, toBuffer } from "ethereumjs-util";
-import { formatChainId, getFaviconUri, loadStorage, openWindow, parse, parseChainId } from "./utils";
+import { formatChainId, loadStorage, parseChainId } from "./utils";
 import type { Account, App, Asset, Chain, EIP712Domain, EIP712Message, EIP712Types, TransactionParams } from "./types";
 import axios from "axios";
 import { getChainsByType } from "./chains";
@@ -167,9 +167,7 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
     }
 
     get address(): string {
-        const test = this.#data({ storage: sessionStorage })?.get("address") || this.#data()?.get("address");
-        console.log(this.#data({ storage: sessionStorage })?.get("address"), this.#data()?.get("address"), test);
-        return test;
+        return this.#data({ storage: sessionStorage })?.get("address") || this.#data()?.get("address");
     }
 
     account(address?: string): Account {
@@ -421,33 +419,24 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
         address = address?.toLowerCase();
         const chainId = this.chain?.chainId?.toString();
         let account = this.account();
-        console.log({ account })
-        console.log(1)
         if (account?.tokens?.fungibles) {
-            console.log(2)
             const tokens = account.tokens.fungibles?.[chainId];
             if (Array.isArray(tokens)) {
-                console.log(3)
                 const exist = tokens?.map((a) => a?.toLowerCase() === address?.toLowerCase());
                 if (!exist) {
-                    console.log(4)
                     account.tokens.fungibles[chainId] = [...tokens, address];
                     this.#storage?.set(account?.address?.toLowerCase(), account);
                     this.emit("updateFungibleAsset");
                 }
             } else {
-                console.log(5)
                 account.tokens.fungibles = { ...account.tokens.fungibles, [chainId]: [address] };
                 this.#storage?.set(account?.address?.toLowerCase(), account);
                 this.emit("updateFungibleAsset");
             }
         } else {
-            console.log(6)
             if (account?.tokens) {
-                console.log(7)
                 account.tokens = { ...account.tokens, fungibles: { [chainId]: [address] } };
             } else {
-                console.log(8)
                 account = { ...account, tokens: { fungibles: { [chainId]: [address] } } }
             };
             this.#storage?.set(account?.address?.toLowerCase(), account);
