@@ -59,6 +59,10 @@ export const CoinmecaWalletContextProvider: React.FC<{ children?: React.ReactNod
                 setChain(provider?.chain);
             };
 
+            const updateApps = () => {};
+
+            const updateFungibles = () => {};
+
             const update = () => {
                 updateAccount();
                 updateChain();
