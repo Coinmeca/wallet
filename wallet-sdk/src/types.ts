@@ -133,14 +133,16 @@ export interface Asset<Name extends "ERC20" | "ERC721" | "ERC1155"> {
     options: AssetOptions<Name>;
 }
 
+export interface Tokens {
+    fungibles?: { [chainId: number | string]: string[] | undefined };
+    nonFungibles?: { [chainId: number | string]: string[] | undefined };
+    multiTokens?: { [chainId: number | string]: string[] | undefined };
+}
+
 export interface Account {
     name: string;
     address: string;
     index: number;
     balance?: number;
-    tokens?: {
-        fungibles?: string[];
-        nonFungibles?: string[];
-        multiTokens?: string[];
-    };
+    tokens?: Tokens;
 }

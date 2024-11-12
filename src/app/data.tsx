@@ -1,6 +1,7 @@
 ﻿"use client";
 
-import { useCallback, useMemo, useState } from "react";
+import Image from "next/image";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useNotification, usePortal, useWindowSize } from "@coinmeca/ui/hooks";
@@ -9,14 +10,13 @@ import { Account, App, Chain } from "@coinmeca/wallet-sdk/types";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
 
 import Coinmeca from "assets/coinmeca.svg";
-import { usePageLoader } from "hooks";
+import { usePageLoader, useWeb3Client } from "hooks";
 import { filter, format } from "@coinmeca/ui/lib/utils";
 import { Modal } from "@coinmeca/ui/containers";
 import { Root } from "@coinmeca/ui/lib/style";
-import Image from "next/image";
-import { GetBalance } from "api/account";
 import { useQueries } from "@tanstack/react-query";
 import { query } from "api/onchain/query";
+import { Address, custom, http } from "viem";
 
 export default function Data() {
     const router = useRouter();
@@ -25,6 +25,7 @@ export default function Data() {
     const { windowSize } = useWindowSize();
     const { isLoad } = usePageLoader();
     const { provider, account, accounts, chain, chains, apps } = useCoinmecaWalletProvider();
+    const { setWeb3Client, resetWeb3Client } = useWeb3Client();
     const { toasts, addToast } = useNotification();
 
     const [value, setValue] = useState<number>(0);
@@ -369,6 +370,18 @@ export default function Data() {
         },
         [chain, chains],
     );
+
+    useEffect(() => {
+        if (chain && account?.address) {
+            setWeb3Client({
+                chain,
+                account: account?.address as Address,
+                transport: http(),
+            });
+        } else {
+            resetWeb3Client();
+        }
+    }, [account]);
 
     const header = {
         color: colorMap,

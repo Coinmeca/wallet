@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import React, { createContext, useContext, useEffect, useLayoutEffect, useState } from "react";
-import { Chain, Account, App } from "../types";
+import { Chain, Account, App, Tokens } from "../types";
 import { CoinmecaWalletProvider } from "../provider";
 
 // Inject the provider into window.ethereum
@@ -20,6 +20,11 @@ interface CoinmecaWalletProviderContextProps {
     chain: Chain | undefined;
     chains: Chain[] | undefined;
     apps: App[] | undefined;
+    tokens: {
+        fungibles?: string[];
+        nonFungibles?: string[];
+        multiTokens?: string[];
+    };
 }
 
 const CoinmecaWalletContext = createContext<CoinmecaWalletProviderContextProps | undefined>(undefined);
@@ -34,7 +39,7 @@ export const CoinmecaWalletContextProvider: React.FC<{ children?: React.ReactNod
     const [provider, setProvider] = useState<CoinmecaWalletProvider>();
 
     const [account, setAccount] = useState<Account>();
-    const [chain, setChain] = useState();
+    const [chain, setChain] = useState<Chain>();
 
     useLayoutEffect(() => {
         setProvider(
@@ -47,11 +52,11 @@ export const CoinmecaWalletContextProvider: React.FC<{ children?: React.ReactNod
     useLayoutEffect(() => {
         if (provider) {
             const updateAccount = () => {
-                setAccount(provider?.account());
+                if (provider?.account()) setAccount(provider?.account());
             };
 
             const updateChain = () => {
-                setChain(provider?.chain);
+                if (provider?.chain) setChain(provider?.chain);
             };
 
             const update = () => {
@@ -71,7 +76,20 @@ export const CoinmecaWalletContextProvider: React.FC<{ children?: React.ReactNod
     }, [provider]);
 
     return (
-        <CoinmecaWalletContext.Provider value={{ provider, account, chain, accounts: provider?.accounts() as Account[], chains: provider?.chains, apps:provider?.apps }}>
+        <CoinmecaWalletContext.Provider
+            value={{
+                provider,
+                account,
+                chain,
+                accounts: provider?.accounts() as Account[],
+                chains: provider?.chains,
+                apps: provider?.apps,
+                tokens: {
+                    fungibles: chain?.chainId ? account?.tokens?.fungibles?.[`${chain?.chainId}`] : undefined,
+                    nonFungibles: chain?.chainId ? account?.tokens?.nonFungibles?.[`${chain?.chainId}`] : undefined,
+                    multiTokens: chain?.chainId ? account?.tokens?.multiTokens?.[`${chain?.chainId}`] : undefined,
+                },
+            }}>
             {children}
         </CoinmecaWalletContext.Provider>
     );

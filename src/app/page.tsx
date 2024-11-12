@@ -1,10 +1,12 @@
 "use client";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
+import { usePortal } from "@coinmeca/ui/hooks";
 import { format } from "@coinmeca/ui/lib/utils";
+import { Asset } from "@coinmeca/ui/types";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
-import { useQueries } from "@tanstack/react-query";
 import { GetBalance } from "api/account";
-import { query } from "api/query";
+import { GetErc20 } from "api/erc20";
+import { Modals } from "containers";
 import { AnimatePresence } from "framer-motion";
 import { usePageLoader } from "hooks";
 import { usePathname, useRouter } from "next/navigation";
@@ -15,7 +17,7 @@ export default function Home() {
     const router = useRouter();
 
     const { isLoad } = usePageLoader();
-    const { account, chain } = useCoinmecaWalletProvider();
+    const { account, chain, tokens } = useCoinmecaWalletProvider();
     const { data: balance, isLoading } = GetBalance(chain?.rpcUrls?.[0], account?.address);
 
     const [tab, setTab] = useState("token");
@@ -27,9 +29,71 @@ export default function Home() {
         if (path.startsWith("/nft")) setTab("nft");
     }, [path]);
 
-    const fungibles = useQueries({
-        queries: (account?.tokens?.fungibles || [])?.map((t: string) => query.erc20.token(chain?.rpcUrls?.[0], t, account?.address)),
-    });
+    const [showAddFungible, closeAddFungible] = usePortal(() => <Modals.Add.Fungible onClose={closeAddFungible} />);
+
+    const fungibles = GetErc20(chain?.rpcUrls?.[0], tokens?.fungibles, account?.address);
+    const fungiblesList = useCallback(
+        (tokens?: Asset[]) => {
+            return [
+                ...(tokens || [])
+                    ?.map(
+                        (t?: Asset) =>
+                            typeof t === "object" && [
+                                [
+                                    <>
+                                        <Elements.Avatar img={`https://web3.coinmeca.net/${chain?.chainId}/${t?.address}/logo.svg`} />
+                                    </>,
+                                ],
+                                [
+                                    [
+                                        <>
+                                            <Elements.Text>{t?.symbol}</Elements.Text>
+                                        </>,
+                                        <>
+                                            <Elements.Text opacity={0.6}>{t?.name}</Elements.Text>
+                                        </>,
+                                    ],
+                                ],
+                                ...(t?.balance
+                                    ? [
+                                          <>
+                                              <Elements.Text>{t?.balance}</Elements.Text>
+                                          </>,
+                                      ]
+                                    : []),
+                            ],
+                    )
+                    ?.filter((a) => a),
+                {
+                    onClick: showAddFungible,
+                    style: { padding: "2em" },
+                    children: [
+                        [
+                            {
+                                gap: 1.5,
+                                children: [
+                                    {
+                                        fit: true,
+                                        children: (
+                                            <Elements.Icon
+                                                scale={0.5}
+                                                icon={"plus-bold"}
+                                                style={{ padding: "0.5em", borderRadius: "100%", border: "0.2em solid rgb(var(--white))" }}
+                                            />
+                                        ),
+                                    },
+                                    <>
+                                        <Elements.Text>Add Fungible Token</Elements.Text>
+                                    </>,
+                                ],
+                            },
+                        ],
+                    ],
+                },
+            ];
+        },
+        [tokens?.fungibles, fungibles],
+    );
 
     return (
         <Layouts.Page snap>
@@ -63,25 +127,46 @@ export default function Home() {
                                 <Layouts.Menu
                                     menu={[
                                         [
-                                            <>
-                                                <Controls.Tab active={tab === "token"} onClick={() => router.push("/token")}>
-                                                    Token
-                                                </Controls.Tab>
-                                            </>,
-                                            <>
-                                                <Controls.Tab active={tab === "nft"} onClick={() => router.push("/nft")}>
-                                                    NFT
-                                                </Controls.Tab>
-                                            </>,
-                                            <>
-                                                <Controls.Tab active={tab === "activity"} onClick={() => router.push("/activity")}>
-                                                    Activity
-                                                </Controls.Tab>
-                                            </>,
+                                            [
+                                                <>
+                                                    <Controls.Tab active={tab === "token"} onClick={() => router.push("/token")}>
+                                                        Token
+                                                    </Controls.Tab>
+                                                </>,
+                                                <>
+                                                    <Controls.Tab active={tab === "nft"} onClick={() => router.push("/nft")}>
+                                                        NFT
+                                                    </Controls.Tab>
+                                                </>,
+                                                <>
+                                                    <Controls.Tab active={tab === "activity"} onClick={() => router.push("/activity")}>
+                                                        Activity
+                                                    </Controls.Tab>
+                                                </>,
+                                            ],
+                                            [
+                                                <>
+                                                    <Controls.Tab
+                                                        active={tab === "activity"}
+                                                        onClick={() => router.push("/activity")}
+                                                        iconLeft={"plus-small"}
+                                                    />
+                                                </>,
+                                            ],
                                         ],
                                     ]}
                                 />
                             </Layouts.Col>
+                            <Layouts.Contents.InnerContent scroll={false}>
+                                <Layouts.Contents.TabContainer
+                                    contents={[
+                                        {
+                                            active: tab === "token",
+                                            children: <Layouts.List list={Object.values(fungibles?.data || [{}])} formatter={fungiblesList} />,
+                                        },
+                                    ]}
+                                />
+                            </Layouts.Contents.InnerContent>
                             <div style={{ position: "fixed", width: "-webkit-fill-available", left: 0, bottom: 0, margin: "2em" }}>
                                 <Layouts.Row gap={2} fill>
                                     <Controls.Button type={"solid"} icon={"chevron-left-bold"} color={"green"}>
