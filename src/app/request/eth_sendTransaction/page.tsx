@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
 import { Account, TransactionParams } from "@coinmeca/wallet-sdk/types";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
-import { GetEstimateGas, GetGasPrice } from "api/onchain";
+import { GetEstimateGas, GetGasPrice, GetRpcUrls } from "api/onchain";
 import { format } from "@coinmeca/ui/lib/utils";
 
 /*
@@ -51,13 +51,17 @@ export default function eth_sendTransaction() {
 
     const { data: gasPrice, isLoading: isGasPriceLoading } = GetGasPrice(chain?.rpcUrls[0]);
     const { data: estimateGas, isLoading: isEstimateGasLoading } = GetEstimateGas(chain?.rpcUrls[0], tx);
+
+    const [txHash, setTxHash] = useState<string>('');
     const [error, setError] = useState<any>();
 
+    const rpcUrls = GetRpcUrls();
+    console.log({rpc:rpcUrls?.data})
 
     useLayoutEffect(() => {
         console.log({ params, auth, app });
         if (params) {
-            const { value, gasLimit, maxFeePerGas, maxPriorityFeePerGas } = params;
+            const { value, gasLimit, maxFeePerGas, maxPriorityFeePerGas,chainId } = params;
             const tx = {
                 ...params,
                 value: Number(value),
@@ -65,6 +69,7 @@ export default function eth_sendTransaction() {
                 maxFeePerGas: Number(maxFeePerGas),
                 maxPriorityFeePerGas: Number(maxPriorityFeePerGas),
             };
+            if (chainId) provider?.changeChain(chainId);
             setTx(tx);
             setSigner(provider?.account(tx?.from));
         }
@@ -73,7 +78,7 @@ export default function eth_sendTransaction() {
     const handleSign = async () => {
         setLevel(1);
         try {
-            const result = await provider?.sign({ ...params, chainId: chain?.chainId }, signer!);
+            const result = await provider?.sign({ ...params, chainId: chain?.chainId }, signer!).then(async (tx:any) => await provider?.send(tx));
             if (result) {
                 window?.opener?.postMessage(
                     {
@@ -85,6 +90,7 @@ export default function eth_sendTransaction() {
             } else {
                 throw new Error(result);
             }
+            setTxHash(result);
             setLevel(2);
         } catch (error:any) {
             console.log(error);
@@ -95,7 +101,7 @@ export default function eth_sendTransaction() {
                 },
                 "*",
             );
-            setError(error?.message || error);
+            setError(error);
             setLevel(3);
         }
     };
@@ -365,6 +371,7 @@ export default function eth_sendTransaction() {
                                         <Layouts.Col gap={4} align={"center"} fit>
                                             <Elements.Text type={"h3"}>Complete</Elements.Text>
                                             <Elements.Text size={1} weight={"bold"}>
+                                                <Elements.Text opacity={0.6}>{txHash?.substring(0, txHash?.startsWith("0x") ? 8: 6) + "..." + txHash?.substring(txHash?.length - 6, txHash?.length)}</Elements.Text>{" "}
                                                 <Elements.Text opacity={0.6}>Selected chain was switched from</Elements.Text>{" "}
                                                 <Elements.Text>{app?.name}</Elements.Text> <Elements.Text opacity={0.6}>to</Elements.Text>{" "}
                                                 <Elements.Text>{` ${tx?.to}`}</Elements.Text>
@@ -415,7 +422,7 @@ export default function eth_sendTransaction() {
                                         <Layouts.Col gap={4} align={"center"} fit>
                                             <Elements.Text type={"h3"}>Failure</Elements.Text>
                                             <Elements.Text weight={"bold"} opacity={0.6}>
-                                                {error}
+                                                {error?.message || error}
                                             </Elements.Text>
                                         </Layouts.Col>
                                     </Layouts.Col>

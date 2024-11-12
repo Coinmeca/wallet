@@ -18,7 +18,6 @@ export default function Providers({ children }: { children: any }) {
                 <TelegramProvider>
                     <StorageProvider>
                         <CoinmecaWalletContextProvider>
-                            <CoinmecaWalletAdapterContextProvider>
                                 <MessageHandler>
                                     <Theme>
                                         <QueryClientProvider {...{ client }}>
@@ -32,7 +31,6 @@ export default function Providers({ children }: { children: any }) {
                                         </QueryClientProvider>
                                     </Theme>
                                 </MessageHandler>
-                            </CoinmecaWalletAdapterContextProvider>
                         </CoinmecaWalletContextProvider>
                     </StorageProvider>
                 </TelegramProvider>

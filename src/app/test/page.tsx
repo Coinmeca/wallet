@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Controls, Layouts } from "@coinmeca/ui/components";
 import { useCoinmecaWallet, useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
-import { getChainById, getChainsByType } from "@coinmeca/wallet-sdk/chains";
+import { getChainsByType } from "@coinmeca/wallet-sdk/chains";
 import { useTelegram } from "hooks";
 
 export default function Home() {
@@ -98,25 +98,25 @@ export default function Home() {
     };
 
     return (
-        <Layouts.Col>
-            <div>{telegram ? `Success, Platform: ${telegram.platform}` : "Fail"}</div>
-            <Controls.Button onClick={handleAddEthereumChain}>Add Ethereum Chain</Controls.Button>
-            <Controls.Button onClick={switchEthereumChain}>Switch Ethereum Chain</Controls.Button>
-            <Controls.Button onClick={handleRequestAccounts}>Request Accounts</Controls.Button>
-            <Controls.Button onClick={handleSendTransaction}>Send Transaction</Controls.Button>
-            <Controls.Button onClick={handleSendData}>Send Data</Controls.Button>
-            <Controls.Button onClick={handleExpand}>Expand</Controls.Button>
-            <Controls.Button onClick={handleShowConfirm}>Show Confirm</Controls.Button>
-            <Controls.Button onClick={handleShowPopup}>Show Popup</Controls.Button>
-            <Controls.Button onClick={handleRequest}>Biometric Request</Controls.Button>
-            <Controls.Button onClick={handleAuthenticate}>Biometric Auth</Controls.Button>
-            <Controls.Button onClick={handleClose}>Close</Controls.Button>
-            {authenticate && `Authenticate: ${authenticate}`}
-            <br />
-            {requestAccess && `Request Access: ${requestAccess}`}
-            <br />
-            {error && `Error: ${error}`}
-            <br />
-        </Layouts.Col>
+            <Layouts.Col>
+                <div>{telegram ? `Success, Platform: ${telegram.platform}` : "Fail"}</div>
+                <Controls.Button onClick={handleAddEthereumChain}>Add Ethereum Chain</Controls.Button>
+                <Controls.Button onClick={switchEthereumChain}>Switch Ethereum Chain</Controls.Button>
+                <Controls.Button onClick={handleRequestAccounts}>Request Accounts</Controls.Button>
+                <Controls.Button onClick={handleSendTransaction}>Send Transaction</Controls.Button>
+                <Controls.Button onClick={handleSendData}>Send Data</Controls.Button>
+                <Controls.Button onClick={handleExpand}>Expand</Controls.Button>
+                <Controls.Button onClick={handleShowConfirm}>Show Confirm</Controls.Button>
+                <Controls.Button onClick={handleShowPopup}>Show Popup</Controls.Button>
+                <Controls.Button onClick={handleRequest}>Biometric Request</Controls.Button>
+                <Controls.Button onClick={handleAuthenticate}>Biometric Auth</Controls.Button>
+                <Controls.Button onClick={handleClose}>Close</Controls.Button>
+                {authenticate && `Authenticate: ${authenticate}`}
+                <br />
+                {requestAccess && `Request Access: ${requestAccess}`}
+                <br />
+                {error && `Error: ${error}`}
+                <br />
+                </Layouts.Col>
     );
 }

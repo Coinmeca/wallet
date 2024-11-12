@@ -108,7 +108,9 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
             console.error("Attempted to clear localStorage! This action is prevented.");
         };
         Object.freeze(loadStorage);
+
         (window as any).coinmeca = { wallet: this };
+        Object.freeze(this);
     }
 
     #safe(fn: Function) {
@@ -379,17 +381,22 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
         return await this.#sendRpcRequest("eth_gasPrice");
     }
 
-    async #getTransactionCount(address: string) {
-        return await this.#sendRpcRequest("eth_getTransactionCount", [address || this.address, "latest"]);
+    async #nonce(address: string) {
+        if (this.#count) return this.#count + 1;
+        else return await this.#sendRpcRequest("eth_getTransactionCount", [address || this.address, "latest"]);
     }
 
     async sign(transaction: TransactionParams, signer: Account | string) {
         const privateKey = this.#getPrivateKey(typeof signer === "object" ? signer?.index : this.#storage?.get(signer?.toLowerCase())?.index);
         if (this.chain?.chainId) transaction.chainId = this.chain.chainId;
-        transaction.nonce = (this.#count || (await this.#getTransactionCount(typeof signer === "object" ? signer?.address : signer))).toString(16);
+        transaction.nonce = (await this.#nonce(typeof signer === "object" ? signer?.address : signer)).toString(16);
         const tx = new Transaction(transaction);
         tx.sign(Buffer.from(privateKey?.substring(0, 64), "hex"));
-        return await this.#broadcastTransaction(tx.serialize());
+        return tx;
+    }
+
+    async send(signedTx: Transaction) {
+        return await this.#sendRpcRequest("eth_sendRawTransaction", [`0x${signedTx.serialize().toString("hex")}`]);
     }
 
     // Background confirmation process without blocking the main flow
@@ -425,7 +432,10 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
 
     async #broadcastTransaction(serializedTx: Buffer) {
         console.log("serializedTx", serializedTx, [`0x${serializedTx.toString("hex")}`]);
-        return await this.#sendRpcRequest("eth_sendRawTransaction", [`0x${serializedTx.toString("hex")}`]);
+    }
+
+    async #getCode(address: string) {
+        return await this.#sendRpcRequest("eth_getCode", [address, "latest"]);
     }
 
     async #sendRpcRequest(method: string, params?: any) {
@@ -591,10 +601,6 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
 
     async #getBalance(address: string) {
         return await this.#sendRpcRequest("eth_getBalance", [address, "latest"]);
-    }
-
-    async #getCode(address: string) {
-        return await this.#sendRpcRequest("eth_getCode", [address, "latest"]);
     }
 
     async #watchAsset(asset: Asset<"ERC20" | "ERC721" | "ERC1155">) {

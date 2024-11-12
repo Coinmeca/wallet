@@ -2,6 +2,14 @@ const path = require("path");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+    async rewrites() {
+        return [
+            {
+                source: '/api/chainlist/:path*', // Path after '/api/chainlist'
+                destination: 'https://chainlist.org/api/:path*', // Forward to chainlist API,
+            }
+        ];
+    },
     async headers() {
         return [
             {

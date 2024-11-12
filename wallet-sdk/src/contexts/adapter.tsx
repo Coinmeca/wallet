@@ -29,7 +29,7 @@ export const useCoinmecaWallet = () => {
     return context;
 };
 
-export const CoinmecaWalletAdapterContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const CoinmecaWalletAdapterContextProvider: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     const [adapter, setAdapter] = useState<CoinmecaWalletAdapter>();
 
     const [account, setAccount] = useState<Account>();
