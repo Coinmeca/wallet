@@ -92,6 +92,7 @@ export interface CoinmecaWalletProviderConfig {
 
 export class CoinmecaWalletProvider extends CoinmecaWalletBase {
     #key?: string;
+    #count?: number;
 
     constructor(config?: CoinmecaWalletProviderConfig) {
         super();
@@ -184,11 +185,11 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
             return (
                 (url && url !== ""
                     ? this.#data()
-                        ?.get("apps")
-                        ?.find((a: App) => a?.url?.toLowerCase() === url?.toLowerCase())?.accounts
+                          ?.get("apps")
+                          ?.find((a: App) => a?.url?.toLowerCase() === url?.toLowerCase())?.accounts
                     : this.#safe((key: string) => this.#storage?.get(`${key}:seed`)?.map((s: string) => this.#wallet(s)?.getAddressString()))?.map(
-                        (a: string) => this.#storage?.get(a?.toLowerCase()),
-                    )) || []
+                          (a: string) => this.#storage?.get(a?.toLowerCase()),
+                      )) || []
             ).filter((a: any) => a);
         } catch (e) {
             return [];
@@ -285,13 +286,16 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
 
             let index = accounts?.length;
             if (address) {
-                if (!keys?.some((s: string, i: number) => {
-                    const check = s?.toLowerCase() === privateKey?.toLowerCase()
-                    if (check) {
-                        index = i;
-                        return check;
-                    }
-                })) this.#storage?.set(`${key}:seed`, [...keys, privateKey]);
+                if (
+                    !keys?.some((s: string, i: number) => {
+                        const check = s?.toLowerCase() === privateKey?.toLowerCase();
+                        if (check) {
+                            index = i;
+                            return check;
+                        }
+                    })
+                )
+                    this.#storage?.set(`${key}:seed`, [...keys, privateKey]);
                 if (!this.#data()?.get(address?.toLowerCase())) this.#storage?.set(address?.toLowerCase(), { address, index, name: `Account ${index + 1}` });
                 this.changeAccount(index);
                 return true;
@@ -308,6 +312,12 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
     changeAccount(index: number) {
         return this.#safe(() => {
             const account = this.accounts()?.[index] as Account;
+            this.#sendRpcRequest("eth_getTransactionCount", [account?.address, "latest"]).then((result) => {
+                if (result) {
+                    const count = Number(result);
+                    if (!isNaN(count)) this.#count = count;
+                }
+            });
             if (!account) throw new Error("There is no accounts that setup yet.");
             this.#data().set("account", account?.address);
             this.emit("accountChanged", account?.address);
@@ -369,24 +379,16 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
         return await this.#sendRpcRequest("eth_gasPrice");
     }
 
+    async #getTransactionCount(address: string) {
+        return await this.#sendRpcRequest("eth_getTransactionCount", [address || this.address, "latest"]);
+    }
+
     async sign(transaction: TransactionParams, signer: Account | string) {
         const privateKey = this.#getPrivateKey(typeof signer === "object" ? signer?.index : this.#storage?.get(signer?.toLowerCase())?.index);
-        if (!transaction.nonce)
-            transaction.nonce = `0x${parseInt(await this.#sendRpcRequest("eth_getTransactionCount", [transaction?.from, "latest"])).toString(16)}`;
-        console.log({ nonce: transaction?.nonce });
-        if (!transaction.chainId) transaction.chainId = this.chain.chainId;
+        if (this.chain?.chainId) transaction.chainId = this.chain.chainId;
+        transaction.nonce = (this.#count || (await this.#getTransactionCount(typeof signer === "object" ? signer?.address : signer))).toString(16);
         const tx = new Transaction(transaction);
         tx.sign(Buffer.from(privateKey?.substring(0, 64), "hex"));
-
-        // Log sender address after signing
-        console.log("Sender Address after signing:", tx.getSenderAddress().toString("hex"));
-
-        const signedTx = tx.serialize();
-        console.log("Signed Transaction:", signedTx.toString("hex"));
-
-        const txFrom = `0x${signedTx.slice(0, 20).toString("hex")}`;
-        console.log("Extracted Sender Address from Signed Tx:", txFrom);
-
         return await this.#broadcastTransaction(tx.serialize());
     }
 
@@ -589,10 +591,6 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
 
     async #getBalance(address: string) {
         return await this.#sendRpcRequest("eth_getBalance", [address, "latest"]);
-    }
-
-    async #getTransactionCount(address: string) {
-        return await this.#sendRpcRequest("eth_getTransactionCount", [address, "latest"]);
     }
 
     async #getCode(address: string) {

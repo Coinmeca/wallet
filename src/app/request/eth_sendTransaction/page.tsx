@@ -51,6 +51,8 @@ export default function eth_sendTransaction() {
 
     const { data: gasPrice, isLoading: isGasPriceLoading } = GetGasPrice(chain?.rpcUrls[0]);
     const { data: estimateGas, isLoading: isEstimateGasLoading } = GetEstimateGas(chain?.rpcUrls[0], tx);
+    const [error, setError] = useState<any>();
+
 
     useLayoutEffect(() => {
         console.log({ params, auth, app });
@@ -83,7 +85,8 @@ export default function eth_sendTransaction() {
             } else {
                 throw new Error(result);
             }
-        } catch (error) {
+            setLevel(2);
+        } catch (error:any) {
             console.log(error);
             window?.opener?.postMessage(
                 {
@@ -92,8 +95,8 @@ export default function eth_sendTransaction() {
                 },
                 "*",
             );
-        } finally {
-            setLevel(2);
+            setError(error?.message || error);
+            setLevel(3);
         }
     };
 
@@ -126,7 +129,6 @@ export default function eth_sendTransaction() {
                                             <Layouts.Row gap={3} align={"center"} fix>
                                                 <div
                                                     style={{
-                                                        position: "relative",
                                                         display: "flex",
                                                         alignItems: "center",
                                                         justifyContent: "center",
@@ -136,38 +138,44 @@ export default function eth_sendTransaction() {
                                                         borderRadius: "100%",
                                                         background: "rgba(var(--white),.15)",
                                                     }}>
-                                                    <Image
-                                                        src={app?.logo || ""}
-                                                        width={0}
-                                                        height={0}
-                                                        alt={app?.name || ""}
-                                                        style={{ width: "4em", height: "4em", borderRadius: "100%" }}
-                                                    />
-                                                    <Image
-                                                        src={app?.logo || ""}
-                                                        width={0}
-                                                        height={0}
-                                                        alt={app?.name || ""}
-                                                        style={{
-                                                            position: "absolute",
-                                                            right: "1em",
-                                                            bottom: "1em",
-                                                            width: "1em",
-                                                            height: "1em",
-                                                            borderRadius: "100%",
-                                                        }}
-                                                    />
+                                                    <div style={{position: "relative", width: "4em", height: "4em",}}>
+                                                        <Image
+                                                            src={app?.logo || ""}
+                                                            width={0}
+                                                            height={0}
+                                                            title={app?.name || ""}
+                                                            alt={app?.name || ""}
+                                                            style={{ width: "100%", height:"100%", borderRadius: "100%" }}
+                                                        />
+                                                        <Image
+                                                            src={chain?.logo || ""}
+                                                            width={0}
+                                                            height={0}
+                                                            title={chain?.chainName || ''}
+                                                            alt={chain?.chainName || ""}
+                                                            style={{
+                                                                position: "absolute",
+                                                                width: "2em",
+                                                                height: "2em",
+                                                                right: "-0.5em",
+                                                                bottom: "-0.5em",
+                                                                borderRadius: "100%",
+                                                            }}
+                                                        />
+                                                    </div>
                                                 </div>
                                                 <Layouts.Col gap={0} align={"center"} fill>
-                                                    <Elements.Text height={0} align={"left"} opacity={0.6}>
+                                                    <Elements.Text type={'desc'} weight={'bold'} height={0} align={"left"} opacity={0.6}>
                                                         Requested By
                                                     </Elements.Text>
-                                                    <Elements.Text type={"h6"} height={0} align={"left"}>
-                                                        {app?.name}
-                                                    </Elements.Text>
-                                                    <Elements.Text type={"strong"} height={0} align={"left"} opacity={0.6}>
-                                                        {app?.url}
-                                                    </Elements.Text>
+                                                    <Layouts.Col gap={0}>
+                                                        <Elements.Text type={"h6"} height={0} align={"left"}>
+                                                            {app?.name}
+                                                        </Elements.Text>
+                                                        <Elements.Text type={"strong"} height={0} align={"left"} opacity={0.6}>
+                                                            {app?.url}
+                                                        </Elements.Text>
+                                                    </Layouts.Col>
                                                 </Layouts.Col>
                                             </Layouts.Row>
                                             <Layouts.Divider />
@@ -183,7 +191,7 @@ export default function eth_sendTransaction() {
                                                         borderRadius: "100%",
                                                         background: "rgba(var(--white),.15)",
                                                     }}>
-                                                    <Elements.Avatar character={`${signer?.index + 1}`} name={`${signer?.index + 1}`} hideName />
+                                                    <Elements.Avatar character={`${signer?.index + 1}`} name={`${signer?.index + 1}`} title={signer?.name} hideName />
                                                 </div>
                                                 <Layouts.Col gap={0} align={"center"}>
                                                     <Elements.Text type={"h6"} height={0} align={"left"}>
@@ -374,6 +382,55 @@ export default function eth_sendTransaction() {
                         </Layouts.Contents.InnerContent>
                     ),
                 },
+                {
+                    active: level === 3,
+                    children:(        <Layouts.Contents.InnerContent scroll={false}>
+                        <Layouts.Col gap={2} align={"center"} fill>
+                            <Layouts.Contents.InnerContent padding={[4, 4, 0]}>
+                                <Layouts.Col fill>
+                                    <Layouts.Col align={"center"} style={{ flex: 1 }}>
+                                        <Layouts.Col gap={8} align={"center"} fit>
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                    maxWidth: "max-content",
+                                                    maxHeight: "max-content",
+                                                    padding: "2em",
+                                                    borderRadius: "100%",
+                                                    background: "rgba(var(--white),.15)",
+                                                }}>
+                                                <Image
+                                                    width={0}
+                                                    height={0}
+                                                    src={require("../../../assets/animation/failure.gif")}
+                                                    alt={"Failure"}
+                                                    style={{ width: "8em", height: "8em" }}
+                                                />
+                                            </div>
+                                        </Layouts.Col>
+                                    </Layouts.Col>
+                                    <Layouts.Col gap={8} align={"center"} style={{ flex: 1 }} fill>
+                                        <Layouts.Col gap={4} align={"center"} fit>
+                                            <Elements.Text type={"h3"}>Failure</Elements.Text>
+                                            <Elements.Text weight={"bold"} opacity={0.6}>
+                                                {error}
+                                            </Elements.Text>
+                                        </Layouts.Col>
+                                    </Layouts.Col>
+                                </Layouts.Col>
+                            </Layouts.Contents.InnerContent>
+                            <Layouts.Col gap={4} align={"center"} style={{ padding: "4em", paddingTop: 0 }}>
+                                <Layouts.Row gap={2}>
+                                    <Controls.Button type={"glass"} onClick={handleClose}>
+                                        Close
+                                    </Controls.Button>
+                                </Layouts.Row>
+                            </Layouts.Col>
+                        </Layouts.Col>
+                    </Layouts.Contents.InnerContent>)
+                }
             ]}
         />
     ) : (
@@ -398,7 +455,7 @@ export default function eth_sendTransaction() {
                                         width={0}
                                         height={0}
                                         src={require("../../../assets/animation/failure.gif")}
-                                        alt={"Unknown"}
+                                        alt={"Failure"}
                                         style={{ width: "8em", height: "8em" }}
                                     />
                                 </div>
