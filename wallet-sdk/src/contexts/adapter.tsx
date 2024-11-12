@@ -4,15 +4,6 @@ import React, { createContext, useContext, useEffect, useLayoutEffect, useMemo, 
 import { Chain, Account } from "../types";
 import { CoinmecaWalletAdapter } from "../adpater";
 
-// Inject the adapter into window.ethereum
-declare global {
-    interface Window {
-        ethereum?: any;
-        providers?: any;
-        providersMaprovider?: Map<string, any>;
-    }
-}
-
 interface CoinmecaWalletAdapterContextProps {
     adapter: CoinmecaWalletAdapter | undefined;
     account: Account | undefined;
