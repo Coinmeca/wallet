@@ -35,6 +35,7 @@ export function GetErc20(rpc?: string, erc20?: (string | undefined)[], owner?: s
 
     return {
         isError: results?.some((result: any) => result?.isError),
+        isPaused: results?.some((result: any) => result?.isPaused),
         isPending: results?.some((result: any) => result?.isPending),
         isLoading: results?.some((result: any) => result?.isLoading),
         isFetching: results?.some((result: any) => result?.isFetching),

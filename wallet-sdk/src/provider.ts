@@ -325,7 +325,6 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
         if (!chainId) return;
         chainId = (typeof chainId === "string" ? (chainId?.startsWith("0x") ? parseChainId(chainId) : parseInt(chainId)) : chainId) as number;
         const chains = this.chains;
-        console.log({ chains, chainId });
         if (chains?.length && chains?.find((c: Chain) => c?.chainId === chainId)) {
             if (typeof window !== "undefined") (window as any).ethereum = { chainId };
             this.#data()?.set("chainId", chainId);
@@ -416,51 +415,55 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
     }
 
     addFungibleAsset(address: string) {
-        address = address?.toLowerCase();
-        const chainId = this.chain?.chainId?.toString();
-        let account = this.account();
-        if (account?.tokens?.fungibles) {
-            const tokens = account.tokens.fungibles?.[chainId];
-            if (Array.isArray(tokens)) {
-                const exist = tokens?.map((a) => a?.toLowerCase() === address?.toLowerCase());
-                if (!exist) {
-                    account.tokens.fungibles[chainId] = [...tokens, address];
+        return this.#safe(() => {
+            address = address?.toLowerCase();
+            const chainId = this.chain?.chainId?.toString();
+            let account = this.account();
+            if (account?.tokens?.fungibles) {
+                const tokens = account.tokens.fungibles?.[chainId];
+                if (Array.isArray(tokens)) {
+                    const exist = tokens?.map((a) => a?.toLowerCase() === address?.toLowerCase());
+                    if (!exist) {
+                        account.tokens.fungibles[chainId] = [...tokens, address];
+                        this.#storage?.set(account?.address?.toLowerCase(), account);
+                        this.emit("updateFungibleAsset");
+                    }
+                } else {
+                    account.tokens.fungibles = { ...account.tokens.fungibles, [chainId]: [address] };
                     this.#storage?.set(account?.address?.toLowerCase(), account);
                     this.emit("updateFungibleAsset");
                 }
             } else {
-                account.tokens.fungibles = { ...account.tokens.fungibles, [chainId]: [address] };
+                if (account?.tokens) {
+                    account.tokens = { ...account.tokens, fungibles: { [chainId]: [address] } };
+                } else {
+                    account = { ...account, tokens: { fungibles: { [chainId]: [address] } } }
+                };
                 this.#storage?.set(account?.address?.toLowerCase(), account);
                 this.emit("updateFungibleAsset");
             }
-        } else {
-            if (account?.tokens) {
-                account.tokens = { ...account.tokens, fungibles: { [chainId]: [address] } };
-            } else {
-                account = { ...account, tokens: { fungibles: { [chainId]: [address] } } }
-            };
-            this.#storage?.set(account?.address?.toLowerCase(), account);
-            this.emit("updateFungibleAsset");
-        }
 
-        console.log({ account });
-        console.log(this.#storage?.get(account?.address?.toLowerCase()));
+            console.log({ account });
+            console.log(this.#storage?.get(account?.address?.toLowerCase()));
+        })
     }
 
     removeFungibleAsset(address: string) {
-        let account = this.account();
-        const chainId = this.chain?.chainId?.toString();
-        if (account?.tokens?.fungibles) {
-            const tokens = account.tokens.fungibles?.[chainId];
-            if (Array.isArray(tokens)) {
-                const exist = tokens?.map((a) => a?.toLowerCase() === address?.toLowerCase());
-                if (!exist) {
-                    account.tokens.fungibles[chainId] = [...tokens?.filter(a => a?.toLowerCase() !== address?.toLowerCase())];
-                    this.#storage?.set(account.address?.toLowerCase(), account);
-                    this.emit("updateFungibleAsset");
+        return this.#safe(() => {
+            let account = this.account();
+            const chainId = this.chain?.chainId?.toString();
+            if (account?.tokens?.fungibles) {
+                const tokens = account.tokens.fungibles?.[chainId];
+                if (Array.isArray(tokens)) {
+                    const exist = tokens?.map((a) => a?.toLowerCase() === address?.toLowerCase());
+                    if (!exist) {
+                        account.tokens.fungibles[chainId] = [...tokens?.filter(a => a?.toLowerCase() !== address?.toLowerCase())];
+                        this.#storage?.set(account.address?.toLowerCase(), account);
+                        this.emit("updateFungibleAsset");
+                    }
                 }
             }
-        }
+        })
     }
 
     /* **************************************************** */
