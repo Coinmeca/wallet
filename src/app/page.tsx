@@ -146,11 +146,7 @@ export default function Home() {
                                             ],
                                             [
                                                 <>
-                                                    <Controls.Tab
-                                                        active={tab === "activity"}
-                                                        onClick={() => router.push("/activity")}
-                                                        iconLeft={"plus-small"}
-                                                    />
+                                                    <Controls.Tab active={tab === "activity"} onClick={() => router.push("/activity")} iconLeft={"search"} />
                                                 </>,
                                             ],
                                         ],
