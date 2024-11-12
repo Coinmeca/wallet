@@ -4,6 +4,7 @@
 /**/node_modules
 /**/trading-view
 ui-kit
+wallet-sdk
 
 # testing
 /coverage
@@ -13,9 +14,9 @@ ui-kit
 /out/
 
 # production
-/build
-/dist
-/.turbo
+/**/build
+/**/dist
+/**/.turbo
 
 # misc
 .DS_Store
