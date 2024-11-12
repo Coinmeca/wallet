@@ -2,7 +2,8 @@
 export interface Asset {
     type?: string;
     address?: string;
+    name?: string;
     symbol?: string;
-    decimals?: string | number;
-    image?: string;
+    decimals?: number;
+    balance?: number;
 }

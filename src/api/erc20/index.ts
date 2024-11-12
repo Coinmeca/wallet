@@ -1,9 +1,50 @@
-﻿import { useQueries, useQuery } from '@tanstack/react-query';
+﻿import { useQueries, useQuery, UseQueryOptions } from '@tanstack/react-query';
 import { query } from './query';
 
-export function GetErc20(rpc?: string, erc20?: string, owner?: string) {
-    return useQueries({ queries: [query.name(rpc, erc20), query.symbol(rpc, erc20), query.decimals(rpc, erc20), ...(owner ? [query.balanceOf(rpc, erc20, owner)] : [])] });
+export function GetErc20(rpc?: string, erc20?: (string | undefined)[], owner?: string) {
+    let data;
+    let results: any;
+
+    if (Array.isArray(erc20)) {
+        erc20 = erc20.filter((a) => a);
+
+        const queryConfigs: UseQueryOptions<any, Error, any, any[]>[] = erc20?.flatMap((token) => [
+            query.name(rpc, token),
+            query.symbol(rpc, token),
+            query.decimals(rpc, token),
+            ...(owner ? [query.balanceOf(rpc, token, owner)] : []),
+        ]);
+
+        results = useQueries({ queries: queryConfigs });
+
+        data = erc20.reduce((acc, address, index) => {
+            if (address) {
+                acc[address] = {
+                    address,
+                    name: results[index * 4]?.data,
+                    symbol: results[index * 4 + 1]?.data,
+                    decimals: results[index * 4 + 2]?.data,
+                    balance: owner ? results[index * 4 + 3]?.data : undefined,
+                };
+            }
+            return acc;
+        }, {} as Record<string, any>);
+
+        data = Object.keys(data).length > 0 ? data : undefined;
+    }
+
+    return {
+        isError: results?.some((result: any) => result?.isError),
+        isPending: results?.some((result: any) => result?.isPending),
+        isLoading: results?.some((result: any) => result?.isLoading),
+        isFetching: results?.some((result: any) => result?.isFetching),
+        isFetched: results?.some((result: any) => result?.isFetched),
+        isSuccess: results?.every((result: any) => result?.isSuccess),
+        isRefetching: results?.every((result: any) => result?.isRefetching),
+        data
+    };
 }
+
 
 export function GetErc20Name(rpc?: string, erc20?: string) {
     return useQuery(query.name(rpc, erc20));

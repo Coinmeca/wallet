@@ -8,45 +8,6 @@ import axios from "axios";
 import { getChainsByType } from "./chains";
 import { CoinmecaWalletBase } from "./core";
 
-const __promise = async (method: string, popup: any, params?: any) => {
-    return new Promise((resolve, reject) => {
-        const messageHandler = (event: any) => {
-            if (event.data.method === method) {
-                if (typeof event.data.result !== "undefined") resolve(event.data.result);
-                if (typeof event.data.error !== "undefined") reject(new Error(event.data.error));
-                // else reject(new Error("Request something wrong."));
-
-                window.removeEventListener("message", messageHandler);
-            }
-
-            if (event.data.close) {
-                reject(new Error(event.data.error));
-                window.removeEventListener("message", messageHandler);
-            }
-        };
-        window.addEventListener("message", messageHandler);
-
-        console.log("beforeload", popup);
-        if (popup) {
-            const onLoad = (e: any) => {
-                console.log({ e, popup });
-                if (popup?.coinmeca) popup.coinmeca = { ...popup.coinmeca, method, params };
-                else popup.coinmeca = { method, params };
-            };
-            if (params) popup.addEventListener("load", onLoad);
-
-            const onClose = setInterval(() => {
-                if (popup.closed) {
-                    clearInterval(onClose);
-                    reject(new Error("User closed the window before approving the request."));
-                    window.removeEventListener("message", messageHandler);
-                    if (params) window.removeEventListener("load", onLoad);
-                }
-            }, 100); // Check every 100ms
-        }
-    });
-};
-
 const __notify = (message?: { icon?: string; title?: string; body?: string; onClick?: Function; onClose?: Function }) => {
     function push() {
         const notification = new Notification("Hello!", {
@@ -101,8 +62,19 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
         this.#key = key;
 
         const data = this.#data();
-        if (address) data?.set("account", address);
-        if (chainId && data?.get("chains")?.some((c: Chain) => c?.chainId === chainId)) this.changeChain(chainId);
+        if (address) {
+            if (key) this.changeAccount(address);
+            else data?.set("address", address);
+        } else {
+            const last = data?.get("address");
+            if (last) this.changeAccount(last);
+        }
+
+        if (chainId && data?.get("chains")?.find((c: Chain) => c?.chainId === chainId)) this.changeChain(chainId);
+        else {
+            const last = data?.get("chainId");
+            if (last) this.changeChain(last?.chainId);
+        }
 
         localStorage.clear = () => {
             console.error("Attempted to clear localStorage! This action is prevented.");
@@ -127,7 +99,7 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
         const telegram = typeof window !== "undefined" ? (window as any).Telegram?.WebApp : undefined;
         const user = telegram?.initDataUnsafe?.user;
         const isTelegram = !!(telegram && user?.id);
-        return loadStorage(this.codename, _?.storage || isTelegram ? telegram?.CloudStorage : localStorage, _?.storage ? false : isTelegram, _?.key);
+        return loadStorage(this.codename, _?.storage || (isTelegram ? telegram?.CloudStorage : localStorage), _?.storage ? false : isTelegram, _?.key);
     }
 
     #wallet(privateKey: string) {
@@ -162,6 +134,26 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
         });
     }
 
+    async #nonce(address: string) {
+        if (this.#count) return this.#count + 1;
+        else return await this.#sendRpcRequest("eth_getTransactionCount", [address || this.address, "latest"]);
+    }
+
+    async #sendRpcRequest(method: string, params?: any) {
+        console.log("sendRpcRequest");
+        const rpc = this.chain?.rpcUrls?.[0];
+        if (!rpc) return new Error("Provider URL was not setup yet.");
+        const response = await axios.post(rpc, {
+            jsonrpc: "2.0",
+            id: new Date().getTime(),
+            method,
+            params,
+        });
+
+        if (response.data.error) throw new Error(`RPC Error: ${response.data.error.message}`);
+        return response.data.result;
+    }
+
     get isInitialized(): boolean {
         return !!this.#userId;
     }
@@ -175,7 +167,9 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
     }
 
     get address(): string {
-        return this.#data()?.get("account");
+        const test = this.#data({ storage: sessionStorage })?.get("address") || this.#data()?.get("address");
+        console.log(this.#data({ storage: sessionStorage })?.get("address"), this.#data()?.get("address"), test);
+        return test;
     }
 
     account(address?: string): Account {
@@ -187,11 +181,11 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
             return (
                 (url && url !== ""
                     ? this.#data()
-                          ?.get("apps")
-                          ?.find((a: App) => a?.url?.toLowerCase() === url?.toLowerCase())?.accounts
+                        ?.get("apps")
+                        ?.find((a: App) => a?.url?.toLowerCase() === url?.toLowerCase())?.accounts
                     : this.#safe((key: string) => this.#storage?.get(`${key}:seed`)?.map((s: string) => this.#wallet(s)?.getAddressString()))?.map(
-                          (a: string) => this.#storage?.get(a?.toLowerCase()),
-                      )) || []
+                        (a: string) => this.#storage?.get(a?.toLowerCase()),
+                    )) || []
             ).filter((a: any) => a);
         } catch (e) {
             return [];
@@ -203,14 +197,12 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
         return !!url && url !== "" && !!address && address !== "" && (this.accounts(url) as string[])?.some((a) => a?.toLowerCase() === address?.toLowerCase());
     }
 
-    get chain() {
-        const chainId = this.#data()?.get("chain");
-        return this.chains?.find((c: Chain) => c?.chainId === chainId);
+    get chainId() {
+        return formatChainId(this.#data({ storage: sessionStorage })?.get("chainId") || this.#data()?.get("chainId") || 1);
     }
 
-    get chainId() {
-        const id = this.#data()?.get("chain");
-        return id ? formatChainId(id) : undefined;
+    get chain() {
+        return this.chains?.find((c: Chain) => c?.chainId === parseChainId(this.chainId || "0x1"));
     }
 
     get chains() {
@@ -237,7 +229,7 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
     }
 
     lock() {
-        this.#data()?.set("account", this.account()?.address);
+        this.#data()?.set("address", this.account()?.address);
         this.#key = undefined;
     }
 
@@ -253,7 +245,7 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
             const accounts = this.accounts();
 
             if (accounts?.length) {
-                const last: any = this.address || this.#storage?.get("account") || (this.accounts()?.[0] as Account)?.address;
+                const last: any = this.address || this.#storage?.get("address") || (this.accounts()?.[0] as Account)?.address;
                 const info: any = last && this.#storage?.get(last?.toLowerCase());
                 if (info) {
                     this.emit("unlock", info);
@@ -311,8 +303,11 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
         this.#data({ key }).remove(old);
     }
 
-    changeAccount(index: number) {
+    changeAccount(index: number | string) {
+        if (typeof index === 'undefined') return;
         return this.#safe(() => {
+            index = typeof index === 'string' ? (this.#storage?.get(index?.toLowerCase()))?.index : index;
+            if (typeof index !== 'number') return;
             const account = this.accounts()?.[index] as Account;
             this.#sendRpcRequest("eth_getTransactionCount", [account?.address, "latest"]).then((result) => {
                 if (result) {
@@ -321,18 +316,22 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
                 }
             });
             if (!account) throw new Error("There is no accounts that setup yet.");
-            this.#data().set("account", account?.address);
+            this.#data()?.set("address", account?.address);
+            this.#data({ storage: sessionStorage })?.set("address", account?.address);
             this.emit("accountChanged", account?.address);
             return account?.address;
         });
     }
 
     changeChain(chainId: number | string) {
+        if (!chainId) return;
         chainId = (typeof chainId === "string" ? (chainId?.startsWith("0x") ? parseChainId(chainId) : parseInt(chainId)) : chainId) as number;
         const chains = this.chains;
+        console.log({ chains, chainId });
         if (chains?.length && chains?.find((c: Chain) => c?.chainId === chainId)) {
             if (typeof window !== "undefined") (window as any).ethereum = { chainId };
-            this.#data().set("chain", chainId);
+            this.#data()?.set("chainId", chainId);
+            this.#data({ storage: sessionStorage })?.set("chainId", chainId);
             this.emit("chainChanged", formatChainId(chainId));
             return chainId;
         } else throw new Error("There is no any chain registered.");
@@ -373,18 +372,6 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
         } else throw new Error("Couldn't found a current account information.");
     }
 
-    async estimateGas(txParams: any) {
-        return await this.#sendRpcRequest("eth_estimateGas", [txParams]);
-    }
-
-    async getGasPrice() {
-        return await this.#sendRpcRequest("eth_gasPrice");
-    }
-
-    async #nonce(address: string) {
-        if (this.#count) return this.#count + 1;
-        else return await this.#sendRpcRequest("eth_getTransactionCount", [address || this.address, "latest"]);
-    }
 
     async sign(transaction: TransactionParams, signer: Account | string) {
         const privateKey = this.#getPrivateKey(typeof signer === "object" ? signer?.index : this.#storage?.get(signer?.toLowerCase())?.index);
@@ -430,38 +417,64 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
         return null; // Return null explicitly if no receipt is found
     }
 
-    async #broadcastTransaction(serializedTx: Buffer) {
-        console.log("serializedTx", serializedTx, [`0x${serializedTx.toString("hex")}`]);
+    addFungibleAsset(address: string) {
+        address = address?.toLowerCase();
+        const chainId = this.chain?.chainId?.toString();
+        let account = this.account();
+        console.log({ account })
+        console.log(1)
+        if (account?.tokens?.fungibles) {
+            console.log(2)
+            const tokens = account.tokens.fungibles?.[chainId];
+            if (Array.isArray(tokens)) {
+                console.log(3)
+                const exist = tokens?.map((a) => a?.toLowerCase() === address?.toLowerCase());
+                if (!exist) {
+                    console.log(4)
+                    account.tokens.fungibles[chainId] = [...tokens, address];
+                    this.#storage?.set(account?.address?.toLowerCase(), account);
+                    this.emit("updateFungibleAsset");
+                }
+            } else {
+                console.log(5)
+                account.tokens.fungibles = { ...account.tokens.fungibles, [chainId]: [address] };
+                this.#storage?.set(account?.address?.toLowerCase(), account);
+                this.emit("updateFungibleAsset");
+            }
+        } else {
+            console.log(6)
+            if (account?.tokens) {
+                console.log(7)
+                account.tokens = { ...account.tokens, fungibles: { [chainId]: [address] } };
+            } else {
+                console.log(8)
+                account = { ...account, tokens: { fungibles: { [chainId]: [address] } } }
+            };
+            this.#storage?.set(account?.address?.toLowerCase(), account);
+            this.emit("updateFungibleAsset");
+        }
+
+        console.log({ account });
+        console.log(this.#storage?.get(account?.address?.toLowerCase()));
     }
 
-    async #getCode(address: string) {
-        return await this.#sendRpcRequest("eth_getCode", [address, "latest"]);
+    removeFungibleAsset(address: string) {
+        let account = this.account();
+        const chainId = this.chain?.chainId?.toString();
+        if (account?.tokens?.fungibles) {
+            const tokens = account.tokens.fungibles?.[chainId];
+            if (Array.isArray(tokens)) {
+                const exist = tokens?.map((a) => a?.toLowerCase() === address?.toLowerCase());
+                if (!exist) {
+                    account.tokens.fungibles[chainId] = [...tokens?.filter(a => a?.toLowerCase() !== address?.toLowerCase())];
+                    this.#storage?.set(account.address?.toLowerCase(), account);
+                    this.emit("updateFungibleAsset");
+                }
+            }
+        }
     }
 
-    async #sendRpcRequest(method: string, params?: any) {
-        console.log("sendRpcRequest");
-        const rpc = await this.chain.rpcUrls[0];
-        console.log({ rpc });
-        if (!rpc) return new Error("Provider URL was not setup yet.");
-        const response = await axios.post(rpc, {
-            jsonrpc: "2.0",
-            id: new Date().getTime(),
-            method,
-            params,
-        });
-
-        if (response.data.error) throw new Error(`RPC Error: ${response.data.error.message}`);
-        return response.data.result;
-    }
-
-    #confirm(method: string) {
-        // window.location.href = `${window.location.origin}/request/${method}`;
-        // return window;
-        if (window.location.hostname?.includes("wallet.coinmeca.net")) {
-            window.location.href = `${window.location.origin}/request/${method}`;
-            return window;
-        } else return openWindow(`${window.location.origin}/request/${method}`);
-    }
+    /* **************************************************** */
 
     #hashDomain(domain: EIP712Domain) {
         return this.#hashStruct("EIP712Domain", domain, {
@@ -516,14 +529,6 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
         return keccak256(this.#encodeData(primaryType, data, types));
     }
 
-    async #app() {
-        return {
-            appName: (document.querySelector('meta[property="og:site_name"]') as HTMLMetaElement)?.content || document.title?.split(" ")[0],
-            appUrl: window.location.host,
-            appLogo: await getFaviconUri(),
-        };
-    }
-
     async #signMessage(address: string, message: string) {
         return this.#safe(() => {
             if (address.toLowerCase() !== this.address.toLowerCase()) throw new Error("Address does not match selected wallet address");
@@ -547,51 +552,6 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
         const data = keccak256(Buffer.concat([toBuffer("0x1901"), domain, message]));
         const signature = ecsign(data, this.#getPrivateKey(address));
         return bufferToHex(Buffer.concat([signature.r, signature.s, Buffer.from([signature.v])]));
-    }
-
-    async #signTransaction(txParams: any) {
-        const app = this.#storage?.get(`app:${window.location.host}`);
-        if (app) {
-            const from = txParams?.from?.toLowerCase();
-            const exist = app?.address?.find((a: string) => a?.toLowerCase() === from);
-            if (exist) {
-                const account = this.#storage?.get(from);
-                if (!account) throw new Error("Account information is something wrong.");
-
-                const method = "eth_signTransaction";
-                return await __promise(method, this.#confirm(method), [txParams, await this.#app()]).then(async (result: any) => {
-                    if (result) {
-                        const tx = new Transaction(txParams);
-                        tx.sign((this.#storage?.get(`${this.#session?.get("key")}:seed`))[exist.index]);
-                        return `0x${tx.serialize().toString("hex")}`;
-                    }
-                });
-            } else throw new Error("Account doesn't approved this app.");
-        }
-        throw new Error("Account have to be connected to the app first.");
-    }
-
-    async #sendTransaction(txParams: any) {
-        const app = this.#storage?.get(`app:${window.location.host}`);
-        if (app) {
-            const from = txParams?.from?.toLowerCase();
-            const exist = app?.address?.find((a: string) => a?.toLowerCase() === from);
-            if (exist) {
-                const account = this.#storage?.get(from);
-                if (!account) throw new Error("Account information is something wrong.");
-
-                const method = "eth_sendTransaction";
-                return await __promise(method, this.#confirm(method), [txParams, await this.#app()]).then(async (result: any) => {
-                    if (result) {
-                        __notify();
-                        const tx = new Transaction(txParams);
-                        tx.sign(Buffer.from(result?.substring(0, 64), "hex"));
-                        return await this.#broadcastTransaction(result);
-                    }
-                });
-            } else throw new Error("Account doesn't approved this app.");
-        }
-        throw new Error("Account have to be connected to the app first.");
     }
 
     async #getBlockNumber() {

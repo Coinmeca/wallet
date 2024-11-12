@@ -184,7 +184,7 @@ export class CoinmecaWalletAdapter extends CoinmecaWalletBase {
                 if (!(params as any)?.chainId) throw new Error("No chainId provided");
                 return await this.#promise(method, (params as any)?.chainId).then((result) => {
                     if (result) {
-                        this.#data()?.set("chain", getChainById(result as number));
+                        this.#data()?.set("chainId", getChainById(result as number));
                         this.emit("chainChanged", result);
                         return result;
                     }
@@ -210,7 +210,7 @@ export class CoinmecaWalletAdapter extends CoinmecaWalletBase {
     }
 
     get chain() {
-        return this.#data()?.get("chain");
+        return this.#data()?.get("chainId");
     }
 
     get chainId() {

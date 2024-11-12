@@ -55,7 +55,8 @@
         "sass": "1.80.5",
         "styled-components": "^6.1.13",
         "vercel": "37.12.1",
-        "viem": "^2.21.33"
+        "viem": "^2.21.33",
+        "zustand": "^5.0.1"
     },
     "devDependencies": {
         "@svgr/webpack": "^8.1.0",
