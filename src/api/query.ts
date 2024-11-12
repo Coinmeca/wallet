@@ -1,5 +1,7 @@
-﻿import { sort } from "@coinmeca/ui/lib/utils";
-import { getBalance } from "viem/_types/actions/public/getBalance";
+﻿import { query as erc20 } from "./erc20/query";
+import { query as onchain } from "./onchain/query";
 
 export const query = {
-};
+    onchain,
+    erc20,
+}

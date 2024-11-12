@@ -1,4 +1,4 @@
-﻿export * from "./contexts/provider";
+﻿export * from "./contexts";
 export * from "./chains";
 export * from "./types";
 export * from "./provider";

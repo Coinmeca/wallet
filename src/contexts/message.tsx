@@ -1,15 +1,23 @@
-﻿import { usePathname } from "next/navigation";
+﻿"use client";
+
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
+import { Account, App } from "@coinmeca/wallet-sdk/types";
+import { useTelegram } from "hooks";
+import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
 
-interface MessageProps{
-    method: string|undefined;
+interface MessageProps {
+    method: string | undefined;
     params: any;
+    app: App | undefined;
 }
 
 interface MessageHandlerProps extends MessageProps {
     isPopup: boolean;
     popupId?: number;
-    message: MessageProps | undefined
+    message: MessageProps | undefined;
+    app: App;
+    auth: boolean;
 }
 
 const MessageHandlerContext = createContext<MessageHandlerProps | undefined>(undefined);
@@ -22,13 +30,18 @@ export const useMessageHandler = () => {
 
 export const MessageHandler: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const path = usePathname();
+    const router = useRouter();
+
+    const { telegram } = useTelegram();
+    const { provider } = useCoinmecaWalletProvider();
 
     const [popupId, setPopupId] = useState<number>();
     const [isPopup, setIsPopup] = useState(false);
     const [message, setMessage] = useState<any>();
+    const [auth, setAuth] = useState<boolean | undefined>(undefined);
 
     useLayoutEffect(() => {
-        if (typeof window !== "undefined") { 
+        if (typeof window !== "undefined") {
             const check = !!(window as any)?.coinmeca?.isPopup;
             if (check) {
                 setIsPopup(check);
@@ -36,16 +49,52 @@ export const MessageHandler: React.FC<{ children: React.ReactNode }> = ({ childr
                 if (id) setPopupId(id);
             }
 
-            if ((window as any)?.coinmeca) {
-                const request = (window as any)?.coinmeca?.request;
-                if (request) setMessage(request);
-            }
+            const request = (window as any)?.coinmeca?.request;
+            if (request) setMessage(request);
         }
     }, []);
 
     useLayoutEffect(() => {
-        if (isPopup) window.close();
-    }, [path])
+        if (provider)
+            setAuth(() => {
+                if (message?.params?.from) {
+                    if (provider?.allowance(message?.app?.url, message?.params?.from)) return true;
+                    else {
+                        window?.opener?.postMessage(
+                            {
+                                method: message?.method,
+                                error: "The requested account and/or method has not been authorized by the user.",
+                            },
+                            "*",
+                        );
+                        if (isPopup) {
+                            if (telegram) telegram?.close();
+                            window?.close();
+                        } else router.push("/");
+                        return false;
+                    }
+                } else return false;
+            });
+    }, [provider]);
 
-    return <MessageHandlerContext.Provider value={{ ...message, isPopup, popupId, message }}>{children}</MessageHandlerContext.Provider>;
+    useLayoutEffect(() => {
+        if (!path?.startsWith("/lock")) {
+            const handleUnload = () => {
+                window?.opener?.postMessage(
+                    {
+                        close: true,
+                        error: "User rejected the request",
+                    },
+                    "*",
+                );
+            };
+            if (isPopup) window.close();
+            window.addEventListener("beforeunload", handleUnload);
+            return () => window.removeEventListener("beforeunload", handleUnload);
+        }
+    }, [path]);
+
+    return (
+        <MessageHandlerContext.Provider value={{ ...message, isPopup, popupId, message, app: message?.app, auth }}>{children}</MessageHandlerContext.Provider>
+    );
 };

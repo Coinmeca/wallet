@@ -1,4 +1,6 @@
-﻿import React, { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
+﻿"use client";
+
+import React, { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { Chain, Account } from "../types";
 import { CoinmecaWalletAdapter } from "../adpater";
 
@@ -54,9 +56,5 @@ export const CoinmecaWalletAdapterContextProvider: React.FC<{ children: React.Re
         };
     }, [adapter]);
 
-    return (
-        <CoinmecaWalletAdapterContext.Provider value={{ adapter, account, chain }}>
-            {children}
-        </CoinmecaWalletAdapterContext.Provider>
-    );
+    return <CoinmecaWalletAdapterContext.Provider value={{ adapter, account, chain }}>{children}</CoinmecaWalletAdapterContext.Provider>;
 };

@@ -1,12 +1,14 @@
 "use client";
 
-import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
+import { Contents, Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useMessageHandler, useTelegram } from "hooks";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
-import { TransactionParams } from "@coinmeca/wallet-sdk/types";
+import { Account, TransactionParams } from "@coinmeca/wallet-sdk/types";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
+import { GetEstimateGas, GetGasPrice } from "api/onchain";
+import { format } from "@coinmeca/ui/lib/utils";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({
@@ -24,66 +26,75 @@ await window.ethereum.providerMap.get("CoinmecaWallet").request({
       })
 */
 
-export default function eth_sendTransaction({ params }: { params: any }) {
+export interface Transaction {
+    from: string;
+    to: string;
+    value: string;
+    gas: string;
+    gasPrice: string;
+    data?: string;
+    maxFeePerGas?: number;
+    maxPriorityFeePerGas?: number;
+}
+
+export default function eth_sendTransaction() {
     const method = "eth_sendTransaction";
     const router = useRouter();
 
     const { telegram } = useTelegram();
-    const { isPopup } = useMessageHandler();
-    // const { storage, session } = useStorage();
+    const { provider, chain } = useCoinmecaWalletProvider();
+    const { auth, app, params, isPopup } = useMessageHandler();
 
-    const [app, setApp] = useState<any>();
-    const [tx, setTx] = useState<TransactionParams>();
+    const [tx, setTx] = useState<Transaction>();
     const [level, setLevel] = useState(0);
+    const [signer, setSigner] = useState<Account>();
+
+    const { data: gasPrice, isLoading: isGasPriceLoading } = GetGasPrice(chain?.rpcUrls[0]);
+    const { data: estimateGas, isLoading: isEstimateGasLoading } = GetEstimateGas(chain?.rpcUrls[0], tx);
 
     useLayoutEffect(() => {
-        if ((window as any)?.coinmeca) {
-            const params = (window as any)?.coinmeca?.params || (window as any)?.coinmeca?.params;
-            if (params) {
-                const { value, gasLimit, maxFeePerGas, maxPriorityFeePerGas } = params?.[0];
-                setTx({
-                    ...params?.[0],
-                    value: value && value !== "" ? parseInt(value, 16) : undefined,
-                    gasLimit: gasLimit && gasLimit !== "" ? parseInt(gasLimit, 16) : undefined,
-                    maxFeePerGas: maxFeePerGas && maxFeePerGas !== "" ? parseInt(maxFeePerGas, 16) : undefined,
-                    maxPriorityFeePerGas: maxPriorityFeePerGas && maxPriorityFeePerGas !== "" ? parseInt(maxPriorityFeePerGas, 16) : undefined,
-                });
-
-                const url = params?.[1]?.appUrl || params?.url;
-                const site = url && decodeURIComponent(url);
-                const origin = site && new URL(site.startsWith("http") ? site : `https://${site}`).host;
-                const app = {
-                    name: params?.[1]?.appName || params?.[1]?.name || undefined,
-                    logo: params?.[1]?.appLogo || params?.[1]?.logo || params?.[1]?.appIcon || params?.[1]?.icon || undefined,
-                    url: origin || undefined,
-                };
-                if (app?.name && app?.name !== "" && app?.url && app?.url !== "") setApp(app);
-            }
+        console.log({ params, auth, app });
+        if (params) {
+            const { value, gasLimit, maxFeePerGas, maxPriorityFeePerGas } = params;
+            const tx = {
+                ...params,
+                value: Number(value),
+                gasLimit: Number(gasLimit),
+                maxFeePerGas: Number(maxFeePerGas),
+                maxPriorityFeePerGas: Number(maxPriorityFeePerGas),
+            };
+            setTx(tx);
+            setSigner(provider?.account(tx?.from));
         }
     }, []);
 
-    const handleSign = () => {
-        // const result = storage?.get(`${session?.get("key")}:wallets`)?.[storage?.get(tx?.from?.toLowerCase()!)?.index];
-
-        // if (result) {
-        //     window?.opener?.postMessage(
-        //         {
-        //             method,
-        //             result,
-        //         },
-        //         "*",
-        //     );
-        // } else {
-        //     window?.opener?.postMessage(
-        //         {
-        //             method,
-        //             error: "Failed to signning",
-        //         },
-        //         "*",
-        //     );
-        // }
-
+    const handleSign = async () => {
         setLevel(1);
+        try {
+            const result = await provider?.sign({ ...params, chainId: chain?.chainId }, signer!);
+            if (result) {
+                window?.opener?.postMessage(
+                    {
+                        method,
+                        result,
+                    },
+                    "*",
+                );
+            } else {
+                throw new Error(result);
+            }
+        } catch (error) {
+            console.log(error);
+            window?.opener?.postMessage(
+                {
+                    method,
+                    error: "Failed to signning",
+                },
+                "*",
+            );
+        } finally {
+            setLevel(2);
+        }
     };
 
     const handleClose = () => {
@@ -101,7 +112,7 @@ export default function eth_sendTransaction({ params }: { params: any }) {
             );
     };
 
-    return app && tx ? (
+    return auth && app && signer && tx ? (
         <Layouts.Contents.SlideContainer
             contents={[
                 {
@@ -115,6 +126,7 @@ export default function eth_sendTransaction({ params }: { params: any }) {
                                             <Layouts.Row gap={3} align={"center"} fix>
                                                 <div
                                                     style={{
+                                                        position: "relative",
                                                         display: "flex",
                                                         alignItems: "center",
                                                         justifyContent: "center",
@@ -124,14 +136,63 @@ export default function eth_sendTransaction({ params }: { params: any }) {
                                                         borderRadius: "100%",
                                                         background: "rgba(var(--white),.15)",
                                                     }}>
-                                                    <Image src={app?.logo || ""} width={0} height={0} alt={app?.name} style={{ width: "4em", height: "4em" }} />
+                                                    <Image
+                                                        src={app?.logo || ""}
+                                                        width={0}
+                                                        height={0}
+                                                        alt={app?.name || ""}
+                                                        style={{ width: "4em", height: "4em", borderRadius: "100%" }}
+                                                    />
+                                                    <Image
+                                                        src={app?.logo || ""}
+                                                        width={0}
+                                                        height={0}
+                                                        alt={app?.name || ""}
+                                                        style={{
+                                                            position: "absolute",
+                                                            right: "1em",
+                                                            bottom: "1em",
+                                                            width: "1em",
+                                                            height: "1em",
+                                                            borderRadius: "100%",
+                                                        }}
+                                                    />
                                                 </div>
                                                 <Layouts.Col gap={0} align={"center"} fill>
+                                                    <Elements.Text height={0} align={"left"} opacity={0.6}>
+                                                        Requested By
+                                                    </Elements.Text>
                                                     <Elements.Text type={"h6"} height={0} align={"left"}>
                                                         {app?.name}
                                                     </Elements.Text>
                                                     <Elements.Text type={"strong"} height={0} align={"left"} opacity={0.6}>
                                                         {app?.url}
+                                                    </Elements.Text>
+                                                </Layouts.Col>
+                                            </Layouts.Row>
+                                            <Layouts.Divider />
+                                            <Layouts.Row gap={3} align={"center"} fix>
+                                                <div
+                                                    style={{
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent: "center",
+                                                        maxWidth: "max-content",
+                                                        maxHeight: "max-content",
+                                                        padding: "2em",
+                                                        borderRadius: "100%",
+                                                        background: "rgba(var(--white),.15)",
+                                                    }}>
+                                                    <Elements.Avatar character={`${signer?.index + 1}`} name={`${signer?.index + 1}`} hideName />
+                                                </div>
+                                                <Layouts.Col gap={0} align={"center"}>
+                                                    <Elements.Text type={"h6"} height={0} align={"left"}>
+                                                        {signer?.name}
+                                                    </Elements.Text>
+                                                    <Elements.Text type={"strong"} height={0} align={"left"} opacity={0.6}>
+                                                        {signer?.address?.substring(0, signer?.address.startsWith("0x") ? 8 : 6) +
+                                                            " ... " +
+                                                            signer?.address?.substring(signer?.address?.length - 6, signer?.address?.length)}
                                                     </Elements.Text>
                                                 </Layouts.Col>
                                             </Layouts.Row>
@@ -152,18 +213,18 @@ export default function eth_sendTransaction({ params }: { params: any }) {
                                                     }}>
                                                     <Elements.Avatar
                                                         character={tx?.to?.startsWith("0x") ? tx?.to?.substring(2, 4) : tx?.to?.substring(0, 2)}
-                                                        name={tx?.to}
+                                                        name={"To"}
                                                         hideName
                                                     />
                                                 </div>
                                                 <Layouts.Col gap={0} align={"center"}>
                                                     <Elements.Text type={"h6"} height={0} align={"left"}>
-                                                        {(tx?.to?.startsWith("0x") ? tx?.to?.substring(0, 8) : tx?.to?.substring(0, 6)) +
-                                                            " ... " +
-                                                            tx?.to?.substring(tx?.to?.length - 6, tx?.to?.length)}
+                                                        To
                                                     </Elements.Text>
                                                     <Elements.Text type={"strong"} height={0} align={"left"} opacity={0.6}>
-                                                        {tx?.value}
+                                                        {tx?.to?.substring(0, tx?.to?.startsWith("0x") ? 8 : 6) +
+                                                            " ... " +
+                                                            tx?.to?.substring(tx?.to?.length - 6, tx?.to?.length)}
                                                     </Elements.Text>
                                                 </Layouts.Col>
                                             </Layouts.Row>
@@ -184,25 +245,51 @@ export default function eth_sendTransaction({ params }: { params: any }) {
                                                 fit>
                                                 <Layouts.Col gap={2} align={"left"}>
                                                     <Layouts.Col gap={0.5}>
-                                                        <Elements.Text size={1.25} opacity={0.6}>
-                                                            <Elements.Text size={1} opacity={0.6}>
-                                                                Chain RPC URL
-                                                            </Elements.Text>
-                                                            {tx.gas}
+                                                        <Elements.Text type={"desc"} weight={"bold"} opacity={0.6}>
+                                                            Gas Price
                                                         </Elements.Text>
-                                                        <Elements.Text>{tx.gasPrice}</Elements.Text>
+                                                        <Elements.Text>
+                                                            {isGasPriceLoading
+                                                                ? "~"
+                                                                : format(gasPrice, "currency", {
+                                                                      unit: 9,
+                                                                      limit: 12,
+                                                                      fix: 9,
+                                                                  })}
+                                                        </Elements.Text>
                                                     </Layouts.Col>
                                                     <Layouts.Col gap={0.5}>
-                                                        <Elements.Text size={1.25} opacity={0.6}>
+                                                        <Elements.Text type={"desc"} weight={"bold"} opacity={0.6}>
                                                             Estimated Gas
                                                         </Elements.Text>
-                                                        {/* <Elements.Text>{tx.gas * tx.gasPrice}</Elements.Text> */}
+                                                        <Elements.Text>
+                                                            {isEstimateGasLoading
+                                                                ? "~"
+                                                                : format(estimateGas, "currency", {
+                                                                      unit: 9,
+                                                                      limit: 12,
+                                                                      fix: 9,
+                                                                  })}
+                                                        </Elements.Text>
                                                     </Layouts.Col>
                                                     <Layouts.Col gap={0.5}>
-                                                        <Elements.Text size={1.25} opacity={0.6}>
-                                                            Data
+                                                        <Elements.Text type={"desc"} weight={"bold"} opacity={0.6}>
+                                                            Total
                                                         </Elements.Text>
-                                                        <Elements.Text>{tx.data}</Elements.Text>
+                                                        <Layouts.Row gap={1} fix>
+                                                            <Elements.Text style={{ flex: "initial" }} fix>
+                                                                {isGasPriceLoading || isEstimateGasLoading
+                                                                    ? "~"
+                                                                    : format((gasPrice || 0) * (estimateGas || 0), "currency", {
+                                                                          unit: 9,
+                                                                          limit: 12,
+                                                                          fix: 9,
+                                                                      })}
+                                                            </Elements.Text>
+                                                            <Elements.Text opacity={0.6} fit>
+                                                                {chain?.nativeCurrency?.symbol}
+                                                            </Elements.Text>
+                                                        </Layouts.Row>
                                                     </Layouts.Col>
                                                 </Layouts.Col>
                                             </Layouts.Box>
@@ -225,6 +312,10 @@ export default function eth_sendTransaction({ params }: { params: any }) {
                 },
                 {
                     active: level === 1,
+                    children: <Contents.States.Loading />,
+                },
+                {
+                    active: level === 2,
                     children: (
                         <Layouts.Contents.InnerContent scroll={false}>
                             <Layouts.Col align={"center"} style={{ padding: "4em" }} fill>
@@ -287,44 +378,46 @@ export default function eth_sendTransaction({ params }: { params: any }) {
         />
     ) : (
         <Layouts.Contents.InnerContent scroll={false}>
-            <Layouts.Col align={"center"} style={{ padding: "4em" }} fill>
-                <Layouts.Col gap={4} align={"center"} style={{ flex: 1 }} fill>
-                    <Layouts.Col gap={4} align={"center"} fill>
-                        <Layouts.Col gap={8} align={"center"} fit>
-                            <div
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    maxWidth: "max-content",
-                                    maxHeight: "max-content",
-                                    padding: "2em",
-                                    borderRadius: "100%",
-                                    background: "rgba(var(--white),.15)",
-                                }}>
-                                <Image
-                                    width={0}
-                                    height={0}
-                                    src={require("../../../assets/animation/failure.gif")}
-                                    alt={"Unknown"}
-                                    style={{ width: "8em", height: "8em" }}
-                                />
-                            </div>
+            <Layouts.Col gap={2} align={"center"} fill>
+                <Layouts.Contents.InnerContent padding={[4, 4, 0]}>
+                    <Layouts.Col fill>
+                        <Layouts.Col align={"center"} style={{ flex: 1 }}>
+                            <Layouts.Col gap={8} align={"center"} fit>
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        maxWidth: "max-content",
+                                        maxHeight: "max-content",
+                                        padding: "2em",
+                                        borderRadius: "100%",
+                                        background: "rgba(var(--white),.15)",
+                                    }}>
+                                    <Image
+                                        width={0}
+                                        height={0}
+                                        src={require("../../../assets/animation/failure.gif")}
+                                        alt={"Unknown"}
+                                        style={{ width: "8em", height: "8em" }}
+                                    />
+                                </div>
+                            </Layouts.Col>
+                        </Layouts.Col>
+                        <Layouts.Col gap={8} align={"center"} style={{ flex: 1 }} fill>
+                            <Layouts.Col gap={4} align={"center"} fit>
+                                <Elements.Text type={"h3"}>Invalid Request</Elements.Text>
+                                <Elements.Text weight={"bold"} opacity={0.6}>
+                                    The given transaction information is something wrong. Couldn't found the information of requested chain.
+                                </Elements.Text>
+                            </Layouts.Col>
                         </Layouts.Col>
                     </Layouts.Col>
-                </Layouts.Col>
-                <Layouts.Col gap={0} align={"center"} style={{ flex: 1 }} fill>
-                    <Layouts.Col align={"center"} style={{ flex: 1 }} fill>
-                        <Layouts.Col gap={4} align={"center"} fit>
-                            <Elements.Text type={"h3"}>Invalid Request</Elements.Text>
-                            <Elements.Text weight={"bold"} opacity={0.6}>
-                                The given chain information is something wrong. Couldn't found the information of requested chain.
-                            </Elements.Text>
-                        </Layouts.Col>
-                    </Layouts.Col>
+                </Layouts.Contents.InnerContent>
+                <Layouts.Col gap={4} align={"center"} style={{ padding: "4em", paddingTop: 0 }}>
                     <Layouts.Row gap={2}>
                         <Controls.Button type={"glass"} onClick={handleClose}>
-                            Cancel
+                            Close
                         </Controls.Button>
                     </Layouts.Row>
                 </Layouts.Col>

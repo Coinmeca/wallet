@@ -1,6 +1,9 @@
-﻿import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
+﻿"use client";
+
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
+import { useMessageHandler } from "hooks";
 import { usePathname, useRouter } from "next/navigation";
-import React, { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import React, { createContext, useContext, useLayoutEffect, useMemo, useState } from "react";
 import { Account } from "viem";
 
 interface GuardContextProps {
@@ -22,6 +25,7 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const path = usePathname();
     const router = useRouter();
     const { provider } = useCoinmecaWalletProvider();
+    const { auth, message } = useMessageHandler();
 
     const [isInit, setIsInit] = useState<boolean>(false);
     const [isAccess, setIsAccess] = useState<boolean>(false);
@@ -69,32 +73,13 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (target) router.push(target);
     }, [target]);
 
-    useLayoutEffect(() => {
-        if (!path?.startsWith("/lock")) {
-            if (typeof window !== "undefined" && (window as any)?.coinmeca?.isPopup) {
-                const handleUnload = () => {
-                    window?.opener?.postMessage(
-                        {
-                            close: true,
-                            error: "User rejected the request",
-                        },
-                        "*",
-                    );
-                };
-
-                window.addEventListener("beforeunload", handleUnload);
-                return () => window.removeEventListener("beforeunload", handleUnload);
-            }
-        }
-    }, [path]);
-
     const isLoad = useMemo(() => {
-        if (typeof check?.init !== "boolean" && typeof check?.access !== "boolean") return false;
+        if (typeof auth === "undefined") return false;
+        else if (typeof check?.init !== "boolean" || typeof check?.access !== "boolean") return false;
         else if (check?.init === false && path?.startsWith("/welcome")) return true;
-        else return true;
         // else if (!check.access && path?.startsWith("/lock")) return true;
-        return false;
-    }, [check]);
+        else return true;
+    }, [auth, check]);
 
     return <GuardContext.Provider value={{ isInit, isAccess, isLoad, setIsAccess }}>{children}</GuardContext.Provider>;
 };

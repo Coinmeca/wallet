@@ -13,28 +13,19 @@ export default function RootTemplate({ children, params }: { children: any; para
     const { header, toastlist } = Data();
     const { isLoad, isAccess } = useGuard();
 
-    return (
+    return isLoad ? (
         <Frames.Frame
             header={{ type: "custom", children: <Containers.Header {...header} /> }}
             align={"right"}
             background={{ img: { src: 2 } }}
+            // background={{ img: { src: 2 }, filter: { color: "black", opacity: 0.3 } }}
             side={56}
             toast={toastlist}>
             <Layouts.Page>
-                <AnimatePresence>
-                    {isLoad ? (
-                        isAccess ? (
-                            children
-                        ) : (
-                            <Lock params={{}} />
-                        )
-                    ) : (
-                        <Contents.States.Loading
-                            style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", zIndex: 1000, background: "black" }}
-                        />
-                    )}
-                </AnimatePresence>
+                <AnimatePresence>{isAccess ? children : <Lock params={{}} />}</AnimatePresence>
             </Layouts.Page>
         </Frames.Frame>
+    ) : (
+        <Contents.States.Loading style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", zIndex: 10000, background: "black" }} />
     );
 }

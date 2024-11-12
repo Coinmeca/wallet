@@ -1,4 +1,6 @@
-﻿import CryptoJS from "crypto-js";
+﻿"use client";
+
+import CryptoJS from "crypto-js";
 import React, { createContext, useCallback, useContext, useLayoutEffect, useState } from "react";
 import { useTelegram } from "hooks";
 import { loadStorage } from "utils";

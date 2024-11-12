@@ -2,26 +2,23 @@
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { format } from "@coinmeca/ui/lib/utils";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
+import { useQueries } from "@tanstack/react-query";
+import { GetBalance } from "api/account";
+import { query } from "api/query";
 import { AnimatePresence } from "framer-motion";
 import { usePageLoader } from "hooks";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export default function Home() {
     const path = usePathname();
     const router = useRouter();
 
     const { isLoad } = usePageLoader();
-    const { provider, account, chain } = useCoinmecaWalletProvider();
+    const { account, chain } = useCoinmecaWalletProvider();
+    const { data: balance, isLoading } = GetBalance(chain?.rpcUrls?.[0], account?.address);
 
-    const [balance, setBalance] = useState(0);
     const [tab, setTab] = useState("token");
-
-    useEffect(() => {
-        (async () => await provider?.balance())().then((balance: any) => {
-            setBalance(Number(balance) / (10 ^ (chain?.nativeCurrency?.decimals || 1)));
-        });
-    }, [chain, account]);
 
     useEffect(() => {
         // fixme:
@@ -29,6 +26,10 @@ export default function Home() {
         if (path.startsWith("/token")) setTab("token");
         if (path.startsWith("/nft")) setTab("nft");
     }, [path]);
+
+    const fungibles = useQueries({
+        queries: (account?.tokens?.fungibles || [])?.map((t: string) => query.erc20.token(chain?.rpcUrls?.[0], t, account?.address)),
+    });
 
     return (
         <Layouts.Page snap>
@@ -46,11 +47,13 @@ export default function Home() {
                             fill>
                             <Layouts.Col gap={2}>
                                 <Elements.Text type={"h3"}>
-                                    {format(balance, "currency", {
-                                        limit: 10,
-                                        unit: 12,
-                                        fix: 3,
-                                    })}
+                                    {isLoading
+                                        ? "~"
+                                        : format(balance, "currency", {
+                                              unit: 9,
+                                              limit: 12,
+                                              fix: 9,
+                                          })}
                                 </Elements.Text>
                                 <Elements.Text type={"h6"}>{chain?.nativeCurrency?.symbol}</Elements.Text>
                             </Layouts.Col>
