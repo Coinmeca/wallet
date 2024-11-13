@@ -46,7 +46,7 @@
     },
     "scripts": {
         "setup": "git submodule update --init --recursive && cd wallet-sdk && git fetch origin && git checkout main && git pull origin main && cd .. && git submodule update --init --recursive",
-        "install": "yarn install",
+        "dev": "next dev",
         "install:sdk": "yarn workspace @coinmeca/wallet-sdk install",
         "check": "npx tsc --watch",
         "build": "yarn clean && npx tsc --build --force",
