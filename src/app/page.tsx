@@ -1,23 +1,20 @@
 "use client";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { usePortal } from "@coinmeca/ui/hooks";
 import { format } from "@coinmeca/ui/lib/utils";
-import { Asset } from "@coinmeca/ui/types";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
 import { GetBalance } from "api/account";
-import { GetErc20 } from "api/erc20";
-import { Modals } from "containers";
+import { Lists } from "containers";
 import { AnimatePresence } from "framer-motion";
 import { usePageLoader } from "hooks";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function Home() {
     const path = usePathname();
     const router = useRouter();
 
     const { isLoad } = usePageLoader();
-    const { account, chain, tokens } = useCoinmecaWalletProvider();
+    const { account, chain } = useCoinmecaWalletProvider();
     const { data: balance, isLoading } = GetBalance(chain?.rpcUrls?.[0], account?.address);
 
     const [tab, setTab] = useState("token");
@@ -28,72 +25,6 @@ export default function Home() {
         if (path.startsWith("/token")) setTab("token");
         if (path.startsWith("/nft")) setTab("nft");
     }, [path]);
-
-    const [showAddFungible, closeAddFungible] = usePortal(() => <Modals.Add.Fungible onClose={closeAddFungible} />);
-
-    const fungibles = GetErc20(chain?.rpcUrls?.[0], tokens?.fungibles, account?.address);
-    const fungiblesList = useCallback(
-        (tokens?: Asset[]) => {
-            return [
-                ...(tokens || [])
-                    ?.map(
-                        (t?: Asset) =>
-                            typeof t === "object" && [
-                                [
-                                    <>
-                                        <Elements.Avatar img={`https://web3.coinmeca.net/${chain?.chainId}/${t?.address}/logo.svg`} />
-                                    </>,
-                                ],
-                                [
-                                    [
-                                        <>
-                                            <Elements.Text>{t?.symbol}</Elements.Text>
-                                        </>,
-                                        <>
-                                            <Elements.Text opacity={0.6}>{t?.name}</Elements.Text>
-                                        </>,
-                                    ],
-                                ],
-                                ...(t?.balance
-                                    ? [
-                                          <>
-                                              <Elements.Text>{t?.balance}</Elements.Text>
-                                          </>,
-                                      ]
-                                    : []),
-                            ],
-                    )
-                    ?.filter((a) => a),
-                {
-                    onClick: showAddFungible,
-                    style: { padding: "2em" },
-                    children: [
-                        [
-                            {
-                                gap: 1.5,
-                                children: [
-                                    {
-                                        fit: true,
-                                        children: (
-                                            <Elements.Icon
-                                                scale={0.5}
-                                                icon={"plus-bold"}
-                                                style={{ padding: "0.5em", borderRadius: "100%", border: "0.2em solid rgb(var(--white))" }}
-                                            />
-                                        ),
-                                    },
-                                    <>
-                                        <Elements.Text>Add Fungible Token</Elements.Text>
-                                    </>,
-                                ],
-                            },
-                        ],
-                    ],
-                },
-            ];
-        },
-        [tokens?.fungibles, fungibles],
-    );
 
     return (
         <Layouts.Page snap>
@@ -158,7 +89,7 @@ export default function Home() {
                                     contents={[
                                         {
                                             active: tab === "token",
-                                            children: <Layouts.List list={Object.values(fungibles?.data || [{}])} formatter={fungiblesList} />,
+                                            children: <Lists.Fungibles />
                                         },
                                     ]}
                                 />

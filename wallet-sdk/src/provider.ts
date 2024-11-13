@@ -179,11 +179,11 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
             return (
                 (url && url !== ""
                     ? this.#data()
-                        ?.get("apps")
-                        ?.find((a: App) => a?.url?.toLowerCase() === url?.toLowerCase())?.accounts
+                          ?.get("apps")
+                          ?.find((a: App) => a?.url?.toLowerCase() === url?.toLowerCase())?.accounts
                     : this.#safe((key: string) => this.#storage?.get(`${key}:seed`)?.map((s: string) => this.#wallet(s)?.getAddressString()))?.map(
-                        (a: string) => this.#storage?.get(a?.toLowerCase()),
-                    )) || []
+                          (a: string) => this.#storage?.get(a?.toLowerCase()),
+                      )) || []
             ).filter((a: any) => a);
         } catch (e) {
             return [];
@@ -302,10 +302,10 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
     }
 
     changeAccount(index: number | string) {
-        if (typeof index === 'undefined') return;
+        if (typeof index === "undefined") return;
         return this.#safe(() => {
-            index = typeof index === 'string' ? (this.#storage?.get(index?.toLowerCase()))?.index : index;
-            if (typeof index !== 'number') return;
+            index = typeof index === "string" ? this.#storage?.get(index?.toLowerCase())?.index : index;
+            if (typeof index !== "number") return;
             const account = this.accounts()?.[index] as Account;
             this.#sendRpcRequest("eth_getTransactionCount", [account?.address, "latest"]).then((result) => {
                 if (result) {
@@ -369,7 +369,6 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
         } else throw new Error("Couldn't found a current account information.");
     }
 
-
     async sign(transaction: TransactionParams, signer: Account | string) {
         const privateKey = this.#getPrivateKey(typeof signer === "object" ? signer?.index : this.#storage?.get(signer?.toLowerCase())?.index);
         if (this.chain?.chainId) transaction.chainId = this.chain.chainId;
@@ -422,30 +421,27 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
             if (account?.tokens?.fungibles) {
                 const tokens = account.tokens.fungibles?.[chainId];
                 if (Array.isArray(tokens)) {
-                    const exist = tokens?.map((a) => a?.toLowerCase() === address?.toLowerCase());
+                    const exist = tokens?.find((a) => a?.toLowerCase() === address?.toLowerCase());
                     if (!exist) {
                         account.tokens.fungibles[chainId] = [...tokens, address];
                         this.#storage?.set(account?.address?.toLowerCase(), account);
-                        this.emit("updateFungibleAsset");
+                        this.emit("updateFungibleAsset", account.tokens?.fungibles);
                     }
                 } else {
                     account.tokens.fungibles = { ...account.tokens.fungibles, [chainId]: [address] };
                     this.#storage?.set(account?.address?.toLowerCase(), account);
-                    this.emit("updateFungibleAsset");
+                    this.emit("updateFungibleAsset", account.tokens?.fungibles);
                 }
             } else {
                 if (account?.tokens) {
                     account.tokens = { ...account.tokens, fungibles: { [chainId]: [address] } };
                 } else {
-                    account = { ...account, tokens: { fungibles: { [chainId]: [address] } } }
-                };
+                    account = { ...account, tokens: { fungibles: { [chainId]: [address] } } };
+                }
                 this.#storage?.set(account?.address?.toLowerCase(), account);
-                this.emit("updateFungibleAsset");
+                this.emit("updateFungibleAsset", account.tokens?.fungibles);
             }
-
-            console.log({ account });
-            console.log(this.#storage?.get(account?.address?.toLowerCase()));
-        })
+        });
     }
 
     removeFungibleAsset(address: string) {
@@ -457,13 +453,13 @@ export class CoinmecaWalletProvider extends CoinmecaWalletBase {
                 if (Array.isArray(tokens)) {
                     const exist = tokens?.map((a) => a?.toLowerCase() === address?.toLowerCase());
                     if (!exist) {
-                        account.tokens.fungibles[chainId] = [...tokens?.filter(a => a?.toLowerCase() !== address?.toLowerCase())];
+                        account.tokens.fungibles[chainId] = [...tokens?.filter((a) => a?.toLowerCase() !== address?.toLowerCase())];
                         this.#storage?.set(account.address?.toLowerCase(), account);
                         this.emit("updateFungibleAsset");
                     }
                 }
             }
-        })
+        });
     }
 
     /* **************************************************** */

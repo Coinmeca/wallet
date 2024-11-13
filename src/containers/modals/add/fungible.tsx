@@ -10,6 +10,7 @@ import { dehydrate, HydrationBoundary, QueryClientProvider } from "@tanstack/rea
 import { getQueryClient } from "api";
 import { GetErc20 } from "api/erc20";
 import { Asset } from "types";
+import { States } from "@coinmeca/ui/components/contents";
 
 export interface Fungible {
     standard?: any;
@@ -188,6 +189,10 @@ function AddFungibleModal(props: Fungible) {
                                 ),
                             },
                             {
+                                active: loading,
+                                children:<States.Loading />
+                            },
+                            {
                                 active: !!tokens && isSuccess,
                                 children: (
                                     <Layouts.Col>
@@ -231,7 +236,7 @@ function AddFungibleModal(props: Fungible) {
                 children: <Controls.Button onClick={(e: any) => {}}>Go Back</Controls.Button>,
             }}
             loading={{
-                active: loading,
+                // active: loading,
                 message: "Please wait until the processing is complete.",
             }}
             success={{

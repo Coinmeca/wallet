@@ -1,23 +1,27 @@
-﻿import { useQueries, useQuery, UseQueryOptions } from '@tanstack/react-query';
-import { query } from './query';
+﻿import { useQueries, useQuery, UseQueryOptions } from "@tanstack/react-query";
+import { query } from "./query";
 
 export function GetErc20(rpc?: string, erc20?: (string | undefined)[], owner?: string) {
     let data;
     let results: any;
 
-    if (Array.isArray(erc20)) {
-        erc20 = erc20.filter((a) => a);
+    // Ensure `erc20` is always an array, even if empty
+    const validTokens = Array.isArray(erc20) ? erc20.filter((a) => a) : [];
 
-        const queryConfigs: UseQueryOptions<any, Error, any, any[]>[] = erc20?.flatMap((token) => [
-            query.name(rpc, token),
-            query.symbol(rpc, token),
-            query.decimals(rpc, token),
-            ...(owner ? [query.balanceOf(rpc, token, owner)] : []),
-        ]);
+    // Build `queryConfigs` based on tokens available
+    const queryConfigs: UseQueryOptions<any, Error, any, any[]>[] = validTokens.flatMap((token) => [
+        query.name(rpc, token),
+        query.symbol(rpc, token),
+        query.decimals(rpc, token),
+        ...(owner ? [query.balanceOf(rpc, token, owner)] : []),
+    ]);
 
-        results = useQueries({ queries: queryConfigs });
+    // Always call `useQueries` regardless of conditions
+    results = useQueries({ queries: queryConfigs });
 
-        data = erc20.reduce((acc, address, index) => {
+    // Process data if there are valid tokens
+    if (validTokens.length > 0) {
+        data = validTokens.reduce((acc, address, index) => {
             if (address) {
                 acc[address] = {
                     address,
@@ -42,10 +46,9 @@ export function GetErc20(rpc?: string, erc20?: (string | undefined)[], owner?: s
         isFetched: results?.some((result: any) => result?.isFetched),
         isSuccess: results?.every((result: any) => result?.isSuccess),
         isRefetching: results?.every((result: any) => result?.isRefetching),
-        data
+        data,
     };
 }
-
 
 export function GetErc20Name(rpc?: string, erc20?: string) {
     return useQuery(query.name(rpc, erc20));
