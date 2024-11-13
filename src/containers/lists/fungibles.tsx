@@ -1,7 +1,7 @@
 ﻿import { Elements, Layouts } from "@coinmeca/ui/components";
 import { usePortal } from "@coinmeca/ui/hooks";
 import { format } from "@coinmeca/ui/lib/utils";
-import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { GetErc20 } from "api/erc20";
 import { Modals } from "containers";
 import { useCallback } from "react";
