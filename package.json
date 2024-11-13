@@ -17,7 +17,7 @@
         "wallet-provider"
     ],
     "scripts": {
-        "setup": "git submodule update --init --recursive && cd ui-kit && git fetch origin && git checkout main && git pull origin main && cd .. && cd wallet-provider && git fetch origin && git checkout main && git pull origin main && cd .. && git submodule update --init --recursive",
+        "setup": "git submodule update --init --recursive && cd ui-kit && git fetch origin && git checkout main && git pull origin main && cd .. && cd wallet-provider && yarn setup && git fetch origin && git checkout main && git pull origin main && yarn install:sdk && cd .. && git submodule update --init --recursive",
         "lint": "next lint",
         "install:ui": "yarn workspace @coinmeca/ui install",
         "install:provider": "yarn workspace @coinmeca/wallet-provider install",
