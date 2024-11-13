@@ -3,6 +3,5 @@
   "compilerOptions": {
     "jsx": "preserve",  // use preserve for JSX in this folder
   },
-  "include": [ "../types.ts", "../chains.ts", "../core.ts", "../adapter.ts", "../provider.ts", "../utils.ts" ],
-  "exclude": ["../../node_modules", "../../dist", "../../context", "../../rollup.config.*"]
+  "exclude": ["../../node_modules", "../../dist", "../../rollup.config.*", "../../../src"]
 }
