@@ -7,7 +7,7 @@ import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useNotification, usePortal, useWindowSize } from "@coinmeca/ui/hooks";
 import { Avatar } from "@coinmeca/ui/components/elements";
 import { Account, App, Chain } from "@coinmeca/wallet-sdk/types";
-import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 
 import Coinmeca from "assets/coinmeca.svg";
 import { usePageLoader } from "hooks";

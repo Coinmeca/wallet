@@ -4,7 +4,7 @@ import MECA from "assets/graphics/meca.png";
 
 import { useRouter } from "next/navigation";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider";
 import { Stage } from "..";
 
 export default function Create({ setStage }: Stage) {

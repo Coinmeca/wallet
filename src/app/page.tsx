@@ -1,7 +1,7 @@
 "use client";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { format } from "@coinmeca/ui/lib/utils";
-import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider";
 import { GetBalance } from "api/account";
 import { Lists } from "containers";
 import { AnimatePresence } from "framer-motion";
@@ -89,7 +89,7 @@ export default function Home() {
                                     contents={[
                                         {
                                             active: tab === "token",
-                                            children: <Lists.Fungibles />
+                                            children: <Lists.Fungibles />,
                                         },
                                     ]}
                                 />

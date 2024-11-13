@@ -1,7 +1,7 @@
-﻿'use client';
+﻿"use client";
 
-import { CoinmecaWalletAdapterContextProvider } from "@coinmeca/wallet-sdk/contexts"
+import { CoinmecaWalletAdapterContextProvider } from "@coinmeca/wallet-provider";
 
-export default function Layout({children}: any) {
-    return <CoinmecaWalletAdapterContextProvider>{children}</CoinmecaWalletAdapterContextProvider>
+export default function Layout({ children }: any) {
+    return <CoinmecaWalletAdapterContextProvider>{children}</CoinmecaWalletAdapterContextProvider>;
 }

@@ -2,7 +2,7 @@
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { Stage } from "..";
 import { useRouter } from "next/navigation";
-import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider";
 
 export default function Import({ setStage }: Stage) {
     const router = useRouter();

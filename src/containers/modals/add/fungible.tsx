@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { Modals } from "@coinmeca/ui/containers";
-import { CoinmecaWalletContextProvider, useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
+import { CoinmecaWalletContextProvider, useCoinmecaWalletProvider } from "@coinmeca/wallet-provider";
 import { dehydrate, HydrationBoundary, QueryClientProvider } from "@tanstack/react-query";
 
 import { getQueryClient } from "api";
@@ -190,7 +190,7 @@ function AddFungibleModal(props: Fungible) {
                             },
                             {
                                 active: loading,
-                                children:<States.Loading />
+                                children: <States.Loading />,
                             },
                             {
                                 active: !!tokens && isSuccess,

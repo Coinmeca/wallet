@@ -14,7 +14,7 @@
     "author": "Coinmeca Team <dev@coinmeca.net>",
     "scripts": {
         "check": "npx tsc --watch",
-        "build": "yarn clean && npx tsc --build",
+        "build": "yarn clean && npx tsc --build --force",
         "deploy": "npm publish",
         "clean": "rm -rf ./dist ./build ./.next ./node_modules/.cache ./tsconfig.tsbuildinfo"
     },

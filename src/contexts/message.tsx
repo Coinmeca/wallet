@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider";
 import { Account, App } from "@coinmeca/wallet-sdk/types";
 import { useTelegram } from "hooks";
 import { usePathname, useRouter } from "next/navigation";

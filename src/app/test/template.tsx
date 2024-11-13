@@ -1,8 +1,8 @@
-﻿'use client';
+﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
 import { Controls, Layouts } from "@coinmeca/ui/components";
-import { useCoinmecaWallet, useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
+import { useCoinmecaWallet, useCoinmecaWalletProvider } from "@coinmeca/wallet-provider";
 import { getChainsByType } from "@coinmeca/wallet-sdk/chains";
 import { useTelegram } from "hooks";
 import { usePathname } from "next/navigation";
@@ -140,59 +140,57 @@ export default function Template({ children }: { children?: any }) {
         }
     }, []);
 
-
     useEffect(() => {
-        if(path?.startsWith('/test/dapp')) setTab("dapp")
-    },[path])
+        if (path?.startsWith("/test/dapp")) setTab("dapp");
+    }, [path]);
 
     return (
-            <Layouts.Contents.InnerContent>
-                <Layouts.Menu
-                    menu={[
-                        [
-                            <>
-                                <Controls.Tab onClick={() => setTab("test")}>Test</Controls.Tab>
-                            </>,
-                            <>
-                                <Controls.Tab onClick={() => setTab("dapp")}>dApp</Controls.Tab>
-                            </>,
-                        ],
-                    ]}
-                />
-                <Layouts.Contents.TabContainer
-                    contents={[
-                        {
-                            active: tab === "test",
-                            children: (
-                                <Layouts.Col>
-                                    <div>{telegram ? `Success, Platform: ${telegram.platform}` : "Fail"}</div>
-                                    <Controls.Button onClick={handleAddEthereumChain}>Add Ethereum Chain</Controls.Button>
-                                    <Controls.Button onClick={switchEthereumChain}>Switch Ethereum Chain</Controls.Button>
-                                    <Controls.Button onClick={handleRequestAccounts}>Request Accounts</Controls.Button>
-                                    <Controls.Button onClick={handleSendTransaction}>Send Transaction</Controls.Button>
-                                    <Controls.Button onClick={handleSendData}>Send Data</Controls.Button>
-                                    <Controls.Button onClick={handleExpand}>Expand</Controls.Button>
-                                    <Controls.Button onClick={handleShowConfirm}>Show Confirm</Controls.Button>
-                                    <Controls.Button onClick={handleShowPopup}>Show Popup</Controls.Button>
-                                    <Controls.Button onClick={handleRequest}>Biometric Request</Controls.Button>
-                                    <Controls.Button onClick={handleAuthenticate}>Biometric Auth</Controls.Button>
-                                    <Controls.Button onClick={handleClose}>Close</Controls.Button>
-                                    {authenticate && `Authenticate: ${authenticate}`}
-                                    <br />
-                                    {requestAccess && `Request Access: ${requestAccess}`}
-                                    <br />
-                                    {error && `Error: ${error}`}
-                                    <br />
-                                </Layouts.Col>
-                            ),
-                        },
-                        {
-                            active: tab === "dapp",
-                            children: <iframe ref={iframeRef} src="/test-dapp/index.html" width="100%" height="100%" allowFullScreen></iframe>,
-                        },
-                    ]}
-                />
-            </Layouts.Contents.InnerContent>
-
-    )
+        <Layouts.Contents.InnerContent>
+            <Layouts.Menu
+                menu={[
+                    [
+                        <>
+                            <Controls.Tab onClick={() => setTab("test")}>Test</Controls.Tab>
+                        </>,
+                        <>
+                            <Controls.Tab onClick={() => setTab("dapp")}>dApp</Controls.Tab>
+                        </>,
+                    ],
+                ]}
+            />
+            <Layouts.Contents.TabContainer
+                contents={[
+                    {
+                        active: tab === "test",
+                        children: (
+                            <Layouts.Col>
+                                <div>{telegram ? `Success, Platform: ${telegram.platform}` : "Fail"}</div>
+                                <Controls.Button onClick={handleAddEthereumChain}>Add Ethereum Chain</Controls.Button>
+                                <Controls.Button onClick={switchEthereumChain}>Switch Ethereum Chain</Controls.Button>
+                                <Controls.Button onClick={handleRequestAccounts}>Request Accounts</Controls.Button>
+                                <Controls.Button onClick={handleSendTransaction}>Send Transaction</Controls.Button>
+                                <Controls.Button onClick={handleSendData}>Send Data</Controls.Button>
+                                <Controls.Button onClick={handleExpand}>Expand</Controls.Button>
+                                <Controls.Button onClick={handleShowConfirm}>Show Confirm</Controls.Button>
+                                <Controls.Button onClick={handleShowPopup}>Show Popup</Controls.Button>
+                                <Controls.Button onClick={handleRequest}>Biometric Request</Controls.Button>
+                                <Controls.Button onClick={handleAuthenticate}>Biometric Auth</Controls.Button>
+                                <Controls.Button onClick={handleClose}>Close</Controls.Button>
+                                {authenticate && `Authenticate: ${authenticate}`}
+                                <br />
+                                {requestAccess && `Request Access: ${requestAccess}`}
+                                <br />
+                                {error && `Error: ${error}`}
+                                <br />
+                            </Layouts.Col>
+                        ),
+                    },
+                    {
+                        active: tab === "dapp",
+                        children: <iframe ref={iframeRef} src="/test-dapp/index.html" width="100%" height="100%" allowFullScreen></iframe>,
+                    },
+                ]}
+            />
+        </Layouts.Contents.InnerContent>
+    );
 }
