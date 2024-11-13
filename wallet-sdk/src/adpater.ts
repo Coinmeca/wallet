@@ -109,7 +109,7 @@ export class CoinmecaWalletAdapter extends CoinmecaWalletBase {
     async request({ method, params }: { method: string; params?: any[] }) {
         switch (method) {
             case "eth_accounts":
-                return this.#data()?.get("accounts");
+            // return this.#data()?.get("accounts");
 
             case "eth_requestAccounts":
                 return await this.#promise(method).then((result) => {

@@ -1,2 +1,2 @@
-﻿import Fungible from './fungible';
+﻿import Fungible from "./fungible";
 export { Fungible };
