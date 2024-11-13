@@ -28,7 +28,7 @@
         "paths": {
             "": ["./*"],
             "~/*": ["./*"],
-            "@coinmeca/wallet-sdk/*": ["../wallet-sdk/dist/*"]
+            "@coinmeca/wallet-sdk/*": ["../wallet-sdk/src/contexts/*"]
         },
         "typeRoots": ["src/types", "node_modules/@types"]
     },

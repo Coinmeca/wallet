@@ -21,7 +21,7 @@
         "lint": "next lint",
         "install:ui": "yarn workspace @coinmeca/ui install",
         "install:provider": "yarn workspace @coinmeca/wallet-provider install",
-        "install:provider:sdk": "yarn workspace @coinmeca/wallet-provider install:sdk",
+        "install:provider:sdk": "yarn workspace @coinmeca/wallet-provider install:sdk && yarn workspace @coinmeca/wallet-provider install",
         "dev": "next dev",
         "dev:ui": "yarn workspace @coinmeca/ui dev",
         "dev:provider": "yarn workspace @coinmeca/wallet-provider dev",
@@ -29,7 +29,7 @@
         "build": "next build",
         "build:ui": "yarn workspace @coinmeca/ui build",
         "build:provider": "yarn workspace @coinmeca/wallet-provider build",
-        "build:provider:sdk": "yarn workspace @coinmeca/wallet-provider build:sdk",
+        "build:provider:sdk": "yarn workspace @coinmeca/wallet-provider build:sdk && yarn workspace @coinmeca/wallet-provider build",
         "deploy": "next build && npx vercel --prod",
         "deploy:ui": "yarn workspace @coinmeca/ui deploy",
         "deploy:provider": "yarn workspace @coinmeca/wallet-provider deploy",
@@ -37,7 +37,7 @@
         "clean": "rm -rf ./dist ./build ./.next ./tsconfig.tsbuildinfo ./node_modules/.cache",
         "clean:ui": "yarn workspace @coinmeca/ui clean",
         "clean:provider": "yarn workspace @coinmeca/wallet-provider clean",
-        "clean:provider:sdk": "yarn workspace @coinmeca/wallet-provider clean:sdk",
+        "clean:provider:sdk": "yarn workspace @coinmeca/wallet-provider clean:sdk && yarn workspace @coinmeca/wallet-provider clean",
         "discord": "tsx ./src/app/api/discord/register"
     },
     "dependencies": {
