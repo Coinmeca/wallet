@@ -29,7 +29,6 @@
         },
         "typeRoots": ["src/types", "node_modules/@types"]
     },
-    // "files": ["src/index.ts", "src/adapter.ts", "src/chains.ts", "src/core.ts", "src/provider.ts", "src/types.ts", "src/utils.ts"],
-    "include": ["src", "src/global.d.ts", "rollup.config.js"],
+    "include": ["src", "src/global.d.ts"],
     "exclude": ["node_modules", "dist", "rollup.config.*"]
 }
