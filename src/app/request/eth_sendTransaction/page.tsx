@@ -6,8 +6,8 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
 import { Account, TransactionParams } from "@coinmeca/wallet-sdk/types";
-import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider";
-import { GetEstimateGas, GetGasPrice, GetRpcUrls } from "api/onchain";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
+import { GetEstimateGas, GetGasPrice } from "api/onchain";
 import { format } from "@coinmeca/ui/lib/utils";
 
 /*
@@ -55,9 +55,6 @@ export default function eth_sendTransaction() {
     const [txHash, setTxHash] = useState<string>("");
     const [error, setError] = useState<any>();
 
-    const rpcUrls = GetRpcUrls();
-    console.log({ rpc: rpcUrls?.data });
-
     useLayoutEffect(() => {
         console.log({ params, auth, app });
         if (params) {
@@ -69,7 +66,6 @@ export default function eth_sendTransaction() {
                 maxFeePerGas: Number(maxFeePerGas),
                 maxPriorityFeePerGas: Number(maxPriorityFeePerGas),
             };
-            if (chainId) provider?.changeChain(chainId);
             setTx(tx);
             setSigner(provider?.account(tx?.from));
         }
@@ -101,8 +97,8 @@ export default function eth_sendTransaction() {
                 },
                 "*",
             );
-            setError(error);
-            setLevel(3);
+        } finally {
+            setLevel(2);
         }
     };
 
@@ -135,6 +131,7 @@ export default function eth_sendTransaction() {
                                             <Layouts.Row gap={3} align={"center"} fix>
                                                 <div
                                                     style={{
+                                                        position: "relative",
                                                         display: "flex",
                                                         alignItems: "center",
                                                         justifyContent: "center",
@@ -174,14 +171,12 @@ export default function eth_sendTransaction() {
                                                     <Elements.Text type={"desc"} weight={"bold"} height={0} align={"left"} opacity={0.6}>
                                                         Requested By
                                                     </Elements.Text>
-                                                    <Layouts.Col gap={0}>
-                                                        <Elements.Text type={"h6"} height={0} align={"left"}>
-                                                            {app?.name}
-                                                        </Elements.Text>
-                                                        <Elements.Text type={"strong"} height={0} align={"left"} opacity={0.6}>
-                                                            {app?.url}
-                                                        </Elements.Text>
-                                                    </Layouts.Col>
+                                                    <Elements.Text type={"h6"} height={0} align={"left"}>
+                                                        {app?.name}
+                                                    </Elements.Text>
+                                                    <Elements.Text type={"strong"} height={0} align={"left"} opacity={0.6}>
+                                                        {app?.url}
+                                                    </Elements.Text>
                                                 </Layouts.Col>
                                             </Layouts.Row>
                                             <Layouts.Divider />
@@ -473,7 +468,7 @@ export default function eth_sendTransaction() {
                                         width={0}
                                         height={0}
                                         src={require("../../../assets/animation/failure.gif")}
-                                        alt={"Failure"}
+                                        alt={"Unknown"}
                                         style={{ width: "8em", height: "8em" }}
                                     />
                                 </div>

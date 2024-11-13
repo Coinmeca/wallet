@@ -28,7 +28,7 @@ export const useMessageHandler = () => {
     return context;
 };
 
-export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
+export const MessageHandler: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const path = usePathname();
     const router = useRouter();
 

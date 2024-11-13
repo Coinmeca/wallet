@@ -34,7 +34,14 @@ export class CoinmecaWalletAdapter extends CoinmecaWalletBase {
     constructor() {
         super();
 
-        const announceEvent = new CustomEvent("eip6963:announceProvider", {
+        window.ethereum = { ...window.ethereum, ...this };
+        window.ethereum.providers = window.ethereum.providers || [];
+        if (!window.ethereum.providers.find((p: any) => p?.isCoinmecaWallet)) window.ethereum.providers.push(this);
+
+        if (!window.ethereum.providerMap) window.ethereum.providerMap = new Map<string, any>(); // Ensure providerMap is initialized
+        window.ethereum.providerMap.set("CoinmecaWallet", this);
+
+        new CustomEvent("eip6963:announceProvider", {
             detail: {
                 info: {
                     name: "Coinmeca Wallet",
@@ -45,28 +52,15 @@ export class CoinmecaWalletAdapter extends CoinmecaWalletBase {
                 provider: this,
             },
         });
-
-        window.dispatchEvent(announceEvent);
-        window.addEventListener("eip6963:requestProvider", () => {
-            window.dispatchEvent(announceEvent);
-        });
-
-        window.ethereum = { ...window.ethereum, ...this };
-        window.ethereum.providers = window.ethereum.providers || [];
-        if (!window.ethereum.providers.find((p: any) => p?.isCoinmecaWallet)) window.ethereum.providers.push(this);
-        if (!window.ethereum.providerMap) window.ethereum.providerMap = new Map<string, any>(); // Ensure providerMap is initialized
-        window.ethereum.providerMap.set("CoinmecaWallet", this);
-
-        Object.freeze(this);
     }
 
     #promise = async (method: string, params?: any) => {
-        const chainId = this.chainId;
+        const chainId = this.chainId
         const app = {
             name: (document.querySelector('meta[property="og:site_name"]') as HTMLMetaElement)?.content || document.title?.split(" ")[0],
             url: window.location.host,
             logo: await getFaviconUri(),
-        };
+        }
 
         return new Promise((resolve, reject) => {
             const messageHandler = (event: any) => {
@@ -108,13 +102,13 @@ export class CoinmecaWalletAdapter extends CoinmecaWalletBase {
     async request({ method, params }: { method: string; params?: any[] }) {
         switch (method) {
             case "eth_accounts":
-            // return this.#data()?.get("accounts");
+                return this.#data()?.get('accounts');
 
             case "eth_requestAccounts":
                 return await this.#promise(method).then((result) => {
                     if (result) {
-                        this.#data()?.set("accounts", result);
-                        return result;
+                        this.#data()?.set('accounts', result)
+                        return result
                     }
                 });
 
@@ -122,10 +116,10 @@ export class CoinmecaWalletAdapter extends CoinmecaWalletBase {
                 return;
 
             case "eth_chainId":
-                return this.chainId;
+                return;
 
             case "net_version":
-                return this.chainId;
+                return;
 
             case "eth_estimateGas":
                 return;
@@ -146,10 +140,10 @@ export class CoinmecaWalletAdapter extends CoinmecaWalletBase {
                 return;
 
             case "eth_sendTransaction":
-                params = Array.isArray(params) ? params[0] : params;
+                params = (Array.isArray(params) ? params[0] : params);
                 if (!params) throw new Error("No transaction data provided");
                 return await this.#promise(method, params).then((result) => {
-                    if (result) return result;
+                    if (result) return result
                 });
 
             // Event Subscription
@@ -169,11 +163,11 @@ export class CoinmecaWalletAdapter extends CoinmecaWalletBase {
                 return;
 
             case "wallet_addEthereumChain":
-                params = Array.isArray(params) ? params[0] : params;
+                params = (Array.isArray(params) ? params[0] : params);
                 if (!params) throw new Error("No chain information provided");
                 return await this.#promise(method, params).then((result) => {
                     if (result) {
-                        if (typeof result === "number") this.emit("chainChanged", result);
+                        if (typeof result === 'number') this.emit("chainChanged", result);
                         return result;
                     }
                 });
@@ -183,7 +177,7 @@ export class CoinmecaWalletAdapter extends CoinmecaWalletBase {
                 if (!(params as any)?.chainId) throw new Error("No chainId provided");
                 return await this.#promise(method, (params as any)?.chainId).then((result) => {
                     if (result) {
-                        this.#data()?.set("chainId", getChainById(result as number));
+                        this.#data()?.set('chain', getChainById(result as number))
                         this.emit("chainChanged", result);
                         return result;
                     }
@@ -209,7 +203,7 @@ export class CoinmecaWalletAdapter extends CoinmecaWalletBase {
     }
 
     get chain() {
-        return this.#data()?.get("chainId");
+        return this.#data()?.get("chain");
     }
 
     get chainId() {
@@ -224,5 +218,32 @@ export class CoinmecaWalletAdapter extends CoinmecaWalletBase {
         // if (this.address) return await this.#sendRpcRequest("eth_getBalance", [this.address, "latest"]);
         // else return 0;
         return 0;
+    }
+
+    async #rpcUrl() {
+        const urls = (
+            typeof this.chain?.rpcUrls === "object" ? Object.values(this.chain.rpcUrls) : Array.isArray(this.chain?.rpcUrls) ? this.chain.rpcUrls : []
+        ).filter((url?: string) => url?.startsWith("http"));
+
+        if (urls.length === 0) return null;
+        const availableUrls = await Promise.all(
+            urls.map(async (url: string) => {
+                const start = Date.now();
+                try {
+                    await axiosQuiet.get(url); // Making the request
+                    const elapsed = Date.now() - start;
+
+                    // If the request is successful, return the URL and its latency
+                    return { url, latency: elapsed };
+                } catch {
+                    // Return an object indicating failure without logging errors
+                    return { url, latency: Number.MAX_SAFE_INTEGER };
+                }
+            }),
+        );
+
+        // Filter out URLs that resulted in an error
+        const workingUrls = availableUrls.filter((result) => !!result && result.latency !== Number.MAX_SAFE_INTEGER).sort((a, b) => a.latency - b.latency);
+        return workingUrls.length ? workingUrls[0].url : null;
     }
 }

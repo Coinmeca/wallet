@@ -7,7 +7,7 @@ import { MessageHandler, StorageProvider, TelegramProvider } from "contexts";
 import { dehydrate, HydrationBoundary, QueryClientProvider } from "@tanstack/react-query";
 import { getQueryClient } from "api";
 import { GuardProvider } from "contexts/guard";
-import { CoinmecaWalletAdapterContextProvider, CoinmecaWalletContextProvider } from "@coinmeca/wallet-provider";
+import { CoinmecaWalletContextProvider } from "@coinmeca/wallet-provider/provider";
 
 export default function Providers({ children }: { children: any }) {
     const client = getQueryClient();

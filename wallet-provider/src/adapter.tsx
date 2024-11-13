@@ -4,6 +4,15 @@ import React, { createContext, useContext, useEffect, useLayoutEffect, useMemo, 
 import { Chain, Account } from "@coinmeca/wallet-sdk/types";
 import { CoinmecaWalletAdapter } from "@coinmeca/wallet-sdk/adapter";
 
+// Inject the adapter into window.ethereum
+declare global {
+    interface Window {
+        ethereum?: any;
+        providers?: any;
+        providersMaprovider?: Map<string, any>;
+    }
+}
+
 interface CoinmecaWalletAdapterContextProps {
     adapter: CoinmecaWalletAdapter | undefined;
     account: Account | undefined;
@@ -20,7 +29,7 @@ export const useCoinmecaWallet = () => {
     return context;
 };
 
-export const CoinmecaWalletAdapterContextProvider: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
+export const CoinmecaWalletAdapterContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [adapter, setAdapter] = useState<CoinmecaWalletAdapter>();
 
     const [account, setAccount] = useState<Account>();

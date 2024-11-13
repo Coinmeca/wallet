@@ -1,9 +1,10 @@
 "use client";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { format } from "@coinmeca/ui/lib/utils";
-import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
+import { useQueries } from "@tanstack/react-query";
 import { GetBalance } from "api/account";
-import { Lists } from "containers";
+import { query } from "api/query";
 import { AnimatePresence } from "framer-motion";
 import { usePageLoader } from "hooks";
 import { usePathname, useRouter } from "next/navigation";
@@ -25,6 +26,10 @@ export default function Home() {
         if (path.startsWith("/token")) setTab("token");
         if (path.startsWith("/nft")) setTab("nft");
     }, [path]);
+
+    const fungibles = useQueries({
+        queries: (account?.tokens?.fungibles || [])?.map((t: string) => query.erc20.token(chain?.rpcUrls?.[0], t, account?.address)),
+    });
 
     return (
         <Layouts.Page snap>

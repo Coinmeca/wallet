@@ -1,6 +1,5 @@
 ﻿"use client";
 
-import Image from "next/image";
 import { useCallback, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
@@ -14,6 +13,8 @@ import { usePageLoader } from "hooks";
 import { filter, format } from "@coinmeca/ui/lib/utils";
 import { Modal } from "@coinmeca/ui/containers";
 import { Root } from "@coinmeca/ui/lib/style";
+import Image from "next/image";
+import { GetBalance } from "api/account";
 import { useQueries } from "@tanstack/react-query";
 import { query } from "api/onchain/query";
 

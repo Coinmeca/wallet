@@ -9,6 +9,7 @@ export abstract class CoinmecaWalletBase {
     constructor() {
         this.event = new EventEmitter();
         this.#proxy;
+        Object.freeze(this);
     }
 
     get #proxy() {

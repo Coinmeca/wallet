@@ -12,7 +12,7 @@ export const useTelegram = () => {
     return context;
 };
 
-export const TelegramProvider: React.FC<{ src?: string; children?: React.ReactNode }> = ({ src = "https://telegram.org/js/telegram-web-app.js", children }) => {
+export const TelegramProvider: React.FC<{ src?: string; children: React.ReactNode }> = ({ src = "https://telegram.org/js/telegram-web-app.js", children }) => {
     const [telegram, setTelegram] = useState<Telegram["WebApp"]>();
     const [user, setUser] = useState<Telegram["WebApp"]["initDataUnsafe"]["user"]>();
 
