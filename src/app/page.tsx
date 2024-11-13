@@ -146,7 +146,7 @@ export default function Home() {
                                             ],
                                             [
                                                 <>
-                                                    <Controls.Tab active={tab === "activity"} onClick={() => router.push("/activity")} iconLeft={"search"} />
+                                                    <Controls.Input left={{ children: <Elements.Icon icon={"search"} /> }} fold />
                                                 </>,
                                             ],
                                         ],
