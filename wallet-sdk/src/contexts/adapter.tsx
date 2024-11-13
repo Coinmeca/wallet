@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { Chain, Account } from "../types";
-import { CoinmecaWalletAdapter } from "../adpater";
+import { CoinmecaWalletAdapter } from "../adapter";
 
 interface CoinmecaWalletAdapterContextProps {
     adapter: CoinmecaWalletAdapter | undefined;

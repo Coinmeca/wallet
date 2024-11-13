@@ -3,11 +3,13 @@ import obfuscator from "rollup-plugin-obfuscator";
 import { terser } from "rollup-plugin-terser";
 
 export default {
-    input: "src/index.ts", // Path to your main entry JavaScript file
+    input: "src/index.ts",
     output: {
-        file: "dist/bundle.js", // Path to the output file
-        format: "iife", // or 'esm', depending on your use case
-        sourcemap: true, // Enable sourcemaps
+        name: "@coinmeca/wallet-sdk",
+        file: "dist/bundle.js",
+        format: "iife",
+        sourcemap: true,
+        extend: true,
         globals: {
             react: "React",
             "react/jsx-runtime": "jsxRuntime",
@@ -19,13 +21,14 @@ export default {
             "ethereumjs-util": "ethereumjsUtil",
         },
     },
-    external: ["react", "react/jsx-runtime", "eventemitter3", "axios", "crypto-js", "ethereumjs-wallet", "ethereumjs-tx", "ethereumjs-util", "src/contexts/**/*"],
+    exclude: ["src/contexts/**/*"],
+    external: ["react", "react/jsx-runtime", "eventemitter3", "axios", "crypto-js", "ethereumjs-wallet", "ethereumjs-tx", "ethereumjs-util"],
     plugins: [
         typescript({
-            tsconfig: "./tsconfig.json",
-            sourceMap: true,
-            declaration: true,
-            exclude: ['src/contexts/**/*'],  // Exclude the context folder from bundling
+            tsconfig: "./tsconfig.rollup.json",
+            // sourceMap: true,
+            // declaration: true,
+            exclude: ["src/contexts/**/*"], // Exclude the context folder from bundling
         }),
         obfuscator({
             compact: true, // Compresses the code to reduce size and obfuscate it more effectively.

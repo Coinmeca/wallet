@@ -14,7 +14,7 @@
     "author": "Coinmeca Team <dev@coinmeca.net>",
     "scripts": {
         "check": "npx rollup -c --watch",
-        "build": "yarn clean && npx rollup -c rollup.config.js && npx tsc --build ./src/contexts/tsconfig.json",
+        "build": "yarn clean && npx rollup -c rollup.config.js && tsc --build tsconfig.json",
         "deploy": "npm publish",
         "clean": "rm -rf ./dist ./build ./.next ./tsconfig.tsbuildinfo ./node_modules/.cache"
     },

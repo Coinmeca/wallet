@@ -1,5 +1,4 @@
-﻿import { Chain } from "./types";
-import { CoinmecaWalletBase } from "./core";
+﻿import { CoinmecaWalletBase } from "./core";
 import { getFaviconUri, loadStorage, openWindow } from "./utils";
 import axios from "axios";
 import { getChainById } from "./chains";
