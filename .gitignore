@@ -5,6 +5,9 @@
 /**/trading-view
 /**/dist
 /public
+/ui-kit
+/wallet-sdk
+/wallet-provider
 
 # testing
 /coverage
