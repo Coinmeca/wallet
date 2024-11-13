@@ -1,8 +1,35 @@
 {
-    "extends": "./tsconfig.rollup.json",
     "compilerOptions": {
-        "jsx": "preserve" // use preserve for JSX in this folder
+        "rootDir": "src",
+        "baseUrl": "src",
+        "outDir": "dist",
+        "target": "ESNext",
+        "jsx": "react-jsx",
+        "lib": ["dom", "dom.iterable", "esnext"],
+        "skipLibCheck": true,
+        "strict": true,
+        "allowJs": true,
+        "allowSyntheticDefaultImports": true,
+        "forceConsistentCasingInFileNames": true,
+        "noEmit": false,
+        "noImplicitAny": true,
+        "moduleResolution": "node",
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "incremental": true,
+        "composite": true,
+        "declaration": true,
+        "declarationMap": true,
+        "declarationDir": "dist",
+        "sourceMap": true,
+        "paths": {
+            "": ["./src/*"],
+            "~/*": ["./src/*"]
+        },
+        "typeRoots": ["src/types", "node_modules/@types"]
     },
-    "include": ["src/contexts", "src/index.ts"],
-    "exclude": ["!src/contexts"]
+    // "files": ["src/index.ts", "src/adapter.ts", "src/chains.ts", "src/core.ts", "src/provider.ts", "src/types.ts", "src/utils.ts"],
+    "include": ["src", "src/global.d.ts", "rollup.config.js"],
+    "exclude": ["node_modules", "dist", "rollup.config.*"]
 }

@@ -1,0 +1,18 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "jsx": "preserve" // use preserve for JSX in this folder
+    },
+    "include": [
+        "src/contexts",
+        "src/global.d.ts",
+        "src/index.ts",
+        "src/adapter.ts",
+        "src/core.ts",
+        "src/utils.ts",
+        "src/chains.ts",
+        "src/types.ts",
+        "src/provider.ts"
+    ],
+    "exclude": ["node_modules", "dist", "rollup.config.*"]
+}

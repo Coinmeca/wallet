@@ -25,10 +25,10 @@ export default {
     external: ["react", "react/jsx-runtime", "eventemitter3", "axios", "crypto-js", "ethereumjs-wallet", "ethereumjs-tx", "ethereumjs-util"],
     plugins: [
         typescript({
-            tsconfig: "./tsconfig.rollup.json",
+            tsconfig: "./tsconfig.json",
             // sourceMap: true,
             // declaration: true,
-            exclude: ["src/contexts/**/*"], // Exclude the context folder from bundling
+            exclude: ["src/contexts/**/*", "src/chains.ts"], // Exclude the context folder from bundling
         }),
         obfuscator({
             compact: true, // Compresses the code to reduce size and obfuscate it more effectively.

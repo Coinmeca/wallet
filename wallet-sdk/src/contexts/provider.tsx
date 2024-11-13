@@ -4,15 +4,6 @@ import React, { createContext, useContext, useEffect, useLayoutEffect, useState 
 import { Chain, Account, App, Tokens } from "../types";
 import { CoinmecaWalletProvider } from "../provider";
 
-// Inject the provider into window.ethereum
-declare global {
-    interface Window {
-        ethereum?: any;
-        providers?: any;
-        providersMaprovider?: Map<string, any>;
-    }
-}
-
 interface CoinmecaWalletProviderContextProps {
     provider: CoinmecaWalletProvider | undefined;
     account: Account | undefined;
@@ -44,7 +35,7 @@ export const CoinmecaWalletContextProvider: React.FC<{ children?: React.ReactNod
 
     useLayoutEffect(() => {
         const chainId = (window as any)?.coinmeca?.request?.chainId;
-        const provider = (window as any)?.coinmeca?.wallet || new CoinmecaWalletProvider({chainId});
+        const provider = (window as any)?.coinmeca?.wallet || new CoinmecaWalletProvider({ chainId });
         setProvider(provider);
     }, []);
 
@@ -58,9 +49,8 @@ export const CoinmecaWalletContextProvider: React.FC<{ children?: React.ReactNod
                 setChain(provider?.chain);
             };
 
-            const updateApps = () => {
-            };
-            
+            const updateApps = () => {};
+
             const updateFungibles = () => {
                 setAccount(provider?.account());
             };
