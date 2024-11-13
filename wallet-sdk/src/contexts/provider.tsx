@@ -40,13 +40,12 @@ export const CoinmecaWalletContextProvider: React.FC<{ children?: React.ReactNod
 
     const [account, setAccount] = useState<Account>();
     const [chain, setChain] = useState<Chain>();
+    const [fungibles, setFungibles] = useState<any>();
 
     useLayoutEffect(() => {
-        setProvider(
-            new CoinmecaWalletProvider({
-                chainId: (window as any)?.coinmeca?.request?.chainId,
-            }),
-        );
+        const chainId = (window as any)?.coinmeca?.request?.chainId;
+        const provider = (window as any)?.coinmeca?.wallet || new CoinmecaWalletProvider({chainId});
+        setProvider(provider);
     }, []);
 
     useLayoutEffect(() => {
@@ -59,9 +58,12 @@ export const CoinmecaWalletContextProvider: React.FC<{ children?: React.ReactNod
                 setChain(provider?.chain);
             };
 
-            const updateApps = () => {};
-
-            const updateFungibles = () => {};
+            const updateApps = () => {
+            };
+            
+            const updateFungibles = () => {
+                setAccount(provider?.account());
+            };
 
             const update = () => {
                 updateAccount();
@@ -71,10 +73,12 @@ export const CoinmecaWalletContextProvider: React.FC<{ children?: React.ReactNod
             provider?.on("unlock", update);
             provider?.on("accountChanged", updateAccount);
             provider?.on("chainChanged", updateChain);
+            provider?.on("updateFungibleAsset", updateFungibles);
             return () => {
                 provider?.off("unlock", update);
                 provider?.off("accountChanged", updateAccount);
                 provider?.off("chainChanged", updateChain);
+                provider?.off("updateFungibleAsset", updateFungibles);
             };
         }
     }, [provider]);
