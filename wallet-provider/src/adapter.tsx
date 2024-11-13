@@ -1,8 +1,8 @@
 ﻿"use client";
 
 import React, { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
-import { Chain, Account } from "../types";
-import { CoinmecaWalletAdapter } from "../adapter";
+import { Chain, Account } from "@coinmeca/wallet-sdk/src/types";
+import { CoinmecaWalletAdapter } from "@coinmeca/wallet-sdk/src/adapter";
 
 interface CoinmecaWalletAdapterContextProps {
     adapter: CoinmecaWalletAdapter | undefined;

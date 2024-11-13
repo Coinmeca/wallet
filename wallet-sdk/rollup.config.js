@@ -21,14 +21,12 @@ export default {
             "ethereumjs-util": "ethereumjsUtil",
         },
     },
-    exclude: ["src/contexts/**/*"],
     external: ["react", "react/jsx-runtime", "eventemitter3", "axios", "crypto-js", "ethereumjs-wallet", "ethereumjs-tx", "ethereumjs-util"],
     plugins: [
         typescript({
             tsconfig: "./tsconfig.json",
-            // sourceMap: true,
-            // declaration: true,
-            exclude: ["src/contexts/**/*", "src/chains.ts"], // Exclude the context folder from bundling
+            sourceMap: true,
+            declaration: true,
         }),
         obfuscator({
             compact: true, // Compresses the code to reduce size and obfuscate it more effectively.
