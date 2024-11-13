@@ -14,7 +14,7 @@
     "author": "Coinmeca Team <dev@coinmeca.net>",
     "scripts": {
         "check": "npx rollup -c --watch",
-        "build": "yarn clean && npx rollup -c",
+        "build": "yarn clean && npx rollup -c rollup.config.js && tsc --build ./src/contexts/tsconfig.json",
         "deploy": "npm publish",
         "clean": "rm -rf ./dist ./build ./.next ./tsconfig.tsbuildinfo ./node_modules/.cache"
     },
@@ -46,6 +46,7 @@
         }
     },
     "dependencies": {
+        "@rollup/plugin-node-resolve": "^15.3.0",
         "axios": "^1.7.7",
         "crypto-js": "^4.2.0",
         "ethereumjs-tx": "^2.1.2",
@@ -55,6 +56,7 @@
         "next": "14.2.16",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
+        "rollup-plugin-commonjs": "^10.1.0",
         "viem": "^2.21.33"
     },
     "devDependencies": {
