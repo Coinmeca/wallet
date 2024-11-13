@@ -6,7 +6,7 @@ import { Layouts } from "@coinmeca/ui/components";
 
 import { getChainsByType } from "@coinmeca/wallet-sdk/chains";
 import { format, parse } from "@coinmeca/wallet-sdk/utils";
-import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { Stages } from "containers";
 
 export default function Welcome() {

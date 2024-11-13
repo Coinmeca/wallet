@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
 import { Account, TransactionParams } from "@coinmeca/wallet-sdk/types";
-import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { GetEstimateGas, GetGasPrice, GetRpcUrls } from "api/onchain";
 import { format } from "@coinmeca/ui/lib/utils";
 

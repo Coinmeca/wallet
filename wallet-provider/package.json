@@ -3,47 +3,57 @@
     "version": "0.0.1",
     "keywords": [
         "coinmeca",
-        "interface",
-        "wallet"
+        "ethereum",
+        "web3",
+        "wallet",
+        "provider",
+        "wallet-provider"
     ],
-    "license": "MIT",
     "repository": {
         "type": "git",
-        "url": "https://github.com/coinmeca/wallet-sdk"
+        "url": "https://github.com/coinmeca/wallet-provider"
     },
-    "author": "Coinmeca Team <dev@coinmeca.net>",
-    "scripts": {
-        "check": "npx tsc --watch",
-        "build": "yarn clean && npx tsc --build --force",
-        "deploy": "npm publish",
-        "clean": "rm -rf ./dist ./build ./.next ./node_modules/.cache ./tsconfig.tsbuildinfo"
-    },
-    "type": "module",
+    "workspaces": [
+        "wallet-sdk"
+    ],
+    "license": "MIT",
     "sideEffects": false,
+    "type": "module",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
-    "typings": "./dist/index.d.js",
+    "module": "./dist/index.esm.js",
     "files": [
         "./dist"
     ],
     "exports": {
-        ".": "./dist/index.js",
+        ".": {
+            "require": "./dist/index.js"
+        },
         "./*": [
             "./dist/*.js",
-            "./dist/*/index.js"
+            "./dist/*/index.js",
+            "./dist/*"
         ]
     },
     "typesVersions": {
         "*": {
-            ".": [
-                "./dist/index"
-            ],
             "*": [
                 "./dist/*",
                 "./dist/*/index",
                 "./dist/index"
             ]
         }
+    },
+    "scripts": {
+        "setup": "git submodule update --init --recursive && cd wallet-sdk && git fetch origin && git checkout main && git pull origin main && cd .. && git submodule update --init --recursive",
+        "install": "yarn install",
+        "install:sdk": "yarn workspace @coinmeca/wallet-sdk install",
+        "check": "npx tsc --watch",
+        "build": "yarn clean && npx tsc --build --force",
+        "build:sdk": "yarn workspace @coinmeca/wallet-sdk build",
+        "deploy": "npm publish",
+        "deploy:sdk": "yarn workspace @coinmeca/wallet-sdk deploy",
+        "clean": "rm -rf ./dist ./build ./.next ./node_modules/.cache ./tsconfig.tsbuildinfo"
     },
     "dependencies": {
         "axios": "^1.7.7",

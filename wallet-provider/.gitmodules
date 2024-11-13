@@ -3,4 +3,6 @@
 	url = https://github.com/coinmeca/ui-kit
 [submodule "wallet-provider"]
 	path = wallet-provider
-	url = https://github.com/coinmeca/wallet-provider
+[submodule "wallet-sdk"]
+	path = wallet-sdk
+	url = https://github.com/coinmeca/wallet-sdk
