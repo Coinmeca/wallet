@@ -30,8 +30,7 @@
             "": ["./src/*"],
             "~/*": ["./src/*"],
             "@coinmeca/ui/*": ["../ui-kit/dist/*"],
-            "@coinmeca/wallet-sdk/*": ["../wallet-sdk/dist/*"],
-            "@coinmeca/wallet-provider/*": ["../wallet-provider/dist/*"]
+            "@coinmeca/wallet-provider/*": ["../wallet-provider/src/*"]
         },
         "downlevelIteration": false,
         "typeRoots": ["src/types", "node_modules/@types"]
