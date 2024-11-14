@@ -1,3 +1,0 @@
-[submodule "wallet-sdk"]
-	path = wallet-sdk
-	url = https://github.com/coinmeca/wallet-sdk
