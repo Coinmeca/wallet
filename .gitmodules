@@ -1,7 +1,7 @@
 [submodule "ui-kit"]
 	path = ui-kit
-	url = https://${GIT_TOKEN}@github.com/coinmeca/ui-kit
+	url = https://github.com/coinmeca/ui-kit
 [submodule "wallet-provider"]
 	path = wallet-provider
-	url = https://${GIT_TOKEN}@github.com/coinmeca/wallet-provider
+	url = https://github.com/coinmeca/wallet-provider
 	branch = dev
