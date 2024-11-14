@@ -5,6 +5,7 @@ import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { useQueries } from "@tanstack/react-query";
 import { GetBalance } from "api/account";
 import { query } from "api/query";
+import { Lists } from "containers";
 import { AnimatePresence } from "framer-motion";
 import { usePageLoader } from "hooks";
 import { usePathname, useRouter } from "next/navigation";
@@ -28,7 +29,7 @@ export default function Home() {
     }, [path]);
 
     const fungibles = useQueries({
-        queries: (account?.tokens?.fungibles || [])?.map((t: string) => query.erc20.token(chain?.rpcUrls?.[0], t, account?.address)),
+        queries: (account?.tokens?.fungibles?.[`${chain?.chainId}`] || [])?.map((t: string) => query.erc20.token(chain?.rpcUrls?.[0], t, account?.address)),
     });
 
     return (
@@ -45,20 +46,20 @@ export default function Home() {
                                 maxHeight: "32em",
                             }}
                             fill>
-                            <Layouts.Col gap={2} align={'center'}>
-                            <Elements.Text type={"h6"}>BALANCE</Elements.Text>
-                                <Layouts.Row gap={0} align={'center'}>
+                            <Layouts.Col gap={2} align={"center"}>
+                                <Elements.Text type={"h6"}>BALANCE</Elements.Text>
+                                <Layouts.Row gap={0} align={"center"}>
                                     <Elements.Text type={"h3"}>
                                         {isLoading
                                             ? "~"
                                             : format(balance, "currency", {
-                                                unit: 9,
-                                                limit: 12,
-                                                fix: 9,
-                                            })}
+                                                  unit: 9,
+                                                  limit: 12,
+                                                  fix: 9,
+                                              })}
                                     </Elements.Text>
                                     <Elements.Text type={"h3"}>{chain?.nativeCurrency?.symbol}</Elements.Text>
-                                        </Layouts.Row>
+                                </Layouts.Row>
                             </Layouts.Col>
                         </Layouts.Col>
                         <Layouts.Box padding={[2, "", "", ""]} fit>
