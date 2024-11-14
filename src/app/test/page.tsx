@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { Controls, Layouts } from "@coinmeca/ui/components";
-import { useCoinmecaWallet, useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
-import { getChainById, getChainsByType } from "@coinmeca/wallet-sdk/chains";
 import { useTelegram } from "hooks";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
+import { useCoinmecaWallet } from "@coinmeca/wallet-provider/adapter";
+import { getChainsByType } from "@coinmeca/wallet-provider/chains";
 
 export default function Home() {
     const { telegram, send, show, expand, exit, bio } = useTelegram();
@@ -74,7 +75,9 @@ export default function Home() {
 
     const switchEthereumChain = async () => {
         const chains = getChainsByType("mainnet").filter((c) => c?.chainId !== chain?.chainId);
-        console.log(await adapter?.request({ method: "wallet_switchEthereumChain", params: [{chainId: chains[Math.floor(Math.random() * chains.length)]?.chainId}] }));
+        console.log(
+            await adapter?.request({ method: "wallet_switchEthereumChain", params: [{ chainId: chains[Math.floor(Math.random() * chains.length)]?.chainId }] }),
+        );
     };
 
     const handleRequestAccounts = async () => {
@@ -82,19 +85,21 @@ export default function Home() {
     };
 
     const handleSendTransaction = async () => {
-        console.log(await adapter?.request({
-            method: "eth_sendTransaction",
-            params: [
-                {
-                    from: account?.address,
-                    to: "0x0000000000000000000000000000000000000000",
-                    value: "0x0",
-                    gasLimit: "0x5028",
-                    maxFeePerGas: "0x2540be400",
-                    maxPriorityFeePerGas: "0x3b9aca00",
-                },
-            ],
-        }));
+        console.log(
+            await adapter?.request({
+                method: "eth_sendTransaction",
+                params: [
+                    {
+                        from: account?.address,
+                        to: "0x0000000000000000000000000000000000000000",
+                        value: "0x0",
+                        gasLimit: "0x5028",
+                        maxFeePerGas: "0x2540be400",
+                        maxPriorityFeePerGas: "0x3b9aca00",
+                    },
+                ],
+            }),
+        );
     };
 
     return (
