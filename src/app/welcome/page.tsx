@@ -4,7 +4,7 @@ import CryptoJS from "crypto-js";
 import { useLayoutEffect, useState } from "react";
 import { Layouts } from "@coinmeca/ui/components";
 
-import { getChainsByType } from "@coinmeca/wallet-sdk/chains";
+import { getChainsByType } from "@coinmeca/wallet-provider/chains";
 import { format, parse } from "@coinmeca/wallet-sdk/utils";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { Stages } from "containers";

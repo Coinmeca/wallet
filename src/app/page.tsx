@@ -40,7 +40,7 @@ export default function Home() {
                                 maxHeight: "32em",
                             }}
                             fill>
-                            <Layouts.Col gap={2}>
+                            <Layouts.Col gap={2} align={'center'}>
                             <Elements.Text type={"h6"}>BALANCE</Elements.Text>
                                 <Layouts.Row gap={0} align={'center'}>
                                     <Elements.Text type={"h3"}>

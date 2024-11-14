@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Controls, Layouts } from "@coinmeca/ui/components";
 import { useCoinmecaWallet, useCoinmecaWalletProvider } from "@coinmeca/wallet-provider";
-import { getChainsByType } from "@coinmeca/wallet-sdk/chains";
+import { getChainsByType } from "@coinmeca/wallet-provider/chains";
 import { useTelegram } from "hooks";
 import { usePathname } from "next/navigation";
 
