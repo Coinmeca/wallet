@@ -18,9 +18,9 @@ export default function Welcome() {
     }, [provider]);
 
     const handleConfirm = (passcode: string) => {
-        provider?.init(CryptoJS.SHA256(passcode).toString());
         const chains = format(getChainsByType("mainnet"));
-        if (chains) localStorage.setItem("coinmeca:wallet:chains", chains);
+        if(chains) localStorage.setItem("coinmeca:wallet:chains", chains);
+        provider?.init(CryptoJS.SHA256(passcode).toString());
         return true;
     };
 
