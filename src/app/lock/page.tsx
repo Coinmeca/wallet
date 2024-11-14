@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { Stages } from "containers";
 import { usePathname, useRouter } from "next/navigation";
 

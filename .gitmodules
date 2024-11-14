@@ -1,7 +1,0 @@
-[submodule "ui-kit"]
-	path = ui-kit
-	url = https://github.com/coinmeca/ui-kit
-[submodule "wallet-provider"]
-	path = wallet-provider
-[submodule "wallet-sdk"]
-	path = wallet-sdk

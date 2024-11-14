@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { useMessageHandler, useTelegram } from "hooks";
 
 /*

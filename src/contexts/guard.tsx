@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { useMessageHandler } from "hooks";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useLayoutEffect, useMemo, useState } from "react";
@@ -37,8 +37,9 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             const handleCheck = (info?: Account) => {
                 const check = {
                     init: provider?.isInitialized,
-                    access: info ? true : !provider?.isLocked,
+                    access: !!info || !provider?.isLocked,
                 };
+                console.log(!!info, provider?.isLocked, info ? true : !provider?.isLocked);
 
                 if (typeof check.init !== "undefined" && typeof check.access !== "undefined") {
                     let target;
@@ -66,6 +67,9 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
             handleCheck();
             provider?.on("unlock", handleCheck);
+            return () => {
+                provider?.off("unlock", handleCheck);
+            };
         }
     }, [path, provider]);
 

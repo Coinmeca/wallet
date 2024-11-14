@@ -6,7 +6,7 @@ import Image from "next/image";
 
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { Chain } from "@coinmeca/wallet-sdk/types";
-import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { useMessageHandler, useTelegram } from "hooks";
 
 /*

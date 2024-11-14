@@ -4,9 +4,9 @@ import CryptoJS from "crypto-js";
 import { useLayoutEffect, useState } from "react";
 import { Layouts } from "@coinmeca/ui/components";
 
-import { getChainsByType } from "@coinmeca/wallet-sdk/chains";
 import { format, parse } from "@coinmeca/wallet-sdk/utils";
-import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider";
+import { getChainsByType } from "@coinmeca/wallet-provider/chains";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { Stages } from "containers";
 
 export default function Welcome() {
@@ -18,9 +18,9 @@ export default function Welcome() {
     }, [provider]);
 
     const handleConfirm = (passcode: string) => {
-        provider?.init(CryptoJS.SHA256(passcode).toString());
         const chains = format(getChainsByType("mainnet"));
         if (chains) localStorage.setItem("coinmeca:wallet:chains", chains);
+        provider?.init(CryptoJS.SHA256(passcode).toString());
         return true;
     };
 
