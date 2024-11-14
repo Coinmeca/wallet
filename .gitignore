@@ -4,7 +4,6 @@
 /**/node_modules
 /**/trading-view
 /**/dist
-/public
 
 # testing
 /coverage
