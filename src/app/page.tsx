@@ -41,16 +41,19 @@ export default function Home() {
                             }}
                             fill>
                             <Layouts.Col gap={2}>
-                                <Elements.Text type={"h3"}>
-                                    {isLoading
-                                        ? "~"
-                                        : format(balance, "currency", {
-                                              unit: 9,
-                                              limit: 12,
-                                              fix: 9,
-                                          })}
-                                </Elements.Text>
-                                <Elements.Text type={"h6"}>{chain?.nativeCurrency?.symbol}</Elements.Text>
+                            <Elements.Text type={"h6"}>BALANCE</Elements.Text>
+                                <Layouts.Row gap={0} align={'center'}>
+                                    <Elements.Text type={"h3"}>
+                                        {isLoading
+                                            ? "~"
+                                            : format(balance, "currency", {
+                                                unit: 9,
+                                                limit: 12,
+                                                fix: 9,
+                                            })}
+                                    </Elements.Text>
+                                    <Elements.Text type={"h3"}>{chain?.nativeCurrency?.symbol}</Elements.Text>
+                                        </Layouts.Row>
                             </Layouts.Col>
                         </Layouts.Col>
                         <Layouts.Box padding={[2, "", "", ""]} fit>
