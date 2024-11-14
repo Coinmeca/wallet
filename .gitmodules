@@ -1,6 +1,6 @@
 [submodule "ui-kit"]
 	path = ui-kit
-	url = https://github.com/coinmeca/ui-kit
+	url = https://${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}@github.com/coinmeca/ui-kit
 [submodule "wallet-provider"]
 	path = wallet-provider
-	url = https://github.com/coinmeca/wallet-provider
+	url = https://${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}@github.com/coinmeca/wallet-provider
