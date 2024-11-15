@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Controls, Layouts } from "@coinmeca/ui/components";
-import { useCoinmecaWallet, useCoinmecaWalletProvider } from "@coinmeca/wallet-provider";
 import { getChainsByType } from "@coinmeca/wallet-provider/chains";
 import { useTelegram } from "hooks";
 import { usePathname } from "next/navigation";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
+import { useCoinmecaWallet } from "@coinmeca/wallet-provider/adapter";
 
 export default function Template({ children }: { children?: any }) {
     const path = usePathname();
