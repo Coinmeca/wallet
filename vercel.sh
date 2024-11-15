@@ -38,13 +38,13 @@ yarn install
 cd ui-kit && yarn install && yarn build
 cd ..
 
+# Install wallet-sdk
+cd wallet-provider/wallet-sdk && yarn install && yarn build
+cd ..
+
 # Install wallet-provider
 cd wallet-provider
 yarn install && yarn build
-cd ..
-
-# Install wallet-sdk
-cd wallet-provider/wallet-sdk && yarn install && yarn build
 cd ..
 
 # Return to root directory
