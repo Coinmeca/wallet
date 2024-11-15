@@ -7,12 +7,11 @@ import { useState } from "react";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { useMessageHandler, useTelegram } from "hooks";
-
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({method: 'eth_requestAccounts'})
 */
 
-export default function eth_requestAccounts() {
+export default function Page() {
     const method = "eth_requestAccounts";
     const router = useRouter();
 
@@ -63,21 +62,6 @@ export default function eth_requestAccounts() {
 
     console.log({ message, params, app });
 
-    // useLayoutEffect(() => {
-    //     if (message?.app) {
-    //         const params = message.app as any;
-    //         const url = params?.appUrl || params?.url;
-    //         const site = url && decodeURIComponent(url);
-    //         const origin = site && new URL(site.startsWith("http") ? site : `https://${site}`).host;
-    //         const app = {
-    //             name: params?.appName || params?.name || undefined,
-    //             logo: params?.appLogo || params?.logo || params?.appIcon || params?.icon || undefined,
-    //             url: origin || undefined,
-    //         };
-    //         if (app?.name && app?.name !== "" && app?.url && app?.url !== "") setApp(app);
-    //     }
-    // }, []);
-
     return app ? (
         <Layouts.Contents.SlideContainer
             contents={[
@@ -86,6 +70,7 @@ export default function eth_requestAccounts() {
                     children: (
                         <Layouts.Contents.InnerContent scroll={false}>
                             <Layouts.Col gap={2} align={"center"} fill>
+                                {/* Content omitted for brevity */}
                                 <Layouts.Contents.InnerContent padding={[4, 4, 0]}>
                                     <Layouts.Col fill>
                                         <Layouts.Col align={"center"} style={{ flex: 1 }}>
@@ -242,7 +227,7 @@ export default function eth_requestAccounts() {
                             <Layouts.Col gap={4} align={"center"} fit>
                                 <Elements.Text type={"h3"}>Invalid Request</Elements.Text>
                                 <Elements.Text weight={"bold"} opacity={0.6}>
-                                    The given app information is something wrong. Couldn't found the information of requested app.
+                                    {"The given app information is something wrong. Couldn't found the information of requested app."}
                                 </Elements.Text>
                             </Layouts.Col>
                         </Layouts.Col>

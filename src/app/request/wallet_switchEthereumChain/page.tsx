@@ -13,7 +13,7 @@ import { useMessageHandler, useTelegram } from "hooks";
 await window.ethereum.providerMap.get("CoinmecaWallet").request({method:"wallet_addEthereumChain", params:[{chainId: '0x13e31'}]})
 */
 
-export default function wallet_switchEthereumChain() {
+export default function Page() {
     const method = "wallet_switchEthereumChain";
     const router = useRouter();
 
@@ -269,7 +269,7 @@ export default function wallet_switchEthereumChain() {
                             <Layouts.Col gap={4} align={"center"} fit>
                                 <Elements.Text type={"h3"}>Invalid Request</Elements.Text>
                                 <Elements.Text weight={"bold"} opacity={0.6}>
-                                    The given chain information is something wrong. Couldn't found the information of requested chain.
+                                    {"The given chain information is something wrong. Couldn't found the information of requested chain."}
                                 </Elements.Text>
                             </Layouts.Col>
                         </Layouts.Col>
