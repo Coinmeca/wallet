@@ -37,7 +37,7 @@ export interface Transaction {
     maxPriorityFeePerGas?: number;
 }
 
-export default function eth_sendTransaction() {
+export default function EthSendTransaction() {
     const method = "eth_sendTransaction";
     const router = useRouter();
 
@@ -483,7 +483,7 @@ export default function eth_sendTransaction() {
                             <Layouts.Col gap={4} align={"center"} fit>
                                 <Elements.Text type={"h3"}>Invalid Request</Elements.Text>
                                 <Elements.Text weight={"bold"} opacity={0.6}>
-                                    The given transaction information is something wrong. Couldn't found the information of requested chain.
+                                    {"The given transaction information is something wrong. Couldn't found the information of requested chain."}
                                 </Elements.Text>
                             </Layouts.Col>
                         </Layouts.Col>

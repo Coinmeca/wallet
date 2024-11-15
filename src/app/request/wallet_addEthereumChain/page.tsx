@@ -30,7 +30,7 @@ await window.ethereum.providerMap.get("CoinmecaWallet").request({method:"wallet_
         }]})
 */
 
-export default function wallet_addEthereumChain() {
+export default function Page() {
     const method = "wallet_addEthereumChain";
     const router = useRouter();
 
@@ -431,7 +431,7 @@ export default function wallet_addEthereumChain() {
                         <Layouts.Col gap={4} align={"center"} fit>
                             <Elements.Text type={"h3"}>Invalid Request</Elements.Text>
                             <Elements.Text weight={"bold"} opacity={0.6}>
-                                The given chain information is something wrong. Couldn't found the information of requested chain.
+                                {"The given chain information is something wrong. Couldn't found the information of requested chain."}
                             </Elements.Text>
                         </Layouts.Col>
                     </Layouts.Col>
