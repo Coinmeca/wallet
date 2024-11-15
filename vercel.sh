@@ -7,12 +7,18 @@ if [ -z "$GIT_TOKEN" ]; then
 fi
 
 # Replace the placeholder in .gitmodules with the actual token
+echo "Replacing GitHub token in .gitmodules"
 sed -i "s|\$GIT_TOKEN|$GIT_TOKEN|g" .gitmodules
 
 # Check if the token substitution was successful
+if [ $? -ne 0 ]; then
+  echo "Error: Token substitution failed."
+  exit 1
+fi
 echo "Token substitution complete."
 
 # Initialize and update submodules
+echo "Initializing and updating submodules"
 git submodule update --init --recursive
 
 # Check if submodule update was successful
@@ -21,22 +27,28 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-# Install dependencies
-echo "Installing dependencies..."
+# Install dependencies for the root project
+echo "Installing root project dependencies..."
 yarn install
 
 # Install UI kit
+echo "Installing UI kit dependencies..."
 cd ui-kit && yarn install && yarn build
 cd ..
 
-# Install wallet-provider
+# Install wallet-provider dependencies
+echo "Installing wallet-provider dependencies..."
 cd wallet-provider
-sh vercel.sh
-cd ..
+yarn install
 
 # Optionally install wallet-sdk
-cd wallet-provider/wallet-sdk && yarn install
+echo "Installing wallet-sdk dependencies..."
+cd wallet-sdk && yarn install && yarn build
 cd ..
 
-# Return to root
+# Build wallet-provider
+echo "Building wallet-provider..."
+yarn build
+
+# Return to root directory
 cd ..
