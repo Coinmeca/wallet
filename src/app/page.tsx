@@ -3,7 +3,7 @@ import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { usePortal } from "@coinmeca/ui/hooks";
 import { format } from "@coinmeca/ui/lib/utils";
 import { Asset } from "@coinmeca/ui/types";
-import { useCoinmecaWalletProvider } from "@coinmeca/wallet-/contexts";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { GetBalance } from "api/account";
 import { GetErc20 } from "api/erc20";
 import { Modals } from "containers";
