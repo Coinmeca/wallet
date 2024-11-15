@@ -12,6 +12,6 @@ git submodule update --init --recursive
 # Install dependencies
 yarn install
 cd ui-kit && yarn install && yarn build
-cd ../wallet-provider && yarn install
-cd wallet-sdk && yarn install
-cd ../..
+cd ../wallet-provider && sh vercel.sh
+# cd wallet-sdk && yarn install
+cd ..
