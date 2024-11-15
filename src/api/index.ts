@@ -5,7 +5,7 @@ import { getQueryClient } from "./client";
 const fetcher = {
     url: async (url: string, option?: RequestInit): Promise<Response | undefined> => {
         try {
-            return await fetch(new URL(url), option);
+            return await fetch(new URL(url.startsWith("http") ? url : `${window.location.origin}${url}`), option);
         } catch (error) {
             console.error("Error fetching URL:", url, error);
             throw error;

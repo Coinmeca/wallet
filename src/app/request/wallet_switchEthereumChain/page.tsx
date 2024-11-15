@@ -1,13 +1,13 @@
 ﻿"use client";
 
+import { useLayoutEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { Chain } from "@coinmeca/wallet-sdk/types";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
-import { useRouter } from "next/router";
 import { useMessageHandler, useTelegram } from "hooks";
-import { useLayoutEffect, useState } from "react";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({method:"wallet_addEthereumChain", params:[{chainId: '0x13e31'}]})

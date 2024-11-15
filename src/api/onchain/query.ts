@@ -2,23 +2,45 @@
 import { fetcher } from "api";
 
 export const query = {
+    rpcUrls: () =>
+        queryOptions({
+            queryKey: ["rpcUrls"],
+            queryFn: async () =>
+                await fetcher.url("/api/v1/chains").then((data: any) => {
+                    console.log(data);
+                    return data?.data?.map((chain: any) => ({
+                        chainName: chain.name,
+                        chainId: chain.chainId,
+                        rpcUrl: [chain.rpc[0]],
+                    }));
+                }),
+        }),
+    accountType: (rpc?: string, address?: string) =>
+        queryOptions({
+            queryKey: ["accountType", address],
+            queryFn: async () => {
+                return (await fetcher.rpc(rpc!, "eth_getCode", [address, "latest"])) === "0x" ? "eoa" : "ca";
+            },
+            enabled: !!address,
+        }),
     balance: (rpc?: string, address?: string) =>
         queryOptions({
-            queryKey: ['eth_getBalance', rpc, address],
-            queryFn: async () => fetcher.rpc(rpc!, "eth_getBalance", [address, "latest"]).then((result) => result ? Number(result) / 1e18 : 0),
-            enabled: typeof rpc === "string" && typeof address === "string"
+            queryKey: ["eth_getBalance", rpc, address],
+            queryFn: async () => fetcher.rpc(rpc!, "eth_getBalance", [address, "latest"]).then((data) => (data ? Number(data) / 1e18 : 0)),
+            enabled: !!rpc && !!address,
         }),
     gasPrice: (rpc?: string) =>
         queryOptions({
-            queryKey: ['eth_gasPrice', rpc],
-            queryFn: async () => await fetcher.rpc(rpc!, "eth_gasPrice").then((result) => result ? Number(result) / 1e18 : 0),
-            enabled: typeof rpc === "string"
+            queryKey: ["eth_gasPrice", rpc],
+            queryFn: async () => await fetcher.rpc(rpc!, "eth_gasPrice").then((data) => (data ? Number(data) / 1e9 : 0)),
+            enabled: !!rpc,
         }),
 
     estimateGas: (rpc?: string, params?: any) =>
         queryOptions({
-            queryKey: ['eth_gasPrice', params],
-            queryFn: async () => fetcher.rpc(rpc!, "eth_estimateGas", Array.isArray(params) ? params : [params]).then((result) => result ? Number(result) / 1e18 : 0),
-            enabled: typeof rpc === "string"
+            queryKey: ["estimateGas", params],
+            queryFn: async () =>
+                fetcher.rpc(rpc!, "eth_estimateGas", Array.isArray(params) ? params : [params]).then((data) => (data ? Number(data) / 1e18 : 0)),
+            enabled: !!rpc,
         }),
 };

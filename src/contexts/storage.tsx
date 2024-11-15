@@ -26,7 +26,7 @@ export const useStorage = () => {
     return context;
 };
 
-export const StorageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const StorageProvider: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     const { telegram, user } = useTelegram();
     const [storage, setStorage] = useState<CloudStorage | Storage | any>();
     const [session, setSession] = useState<CloudStorage | Storage | any>();

@@ -2,19 +2,11 @@
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { usePortal } from "@coinmeca/ui/hooks";
 import { format } from "@coinmeca/ui/lib/utils";
-<<<<<<< HEAD
-import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
-import { useQueries } from "@tanstack/react-query";
-import { GetBalance } from "api/account";
-import { query } from "api/query";
-import { Lists } from "containers";
-=======
 import { Asset } from "@coinmeca/ui/types";
-import { useCoinmecaWalletProvider } from "@coinmeca/wallet-sdk/contexts";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-/contexts";
 import { GetBalance } from "api/account";
 import { GetErc20 } from "api/erc20";
 import { Modals } from "containers";
->>>>>>> dev
 import { AnimatePresence } from "framer-motion";
 import { usePageLoader } from "hooks";
 import { usePathname, useRouter } from "next/navigation";
@@ -37,11 +29,6 @@ export default function Home() {
         if (path.startsWith("/nft")) setTab("nft");
     }, [path]);
 
-<<<<<<< HEAD
-    const fungibles = useQueries({
-        queries: (account?.tokens?.fungibles?.[`${chain?.chainId}`] || [])?.map((t: string) => query.erc20.token(chain?.rpcUrls?.[0], t, account?.address)),
-    });
-=======
     const [showAddFungible, closeAddFungible] = usePortal(() => <Modals.Add.Fungible onClose={closeAddFungible} />);
 
     const fungibles = GetErc20(chain?.rpcUrls?.[0], tokens?.fungibles, account?.address);
@@ -143,7 +130,6 @@ export default function Home() {
         },
         [tokens?.fungibles, fungibles],
     );
->>>>>>> dev
 
     return (
         <Layouts.Page snap>
@@ -159,22 +145,6 @@ export default function Home() {
                                 maxHeight: "32em",
                             }}
                             fill>
-<<<<<<< HEAD
-                            <Layouts.Col gap={2} align={"center"}>
-                                <Elements.Text type={"h6"}>BALANCE</Elements.Text>
-                                <Layouts.Row gap={0} align={"center"}>
-                                    <Elements.Text type={"h3"}>
-                                        {isLoading
-                                            ? "~"
-                                            : format(balance, "currency", {
-                                                  unit: 9,
-                                                  limit: 12,
-                                                  fix: 9,
-                                              })}
-                                    </Elements.Text>
-                                    <Elements.Text type={"h3"}>{chain?.nativeCurrency?.symbol}</Elements.Text>
-                                </Layouts.Row>
-=======
                             <Layouts.Col gap={2}>
                                 <Elements.Text type={"h3"}>
                                     {isLoading
@@ -186,7 +156,6 @@ export default function Home() {
                                           })}
                                 </Elements.Text>
                                 <Elements.Text type={"h6"}>{chain?.nativeCurrency?.symbol}</Elements.Text>
->>>>>>> dev
                             </Layouts.Col>
                         </Layouts.Col>
                         <Layouts.Box padding={[2, "", "", ""]} fit>
