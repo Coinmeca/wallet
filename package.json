@@ -12,20 +12,37 @@
         "url": "https://github.com/coinmeca/interface"
     },
     "author": "Coinmeca Team <dev@coinmeca.net>",
+    "workspaces": [
+        "ui-kit",
+        "wallet-provider"
+    ],
     "scripts": {
+        "setup": "git submodule update --init --recursive && cd ui-kit && git fetch origin && git checkout main && git pull origin main && yarn install && cd ../wallet-provider && git fetch origin && git checkout dev && git pull origin dev && yarn install && yarn setup && yarn install:sdk && cd .. && git submodule update --init --recursive",
+        "setup:provider": "git submodule update --init --recursive && cd wallet-provider && git fetch origin && git checkout dev && git pull origin dev && yarn install && yarn setup && yarn install:sdk && cd .. && yarn workspace @coinmeca/wallet-provider setup",
         "lint": "next lint",
+        "install:ui": "yarn workspace @coinmeca/ui install",
+        "install:provider": "yarn workspace @coinmeca/wallet-provider install",
+        "install:provider:sdk": "yarn workspace @coinmeca/wallet-provider install:sdk && yarn workspace @coinmeca/wallet-provider install",
         "dev": "next dev",
+        "dev:ui": "yarn workspace @coinmeca/ui dev",
+        "dev:provider": "yarn workspace @coinmeca/wallet-provider dev",
         "start": "next start",
         "build": "next build",
+        "build:ui": "yarn workspace @coinmeca/ui build",
+        "build:provider": "yarn workspace @coinmeca/wallet-provider build",
+        "build:provider:sdk": "yarn workspace @coinmeca/wallet-provider build:sdk && yarn workspace @coinmeca/wallet-provider build",
         "deploy": "next build && npx vercel --prod",
+        "deploy:ui": "yarn workspace @coinmeca/ui deploy",
+        "deploy:provider": "yarn workspace @coinmeca/wallet-provider deploy",
         "dist": "npx vercel --prod",
         "clean": "rm -rf ./dist ./build ./.next ./tsconfig.tsbuildinfo ./node_modules/.cache",
+        "clean:ui": "yarn workspace @coinmeca/ui clean",
+        "clean:provider": "yarn workspace @coinmeca/wallet-provider clean",
+        "clean:provider:sdk": "yarn workspace @coinmeca/wallet-provider clean:sdk && yarn workspace @coinmeca/wallet-provider clean",
         "discord": "tsx ./src/app/api/discord/register"
     },
     "dependencies": {
-        "@coinmeca/ui": "0.1.484",
-        "@coinmeca/wallet-provider": "^0.0.4",
-        "@coinmeca/wallet-sdk": "^0.0.4",
+        "@metamask/test-dapp": "^8.13.0",
         "@next/env": "^15.0.2",
         "@vercel/analytics": "^1.3.1",
         "axios": "^1.7.7",
@@ -37,13 +54,15 @@
         "ethereumjs-wallet": "^1.0.2",
         "eventemitter3": "^5.0.1",
         "framer-motion": "^11.11.11",
+        "global": "^4.4.0",
         "next": "14.2.16",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
         "sass": "1.80.5",
         "styled-components": "^6.1.13",
         "vercel": "37.12.1",
-        "viem": "^2.21.33"
+        "viem": "^2.21.33",
+        "zustand": "^5.0.1"
     },
     "devDependencies": {
         "@svgr/webpack": "^8.1.0",
@@ -54,7 +73,7 @@
         "@types/react": "^18",
         "@types/react-dom": "^18",
         "@types/telegram-web-app": "^7.8.0",
-        "eslint": "8.57.1",
+        "eslint": "9.13.0",
         "eslint-config-next": "14.2.16",
         "tsx": "^4.19.1",
         "typescript": "^5.6.3"
