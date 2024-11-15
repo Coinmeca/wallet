@@ -3,15 +3,8 @@
 # dependencies
 /**/node_modules
 /**/trading-view
-<<<<<<< HEAD
-/**/test-dapp
-ui-kit
-wallet-provider
-wallet-sdk
-=======
 /**/dist
 /public
->>>>>>> dev
 
 # testing
 /coverage
