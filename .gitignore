@@ -3,8 +3,9 @@
 # dependencies
 /**/node_modules
 /**/trading-view
-/**/dist
-/public
+ui-kit
+wallet-provider
+wallet-sdk
 
 # testing
 /coverage
