@@ -4,3 +4,4 @@
 [submodule "wallet-provider"]
 	path = wallet-provider
 	url = https://github.com/coinmeca/wallet-provider
+	branch = dev
