@@ -4,10 +4,10 @@
 
 [submodule "wallet-provider"]
     path = wallet-provider
-    url = https://$GITHUB_TOKEN@github.com/coinmeca/wallet-provider
+    url = https://$GIT_TOKEN@github.com/coinmeca/wallet-provider
     branch = dev
 
 [submodule "wallet-sdk"]
     path = wallet-provider/wallet-sdk
-    url = https://$GITHUB_TOKEN@github.com/coinmeca/wallet-sdk
+    url = https://$GIT_TOKEN@github.com/coinmeca/wallet-sdk
     branch = dev
