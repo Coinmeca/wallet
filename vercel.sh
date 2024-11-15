@@ -6,49 +6,46 @@ if [ -z "$GIT_TOKEN" ]; then
   exit 1
 fi
 
-# Replace the placeholder in .gitmodules with the actual token
-echo "Replacing GitHub token in .gitmodules"
+# Replace the token placeholder in .gitmodules
+echo "Replacing GIT_TOKEN in .gitmodules..."
 sed -i "s|\$GIT_TOKEN|$GIT_TOKEN|g" .gitmodules
 
-# Check if the token substitution was successful
-if [ $? -ne 0 ]; then
-  echo "Error: Token substitution failed."
-  exit 1
-fi
-echo "Token substitution complete."
+# Initialize submodules and clone them with the token directly if needed
+echo "Initializing and updating submodules..."
 
-# Initialize and update submodules
-echo "Initializing and updating submodules"
-git submodule update --init --recursive
+# Handling ui-kit submodule
+git submodule update --init --recursive --depth 1 ui-kit
+# Clone wallet-provider submodule
+git submodule update --init --recursive --depth 1 wallet-provider
+# Clone wallet-sdk submodule
+git submodule update --init --recursive --depth 1 wallet-provider/wallet-sdk
 
-# Check if submodule update was successful
-if [ $? -ne 0 ]; then
-  echo "Error: Failed to update submodules."
-  exit 1
-fi
+# Optionally, if submodules still fail to update, you can directly clone the specific ones
+# For ui-kit
+git clone https://$GIT_TOKEN@github.com/coinmeca/ui-kit.git ui-kit
 
-# Install dependencies for the root project
-echo "Installing root project dependencies..."
+# For wallet-provider
+git clone https://$GIT_TOKEN@github.com/coinmeca/wallet-provider.git wallet-provider
+
+# For wallet-sdk (inside wallet-provider)
+git clone https://$GIT_TOKEN@github.com/coinmeca/wallet-sdk.git wallet-provider/wallet-sdk
+
+# Install dependencies for the entire project
+echo "Installing dependencies..."
 yarn install
 
 # Install UI kit
-echo "Installing UI kit dependencies..."
 cd ui-kit && yarn install && yarn build
 cd ..
 
-# Install wallet-provider dependencies
-echo "Installing wallet-provider dependencies..."
+# Install wallet-provider
 cd wallet-provider
-yarn install
-
-# Optionally install wallet-sdk
-echo "Installing wallet-sdk dependencies..."
-cd wallet-sdk && yarn install && yarn build
+yarn install && yarn build
 cd ..
 
-# Build wallet-provider
-echo "Building wallet-provider..."
-yarn build
+# Install wallet-sdk
+cd wallet-provider/wallet-sdk && yarn install && yarn build
+cd ..
 
 # Return to root directory
 cd ..
