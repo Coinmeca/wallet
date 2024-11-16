@@ -369,8 +369,6 @@ export default function Data() {
         [chain, chains],
     );
 
-    console.log(isRequest, !isLoad, !account);
-
     const header = {
         color: colorMap,
         logo: isRequest || !isLoad || !account,

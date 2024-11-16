@@ -1,48 +1,71 @@
-﻿"use client";
-
+﻿import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
+import { Account, TransactionParams } from "@coinmeca/wallet-sdk/types";
+import { useMessageHandler, useTelegram } from "hooks";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-
-import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
-import { useMessageHandler, useTelegram } from "hooks";
+import { useLayoutEffect, useState } from "react";
 
 /*
-await window.ethereum.providerMap.get("CoinmecaWallet").request({method: 'eth_requestAccounts'})
+await window.ethereum.providerMap.get("CoinmecaWallet").request({
+    method: 'eth_sendTransaction',
+    params: [
+        {
+            "from": "0xc8b95755888a2be3f8fa19251f241a1e8b74f933`,
+            "to": "0xYourTokenContractAddress",
+            "data": "0x095ea7b30000000000000000000000000x1234567890123456789012345678901234567890000000000000000000000000000000001b69b4e3eb3e4c0b1b7f89d8f"
+        },
+    ],
+})
 */
 
-const method = "eth_requestAccounts";
-const timeout = 3000;
+const method = "erc20_approve";
+const timeout = 1000;
 
 export default function Page() {
     const router = useRouter();
 
     const { telegram } = useTelegram();
-    const { provider, account } = useCoinmecaWalletProvider();
-    const { message, params, app, isPopup } = useMessageHandler();
+    const { provider, account, chain } = useCoinmecaWalletProvider();
+    const { params, app, isPopup } = useMessageHandler();
+
+    const [tx, setTx] = useState<TransactionParams>();
+    const [txHash, setTxHash] = useState<string>("");
+
+    const [token, setToken] = useState<string>();
+
+    const [signer, setSigner] = useState<Account>();
+    const [spender, setSpender] = useState<string>("");
+    const [amount, setAmount] = useState<number>(0);
 
     const [level, setLevel] = useState(0);
     const [error, setError] = useState<any>();
 
+
+    
+    useLayoutEffect(() => {
+        if (params) {
+            const { to, data } = params;
+            if (data) {
+                setSpender("0x" + data.slice(10, 74));
+                setAmount(parseInt(data.slice(74, 138), 16));
+            }
+            setTx(tx);
+            setSigner(provider?.account(tx?.from));
+        }
+    }, []);
+
     const handleClose = () => {
-        if (level === 0)
-            window?.opener?.postMessage(
-                {
-                    method,
-                    error: "User rejected the request",
-                },
-                "*",
-            );
         if (isPopup) {
             if (telegram) telegram?.close();
             window?.close();
         } else router.push("/");
     };
 
-    const handleConnect = async () => {
+    const handleApprove = async () => {
+        setLevel(1);
         await provider
-            ?.requestAccounts(app!)
+            ?.sign({ ...params, chainId: chain?.chainId }, signer!)
             .then((result) => {
                 window?.opener?.postMessage(
                     {
@@ -51,7 +74,7 @@ export default function Page() {
                     },
                     "*",
                 );
-                setLevel(1);
+                setLevel(2);
                 setTimeout(handleClose, timeout);
             })
             .catch((error) => {
@@ -59,16 +82,14 @@ export default function Page() {
                 window?.opener?.postMessage(
                     {
                         method,
-                        error,
+                        error: "Failed to signning",
                     },
                     "*",
                 );
                 setError(error);
-                setLevel(2);
+                setLevel(3);
             });
     };
-
-    console.log({ message, params, app });
 
     return app ? (
         <Layouts.Contents.SlideContainer
@@ -195,7 +216,7 @@ export default function Page() {
                                                         <Controls.Button type={"glass"} onClick={handleClose}>
                                                             Cancel
                                                         </Controls.Button>
-                                                        <Controls.Button type={"line"} onClick={handleConnect}>
+                                                        <Controls.Button type={"line"} onClick={handleApprove}>
                                                             Approve
                                                         </Controls.Button>
                                                     </Layouts.Row>

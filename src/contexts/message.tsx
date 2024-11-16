@@ -41,13 +41,10 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
     const [auth, setAuth] = useState<boolean | undefined>(undefined);
 
     useLayoutEffect(() => {
-        console.log("message listener");
-        console.log(!!window);
         if (typeof window !== "undefined") {
             window?.opener?.postMessage({ state: "ready" }, "*");
 
             const messageHandler = (event: MessageEvent) => {
-                console.log({ data: event });
                 if (event?.data) {
                     setPopupId(event?.data?.popupId);
                     setIsPopup(event?.data?.isPopup);
@@ -70,6 +67,7 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
                 if (message?.params?.from) {
                     if (message?.app?.url) {
                         if (provider?.allowance(message?.app?.url, message?.params?.from)) return true;
+                        else if (!provider?.isInitialized) return true;
                     } else {
                         window?.opener?.postMessage(
                             {

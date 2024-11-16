@@ -39,7 +39,6 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                     init: provider?.isInitialized,
                     access: !!info || !provider?.isLocked,
                 };
-                console.log(!!info, provider?.isLocked, info ? true : !provider?.isLocked);
 
                 if (typeof check.init !== "undefined" && typeof check.access !== "undefined") {
                     let target;

@@ -35,71 +35,73 @@ export default function Home() {
     const fungiblesList = useCallback(
         (tokens?: Asset[]) => {
             return [
-                ...(tokens || [])
-                    ?.map(
-                        (t?: Asset) =>
-                            typeof t === "object" && {
-                                style: { padding: "1.5em" },
-                                children: [
-                                    [
-                                        {
-                                            gap: 1.5,
-                                            children: [
-                                                {
-                                                    fit: true,
-                                                    children: (
-                                                        <>
-                                                            <Elements.Avatar
-                                                                size={4}
-                                                                img={`https://web3.coinmeca.net/${chain?.chainId}/${t?.address}/logo.svg`}
-                                                            />
-                                                        </>
-                                                    ),
-                                                },
-                                                [
-                                                    [
-                                                        [
-                                                            [
-                                                                {
-                                                                    gap: 0,
-                                                                    children: [
-                                                                        <>
-                                                                            <Elements.Text height={0}>{t?.symbol}</Elements.Text>
-                                                                        </>,
-                                                                        <>
-                                                                            <Elements.Text height={0} opacity={0.6}>
-                                                                                {t?.name}
-                                                                            </Elements.Text>
-                                                                        </>,
-                                                                    ],
-                                                                },
-                                                            ],
-                                                        ],
-                                                        [
-                                                            {
-                                                                align: "right",
-                                                                children: (
-                                                                    <>
-                                                                        <Elements.Text>
-                                                                            {format(t?.balance || 0, "currency", {
-                                                                                unit: 9,
-                                                                                limit: 12,
-                                                                                fix: 9,
-                                                                            })}
-                                                                        </Elements.Text>
-                                                                    </>
-                                                                ),
-                                                            },
-                                                        ],
-                                                    ],
-                                                ],
-                                            ],
-                                        },
-                                    ],
-                                ],
-                            },
-                    )
-                    ?.filter((a) => a),
+                ...(tokens && tokens?.length
+                    ? tokens
+                          ?.map(
+                              (t?: Asset) =>
+                                  typeof t === "object" && {
+                                      style: { padding: "1.5em" },
+                                      children: [
+                                          [
+                                              {
+                                                  gap: 1.5,
+                                                  children: [
+                                                      {
+                                                          fit: true,
+                                                          children: (
+                                                              <>
+                                                                  <Elements.Avatar
+                                                                      size={4}
+                                                                      img={`https://web3.coinmeca.net/${chain?.chainId}/${t?.address}/logo.svg`}
+                                                                  />
+                                                              </>
+                                                          ),
+                                                      },
+                                                      [
+                                                          [
+                                                              [
+                                                                  [
+                                                                      {
+                                                                          gap: 0,
+                                                                          children: [
+                                                                              <>
+                                                                                  <Elements.Text height={0}>{t?.symbol}</Elements.Text>
+                                                                              </>,
+                                                                              <>
+                                                                                  <Elements.Text height={0} opacity={0.6}>
+                                                                                      {t?.name}
+                                                                                  </Elements.Text>
+                                                                              </>,
+                                                                          ],
+                                                                      },
+                                                                  ],
+                                                              ],
+                                                              [
+                                                                  {
+                                                                      align: "right",
+                                                                      children: (
+                                                                          <>
+                                                                              <Elements.Text>
+                                                                                  {format(t?.balance || 0, "currency", {
+                                                                                      unit: 9,
+                                                                                      limit: 12,
+                                                                                      fix: 9,
+                                                                                  })}
+                                                                              </Elements.Text>
+                                                                          </>
+                                                                      ),
+                                                                  },
+                                                              ],
+                                                          ],
+                                                      ],
+                                                  ],
+                                              },
+                                          ],
+                                      ],
+                                  },
+                          )
+                          ?.filter((a) => a)
+                    : []),
                 {
                     onClick: showAddFungible,
                     style: { padding: "1.75em 1.5em" },
