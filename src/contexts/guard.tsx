@@ -3,7 +3,7 @@
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { useMessageHandler } from "hooks";
 import { usePathname, useRouter } from "next/navigation";
-import React, { createContext, useContext, useLayoutEffect, useMemo, useState } from "react";
+import React, { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { Account } from "viem";
 
 interface GuardContextProps {
@@ -29,6 +29,8 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const [isInit, setIsInit] = useState<boolean>(false);
     const [isAccess, setIsAccess] = useState<boolean>(false);
+    const [isLoad, setIsLoad] = useState<boolean>(false);
+
     const [check, setCheck] = useState<any>();
     const [target, setTarget] = useState<string>();
 
@@ -76,19 +78,18 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 provider?.off("unlock", handleCheck);
             };
         }
-    }, []);
+    }, [path, provider]);
 
     useLayoutEffect(() => {
         if (target) router.push(target);
     }, [target]);
 
-    const isLoad = useMemo(() => {
-        if (typeof auth === "undefined") return false;
-        else if (typeof check?.init !== "boolean" || typeof check?.access !== "boolean") return false;
-        else if (check?.init === false && path?.startsWith("/welcome")) return true;
-        else if (!check.access && path?.startsWith("/lock")) return true;
-        else return true;
+    useLayoutEffect(() => {
+        if (!isLoad && check && typeof check?.init !== "undefined" && typeof check?.access !== "undefined" && typeof auth !== "undefined") {
+            if (check.init === false && path?.startsWith("/welcome")) setIsLoad(true);
+            else if (!check.access && path?.startsWith("/lock")) setIsLoad(true);
+            else setIsLoad(true);
+        }
     }, [auth, check]);
-
     return <GuardContext.Provider value={{ isInit, isAccess, isLoad, setIsAccess }}>{children}</GuardContext.Provider>;
 };

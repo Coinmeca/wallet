@@ -79,10 +79,11 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
     }, [path]);
 
     useEffect(() => {
-        if (provider)
+        if (provider) {
+            let result = false;
+            let error: string | undefined;
+
             setAuth(() => {
-                let result = false;
-                let error: string | undefined;
                 if (message?.params?.from) {
                     if (message?.app?.url) {
                         if (provider?.allowance(message?.app?.url, message?.params?.from)) result = true;
@@ -90,22 +91,23 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
                         else error = "The requested account and/or method has not been authorized by the user.";
                     } else error = "Not found app information.";
                 } else error = "Not found sender information.";
-
-                if (!result) {
-                    window?.opener?.postMessage(
-                        {
-                            method: message?.method,
-                            error,
-                        },
-                        "*",
-                    );
-                    if (isPopup) {
-                        if (telegram) telegram?.close();
-                        window?.close();
-                    } else router.push("/");
-                }
                 return result;
             });
+
+            if (!result) {
+                window?.opener?.postMessage(
+                    {
+                        method: message?.method,
+                        error,
+                    },
+                    "*",
+                );
+                if (isPopup) {
+                    if (telegram) telegram?.close();
+                    window?.close();
+                } else router.push("/");
+            }
+        }
     }, [provider]);
 
     return (
