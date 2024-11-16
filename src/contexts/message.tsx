@@ -41,16 +41,26 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
     const [auth, setAuth] = useState<boolean | undefined>(undefined);
 
     useLayoutEffect(() => {
+        console.log("message listener");
+        console.log(!!window);
         if (typeof window !== "undefined") {
-            const check = !!(window as any)?.coinmeca?.isPopup;
-            if (check) {
-                setIsPopup(check);
-                const id = (window as any)?.coinmeca?.popupId;
-                if (id) setPopupId(id);
-            }
+            window?.opener?.postMessage({ state: "ready" }, "*");
 
-            const request = (window as any)?.coinmeca?.request;
-            if (request) setMessage(request);
+            const messageHandler = (event: MessageEvent) => {
+                console.log({ data: event });
+                if (event?.data) {
+                    setPopupId(event?.data?.popupId);
+                    setIsPopup(event?.data?.isPopup);
+
+                    const request = event?.data?.request;
+                    if (request) {
+                        setMessage(request);
+                        if (request?.chain) provider?.changeChain(request?.chain);
+                        window.removeEventListener("message", messageHandler);
+                    }
+                }
+            };
+            window.addEventListener("message", messageHandler);
         }
     }, []);
 

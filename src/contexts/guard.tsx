@@ -53,6 +53,12 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                     } else {
                         setIsInit(true);
                         setIsAccess(check.access);
+                        if (!provider?.account()) {
+                            console.log(provider?.account());
+                            console.log(provider?.accounts()?.length);
+                            // if (provider?.accounts()?.length) provider?.changeAccount(0);
+                            // else target = "/welcome";
+                        }
                         // console.log({ access: check.access });
                         // if (!check.access) {
                         // if (!path.startsWith("/lock") && path !== "/lock?" && path !== "/lock?target=")
