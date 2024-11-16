@@ -76,7 +76,7 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 provider?.off("unlock", handleCheck);
             };
         }
-    }, [path, provider]);
+    }, []);
 
     useLayoutEffect(() => {
         if (target) router.push(target);
@@ -86,7 +86,7 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (typeof auth === "undefined") return false;
         else if (typeof check?.init !== "boolean" || typeof check?.access !== "boolean") return false;
         else if (check?.init === false && path?.startsWith("/welcome")) return true;
-        // else if (!check.access && path?.startsWith("/lock")) return true;
+        else if (!check.access && path?.startsWith("/lock")) return true;
         else return true;
     }, [auth, check]);
 

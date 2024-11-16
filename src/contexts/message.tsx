@@ -4,7 +4,7 @@ import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { App } from "@coinmeca/wallet-sdk/types";
 import { useTelegram } from "hooks";
 import { usePathname, useRouter } from "next/navigation";
-import React, { createContext, useContext, useLayoutEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useLayoutEffect, useState } from "react";
 
 interface MessageProps {
     method: string | undefined;
@@ -62,31 +62,6 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
     }, []);
 
     useLayoutEffect(() => {
-        if (provider)
-            setAuth(() => {
-                if (message?.params?.from) {
-                    if (message?.app?.url) {
-                        if (provider?.allowance(message?.app?.url, message?.params?.from)) return true;
-                        else if (!provider?.isInitialized) return true;
-                    } else {
-                        window?.opener?.postMessage(
-                            {
-                                method: message?.method,
-                                error: "The requested account and/or method has not been authorized by the user.",
-                            },
-                            "*",
-                        );
-                        if (isPopup) {
-                            if (telegram) telegram?.close();
-                            window?.close();
-                        } else router.push("/");
-                        return false;
-                    }
-                } else return false;
-            });
-    }, [provider]);
-
-    useLayoutEffect(() => {
         if (!path?.startsWith("/lock") || !path?.startsWith("/welcome")) {
             const handleUnload = () => {
                 window?.opener?.postMessage(
@@ -102,6 +77,36 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
             return () => window.removeEventListener("beforeunload", handleUnload);
         }
     }, [path]);
+
+    useEffect(() => {
+        if (provider)
+            setAuth(() => {
+                let result = false;
+                let error: string | undefined;
+                if (message?.params?.from) {
+                    if (message?.app?.url) {
+                        if (provider?.allowance(message?.app?.url, message?.params?.from)) result = true;
+                        else if (!provider?.isInitialized) result = true;
+                        else error = "The requested account and/or method has not been authorized by the user.";
+                    } else error = "Not found app information.";
+                } else error = "Not found sender information.";
+
+                if (!result) {
+                    window?.opener?.postMessage(
+                        {
+                            method: message?.method,
+                            error,
+                        },
+                        "*",
+                    );
+                    if (isPopup) {
+                        if (telegram) telegram?.close();
+                        window?.close();
+                    } else router.push("/");
+                }
+                return result;
+            });
+    }, [provider]);
 
     return (
         <MessageHandlerContext.Provider
