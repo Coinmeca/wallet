@@ -6,14 +6,16 @@ import { useRouter } from "next/navigation";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { Stage } from "..";
+import { useMessageHandler } from "hooks";
 
 export default function Create({ setStage }: Stage) {
     const router = useRouter();
     const { provider } = useCoinmecaWalletProvider();
+    const { method } = useMessageHandler();
 
     const handleCreateWallet = () => {
         provider?.create();
-        if (provider?.accounts?.length) router.push("/");
+        if (provider?.accounts?.length) router.push(`/${method ? `request/${method}` : ""}`);
     };
 
     return (

@@ -1,23 +1,23 @@
 ﻿"use client";
 
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
-import { Account, App } from "@coinmeca/wallet-sdk/types";
+import { App } from "@coinmeca/wallet-sdk/types";
 import { useTelegram } from "hooks";
 import { usePathname, useRouter } from "next/navigation";
-import React, { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import React, { createContext, useContext, useLayoutEffect, useState } from "react";
 
 interface MessageProps {
     method: string | undefined;
     params: any;
     app: App | undefined;
+    chainId: number | undefined;
 }
 
 interface MessageHandlerProps extends MessageProps {
     isPopup: boolean;
     popupId?: number;
     message: MessageProps | undefined;
-    app: App;
-    auth: boolean;
+    auth: boolean | undefined;
 }
 
 const MessageHandlerContext = createContext<MessageHandlerProps | undefined>(undefined);
@@ -37,7 +37,7 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
 
     const [popupId, setPopupId] = useState<number>();
     const [isPopup, setIsPopup] = useState(false);
-    const [message, setMessage] = useState<any>();
+    const [message, setMessage] = useState<MessageProps>();
     const [auth, setAuth] = useState<boolean | undefined>(undefined);
 
     useLayoutEffect(() => {
@@ -55,7 +55,7 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
                     const request = event?.data?.request;
                     if (request) {
                         setMessage(request);
-                        if (request?.chain) provider?.changeChain(request?.chain);
+                        if (request?.chainId) provider?.changeChain(request.chainId);
                         window.removeEventListener("message", messageHandler);
                     }
                 }
@@ -68,8 +68,9 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
         if (provider)
             setAuth(() => {
                 if (message?.params?.from) {
-                    if (provider?.allowance(message?.app?.url, message?.params?.from)) return true;
-                    else {
+                    if (message?.app?.url) {
+                        if (provider?.allowance(message?.app?.url, message?.params?.from)) return true;
+                    } else {
                         window?.opener?.postMessage(
                             {
                                 method: message?.method,
@@ -88,7 +89,7 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
     }, [provider]);
 
     useLayoutEffect(() => {
-        if (!path?.startsWith("/lock")) {
+        if (!path?.startsWith("/lock") || !path?.startsWith("/welcome")) {
             const handleUnload = () => {
                 window?.opener?.postMessage(
                     {
@@ -105,6 +106,9 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
     }, [path]);
 
     return (
-        <MessageHandlerContext.Provider value={{ ...message, isPopup, popupId, message, app: message?.app, auth }}>{children}</MessageHandlerContext.Provider>
+        <MessageHandlerContext.Provider
+            value={{ isPopup, popupId, message, method: message?.method, params: message?.params, chainId: message?.chainId, app: message?.app, auth }}>
+            {children}
+        </MessageHandlerContext.Provider>
     );
 };
