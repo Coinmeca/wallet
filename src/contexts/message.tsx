@@ -67,6 +67,7 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
                 if (message?.params?.from) {
                     if (message?.app?.url) {
                         if (provider?.allowance(message?.app?.url, message?.params?.from)) return true;
+                        else if (!provider?.isInitialized) return true;
                     } else {
                         window?.opener?.postMessage(
                             {

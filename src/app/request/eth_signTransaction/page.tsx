@@ -5,14 +5,14 @@ import { useMessageHandler, useTelegram } from "hooks";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
-import { Account, TransactionParams } from "@coinmeca/wallet-sdk/types";
+import { Account } from "@coinmeca/wallet-sdk/types";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
-import { GetEstimateGas, GetGasPrice, GetRpcUrls } from "api/onchain";
+import { GetEstimateGas, GetGasPrice } from "api/onchain";
 import { format } from "@coinmeca/ui/lib/utils";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({
-        method: 'eth_sendTransaction',
+        method: 'eth_signTransaction',
         params: [
           {
             from: '0xc8b95755888a2be3f8fa19251f241a1e8b74f933',
@@ -21,30 +21,41 @@ await window.ethereum.providerMap.get("CoinmecaWallet").request({
             gasLimit: '0x5028',
             maxFeePerGas: '0x2540be400',
             maxPriorityFeePerGas: '0x3b9aca00',
-        },
-    ],
-})
+          },
+        ],
+      })
 */
 
-const method = "eth_sendTransaction";
+export interface Transaction {
+    from: string;
+    to: string;
+    value: string;
+    gas: string;
+    gasPrice: string;
+    data?: string;
+    maxFeePerGas?: number;
+    maxPriorityFeePerGas?: number;
+}
+
+const method = "eth_signTransaction";
 const timeout = 3000;
 
-export default function EthSendTransaction() {
+export default function EthSignTransaction() {
     const router = useRouter();
 
     const { telegram } = useTelegram();
     const { provider, chain } = useCoinmecaWalletProvider();
     const { auth, app, params, isPopup } = useMessageHandler();
 
-    const [tx, setTx] = useState<TransactionParams>();
-    const [level, setLevel] = useState(0);
+    const [tx, setTx] = useState<Transaction>();
+    const [txHash, setTxHash] = useState<string>("");
     const [signer, setSigner] = useState<Account>();
+
+    const [level, setLevel] = useState(0);
+    const [error, setError] = useState<any>();
 
     const { data: gasPrice, isLoading: isGasPriceLoading } = GetGasPrice(chain?.rpcUrls[0]);
     const { data: estimateGas, isLoading: isEstimateGasLoading } = GetEstimateGas(chain?.rpcUrls[0], tx);
-
-    const [txHash, setTxHash] = useState<string>("");
-    const [error, setError] = useState<any>();
 
     useLayoutEffect(() => {
         console.log({ params, auth, app });
@@ -65,9 +76,9 @@ export default function EthSendTransaction() {
 
     const handleSign = async () => {
         setLevel(1);
-        try {
-            const result = await provider?.sign({ ...params, chainId: chain?.chainId }, signer!).then(async (tx: any) => await provider?.send(tx));
-            if (result) {
+        await provider
+            ?.sign({ ...params, chainId: chain?.chainId }, signer!)
+            .then((result) => {
                 window?.opener?.postMessage(
                     {
                         method,
@@ -75,24 +86,21 @@ export default function EthSendTransaction() {
                     },
                     "*",
                 );
-            } else {
-                throw new Error(result);
-            }
-            setTxHash(result);
-            setLevel(2);
-            setTimeout(handleClose, timeout);
-        } catch (error: any) {
-            console.log(error);
-            window?.opener?.postMessage(
-                {
-                    method,
-                    error,
-                },
-                "*",
-            );
-            setError(error);
-            setLevel(3);
-        }
+                setLevel(2);
+                setTimeout(handleClose, timeout);
+            })
+            .catch((error) => {
+                console.log(error);
+                window?.opener?.postMessage(
+                    {
+                        method,
+                        error: "Failed to signning",
+                    },
+                    "*",
+                );
+                setError(error);
+                setLevel(3);
+            });
     };
 
     const handleClose = () => {

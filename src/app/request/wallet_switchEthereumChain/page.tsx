@@ -14,7 +14,7 @@ await window.ethereum.providerMap.get("CoinmecaWallet").request({method:"wallet_
 */
 
 const method = "wallet_switchEthereumChain";
-const timeout = 1000;
+const timeout = 3000;
 
 export default function Page() {
     const router = useRouter();
@@ -75,7 +75,7 @@ export default function Page() {
 
     useLayoutEffect(() => {
         setSelectedChain(chain);
-        if (params) setNewChain(chains?.find((c) => c?.chainId === params));
+        if (params?.chainId) setNewChain(chains?.find((c) => c?.chainId === params.chainId));
     }, []);
 
     return newChain ? (

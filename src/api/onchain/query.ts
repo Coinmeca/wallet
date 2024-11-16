@@ -15,6 +15,7 @@ export const query = {
                     }));
                 }),
         }),
+
     accountType: (rpc?: string, address?: string) =>
         queryOptions({
             queryKey: ["accountType", address],
@@ -23,6 +24,7 @@ export const query = {
             },
             enabled: !!address,
         }),
+
     balance: (rpc?: string, address?: string) =>
         queryOptions({
             queryKey: ["eth_getBalance", rpc, address],

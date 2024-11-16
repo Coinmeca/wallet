@@ -31,7 +31,7 @@ await window.ethereum.providerMap.get("CoinmecaWallet").request({method:"wallet_
 */
 
 const method = "wallet_addEthereumChain";
-const timeout = 1000;
+const timeout = 3000;
 
 export default function Page() {
     const router = useRouter();
