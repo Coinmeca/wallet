@@ -93,7 +93,11 @@ export default function Page() {
                                                     <Image
                                                         width={0}
                                                         height={0}
-                                                        src={level === 0 ? app?.logo || "" : require("../../../assets/animation/success.gif")}
+                                                        src={
+                                                            level === 0
+                                                                ? app?.logo || ""
+                                                                : require(`../../../assets/animation/${level === 1 ? "success" : "failure"}.gif`)
+                                                        }
                                                         alt={app.name || "Unknown"}
                                                         style={{ width: "8em", height: "8em" }}
                                                     />

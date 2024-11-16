@@ -98,8 +98,6 @@ export default function EthSendTransaction() {
                 },
                 "*",
             );
-            setError(error);
-            setLevel(3);
         }
     };
 
