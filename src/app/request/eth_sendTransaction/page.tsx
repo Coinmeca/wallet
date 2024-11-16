@@ -37,8 +37,10 @@ export interface Transaction {
     maxPriorityFeePerGas?: number;
 }
 
+const method = "eth_sendTransaction";
+const timeout = 1000;
+
 export default function EthSendTransaction() {
-    const method = "eth_sendTransaction";
     const router = useRouter();
 
     const { telegram } = useTelegram();
@@ -89,6 +91,7 @@ export default function EthSendTransaction() {
             }
             setTxHash(result);
             setLevel(2);
+            setTimeout(handleClose, timeout);
         } catch (error: any) {
             console.log(error);
             window?.opener?.postMessage(

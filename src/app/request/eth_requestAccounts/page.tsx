@@ -11,8 +11,10 @@ import { useMessageHandler, useTelegram } from "hooks";
 await window.ethereum.providerMap.get("CoinmecaWallet").request({method: 'eth_requestAccounts'})
 */
 
+const method = "eth_requestAccounts";
+const timeout = 1000;
+
 export default function Page() {
-    const method = "eth_requestAccounts";
     const router = useRouter();
 
     const { telegram } = useTelegram();
@@ -49,6 +51,7 @@ export default function Page() {
                     "*",
                 );
                 setLevel(1);
+                setTimeout(handleClose, timeout);
             })
             .catch((error) => {
                 console.log(error);

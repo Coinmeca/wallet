@@ -13,8 +13,10 @@ import { useMessageHandler, useTelegram } from "hooks";
 await window.ethereum.providerMap.get("CoinmecaWallet").request({method:"wallet_addEthereumChain", params:[{chainId: '0x13e31'}]})
 */
 
+const method = "wallet_switchEthereumChain";
+const timeout = 1000;
+
 export default function Page() {
-    const method = "wallet_switchEthereumChain";
     const router = useRouter();
 
     const { telegram } = useTelegram();
@@ -23,7 +25,9 @@ export default function Page() {
 
     const [selectedChain, setSelectedChain] = useState<any>();
     const [newChain, setNewChain] = useState<Chain>();
+
     const [level, setLevel] = useState(0);
+    const [error, setError] = useState<any>();
 
     const handleClose = () => {
         if (isPopup) {
@@ -53,16 +57,20 @@ export default function Page() {
                     "*",
                 );
                 setLevel(1);
+                setTimeout(handleClose, timeout);
             })
-            .catch((error) =>
+            .catch((error) => {
+                console.log(error);
                 window?.opener?.postMessage(
                     {
                         method,
                         error,
                     },
                     "*",
-                ),
-            );
+                );
+                setError(error);
+                setLevel(3);
+            });
     };
 
     useLayoutEffect(() => {
@@ -218,6 +226,67 @@ export default function Page() {
                                                         <Elements.Text opacity={0.6}>to</Elements.Text>{" "}
                                                         <Elements.Text>{` ${newChain?.chainName}`}</Elements.Text>
                                                         <Elements.Text opacity={0.6}>.</Elements.Text>
+                                                    </Elements.Text>
+                                                </Layouts.Col>
+                                            </Layouts.Col>
+                                        </Layouts.Col>
+                                    </Layouts.Col>
+                                </Layouts.Contents.InnerContent>
+                                <Layouts.Col gap={4} align={"center"} style={{ padding: "4em", paddingTop: 0 }}>
+                                    <Layouts.Row gap={2}>
+                                        <Controls.Button type={"glass"} onClick={handleClose}>
+                                            Close
+                                        </Controls.Button>
+                                    </Layouts.Row>
+                                </Layouts.Col>
+                            </Layouts.Col>
+                        </Layouts.Contents.InnerContent>
+                    ),
+                },
+                {
+                    active: level === 2,
+                    children: (
+                        <Layouts.Contents.InnerContent scroll={false}>
+                            <Layouts.Col gap={2} align={"center"} fill>
+                                <Layouts.Contents.InnerContent padding={[4, 4, 0]}>
+                                    <Layouts.Col fill>
+                                        <Layouts.Col align={"center"} style={{ flex: 1 }}>
+                                            <Layouts.Col gap={8} align={"center"} fit>
+                                                <div
+                                                    style={{
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent: "center",
+                                                        maxWidth: "max-content",
+                                                        maxHeight: "max-content",
+                                                        padding: "1em",
+                                                        borderRadius: "100%",
+                                                        background: "rgba(var(--white),.15)",
+                                                    }}>
+                                                    <Image
+                                                        src={require("../../../assets/animation/failure.gif")}
+                                                        width={0}
+                                                        height={0}
+                                                        alt={newChain.chainName || ""}
+                                                        style={{ width: "12em", height: "12em", borderRadius: "100%" }}
+                                                    />
+                                                </div>
+                                                <Layouts.Col gap={0} align={"center"}>
+                                                    <Elements.Text type={"h6"} height={0}>
+                                                        {newChain?.chainName}
+                                                    </Elements.Text>
+                                                    <Elements.Text type={"strong"} height={0} opacity={0.6}>
+                                                        {newChain?.chainId}
+                                                    </Elements.Text>
+                                                </Layouts.Col>
+                                            </Layouts.Col>
+                                        </Layouts.Col>
+                                        <Layouts.Col gap={8} align={"center"} style={{ flex: 1 }} fill>
+                                            <Layouts.Col align={"center"} style={{ padding: "4em" }}>
+                                                <Layouts.Col gap={4} align={"center"} fit>
+                                                    <Elements.Text type={"h3"}>Failure</Elements.Text>
+                                                    <Elements.Text weight={"bold"} opacity={0.6}>
+                                                        {error?.message || error}
                                                     </Elements.Text>
                                                 </Layouts.Col>
                                             </Layouts.Col>

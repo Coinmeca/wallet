@@ -30,8 +30,10 @@ await window.ethereum.providerMap.get("CoinmecaWallet").request({method:"wallet_
         }]})
 */
 
+const method = "wallet_addEthereumChain";
+const timeout = 1000;
+
 export default function Page() {
-    const method = "wallet_addEthereumChain";
     const router = useRouter();
 
     const { telegram } = useTelegram();
@@ -68,15 +70,18 @@ export default function Page() {
         await provider
             ?.addEthereumChain(newChain)
             .then(() => setLevel(1))
-            .catch((error) =>
+            .catch((error) => {
+                console.log(error);
                 window?.opener?.postMessage(
                     {
                         method,
                         error,
                     },
                     "*",
-                ),
-            );
+                );
+                setError(error);
+                setLevel(3);
+            });
     };
 
     const handleSwitchChain = async () => {
@@ -92,6 +97,7 @@ export default function Page() {
                     "*",
                 );
                 setLevel(2);
+                setTimeout(handleClose, timeout);
             })
             .catch((error) => {
                 console.log(error);
@@ -402,7 +408,7 @@ export default function Page() {
                     ),
                 },
                 {
-                    active: level === 2,
+                    active: level === 3,
                     children: (
                         <Layouts.Contents.InnerContent scroll={false}>
                             <Layouts.Col gap={2} align={"center"} fill>
