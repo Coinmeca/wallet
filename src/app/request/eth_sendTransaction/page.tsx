@@ -55,9 +55,6 @@ export default function EthSendTransaction() {
     const [txHash, setTxHash] = useState<string>("");
     const [error, setError] = useState<any>();
 
-    const rpcUrls = GetRpcUrls();
-    console.log({ rpc: rpcUrls?.data });
-
     useLayoutEffect(() => {
         console.log({ params, auth, app });
         if (params) {
