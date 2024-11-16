@@ -20,6 +20,7 @@ export default function Page() {
     const { message, params, app, isPopup } = useMessageHandler();
 
     const [level, setLevel] = useState(0);
+    const [error, setError] = useState<any>();
 
     const handleClose = () => {
         if (level === 0)
@@ -49,15 +50,18 @@ export default function Page() {
                 );
                 setLevel(1);
             })
-            .catch((error) =>
+            .catch((error) => {
+                console.log(error);
                 window?.opener?.postMessage(
                     {
                         method,
                         error,
                     },
                     "*",
-                ),
-            );
+                );
+                setError(error);
+                setLevel(2);
+            });
     };
 
     console.log({ message, params, app });
@@ -155,6 +159,19 @@ export default function Page() {
                                                         </Layouts.Col>
                                                     ),
                                                 },
+                                                {
+                                                    active: level === 2,
+                                                    children: (
+                                                        <Layouts.Col gap={0} align={"center"} style={{ height: "100%" }} fill>
+                                                            <Layouts.Col gap={4} align={"center"} fit>
+                                                                <Elements.Text type={"h3"}>Failure</Elements.Text>
+                                                                <Elements.Text weight={"bold"} opacity={0.6}>
+                                                                    {error?.message || error}
+                                                                </Elements.Text>
+                                                            </Layouts.Col>
+                                                        </Layouts.Col>
+                                                    ),
+                                                },
                                             ]}
                                         />
                                         {/* </Layouts.Col> */}
@@ -177,7 +194,7 @@ export default function Page() {
                                                 ),
                                             },
                                             {
-                                                active: level === 1,
+                                                active: level > 0,
                                                 children: (
                                                     <Layouts.Row gap={2}>
                                                         <Controls.Button type={"glass"} onClick={handleClose}>
