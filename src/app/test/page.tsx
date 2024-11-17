@@ -7,7 +7,7 @@ import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { useTelegram } from "hooks";
 import { useState } from "react";
 
-export default function Page({ children }: { children?: any }) {
+export default function Page() {
 
     const { telegram, send, show, expand, exit, bio } = useTelegram();
     const [authenticate, setAuthenticate] = useState<string | null>(null);
