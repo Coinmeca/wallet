@@ -1,14 +1,14 @@
 "use client";
 
 import { Contents, Controls, Elements, Layouts } from "@coinmeca/ui/components";
+import { format } from "@coinmeca/ui/lib/utils";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
+import { Account, TransactionParams } from "@coinmeca/wallet-sdk/types";
+import { GetEstimateGas, GetGasPrice } from "api/onchain";
 import { useMessageHandler, useTelegram } from "hooks";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
-import { Account, TransactionParams } from "@coinmeca/wallet-sdk/types";
-import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
-import { GetEstimateGas, GetGasPrice, GetRpcUrls } from "api/onchain";
-import { format } from "@coinmeca/ui/lib/utils";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({
@@ -47,7 +47,6 @@ export default function EthSendTransaction() {
     const [error, setError] = useState<any>();
 
     useLayoutEffect(() => {
-        console.log({ params, auth, app });
         if (params) {
             const { value, gasLimit, maxFeePerGas, maxPriorityFeePerGas, chainId } = params;
             const tx = {
@@ -83,6 +82,7 @@ export default function EthSendTransaction() {
             setTimeout(handleClose, timeout);
         } catch (error: any) {
             console.log(error);
+            error = error?.message || error;
             window?.opener?.postMessage(
                 {
                     method,
@@ -260,10 +260,10 @@ export default function EthSendTransaction() {
                                                             {isGasPriceLoading
                                                                 ? "~"
                                                                 : format(gasPrice, "currency", {
-                                                                      unit: 9,
-                                                                      limit: 12,
-                                                                      fix: 9,
-                                                                  })}
+                                                                    unit: 9,
+                                                                    limit: 12,
+                                                                    fix: 9,
+                                                                })}
                                                         </Elements.Text>
                                                     </Layouts.Col>
                                                     <Layouts.Col gap={0.5}>
@@ -274,10 +274,10 @@ export default function EthSendTransaction() {
                                                             {isEstimateGasLoading
                                                                 ? "~"
                                                                 : format(estimateGas, "currency", {
-                                                                      unit: 9,
-                                                                      limit: 12,
-                                                                      fix: 9,
-                                                                  })}
+                                                                    unit: 9,
+                                                                    limit: 12,
+                                                                    fix: 9,
+                                                                })}
                                                         </Elements.Text>
                                                     </Layouts.Col>
                                                     <Layouts.Col gap={0.5}>
@@ -289,10 +289,10 @@ export default function EthSendTransaction() {
                                                                 {isGasPriceLoading || isEstimateGasLoading
                                                                     ? "~"
                                                                     : format((gasPrice || 0) * (estimateGas || 0), "currency", {
-                                                                          unit: 9,
-                                                                          limit: 12,
-                                                                          fix: 9,
-                                                                      })}
+                                                                        unit: 9,
+                                                                        limit: 12,
+                                                                        fix: 9,
+                                                                    })}
                                                             </Elements.Text>
                                                             <Elements.Text opacity={0.6} fit>
                                                                 {chain?.nativeCurrency?.symbol}

@@ -83,18 +83,15 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
             let result = false;
             let error: string | undefined;
 
-            setAuth(() => {
-                if (message?.params?.from) {
-                    if (message?.app?.url) {
-                        if (provider?.allowance(message?.app?.url, message?.params?.from)) result = true;
-                        else if (!provider?.isInitialized) result = true;
-                        else error = "The requested account and/or method has not been authorized by the user.";
-                    } else error = "Not found app information.";
-                } else error = "Not found sender information.";
-                return result;
-            });
+            if (message?.params?.from) {
+                if (message?.app?.url) {
+                    if (provider?.allowance(message?.app?.url, message?.params?.from)) result = true;
+                    else if (!provider?.isInitialized) result = true;
+                    else error = "The requested account and/or method has not been authorized by the user.";
+                } else error = "Not found app information."
+            } else if (message?.params?.to) error = "Not found sender information."
 
-            if (!result) {
+            if (error) {
                 window?.opener?.postMessage(
                     {
                         method: message?.method,
@@ -107,8 +104,10 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
                     window?.close();
                 } else router.push("/");
             }
+
+            setAuth(result);
         }
-    }, [provider]);
+    }, [provider, message]);
 
     return (
         <MessageHandlerContext.Provider

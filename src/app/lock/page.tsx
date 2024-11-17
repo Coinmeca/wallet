@@ -14,6 +14,10 @@ export default function Lock({ params }: { params: any }) {
         try {
             if (provider?.unlock(code)) {
                 if (path?.startsWith("/lock")) router.push("/");
+                else if (!provider?.account()) {
+                    if (provider?.accounts()?.length) provider?.changeAccount(0);
+                    else router.push("/welcome");
+                }
             }
         } catch (e) {
             console.error(e);
