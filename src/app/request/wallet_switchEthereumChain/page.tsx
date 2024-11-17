@@ -1,12 +1,12 @@
 ﻿"use client";
 
-import { useLayoutEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useLayoutEffect, useState } from "react";
 
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { Chain } from "@coinmeca/wallet-sdk/types";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
+import { Chain } from "@coinmeca/wallet-sdk/types";
 import { useMessageHandler, useTelegram } from "hooks";
 
 /*
@@ -74,6 +74,7 @@ export default function Page() {
     };
 
     useLayoutEffect(() => {
+        console.log({ params });
         setSelectedChain(chain);
         if (params?.chainId) setNewChain(chains?.find((c) => c?.chainId === params.chainId));
     }, []);

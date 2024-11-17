@@ -1,12 +1,12 @@
 ﻿"use client";
 
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
+import { Chain } from "@coinmeca/wallet-sdk/types";
 import { useMessageHandler, useTelegram } from "hooks";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
-import { Chain } from "@coinmeca/wallet-sdk/types";
-import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({method:"wallet_addEthereumChain", params:[{
@@ -114,6 +114,7 @@ export default function Page() {
     };
 
     useLayoutEffect(() => {
+        console.log({ params });
         setSelectedChain(chain);
         if (params) {
             const { chainId, chainName, rpcUrls, nativeCurrency } = params;
