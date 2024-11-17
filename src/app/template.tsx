@@ -1,7 +1,7 @@
 ﻿"use client";
 
-import { Frames } from "@coinmeca/ui/containers";
 import { Contents, Layouts } from "@coinmeca/ui/components";
+import { Frames } from "@coinmeca/ui/containers";
 import { AnimatePresence } from "framer-motion";
 
 import { useGuard } from "hooks";

@@ -11,7 +11,6 @@ export default function Import({ setStage }: Stage) {
     const { method } = useMessageHandler();
 
     const handleImportWallet = (seed: string) => {
-        console.log({ seed });
         if (seed.length === 64 && provider?.import(seed)) {
             if (provider?.accounts?.length) router.push(`/${method ? `request/${method}` : ""}`);
         } else new Error("Something wrong while in importing address");
