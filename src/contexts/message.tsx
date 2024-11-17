@@ -46,6 +46,7 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
 
             const messageHandler = (event: MessageEvent) => {
                 if (event?.data) {
+                    console.log({ event_data: event?.data })
                     setPopupId(event?.data?.popupId);
                     setIsPopup(event?.data?.isPopup);
 
