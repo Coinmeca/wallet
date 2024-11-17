@@ -24,8 +24,8 @@
     },
     "dependencies": {
         "@coinmeca/ui": "0.1.487",
-        "@coinmeca/wallet-provider": "^0.0.9",
-        "@coinmeca/wallet-sdk": "^0.0.9",
+        "@coinmeca/wallet-provider": "^0.0.91",
+        "@coinmeca/wallet-sdk": "^0.0.91",
         "@ethereumjs/tx": "^5.4.0",
         "@ethereumjs/wallet": "^2.0.4",
         "@next/env": "^15.0.2",
