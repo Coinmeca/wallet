@@ -7,8 +7,11 @@ import { useRouter } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
 import { Account } from "@coinmeca/wallet-sdk/types";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
-import { GetEstimateGas, GetGasPrice } from "api/onchain";
+import { GetEstimateGas, GetGasPrice, GetMaxFeePerGas } from "api/onchain";
 import { format } from "@coinmeca/ui/lib/utils";
+import { useQueries } from "@tanstack/react-query";
+import { query } from "api/onchain/query";
+import { formatChainId } from "utils";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({
@@ -56,6 +59,8 @@ export default function EthSignTransaction() {
 
     const { data: gasPrice, isLoading: isGasPriceLoading } = GetGasPrice(chain?.rpcUrls[0]);
     const { data: estimateGas, isLoading: isEstimateGasLoading } = GetEstimateGas(chain?.rpcUrls[0], tx);
+    const { data: maxPriorityFeePerGas } = GetEstimateGas(chain?.rpcUrls[0], tx);
+    const { data: maxFeePerGas } = GetMaxFeePerGas(chain?.rpcUrls[0]);
 
     useLayoutEffect(() => {
         console.log({ params, auth, app });
@@ -70,7 +75,16 @@ export default function EthSignTransaction() {
     const handleSign = async () => {
         setLevel(1);
         await provider
-            ?.sign({ ...params, chainId: chain?.chainId }, signer!)
+            ?.sign(
+                {
+                    ...params,
+                    chainId: formatChainId(params?.chainId || chain?.chainId),
+                    gasLimit: `0x${estimateGas?.raw?.toString(16)}`,
+                    maxFeePerGas: `0x${maxFeePerGas?.raw?.toString(16)}`,
+                    maxPriorityFeePerGas: `0x${maxPriorityFeePerGas?.raw?.toString(16)}`,
+                },
+                signer!,
+            )
             .then((result) => {
                 window?.opener?.postMessage(
                     {
@@ -263,7 +277,7 @@ export default function EthSignTransaction() {
                                                         <Elements.Text>
                                                             {isGasPriceLoading
                                                                 ? "~"
-                                                                : format(gasPrice, "currency", {
+                                                                : format(gasPrice?.format, "currency", {
                                                                       unit: 9,
                                                                       limit: 12,
                                                                       fix: 9,
@@ -277,7 +291,7 @@ export default function EthSignTransaction() {
                                                         <Elements.Text>
                                                             {isEstimateGasLoading
                                                                 ? "~"
-                                                                : format(estimateGas, "currency", {
+                                                                : format(estimateGas?.format, "currency", {
                                                                       unit: 9,
                                                                       limit: 12,
                                                                       fix: 9,
@@ -292,7 +306,7 @@ export default function EthSignTransaction() {
                                                             <Elements.Text style={{ flex: "initial" }} fix>
                                                                 {isGasPriceLoading || isEstimateGasLoading
                                                                     ? "~"
-                                                                    : format((gasPrice || 0) * (estimateGas || 0), "currency", {
+                                                                    : format((gasPrice?.format || 0) * (estimateGas?.format || 0), "currency", {
                                                                           unit: 9,
                                                                           limit: 12,
                                                                           fix: 9,
