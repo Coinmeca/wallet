@@ -31,7 +31,7 @@ export default function Page() {
     const router = useRouter();
 
     const { telegram } = useTelegram();
-    const { provider, chain } = useCoinmecaWalletProvider();
+    const { provider, chain, account } = useCoinmecaWalletProvider();
     const { auth, app, params, isPopup, messageId } = useMessageHandler();
 
     const [tx, setTx] = useState<TransactionParams>();
@@ -59,7 +59,7 @@ export default function Page() {
             }
             if (params?.chainId) provider?.changeChain(params.chainId);
             setTx(tx);
-            setSigner(provider?.account(tx?.from));
+            setSigner(provider?.account(params?.from || account?.address));
         }
     }, []);
 
@@ -68,9 +68,9 @@ export default function Page() {
         console.log("send", {
             ...params,
             chainId: formatChainId(params?.chainId || chain?.chainId),
-            gasLimit: `0x${estimateGas?.raw?.toString(16)}`,
-            maxFeePerGas: `0x${maxFeePerGas?.raw?.toString(16)}`,
-            maxPriorityFeePerGas: `0x${maxPriorityFeePerGas?.raw?.toString(16)}`,
+            // gasLimit: `0x${estimateGas?.raw?.toString(16)}`,
+            // maxFeePerGas: `0x${maxFeePerGas?.raw?.toString(16)}`,
+            // maxPriorityFeePerGas: `0x${maxPriorityFeePerGas?.raw?.toString(16)}`,
         });
         try {
             const result = await provider
