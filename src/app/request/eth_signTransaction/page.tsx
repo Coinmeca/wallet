@@ -57,10 +57,12 @@ export default function EthSignTransaction() {
     const [level, setLevel] = useState(0);
     const [error, setError] = useState<any>();
 
-    const { data: gasPrice, isLoading: isGasPriceLoading } = GetGasPrice(chain?.rpcUrls[0]);
-    const { data: estimateGas, isLoading: isEstimateGasLoading } = GetEstimateGas(chain?.rpcUrls[0], tx);
-    const { data: maxPriorityFeePerGas } = GetEstimateGas(chain?.rpcUrls[0], tx);
-    const { data: maxFeePerGas } = GetMaxFeePerGas(chain?.rpcUrls[0]);
+    const [{ data: nonce }, { data: gasPrice, isLoading: isGasPriceLoading }, { data: estimateGas, isLoading: isEstimateGasLoading }] = useQueries({
+        queries: [query.nonce(chain?.rpcUrls[0], signer?.address), query.gasPrice(chain?.rpcUrls[0]), query.estimateGas(chain?.rpcUrls[0], tx)],
+    });
+    const {
+        data: { maxPriorityFeePerGas, maxFeePerGas },
+    } = GetMaxFeePerGas(chain?.rpcUrls[0]);
 
     useLayoutEffect(() => {
         console.log({ params, auth, app });
