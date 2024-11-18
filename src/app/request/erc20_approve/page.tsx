@@ -69,33 +69,20 @@ export default function Page() {
 
     const handleSign = async () => {
         setLevel(1);
-        console.log("send", {
+        const test = {
+            data: params?.data,
             from: params?.from,
             to: params?.to,
-            nonce: Number(nonce),
-            chainId: Number(params?.chainId || chain?.chainId),
-            gasLimit: Number(estimateGas?.raw || 0),
-            gasPrice: Number(gasPrice?.raw || 0),
+            nonce: nonce,
+            chainId: params?.chainId || chain?.chainId,
+            gasLimit: estimateGas?.raw || 0,
+            gasPrice: gasPrice?.raw || 0,
             // maxFeePerGas: BigInt(maxFeePerGas?.raw || 0),
             // maxPriorityFeePerGas: BigInt(maxPriorityFeePerGas?.raw || 0),
-        });
+        };
+        console.log("send", test);
         try {
-            const result = await provider
-                ?.sign(
-                    {
-                        data: params?.data,
-                        to: params?.to,
-                        // ...params,
-                        nonce: nonce,
-                        chainId: params?.chainId || chain?.chainId,
-                        gasLimit: estimateGas?.raw || 0,
-                        gasPrice: gasPrice?.raw || 0,
-                        // maxFeePerGas: BigInt(maxFeePerGas?.raw || 0),
-                        // maxPriorityFeePerGas: BigInt(maxPriorityFeePerGas?.raw || 0),
-                    },
-                    signer!,
-                )
-                .then(async (tx: any) => await provider?.send(tx));
+            const result = await provider?.sign(test, signer!).then(async (tx: any) => await provider?.send(tx));
             if (result) {
                 window?.opener?.postMessage(
                     {
