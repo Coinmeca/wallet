@@ -50,7 +50,7 @@ export default function Page() {
     const { data: maxFeePerGas } = GetMaxFeePerGas(chain?.rpcUrls[0]);
 
     useLayoutEffect(() => {
-        if (!tx && params) {
+        if (params) {
             console.log({ params, auth, app });
             const { data } = params;
             if (data) {
