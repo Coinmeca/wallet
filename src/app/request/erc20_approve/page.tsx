@@ -4,7 +4,9 @@ import { Contents, Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { format } from "@coinmeca/ui/lib/utils";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { Account, TransactionParams } from "@coinmeca/wallet-sdk/types";
+import { useQueries } from "@tanstack/react-query";
 import { GetEstimateGas, GetGasPrice, GetMaxFeePerGas } from "api/onchain";
+import { query } from "api/onchain/query";
 import { useMessageHandler, useTelegram } from "hooks";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -44,10 +46,12 @@ export default function Page() {
     const [txHash, setTxHash] = useState<string>("");
     const [error, setError] = useState<any>();
 
-    const { data: gasPrice, isLoading: isGasPriceLoading } = GetGasPrice(chain?.rpcUrls[0]);
-    const { data: estimateGas, isLoading: isEstimateGasLoading } = GetEstimateGas(chain?.rpcUrls[0], tx);
-    const { data: maxPriorityFeePerGas } = GetEstimateGas(chain?.rpcUrls[0], tx);
-    const { data: maxFeePerGas } = GetMaxFeePerGas(chain?.rpcUrls[0]);
+    const [{ data: nonce }, { data: gasPrice, isLoading: isGasPriceLoading }, { data: estimateGas, isLoading: isEstimateGasLoading }] = useQueries({
+        queries: [query.nonce(chain?.rpcUrls[0], signer?.address), query.gasPrice(chain?.rpcUrls[0]), query.estimateGas(chain?.rpcUrls[0], tx)],
+    });
+    const {
+        data: { maxPriorityFeePerGas, maxFeePerGas },
+    } = GetMaxFeePerGas(chain?.rpcUrls[0]);
 
     useLayoutEffect(() => {
         if (params) {
@@ -67,9 +71,10 @@ export default function Page() {
         setLevel(1);
         console.log("send", {
             ...params,
-            chainId: params?.chainId || chain?.chainId,
-            gasLimit: `0x${estimateGas?.raw?.toString(16)}`, // Convert estimateGas to hex format
-            maxFeePerGas: `0x${maxFeePerGas?.raw?.toString(16)}`, // Convert maxFeePerGas to hex format
+            // chainId: formatChainId(params?.chainId || chain?.chainId),
+            // nonce: `0x${nonce?.toString(16)}`,
+            gasLimit: `0x${estimateGas?.raw?.toString(16)}`,
+            maxFeePerGas: `0x${maxFeePerGas?.raw?.toString(16)}`,
             maxPriorityFeePerGas: `0x${maxPriorityFeePerGas?.raw?.toString(16)}`, // Convert maxPriorityFeePerGas to hex format
         });
         try {
@@ -77,9 +82,10 @@ export default function Page() {
                 ?.sign(
                     {
                         ...params,
-                        chainId: params?.chainId || chain?.chainId,
-                        gasLimit: `0x${estimateGas?.raw?.toString(16)}`, // Correct gasLimit
-                        maxFeePerGas: `0x${maxFeePerGas?.raw?.toString(16)}`, // Correct maxFeePerGas
+                        // chainId: formatChainId(params?.chainId || chain?.chainId),
+                        // nonce: `0x${nonce?.toString(16)}`,
+                        gasLimit: `0x${estimateGas?.raw?.toString(16)}`,
+                        maxFeePerGas: `0x${maxFeePerGas?.raw?.toString(16)}`,
                         maxPriorityFeePerGas: `0x${maxPriorityFeePerGas?.raw?.toString(16)}`, // Correct maxPriorityFeePerGas
                     },
                     signer!,
