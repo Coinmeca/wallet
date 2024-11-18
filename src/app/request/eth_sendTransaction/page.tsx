@@ -5,13 +5,12 @@ import { format } from "@coinmeca/ui/lib/utils";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { Account, TransactionParams } from "@coinmeca/wallet-sdk/types";
 import { useQueries } from "@tanstack/react-query";
-import { GetEstimateGas, GetGasPrice, GetMaxFeePerGas, GetMaxPriorityFeePerGas } from "api/onchain";
+import { GetMaxFeePerGas, GetMaxPriorityFeePerGas } from "api/onchain";
 import { query } from "api/onchain/query";
 import { useMessageHandler, useTelegram } from "hooks";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
-import { formatChainId } from "utils";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({

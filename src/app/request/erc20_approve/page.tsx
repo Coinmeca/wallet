@@ -11,7 +11,6 @@ import { useMessageHandler, useTelegram } from "hooks";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
-import { formatChainId } from "utils";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({
