@@ -72,12 +72,12 @@ export default function Page() {
         console.log("send", {
             from: params?.from,
             to: params?.to,
-            // nonce,
+            nonce: BigInt(nonce),
             chainId: BigInt(params?.chainId || chain?.chainId),
             gasLimit: BigInt(estimateGas?.raw || 0),
             gasPrice: BigInt(gasPrice?.raw || 0),
-            maxFeePerGas: BigInt(maxFeePerGas?.raw || 0),
-            maxPriorityFeePerGas: BigInt(maxPriorityFeePerGas?.raw || 0),
+            // maxFeePerGas: BigInt(maxFeePerGas?.raw || 0),
+            // maxPriorityFeePerGas: BigInt(maxPriorityFeePerGas?.raw || 0),
         });
         try {
             const result = await provider
