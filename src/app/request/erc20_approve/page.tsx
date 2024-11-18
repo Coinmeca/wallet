@@ -72,10 +72,10 @@ export default function Page() {
         console.log("send", {
             from: params?.from,
             to: params?.to,
-            // nonce: BigInt(nonce),
+            nonce: Number(nonce),
             chainId: Number(params?.chainId || chain?.chainId),
-            // gasLimit: BigInt(estimateGas?.raw || 0),
-            // gasPrice: BigInt(gasPrice?.raw || 0),
+            gasLimit: Number(estimateGas?.raw || 0),
+            gasPrice: Number(gasPrice?.raw || 0),
             // maxFeePerGas: BigInt(maxFeePerGas?.raw || 0),
             // maxPriorityFeePerGas: BigInt(maxPriorityFeePerGas?.raw || 0),
         });
@@ -85,10 +85,10 @@ export default function Page() {
                     {
                         to: params?.to,
                         // ...params,
-                        // nonce: BigInt(nonce),
+                        nonce: Number(nonce),
                         chainId: Number(params?.chainId || chain?.chainId),
-                        // gasLimit: BigInt(estimateGas?.raw || 0),
-                        // gasPrice: BigInt(gasPrice?.raw || 0),
+                        gasLimit: Number(estimateGas?.raw || 0),
+                        gasPrice: Number(gasPrice?.raw || 0),
                         // maxFeePerGas: BigInt(maxFeePerGas?.raw || 0),
                         // maxPriorityFeePerGas: BigInt(maxPriorityFeePerGas?.raw || 0),
                     },
