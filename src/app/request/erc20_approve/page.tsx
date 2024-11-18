@@ -4,11 +4,12 @@ import { Contents, Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { format } from "@coinmeca/ui/lib/utils";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { Account, TransactionParams } from "@coinmeca/wallet-sdk/types";
-import { GetEstimateGas, GetGasPrice } from "api/onchain";
+import { GetEstimateGas, GetGasPrice, GetMaxFeePerGas } from "api/onchain";
 import { useMessageHandler, useTelegram } from "hooks";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
+import { formatChainId } from "utils";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({
@@ -45,30 +46,18 @@ export default function Page() {
 
     const { data: gasPrice, isLoading: isGasPriceLoading } = GetGasPrice(chain?.rpcUrls[0]);
     const { data: estimateGas, isLoading: isEstimateGasLoading } = GetEstimateGas(chain?.rpcUrls[0], tx);
+    const { data: maxPriorityFeePerGas } = GetEstimateGas(chain?.rpcUrls[0], tx);
+    const { data: maxFeePerGas } = GetMaxFeePerGas(chain?.rpcUrls[0]);
 
     useLayoutEffect(() => {
         if (params) {
-            const { to, data } = params;
+            console.log({ params, auth, app });
+            const { data } = params;
             if (data) {
                 setSpender("0x" + data.slice(36, 76));
                 setAmount(parseInt(data.slice(76, 138), 16));
             }
-            setTx(tx);
-            setSigner(provider?.account(tx?.from));
-        }
-    }, []);
-
-    useLayoutEffect(() => {
-        if (params) {
-            const { value, gasLimit, maxFeePerGas, maxPriorityFeePerGas, chainId } = params;
-            const tx = {
-                ...params,
-                value: Number(value),
-                gasLimit: Number(gasLimit),
-                maxFeePerGas: Number(maxFeePerGas),
-                maxPriorityFeePerGas: Number(maxPriorityFeePerGas),
-            };
-            if (chainId) provider?.changeChain(chainId);
+            if (params?.chainId) provider?.changeChain(params.chainId);
             setTx(tx);
             setSigner(provider?.account(tx?.from));
         }
@@ -76,8 +65,26 @@ export default function Page() {
 
     const handleSign = async () => {
         setLevel(1);
+        console.log("send", {
+            ...params,
+            chainId: formatChainId(params?.chainId || chain?.chainId),
+            gasLimit: `0x${estimateGas?.raw?.toString(16)}`,
+            maxFeePerGas: `0x${maxFeePerGas?.raw?.toString(16)}`,
+            maxPriorityFeePerGas: `0x${maxPriorityFeePerGas?.raw?.toString(16)}`,
+        });
         try {
-            const result = await provider?.sign({ ...params, chainId: chain?.chainId }, signer!).then(async (tx: any) => await provider?.send(tx));
+            const result = await provider
+                ?.sign(
+                    {
+                        ...params,
+                        chainId: formatChainId(params?.chainId || chain?.chainId),
+                        gasLimit: `0x${estimateGas?.raw?.toString(16)}`,
+                        maxFeePerGas: `0x${maxFeePerGas?.raw?.toString(16)}`,
+                        maxPriorityFeePerGas: `0x${maxPriorityFeePerGas?.raw?.toString(16)}`,
+                    },
+                    signer!,
+                )
+                .then(async (tx: any) => await provider?.send(tx));
             if (result) {
                 window?.opener?.postMessage(
                     {
