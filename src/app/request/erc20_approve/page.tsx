@@ -70,15 +70,15 @@ export default function Page() {
     const handleSign = async () => {
         setLevel(1);
         const test = {
-            from: params?.from,
+            // from: params?.from,
             to: params?.to,
-            data: params?.data,
-            chainId: Number(params?.chainId || chain?.chainId),
+            data: BigInt(params?.data),
+            // chainId: Number(params?.chainId || chain?.chainId),
             nonce: BigInt(nonce),
             gasLimit: BigInt(estimateGas?.raw || 0),
             gasPrice: BigInt(gasPrice?.raw || 0),
-            maxFeePerGas: BigInt(maxFeePerGas?.raw || 0),
-            maxPriorityFeePerGas: BigInt(maxPriorityFeePerGas?.raw || 0),
+            // maxFeePerGas: BigInt(maxFeePerGas?.raw || 0),
+            // maxPriorityFeePerGas: BigInt(maxPriorityFeePerGas?.raw || 0),
         };
         console.log("send", test, chain, chain?.rpcUrls);
         try {
