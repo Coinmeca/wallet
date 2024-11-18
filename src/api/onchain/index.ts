@@ -29,8 +29,37 @@ export function GetMaxPriorityFeePerGas(rpc?: string) {
     return useQuery(query.maxPriorityFeePerGas(rpc));
 }
 
-export function GetMaxFeePerGas(rpc?: string, params?: any) {
-    const [block, maxPriorityFeePerGas] = useQueries({ queries: [query.lastBlock(rpc), query.maxFeePerGas(rpc), query.maxPriorityFeePerGas(rpc)] });
-    const baseFeePerGas = block?.data?.baseFeePerGas ? Number(block?.data?.baseFeePerGas) : 0;
-    return baseFeePerGas + maxPriorityFeePerGas;
-} 
+export function GetMaxFeePerGas(rpc?: string) {
+    const results = useQueries({
+        queries: [query.lastBlock(rpc), query.maxPriorityFeePerGas(rpc)],
+    });
+
+    const [blockResult, maxPriorityResult] = results;
+    const isLoading = results.some((result) => result.isLoading);
+    const isFetching = results.some((result) => result.isFetching);
+    const isFetched = results.some((result) => result.isFetched);
+    const isError = results.some((result) => result.isError);
+    const isSuccess = results.some((result) => result.isSuccess);
+    const isPaused = results.some((result) => result.isPaused);
+    const isPending = results.some((result) => result.isPending);
+    const isRefetching = results.some((result) => result.isRefetching);
+
+    const baseFeePerGas = Number(blockResult?.data?.baseFeePerGas || 0);
+    const maxPriorityFee = Number(maxPriorityResult?.data?.raw || 0);
+    const raw = baseFeePerGas + maxPriorityFee;
+
+    return {
+        isLoading,
+        isFetching,
+        isFetched,
+        isError,
+        isSuccess,
+        isPaused,
+        isPending,
+        isRefetching,
+        data: {
+            raw,
+            format: raw / 1e9,
+        },
+    }
+}

@@ -4,11 +4,12 @@ import { Contents, Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { format } from "@coinmeca/ui/lib/utils";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { Account, TransactionParams } from "@coinmeca/wallet-sdk/types";
-import { GetEstimateGas, GetGasPrice } from "api/onchain";
+import { GetEstimateGas, GetGasPrice, GetMaxFeePerGas } from "api/onchain";
 import { useMessageHandler, useTelegram } from "hooks";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
+import { formatChainId } from "utils";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({
@@ -26,6 +27,17 @@ await window.ethereum.providerMap.get("CoinmecaWallet").request({
 })
 */
 
+export interface Transaction {
+    from: string;
+    to: string;
+    value: string;
+    gas: string;
+    gasPrice: string;
+    data?: string;
+    maxFeePerGas?: number;
+    maxPriorityFeePerGas?: number;
+}
+
 const method = "eth_sendTransaction";
 const timeout = 3000;
 
@@ -36,15 +48,17 @@ export default function EthSendTransaction() {
     const { provider, chain } = useCoinmecaWalletProvider();
     const { auth, app, params, isPopup, messageId } = useMessageHandler();
 
-    const [tx, setTx] = useState<TransactionParams>();
-    const [level, setLevel] = useState(0);
+    const [tx, setTx] = useState<Transaction>();
+    const [txHash, setTxHash] = useState<string>("");
     const [signer, setSigner] = useState<Account>();
+
+    const [level, setLevel] = useState(0);
+    const [error, setError] = useState<any>();
 
     const { data: gasPrice, isLoading: isGasPriceLoading } = GetGasPrice(chain?.rpcUrls[0]);
     const { data: estimateGas, isLoading: isEstimateGasLoading } = GetEstimateGas(chain?.rpcUrls[0], tx);
-
-    const [txHash, setTxHash] = useState<string>("");
-    const [error, setError] = useState<any>();
+    const { data: maxPriorityFeePerGas } = GetEstimateGas(chain?.rpcUrls[0], tx);
+    const { data: maxFeePerGas } = GetMaxFeePerGas(chain?.rpcUrls[0]);
 
     useLayoutEffect(() => {
         if (params) {
@@ -57,7 +71,18 @@ export default function EthSendTransaction() {
     const handleSign = async () => {
         setLevel(1);
         try {
-            const result = await provider?.sign({ ...params, chainId: chain?.chainId }, signer!).then(async (tx: any) => await provider?.send(tx));
+            const result = await provider
+                ?.sign(
+                    {
+                        ...params,
+                        chainId: formatChainId(params?.chainId || chain?.chainId),
+                        gasLimit: `0x${estimateGas?.raw?.toString(16)}`,
+                        maxFeePerGas: `0x${maxFeePerGas?.raw?.toString(16)}`,
+                        maxPriorityFeePerGas: `0x${maxPriorityFeePerGas?.raw?.toString(16)}`,
+                    },
+                    signer!,
+                )
+                .then(async (tx: any) => await provider?.send(tx));
             if (result) {
                 window?.opener?.postMessage(
                     {
@@ -254,7 +279,7 @@ export default function EthSendTransaction() {
                                                         <Elements.Text>
                                                             {isGasPriceLoading
                                                                 ? "~"
-                                                                : format(gasPrice, "currency", {
+                                                                : format(gasPrice?.format, "currency", {
                                                                       unit: 9,
                                                                       limit: 12,
                                                                       fix: 9,
@@ -268,7 +293,7 @@ export default function EthSendTransaction() {
                                                         <Elements.Text>
                                                             {isEstimateGasLoading
                                                                 ? "~"
-                                                                : format(estimateGas, "currency", {
+                                                                : format(estimateGas?.format, "currency", {
                                                                       unit: 9,
                                                                       limit: 12,
                                                                       fix: 9,
@@ -283,7 +308,7 @@ export default function EthSendTransaction() {
                                                             <Elements.Text style={{ flex: "initial" }} fix>
                                                                 {isGasPriceLoading || isEstimateGasLoading
                                                                     ? "~"
-                                                                    : format((gasPrice || 0) * (estimateGas || 0), "currency", {
+                                                                    : format((gasPrice?.format || 0) * (estimateGas?.format || 0), "currency", {
                                                                           unit: 9,
                                                                           limit: 12,
                                                                           fix: 9,
