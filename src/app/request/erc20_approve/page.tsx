@@ -50,7 +50,7 @@ export default function Page() {
     const { data: maxFeePerGas } = GetMaxFeePerGas(chain?.rpcUrls[0]);
 
     useLayoutEffect(() => {
-        if (params) {
+        if (!tx && params) {
             console.log({ params, auth, app });
             const { data } = params;
             if (data) {
@@ -61,7 +61,7 @@ export default function Page() {
             setTx(tx);
             setSigner(provider?.account(params?.from || account?.address));
         }
-    }, []);
+    }, [params]);
 
     const handleSign = async () => {
         setLevel(1);
