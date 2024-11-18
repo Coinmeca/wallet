@@ -4,7 +4,7 @@ import { Contents, Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { format } from "@coinmeca/ui/lib/utils";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { Account, TransactionParams } from "@coinmeca/wallet-sdk/types";
-import { GetEstimateGas, GetGasPrice, GetMaxFeePerGas } from "api/onchain";
+import { GetEstimateGas, GetGasPrice, GetMaxFeePerGas, GetMaxPriorityFeePerGas } from "api/onchain";
 import { useMessageHandler, useTelegram } from "hooks";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -57,8 +57,9 @@ export default function EthSendTransaction() {
 
     const { data: gasPrice, isLoading: isGasPriceLoading } = GetGasPrice(chain?.rpcUrls[0]);
     const { data: estimateGas, isLoading: isEstimateGasLoading } = GetEstimateGas(chain?.rpcUrls[0], tx);
-    const { data: maxPriorityFeePerGas } = GetEstimateGas(chain?.rpcUrls[0], tx);
-    const { data: maxFeePerGas } = GetMaxFeePerGas(chain?.rpcUrls[0]);
+    const {
+        data: { maxPriorityFeePerGas, maxFeePerGas },
+    } = GetMaxFeePerGas(chain?.rpcUrls[0]);
 
     useLayoutEffect(() => {
         if (params) {

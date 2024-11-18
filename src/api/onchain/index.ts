@@ -58,8 +58,17 @@ export function GetMaxFeePerGas(rpc?: string) {
         isPending,
         isRefetching,
         data: {
-            raw,
-            format: raw / 1e9,
+            baseFeePerGas: {
+                raw: blockResult?.data?.baseFeePerGas,
+                format: baseFeePerGas,
+            },
+            maxFeePerGas: {
+                raw,
+                format: raw / 1e9,
+            },
+            maxPriorityFeePerGas: {
+                ...maxPriorityResult?.data,
+            },
         },
     }
 }
