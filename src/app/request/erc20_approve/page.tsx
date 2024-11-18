@@ -54,8 +54,8 @@ export default function Page() {
             console.log({ params, auth, app });
             const { data } = params;
             if (data) {
-                setSpender("0x" + data.slice(36, 76));
-                setAmount(parseInt(data.slice(76, 138), 16));
+                setSpender("0x" + data.slice(34, 74));
+                setAmount(Number(BigInt("0x" + data.slice(74, 138)).toString()));
             }
             if (params?.chainId) provider?.changeChain(params.chainId);
             setTx(params);
@@ -68,9 +68,9 @@ export default function Page() {
         console.log("send", {
             ...params,
             chainId: formatChainId(params?.chainId || chain?.chainId),
-            gasLimit: `0x${estimateGas?.raw?.toString(16)}`,
-            maxFeePerGas: `0x${maxFeePerGas?.raw?.toString(16)}`,
-            maxPriorityFeePerGas: `0x${maxPriorityFeePerGas?.raw?.toString(16)}`,
+            gasLimit: `0x${estimateGas?.raw?.toString(16)}`, // Convert estimateGas to hex format
+            maxFeePerGas: `0x${maxFeePerGas?.raw?.toString(16)}`, // Convert maxFeePerGas to hex format
+            maxPriorityFeePerGas: `0x${maxPriorityFeePerGas?.raw?.toString(16)}`, // Convert maxPriorityFeePerGas to hex format
         });
         try {
             const result = await provider
@@ -78,9 +78,9 @@ export default function Page() {
                     {
                         ...params,
                         chainId: formatChainId(params?.chainId || chain?.chainId),
-                        gasLimit: `0x${estimateGas?.raw?.toString(16)}`,
-                        maxFeePerGas: `0x${maxFeePerGas?.raw?.toString(16)}`,
-                        maxPriorityFeePerGas: `0x${maxPriorityFeePerGas?.raw?.toString(16)}`,
+                        gasLimit: `0x${estimateGas?.raw?.toString(16)}`, // Correct gasLimit
+                        maxFeePerGas: `0x${maxFeePerGas?.raw?.toString(16)}`, // Correct maxFeePerGas
+                        maxPriorityFeePerGas: `0x${maxPriorityFeePerGas?.raw?.toString(16)}`, // Correct maxPriorityFeePerGas
                     },
                     signer!,
                 )
