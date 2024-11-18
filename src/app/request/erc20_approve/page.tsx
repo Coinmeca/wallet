@@ -73,10 +73,10 @@ export default function Page() {
             // from: params?.from,
             to: params?.to,
             data: BigInt(params?.data),
-            // chainId: Number(params?.chainId || chain?.chainId),
             nonce: BigInt(nonce),
             gasLimit: BigInt(estimateGas?.raw || 0),
             gasPrice: BigInt(gasPrice?.raw || 0),
+            chainId: Number(params?.chainId || chain?.chainId),
             // maxFeePerGas: BigInt(maxFeePerGas?.raw || 0),
             // maxPriorityFeePerGas: BigInt(maxPriorityFeePerGas?.raw || 0),
         };
