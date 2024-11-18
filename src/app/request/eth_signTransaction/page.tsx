@@ -78,12 +78,15 @@ export default function EthSignTransaction() {
         await provider
             ?.sign(
                 {
-                    ...params,
-                    chainId: formatChainId(params?.chainId || chain?.chainId),
-                    gasLimit: `0x${estimateGas?.raw?.toString(16)}`,
-                    maxFeePerGas: `0x${maxFeePerGas?.raw?.toString(16)}`,
-                    maxPriorityFeePerGas: `0x${maxPriorityFeePerGas?.raw?.toString(16)}`,
-                },
+                    to: params?.to,
+                    data: BigInt(params?.data),
+                    nonce: BigInt(nonce),
+                    gasLimit: BigInt(estimateGas?.raw || 0),
+                    gasPrice: BigInt(gasPrice?.raw || 0),
+                    chainId: Number(params?.chainId || chain?.chainId),
+                    maxFeePerGas: BigInt(maxFeePerGas?.raw || 0),
+                    maxPriorityFeePerGas: BigInt(maxPriorityFeePerGas?.raw || 0),
+                } as any,
                 signer!,
             )
             .then((result) => {

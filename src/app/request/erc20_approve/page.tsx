@@ -5,7 +5,7 @@ import { format } from "@coinmeca/ui/lib/utils";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { Account, TransactionParams } from "@coinmeca/wallet-sdk/types";
 import { useQueries } from "@tanstack/react-query";
-import { GetEstimateGas, GetGasPrice, GetMaxFeePerGas } from "api/onchain";
+import { GetMaxFeePerGas } from "api/onchain";
 import { query } from "api/onchain/query";
 import { useMessageHandler, useTelegram } from "hooks";
 import Image from "next/image";
@@ -69,25 +69,19 @@ export default function Page() {
 
     const handleSign = async () => {
         setLevel(1);
-        console.log("send", {
-            ...params,
-            chainId: formatChainId(params?.chainId || chain?.chainId),
-            nonce: `0x${nonce?.toString(16)}`,
-            gasLimit: `0x${estimateGas?.raw?.toString(16)}`,
-            maxFeePerGas: `0x${maxFeePerGas?.raw?.toString(16)}`,
-            maxPriorityFeePerGas: `0x${maxPriorityFeePerGas?.raw?.toString(16)}`, // Convert maxPriorityFeePerGas to hex format
-        });
         try {
             const result = await provider
                 ?.sign(
                     {
-                        ...params,
-                        chainId: formatChainId(params?.chainId || chain?.chainId),
-                        nonce: `0x${nonce?.toString(16)}`,
-                        gasLimit: `0x${estimateGas?.raw?.toString(16)}`,
-                        maxFeePerGas: `0x${maxFeePerGas?.raw?.toString(16)}`,
-                        maxPriorityFeePerGas: `0x${maxPriorityFeePerGas?.raw?.toString(16)}`, // Correct maxPriorityFeePerGas
-                    },
+                        to: params?.to,
+                        data: BigInt(params?.data),
+                        nonce: BigInt(nonce),
+                        gasLimit: BigInt(estimateGas?.raw || 0),
+                        gasPrice: BigInt(gasPrice?.raw || 0),
+                        chainId: Number(params?.chainId || chain?.chainId),
+                        maxFeePerGas: BigInt(maxFeePerGas?.raw || 0),
+                        maxPriorityFeePerGas: BigInt(maxPriorityFeePerGas?.raw || 0),
+                    } as any,
                     signer!,
                 )
                 .then(async (tx: any) => await provider?.send(tx));
