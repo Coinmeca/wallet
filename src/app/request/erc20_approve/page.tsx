@@ -73,7 +73,7 @@ export default function Page() {
             from: params?.from,
             to: params?.to,
             data: params?.data,
-            chainId: params?.chainId || chain?.chainId,
+            chainId: Number(params?.chainId || chain?.chainId),
             nonce: BigInt(nonce),
             gasLimit: BigInt(estimateGas?.raw || 0),
             gasPrice: BigInt(gasPrice?.raw || 0),
