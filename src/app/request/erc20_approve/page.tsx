@@ -82,7 +82,10 @@ export default function Page() {
         };
         console.log("send", test, chain, chain?.rpcUrls);
         try {
-            const result = await provider?.sign(test, signer!).then(async (tx: any) => await provider?.send(tx));
+            const result = await provider?.sign(test, signer!).then(async (tx: any) => {
+                console.log({ tx });
+                return await provider?.send(tx);
+            });
             if (result) {
                 window?.opener?.postMessage(
                     {
