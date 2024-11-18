@@ -84,7 +84,7 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
     }, []);
 
     useLayoutEffect(() => {
-        if (strategy !== "popup" && (!path?.startsWith("/lock") || !path?.startsWith("/welcome"))) {
+        if (strategy === "popup" && (!path?.startsWith("/lock") || !path?.startsWith("/welcome"))) {
             const portal = window?.opener || window?.parent;
             const handleUnload = () => {
                 portal?.postMessage(
@@ -95,7 +95,7 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
                     "*",
                 );
             };
-            if (isPopup) window.close();
+            window.close();
             window.addEventListener("beforeunload", handleUnload);
             return () => window.removeEventListener("beforeunload", handleUnload);
         }
