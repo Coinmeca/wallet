@@ -7,11 +7,10 @@ import { useRouter } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
 import { Account } from "@coinmeca/wallet-sdk/types";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
-import { GetEstimateGas, GetGasPrice, GetMaxFeePerGas } from "api/onchain";
+import { GetMaxFeePerGas } from "api/onchain";
 import { format } from "@coinmeca/ui/lib/utils";
 import { useQueries } from "@tanstack/react-query";
 import { query } from "api/onchain/query";
-import { formatChainId } from "utils";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({
@@ -79,12 +78,15 @@ export default function EthSignTransaction() {
         await provider
             ?.sign(
                 {
-                    ...params,
-                    chainId: formatChainId(params?.chainId || chain?.chainId),
-                    gasLimit: `0x${estimateGas?.raw?.toString(16)}`,
-                    maxFeePerGas: `0x${maxFeePerGas?.raw?.toString(16)}`,
-                    maxPriorityFeePerGas: `0x${maxPriorityFeePerGas?.raw?.toString(16)}`,
-                },
+                    to: params?.to,
+                    data: BigInt(params?.data),
+                    nonce: BigInt(nonce),
+                    gasLimit: BigInt(estimateGas?.raw || 0),
+                    gasPrice: BigInt(gasPrice?.raw || 0),
+                    chainId: Number(params?.chainId || chain?.chainId),
+                    maxFeePerGas: BigInt(maxFeePerGas?.raw || 0),
+                    maxPriorityFeePerGas: BigInt(maxPriorityFeePerGas?.raw || 0),
+                } as any,
                 signer!,
             )
             .then((result) => {
