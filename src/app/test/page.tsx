@@ -81,14 +81,22 @@ export default function Page() {
         );
     };
 
-    const handleRequestAccounts = async () => {
-        console.log(await adapter?.request({ method: "eth_requestAccounts" }));
+    const handleEthAccounts = async () => {
+        const method = "eth_accounts";
+        console.log(method, await adapter?.request({ method }));
     };
-
+    
+    const handleRequestAccounts = async () => {
+        const method = "eth_requestAccounts";
+        console.log(method, await adapter?.request({ method }));
+    };
+    
     const handleSendTransaction = async () => {
+        const method = "eth_sendTransaction";
         console.log(
+            method,
             await adapter?.request({
-                method: "eth_sendTransaction",
+                method,
                 params: [
                     {
                         from: account?.address,
@@ -105,9 +113,10 @@ export default function Page() {
     };
 
     const handleApprove = async () => {
+        const method = "eth_sendTransaction";
         console.log(
             await adapter?.request({
-                method: 'eth_sendTransaction',
+                method,
                 params: [
                     {
                         "from": account?.address,
@@ -124,6 +133,7 @@ export default function Page() {
             <div>{telegram ? `Success, Platform: ${telegram.platform}` : "Fail"}</div>
             <Controls.Button onClick={handleAddEthereumChain}>Add Ethereum Chain</Controls.Button>
             <Controls.Button onClick={switchEthereumChain}>Switch Ethereum Chain</Controls.Button>
+            <Controls.Button onClick={handleEthAccounts}>Eth Accounts</Controls.Button>
             <Controls.Button onClick={handleRequestAccounts}>Request Accounts</Controls.Button>
             <Controls.Button onClick={handleSendTransaction}>Send Transaction</Controls.Button>
             <Controls.Button onClick={handleApprove}>ERC20 Approve</Controls.Button>

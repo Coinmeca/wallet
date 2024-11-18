@@ -56,7 +56,7 @@ export default function Init({ stage, setStage, exit, onConfirm, reset }: Stage 
                                                 <Layouts.Col gap={4} align={"center"} fill>
                                                     <Layouts.Col gap={4} align={"center"} fit>
                                                         <Elements.Text weight={"bold"} size={2}>
-                                                            {reset && "NEW "}PASSCODE
+                                                            NEW PASSCODE
                                                         </Elements.Text>
                                                         <Elements.Passcode index={pass.code.length} length={length} error={error.state} gap={"5%"} effect />
                                                         <Elements.Text weight={"bold"} opacity={0.6} style={{ marginTop: "2em" }}>
@@ -74,7 +74,7 @@ export default function Init({ stage, setStage, exit, onConfirm, reset }: Stage 
                                                 <Layouts.Col gap={4} align={"center"} fill>
                                                     <Layouts.Col gap={4} align={"center"} fit>
                                                         <Elements.Text weight={"bold"} size={2}>
-                                                            {reset && "NEW "}PASSCODE CONFIRM
+                                                            NEW PASSCODE CONFIRM
                                                         </Elements.Text>
                                                         <Elements.Passcode
                                                             index={pass.confirm?.length || 0}

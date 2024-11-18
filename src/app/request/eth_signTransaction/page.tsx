@@ -45,7 +45,7 @@ export default function EthSignTransaction() {
 
     const { telegram } = useTelegram();
     const { provider, chain } = useCoinmecaWalletProvider();
-    const { auth, app, params, isPopup } = useMessageHandler();
+    const { auth, app, params, isPopup, messageId } = useMessageHandler();
 
     const [tx, setTx] = useState<Transaction>();
     const [txHash, setTxHash] = useState<string>("");
@@ -83,6 +83,7 @@ export default function EthSignTransaction() {
                     {
                         method,
                         result,
+                        id:messageId,
                     },
                     "*",
                 );
@@ -95,6 +96,7 @@ export default function EthSignTransaction() {
                     {
                         method,
                         error: "Failed to signning",
+                        id:messageId,
                     },
                     "*",
                 );
@@ -113,6 +115,7 @@ export default function EthSignTransaction() {
                 {
                     method,
                     ...(level === 0 ? { error: "User rejected the request" } : {}),
+                    id:messageId,
                 },
                 "*",
             );
