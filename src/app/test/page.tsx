@@ -8,7 +8,6 @@ import { useTelegram } from "hooks";
 import { useState } from "react";
 
 export default function Page() {
-
     const { telegram, send, show, expand, exit, bio } = useTelegram();
     const [authenticate, setAuthenticate] = useState<string | null>(null);
     const [requestAccess, setRequestAccess] = useState<string | null>(null);
@@ -85,12 +84,12 @@ export default function Page() {
         const method = "eth_accounts";
         console.log(method, await adapter?.request({ method }));
     };
-    
+
     const handleRequestAccounts = async () => {
         const method = "eth_requestAccounts";
         console.log(method, await adapter?.request({ method }));
     };
-    
+
     const handleSendTransaction = async () => {
         const method = "eth_sendTransaction";
         console.log(
@@ -105,12 +104,28 @@ export default function Page() {
                         gasLimit: 21000n,
                         maxPriorityFeePerGas: 2_000_000n,
                         maxFeePerGas: 3_000_000n,
-                        type: 2
+                        type: 2,
                     },
                 ],
             }),
         );
     };
+
+    // const handleApprove = async () => {
+    //     const method = "eth_sendTransaction";
+    //     console.log(
+    //         await adapter?.request({
+    //             method,
+    //             params: [
+    //                 {
+    //                     "from": account?.address,
+    //                     "to": "0xYourTokenContractAddress",
+    //                     "data": "0x095ea7b30000000000000000000000000x1234567890123456789012345678901234567890000000000000000000000000000000001b69b4e3eb3e4c0b1b7f89d8f"
+    //                 },
+    //             ],
+    //         }),
+    //     );
+    // };
 
     const handleApprove = async () => {
         const method = "eth_sendTransaction";
@@ -119,9 +134,11 @@ export default function Page() {
                 method,
                 params: [
                     {
-                        "from": account?.address,
-                        "to": "0xYourTokenContractAddress",
-                        "data": "0x095ea7b30000000000000000000000000x1234567890123456789012345678901234567890000000000000000000000000000000001b69b4e3eb3e4c0b1b7f89d8f"
+                        chainId: 421614n,
+                        from: "0x94b1f182d48dd9d84e1ab0ee3a593364595bb4ec",
+                        gasLimit: "0xb73b",
+                        gasPrice: "0x5f5e100",
+                        to: "0x72f3a98170e961e310946BEA60B0B23Ad912d969",
                     },
                 ],
             }),
