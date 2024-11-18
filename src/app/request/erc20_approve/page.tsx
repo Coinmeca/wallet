@@ -83,6 +83,7 @@ export default function Page() {
             const result = await provider
                 ?.sign(
                     {
+                        data: params?.data,
                         to: params?.to,
                         // ...params,
                         nonce: nonce,
