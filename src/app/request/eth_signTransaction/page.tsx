@@ -9,6 +9,8 @@ import { Account } from "@coinmeca/wallet-sdk/types";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { GetEstimateGas, GetGasPrice } from "api/onchain";
 import { format } from "@coinmeca/ui/lib/utils";
+import { useQueries } from "@tanstack/react-query";
+import { query } from "api/onchain/query";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({
@@ -53,6 +55,8 @@ export default function EthSignTransaction() {
 
     const [level, setLevel] = useState(0);
     const [error, setError] = useState<any>();
+
+    useQueries({ queries: [query.gasPrice(chain?.rpcUrls[0]), query.estimateGas(chain?.rpcUrls[0], tx), ] });
 
     const { data: gasPrice, isLoading: isGasPriceLoading } = GetGasPrice(chain?.rpcUrls[0]);
     const { data: estimateGas, isLoading: isEstimateGasLoading } = GetEstimateGas(chain?.rpcUrls[0], tx);
