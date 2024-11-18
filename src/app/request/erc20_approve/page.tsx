@@ -68,9 +68,9 @@ export default function Page() {
         console.log("send", {
             ...params,
             chainId: formatChainId(params?.chainId || chain?.chainId),
-            // gasLimit: `0x${estimateGas?.raw?.toString(16)}`,
-            // maxFeePerGas: `0x${maxFeePerGas?.raw?.toString(16)}`,
-            // maxPriorityFeePerGas: `0x${maxPriorityFeePerGas?.raw?.toString(16)}`,
+            gasLimit: `0x${estimateGas?.raw?.toString(16)}`,
+            maxFeePerGas: `0x${maxFeePerGas?.raw?.toString(16)}`,
+            maxPriorityFeePerGas: `0x${maxPriorityFeePerGas?.raw?.toString(16)}`,
         });
         try {
             const result = await provider
@@ -479,6 +479,7 @@ export default function Page() {
             <Layouts.Col gap={2} align={"center"} fill>
                 <Layouts.Contents.InnerContent padding={[4, 4, 0]}>
                     <Layouts.Col fill>
+                        {console.log({ auth, app, signer, tx })}
                         <Layouts.Col align={"center"} style={{ flex: 1 }}>
                             <Layouts.Col gap={8} align={"center"} fit>
                                 <div
