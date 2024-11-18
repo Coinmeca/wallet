@@ -11,7 +11,7 @@ import { useMessageHandler, useTelegram } from "hooks";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
-import { formatChainId } from "utils";
+import { formatChainId, parseChainId } from "utils";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({
@@ -74,7 +74,7 @@ export default function Page() {
             to: params?.to,
             data: params?.data,
             nonce: BigInt(nonce),
-            chainId: BigInt(params?.chainId || chain?.chainId),
+            chainId: parseChainId(params?.chainId || chain?.chainId).toString(),
             gasLimit: BigInt(estimateGas?.raw || 0),
             gasPrice: BigInt(gasPrice?.raw || 0),
             maxFeePerGas: BigInt(maxFeePerGas?.raw || 0),
