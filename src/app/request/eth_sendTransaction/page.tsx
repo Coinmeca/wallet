@@ -4,7 +4,9 @@ import { Contents, Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { format } from "@coinmeca/ui/lib/utils";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { Account, TransactionParams } from "@coinmeca/wallet-sdk/types";
+import { useQueries } from "@tanstack/react-query";
 import { GetEstimateGas, GetGasPrice, GetMaxFeePerGas, GetMaxPriorityFeePerGas } from "api/onchain";
+import { query } from "api/onchain/query";
 import { useMessageHandler, useTelegram } from "hooks";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -55,8 +57,9 @@ export default function EthSendTransaction() {
     const [level, setLevel] = useState(0);
     const [error, setError] = useState<any>();
 
-    const { data: gasPrice, isLoading: isGasPriceLoading } = GetGasPrice(chain?.rpcUrls[0]);
-    const { data: estimateGas, isLoading: isEstimateGasLoading } = GetEstimateGas(chain?.rpcUrls[0], tx);
+    const [{ data: nonce }, { data: gasPrice, isLoading: isGasPriceLoading }, { data: estimateGas, isLoading: isEstimateGasLoading }] = useQueries({
+        queries: [query.nonce(chain?.rpcUrls[0], signer?.address), query.gasPrice(chain?.rpcUrls[0]), query.estimateGas(chain?.rpcUrls[0], tx)],
+    });
     const {
         data: { maxPriorityFeePerGas, maxFeePerGas },
     } = GetMaxFeePerGas(chain?.rpcUrls[0]);
