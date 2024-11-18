@@ -47,7 +47,7 @@ export default function EthSignTransaction() {
     const router = useRouter();
 
     const { telegram } = useTelegram();
-    const { provider, chain } = useCoinmecaWalletProvider();
+    const { provider, chain, account } = useCoinmecaWalletProvider();
     const { auth, app, params, isPopup, messageId } = useMessageHandler();
 
     const [tx, setTx] = useState<Transaction>();
@@ -68,7 +68,7 @@ export default function EthSignTransaction() {
             console.log(params);
             if (params?.chainId) provider?.changeChain(params.chainId);
             setTx(params);
-            setSigner(provider?.account(params?.from));
+            setSigner(provider?.account(tx?.from || account?.address));
         }
     }, []);
 
