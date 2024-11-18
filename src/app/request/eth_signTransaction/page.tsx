@@ -60,17 +60,9 @@ export default function EthSignTransaction() {
     useLayoutEffect(() => {
         console.log({ params, auth, app });
         if (params) {
-            const { value, gasLimit, maxFeePerGas, maxPriorityFeePerGas, chainId } = params;
-            const tx = {
-                ...params,
-                value: Number(value),
-                gasLimit: Number(gasLimit),
-                maxFeePerGas: Number(maxFeePerGas),
-                maxPriorityFeePerGas: Number(maxPriorityFeePerGas),
-            };
-            if (chainId) provider?.changeChain(chainId);
-            setTx(tx);
-            setSigner(provider?.account(tx?.from));
+            if (params?.chainId) provider?.changeChain(params.chainId);
+            setTx(params);
+            setSigner(provider?.account(params?.from));
         }
     }, []);
 
@@ -83,7 +75,7 @@ export default function EthSignTransaction() {
                     {
                         method,
                         result,
-                        id:messageId,
+                        id: messageId,
                     },
                     "*",
                 );
@@ -96,7 +88,7 @@ export default function EthSignTransaction() {
                     {
                         method,
                         error: "Failed to signning",
-                        id:messageId,
+                        id: messageId,
                     },
                     "*",
                 );
@@ -115,7 +107,7 @@ export default function EthSignTransaction() {
                 {
                     method,
                     ...(level === 0 ? { error: "User rejected the request" } : {}),
-                    id:messageId,
+                    id: messageId,
                 },
                 "*",
             );
