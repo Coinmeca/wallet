@@ -71,8 +71,8 @@ export default function Page() {
         setLevel(1);
         console.log("send", {
             ...params,
-            // chainId: formatChainId(params?.chainId || chain?.chainId),
-            // nonce: `0x${nonce?.toString(16)}`,
+            chainId: formatChainId(params?.chainId || chain?.chainId),
+            nonce: `0x${nonce?.toString(16)}`,
             gasLimit: `0x${estimateGas?.raw?.toString(16)}`,
             maxFeePerGas: `0x${maxFeePerGas?.raw?.toString(16)}`,
             maxPriorityFeePerGas: `0x${maxPriorityFeePerGas?.raw?.toString(16)}`, // Convert maxPriorityFeePerGas to hex format
@@ -82,8 +82,8 @@ export default function Page() {
                 ?.sign(
                     {
                         ...params,
-                        // chainId: formatChainId(params?.chainId || chain?.chainId),
-                        // nonce: `0x${nonce?.toString(16)}`,
+                        chainId: formatChainId(params?.chainId || chain?.chainId),
+                        nonce: `0x${nonce?.toString(16)}`,
                         gasLimit: `0x${estimateGas?.raw?.toString(16)}`,
                         maxFeePerGas: `0x${maxFeePerGas?.raw?.toString(16)}`,
                         maxPriorityFeePerGas: `0x${maxPriorityFeePerGas?.raw?.toString(16)}`, // Correct maxPriorityFeePerGas
