@@ -70,23 +70,27 @@ export default function Page() {
     const handleSign = async () => {
         setLevel(1);
         console.log("send", {
-            ...params,
-            nonce,
-            chainId: formatChainId(params?.chainId || chain?.chainId),
+            from: params?.from,
+            to: params?.to,
+            // nonce,
+            // chainId: formatChainId(params?.chainId || chain?.chainId),
             gasLimit: `0x${estimateGas?.raw?.toString(16)}`,
-            maxFeePerGas: `0x${maxFeePerGas?.raw?.toString(16)}`,
-            maxPriorityFeePerGas: `0x${maxPriorityFeePerGas?.raw?.toString(16)}`, // Convert maxPriorityFeePerGas to hex format
+            gasPrice: `0x${gasPrice?.raw?.toString(16)}`,
+            // maxFeePerGas: `0x${maxFeePerGas?.raw?.toString(16)}`,
+            // maxPriorityFeePerGas: `0x${maxPriorityFeePerGas?.raw?.toString(16)}`, // Convert maxPriorityFeePerGas to hex format
         });
         try {
             const result = await provider
                 ?.sign(
                     {
-                        ...params,
-                        nonce,
-                        chainId: formatChainId(params?.chainId || chain?.chainId),
+                        to: params?.to,
+                        // ...params,
+                        // nonce,
+                        // chainId: formatChainId(params?.chainId || chain?.chainId),
                         gasLimit: `0x${estimateGas?.raw?.toString(16)}`,
-                        maxFeePerGas: `0x${maxFeePerGas?.raw?.toString(16)}`,
-                        maxPriorityFeePerGas: `0x${maxPriorityFeePerGas?.raw?.toString(16)}`, // Correct maxPriorityFeePerGas
+                        gasPrice: `0x${gasPrice?.raw?.toString(16)}`,
+                        // maxFeePerGas: `0x${maxFeePerGas?.raw?.toString(16)}`,
+                        // maxPriorityFeePerGas: `0x${maxPriorityFeePerGas?.raw?.toString(16)}`, // Correct maxPriorityFeePerGas
                     },
                     signer!,
                 )
