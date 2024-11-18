@@ -80,7 +80,7 @@ export default function Page() {
             // maxFeePerGas: BigInt(maxFeePerGas?.raw || 0),
             // maxPriorityFeePerGas: BigInt(maxPriorityFeePerGas?.raw || 0),
         };
-        console.log("send", test, chain, chain?.rpcUrls[0]);
+        console.log("send", test, chain, chain?.rpcUrls);
         try {
             const result = await provider?.sign(test, signer!).then(async (tx: any) => await provider?.send(tx));
             if (result) {
