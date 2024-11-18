@@ -27,7 +27,6 @@ const method = "erc20_approve";
 const timeout = 1000;
 
 export default function Page() {
-
     const router = useRouter();
 
     const { telegram } = useTelegram();
@@ -84,7 +83,7 @@ export default function Page() {
                     {
                         method,
                         result,
-                        id:messageId,
+                        id: messageId,
                     },
                     "*",
                 );
@@ -101,7 +100,7 @@ export default function Page() {
                 {
                     method,
                     error,
-                    id:messageId,
+                    id: messageId,
                 },
                 "*",
             );
@@ -120,7 +119,7 @@ export default function Page() {
                 {
                     method,
                     ...(level === 0 ? { error: "User rejected the request" } : {}),
-                    id:messageId,
+                    id: messageId,
                 },
                 "*",
             );
@@ -285,13 +284,13 @@ export default function Page() {
                                                         <Elements.Text type={"desc"} weight={"bold"} opacity={0.6}>
                                                             Spender
                                                         </Elements.Text>
-                                                        <Layouts.Row gap={1} align={'center'} fix>
-                                                            <Elements.Text align={'left'} title={spender}>
+                                                        <Layouts.Row gap={1} align={"center"} fix>
+                                                            <Elements.Text align={"left"} title={spender}>
                                                                 {spender?.substring(0, spender.startsWith("0x") ? 8 : 6) +
                                                                     " ... " +
                                                                     spender?.substring(spender?.length - 6, spender?.length)}
                                                             </Elements.Text>
-                                                            <Controls.Button icon={'copy'} fit />
+                                                            <Controls.Button icon={"copy"} fit />
                                                         </Layouts.Row>
                                                     </Layouts.Col>
                                                     <Layouts.Col gap={0.5}>
@@ -301,11 +300,11 @@ export default function Page() {
                                                         <Elements.Text>
                                                             {isEstimateGasLoading
                                                                 ? "~"
-                                                                : format(estimateGas, "currency", {
-                                                                    unit: 9,
-                                                                    limit: 12,
-                                                                    fix: 9,
-                                                                })}
+                                                                : format(estimateGas?.format, "currency", {
+                                                                      unit: 9,
+                                                                      limit: 12,
+                                                                      fix: 9,
+                                                                  })}
                                                         </Elements.Text>
                                                     </Layouts.Col>
                                                     <Layouts.Col gap={0.5}>
@@ -316,11 +315,11 @@ export default function Page() {
                                                             <Elements.Text style={{ flex: "initial" }} fix>
                                                                 {isGasPriceLoading || isEstimateGasLoading
                                                                     ? "~"
-                                                                    : format((gasPrice || 0) * (estimateGas || 0), "currency", {
-                                                                        unit: 9,
-                                                                        limit: 12,
-                                                                        fix: 9,
-                                                                    })}
+                                                                    : format((gasPrice?.format || 0) * (estimateGas?.format || 0), "currency", {
+                                                                          unit: 9,
+                                                                          limit: 12,
+                                                                          fix: 9,
+                                                                      })}
                                                             </Elements.Text>
                                                             <Elements.Text opacity={0.6} fit>
                                                                 {chain?.nativeCurrency?.symbol}
