@@ -73,12 +73,12 @@ export default function Page() {
             from: params?.from,
             to: params?.to,
             data: params?.data,
-            // nonce: BigInt(nonce),
             chainId: params?.chainId || chain?.chainId,
-            // gasLimit: BigInt(estimateGas?.raw || 0),
-            // gasPrice: BigInt(gasPrice?.raw || 0),
-            // maxFeePerGas: BigInt(maxFeePerGas?.raw || 0),
-            // maxPriorityFeePerGas: BigInt(maxPriorityFeePerGas?.raw || 0),
+            nonce: BigInt(nonce),
+            gasLimit: BigInt(estimateGas?.raw || 0),
+            gasPrice: BigInt(gasPrice?.raw || 0),
+            maxFeePerGas: BigInt(maxFeePerGas?.raw || 0),
+            maxPriorityFeePerGas: BigInt(maxPriorityFeePerGas?.raw || 0),
         };
         console.log("send", test, chain, chain?.rpcUrls);
         try {
