@@ -48,17 +48,9 @@ export default function EthSendTransaction() {
 
     useLayoutEffect(() => {
         if (params) {
-            const { value, gasLimit, maxFeePerGas, maxPriorityFeePerGas, chainId } = params;
-            const tx = {
-                ...params,
-                value: Number(value),
-                gasLimit: Number(gasLimit),
-                maxFeePerGas: Number(maxFeePerGas),
-                maxPriorityFeePerGas: Number(maxPriorityFeePerGas),
-            };
-            if (chainId) provider?.changeChain(chainId);
-            setTx(tx);
-            setSigner(provider?.account(tx?.from));
+            if (params?.chainId) provider?.changeChain(params.chainId);
+            setTx(params);
+            setSigner(provider?.account(params?.from));
         }
     }, []);
 
@@ -71,7 +63,7 @@ export default function EthSendTransaction() {
                     {
                         method,
                         result,
-                        id:messageId,
+                        id: messageId,
                     },
                     "*",
                 );
@@ -88,7 +80,7 @@ export default function EthSendTransaction() {
                 {
                     method,
                     error,
-                    id:messageId,
+                    id: messageId,
                 },
                 "*",
             );
@@ -107,7 +99,7 @@ export default function EthSendTransaction() {
                 {
                     method,
                     ...(level === 0 ? { error: "User rejected the request" } : {}),
-                    id:messageId,
+                    id: messageId,
                 },
                 "*",
             );
@@ -263,10 +255,10 @@ export default function EthSendTransaction() {
                                                             {isGasPriceLoading
                                                                 ? "~"
                                                                 : format(gasPrice, "currency", {
-                                                                    unit: 9,
-                                                                    limit: 12,
-                                                                    fix: 9,
-                                                                })}
+                                                                      unit: 9,
+                                                                      limit: 12,
+                                                                      fix: 9,
+                                                                  })}
                                                         </Elements.Text>
                                                     </Layouts.Col>
                                                     <Layouts.Col gap={0.5}>
@@ -277,10 +269,10 @@ export default function EthSendTransaction() {
                                                             {isEstimateGasLoading
                                                                 ? "~"
                                                                 : format(estimateGas, "currency", {
-                                                                    unit: 9,
-                                                                    limit: 12,
-                                                                    fix: 9,
-                                                                })}
+                                                                      unit: 9,
+                                                                      limit: 12,
+                                                                      fix: 9,
+                                                                  })}
                                                         </Elements.Text>
                                                     </Layouts.Col>
                                                     <Layouts.Col gap={0.5}>
@@ -292,10 +284,10 @@ export default function EthSendTransaction() {
                                                                 {isGasPriceLoading || isEstimateGasLoading
                                                                     ? "~"
                                                                     : format((gasPrice || 0) * (estimateGas || 0), "currency", {
-                                                                        unit: 9,
-                                                                        limit: 12,
-                                                                        fix: 9,
-                                                                    })}
+                                                                          unit: 9,
+                                                                          limit: 12,
+                                                                          fix: 9,
+                                                                      })}
                                                             </Elements.Text>
                                                             <Elements.Text opacity={0.6} fit>
                                                                 {chain?.nativeCurrency?.symbol}
