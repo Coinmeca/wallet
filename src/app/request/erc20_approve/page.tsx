@@ -70,17 +70,17 @@ export default function Page() {
     const handleSign = async () => {
         setLevel(1);
         const test = {
-            data: params?.data,
+            nonce: nonce,
             from: params?.from,
             to: params?.to,
-            nonce: nonce,
+            data: params?.data,
             chainId: params?.chainId || chain?.chainId,
             gasLimit: estimateGas?.raw || 0,
             gasPrice: gasPrice?.raw || 0,
             // maxFeePerGas: BigInt(maxFeePerGas?.raw || 0),
             // maxPriorityFeePerGas: BigInt(maxPriorityFeePerGas?.raw || 0),
         };
-        console.log("send", test);
+        console.log("send", test, chain, chain?.rpcUrls[0]);
         try {
             const result = await provider?.sign(test, signer!).then(async (tx: any) => await provider?.send(tx));
             if (result) {
