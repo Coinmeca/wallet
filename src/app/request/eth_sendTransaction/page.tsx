@@ -48,6 +48,7 @@ export default function EthSendTransaction() {
 
     useLayoutEffect(() => {
         if (params) {
+            console.log(params);
             if (params?.chainId) provider?.changeChain(params.chainId);
             setTx(params);
             setSigner(provider?.account(params?.from));

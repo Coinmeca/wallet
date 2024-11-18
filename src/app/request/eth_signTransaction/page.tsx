@@ -60,6 +60,7 @@ export default function EthSignTransaction() {
     useLayoutEffect(() => {
         console.log({ params, auth, app });
         if (params) {
+            console.log(params);
             if (params?.chainId) provider?.changeChain(params.chainId);
             setTx(params);
             setSigner(provider?.account(params?.from));
