@@ -34,7 +34,7 @@ export default function EthSendTransaction() {
 
     const { telegram } = useTelegram();
     const { provider, chain } = useCoinmecaWalletProvider();
-    const { auth, app, params, isPopup } = useMessageHandler();
+    const { auth, app, params, isPopup, messageId } = useMessageHandler();
 
     const [tx, setTx] = useState<TransactionParams>();
     const [level, setLevel] = useState(0);
@@ -71,6 +71,7 @@ export default function EthSendTransaction() {
                     {
                         method,
                         result,
+                        id:messageId,
                     },
                     "*",
                 );
@@ -87,6 +88,7 @@ export default function EthSendTransaction() {
                 {
                     method,
                     error,
+                    id:messageId,
                 },
                 "*",
             );
@@ -105,6 +107,7 @@ export default function EthSendTransaction() {
                 {
                     method,
                     ...(level === 0 ? { error: "User rejected the request" } : {}),
+                    id:messageId,
                 },
                 "*",
             );

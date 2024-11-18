@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
+import { parseChainId } from "@coinmeca/wallet-provider/chains";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { Chain } from "@coinmeca/wallet-sdk/types";
 import { useMessageHandler, useTelegram } from "hooks";
@@ -38,7 +39,7 @@ export default function Page() {
 
     const { telegram } = useTelegram();
     const { provider, chain } = useCoinmecaWalletProvider();
-    const { isPopup, params } = useMessageHandler();
+    const { isPopup, params, messageId } = useMessageHandler();
 
     const [selectedChain, setSelectedChain] = useState<any>();
     const [newChain, setNewChain] = useState<Chain>();
@@ -52,6 +53,7 @@ export default function Page() {
             {
                 method,
                 ...(level === 0 ? { error: "User rejected the request" } : { result: level === 1 ? true : newChain?.chainId }),
+                id:messageId,
             },
             "*",
         );
@@ -76,6 +78,7 @@ export default function Page() {
                     {
                         method,
                         error,
+                        id:messageId,
                     },
                     "*",
                 );
@@ -93,6 +96,7 @@ export default function Page() {
                     {
                         method,
                         result,
+                        id:messageId,
                     },
                     "*",
                 );
@@ -105,6 +109,7 @@ export default function Page() {
                     {
                         method,
                         error,
+                        id:messageId,
                     },
                     "*",
                 );
@@ -127,8 +132,7 @@ export default function Page() {
                 nativeCurrency.decimals &&
                 rpcUrls &&
                 rpcUrls.length > 0
-            )
-                setNewChain(params as Chain);
+            ) setNewChain({...params, chainId: parseChainId(chainId)} as Chain);
         }
     }, []);
 

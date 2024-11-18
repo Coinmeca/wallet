@@ -32,7 +32,7 @@ export default function Page() {
 
     const { telegram } = useTelegram();
     const { provider, chain } = useCoinmecaWalletProvider();
-    const { auth, app, params, isPopup } = useMessageHandler();
+    const { auth, app, params, isPopup, messageId } = useMessageHandler();
 
     const [tx, setTx] = useState<TransactionParams>();
     const [level, setLevel] = useState(0);
@@ -84,6 +84,7 @@ export default function Page() {
                     {
                         method,
                         result,
+                        id:messageId,
                     },
                     "*",
                 );
@@ -100,6 +101,7 @@ export default function Page() {
                 {
                     method,
                     error,
+                    id:messageId,
                 },
                 "*",
             );
@@ -118,6 +120,7 @@ export default function Page() {
                 {
                     method,
                     ...(level === 0 ? { error: "User rejected the request" } : {}),
+                    id:messageId,
                 },
                 "*",
             );

@@ -13,10 +13,14 @@ interface MessageProps {
     chainId: number | undefined;
 }
 
+type MessageStrategy = "popup" | "proxy";
+
 interface MessageHandlerProps extends MessageProps {
     isPopup: boolean;
-    popupId?: number;
+    isProxy: boolean;
+    messageId: number | undefined;
     message: MessageProps | undefined;
+    strategy: MessageStrategy | undefined;
     auth: boolean | undefined;
 }
 
@@ -35,26 +39,43 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
     const { telegram } = useTelegram();
     const { provider } = useCoinmecaWalletProvider();
 
-    const [popupId, setPopupId] = useState<number>();
+    const [messageId, setMessageId] = useState<number>();
+    const [strategy, setStrategy] = useState<MessageStrategy>();
     const [isPopup, setIsPopup] = useState(false);
+    const [isProxy, setIsProxy] = useState(false);
     const [message, setMessage] = useState<MessageProps>();
     const [auth, setAuth] = useState<boolean | undefined>(undefined);
 
     useLayoutEffect(() => {
         if (typeof window !== "undefined") {
-            window?.opener?.postMessage({ state: "ready" }, "*");
-
+            const portal = window?.opener || window?.parent;
+            portal?.postMessage({ state: "ready" }, "*");
+            
             const messageHandler = (event: MessageEvent) => {
                 if (event?.data) {
-                    console.log({ event_data: event?.data })
-                    setPopupId(event?.data?.popupId);
-                    setIsPopup(event?.data?.isPopup);
+                    if (!messageId || event?.data?.id !== event?.data?.id) {    
+                        setMessageId(event?.data?.id);
+                        setStrategy(event?.data?.strategy);
 
-                    const request = event?.data?.request;
-                    if (request) {
-                        setMessage(request);
-                        if (request?.chainId) provider?.changeChain(request.chainId);
-                        window.removeEventListener("message", messageHandler);
+                        if (!!event?.data?.strategy) {
+                            switch (event?.data?.strategy) {
+                                case "popup":
+                                    setIsPopup(true);
+                                    break;
+                                case "proxy":
+                                    setIsProxy(true);
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+
+                        const request = event?.data?.request;
+                        if (request) {
+                            setMessage(request);
+                            if (request?.chainId) provider?.changeChain(request.chainId);
+                            window.removeEventListener("message", messageHandler);
+                        }
                     }
                 }
             };
@@ -63,9 +84,10 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
     }, []);
 
     useLayoutEffect(() => {
-        if (!path?.startsWith("/lock") || !path?.startsWith("/welcome")) {
+        if (strategy !== "popup" && (!path?.startsWith("/lock") || !path?.startsWith("/welcome"))) {
+            const portal = window?.opener || window?.parent;
             const handleUnload = () => {
-                window?.opener?.postMessage(
+                portal?.postMessage(
                     {
                         close: true,
                         error: "User rejected the request",
@@ -93,7 +115,8 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
             } else if (message?.params?.to) error = "Not found sender information."
 
             if (error) {
-                window?.opener?.postMessage(
+                const portal = window?.opener || window?.parent;
+                portal?.postMessage(
                     {
                         method: message?.method,
                         error,
@@ -112,7 +135,7 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
 
     return (
         <MessageHandlerContext.Provider
-            value={{ isPopup, popupId, message, method: message?.method, params: message?.params, chainId: message?.chainId, app: message?.app, auth }}>
+            value={{ isPopup, isProxy, strategy, messageId, message, method: message?.method, params: message?.params, chainId: message?.chainId, app: message?.app, auth }}>
             {children}
         </MessageHandlerContext.Provider>
     );

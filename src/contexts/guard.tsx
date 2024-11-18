@@ -51,7 +51,8 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                         else target = "/welcome";
                     } else {
                         setIsInit(true);
-                        setIsAccess(check.access);
+                        if (path?.startsWith("/proxy")) setIsAccess(true);
+                        else setIsAccess(check.access);
 
                         // if (!check.access) {
                         // const request = window.location.pathname;
@@ -80,7 +81,8 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     useLayoutEffect(() => {
         if (!isLoad && check && typeof check?.init !== "undefined" && typeof check?.access !== "undefined" && typeof auth !== "undefined") {
-            if (check.init === false && path?.startsWith("/welcome")) setIsLoad(true);
+            if (path?.startsWith('/proxy')) setIsLoad(true);
+            else if (check.init === false && path?.startsWith("/welcome")) setIsLoad(true);
             else if (!check.access && path?.startsWith("/lock")) setIsLoad(true);
             else setIsLoad(true);
         }
