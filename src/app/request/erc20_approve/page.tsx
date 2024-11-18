@@ -74,10 +74,10 @@ export default function Page() {
             to: params?.to,
             // nonce,
             chainId: BigInt(params?.chainId || chain?.chainId),
-            gasLimit: `0x${estimateGas?.raw?.toString(16)}`,
-            gasPrice: `0x${gasPrice?.raw?.toString(16)}`,
-            // maxFeePerGas: `0x${maxFeePerGas?.raw?.toString(16)}`,
-            // maxPriorityFeePerGas: `0x${maxPriorityFeePerGas?.raw?.toString(16)}`, // Convert maxPriorityFeePerGas to hex format
+            gasLimit: BigInt(estimateGas?.raw || 0),
+            gasPrice: BigInt(gasPrice?.raw || 0),
+            maxFeePerGas: BigInt(maxFeePerGas?.raw || 0),
+            maxPriorityFeePerGas: BigInt(maxPriorityFeePerGas?.raw || 0),
         });
         try {
             const result = await provider
@@ -85,12 +85,12 @@ export default function Page() {
                     {
                         to: params?.to,
                         // ...params,
-                        // nonce,
+                        nonce: BigInt(nonce),
                         chainId: BigInt(params?.chainId || chain?.chainId),
-                        gasLimit: `0x${estimateGas?.raw?.toString(16)}`,
-                        gasPrice: `0x${gasPrice?.raw?.toString(16)}`,
-                        // maxFeePerGas: `0x${maxFeePerGas?.raw?.toString(16)}`,
-                        // maxPriorityFeePerGas: `0x${maxPriorityFeePerGas?.raw?.toString(16)}`, // Correct maxPriorityFeePerGas
+                        gasLimit: BigInt(estimateGas?.raw || 0),
+                        gasPrice: BigInt(gasPrice?.raw || 0),
+                        // maxFeePerGas: BigInt(maxFeePerGas?.raw || 0),
+                        // maxPriorityFeePerGas: BigInt(maxPriorityFeePerGas?.raw || 0),
                     },
                     signer!,
                 )
