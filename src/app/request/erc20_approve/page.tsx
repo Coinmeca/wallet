@@ -58,10 +58,10 @@ export default function Page() {
                 setAmount(parseInt(data.slice(76, 138), 16));
             }
             if (params?.chainId) provider?.changeChain(params.chainId);
-            setTx(tx);
+            setTx(params);
             setSigner(provider?.account(params?.from || account?.address));
         }
-    }, [params]);
+    }, []);
 
     const handleSign = async () => {
         setLevel(1);
