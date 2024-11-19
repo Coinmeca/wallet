@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
@@ -26,21 +26,21 @@ interface Validate {
     message?: string;
 }
 
-export default function Fungible(props: Fungible) {
+export default function Add(props: Fungible) {
     const client = getQueryClient();
 
     return (
         <CoinmecaWalletContextProvider>
             <QueryClientProvider {...{ client }}>
                 <HydrationBoundary state={dehydrate(client)}>
-                    <AddFungibleModal {...props} />
+                    <FungibleAddModal {...props} />
                 </HydrationBoundary>
             </QueryClientProvider>
         </CoinmecaWalletContextProvider>
     );
 }
 
-function AddFungibleModal(props: Fungible) {
+function FungibleAddModal(props: Fungible) {
     const { provider, chain, account } = useCoinmecaWalletProvider();
 
     const [address, setAddress] = useState<string>();

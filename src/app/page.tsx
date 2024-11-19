@@ -30,13 +30,14 @@ export default function Home() {
         if (path.startsWith("/nft")) setTab("nft");
     }, [path]);
 
-    const [showAddFungible, closeAddFungible] = usePortal(() => <Modals.Add.Fungible onClose={closeAddFungible} />);
+    const [showAddFungible, closeAddFungible] = usePortal(() => <Modals.Fungible.Add onClose={closeAddFungible} />);
 
     const fungibles = GetErc20(chain?.rpcUrls?.[0], tokens?.fungibles, account?.address);
     const fungiblesList = useCallback(
         (tokens?: Asset[]) => {
             return [
-                ...(tokens?.map((t?: Asset) =>
+                ...(tokens?.map(
+                    (t?: Asset) =>
                         typeof t === "object" && {
                             style: { padding: "1.5em" },
                             children: [
@@ -48,10 +49,7 @@ export default function Home() {
                                                 fit: true,
                                                 children: (
                                                     <>
-                                                        <Elements.Avatar
-                                                            size={4}
-                                                            img={`https://web3.coinmeca.net/${chain?.chainId}/${t?.address}/logo.svg`}
-                                                        />
+                                                        <Elements.Avatar size={4} img={`https://web3.coinmeca.net/${chain?.chainId}/${t?.address}/logo.svg`} />
                                                     </>
                                                 ),
                                             },
@@ -97,7 +95,7 @@ export default function Home() {
                                 ],
                             ],
                         },
-                    )?.filter((a) => a) || []),
+                ) || []),
                 {
                     onClick: showAddFungible,
                     style: { padding: "1.75em 1.5em" },
@@ -145,8 +143,8 @@ export default function Home() {
                                 maxHeight: "32em",
                             }}
                             fill>
-                                <Layouts.Col gap={2}>
-                                <Elements.Text type={"h6"}>BALANCE</Elements.Text>
+                            <Layouts.Col gap={2}>
+                                <Elements.Text type={"h6"}>Balance</Elements.Text>
                                 <Elements.Text type={"h3"}>
                                     {isLoading
                                         ? "~"
@@ -156,8 +154,9 @@ export default function Home() {
                                               fix: 9,
                                           })}
                                 </Elements.Text>
-                                <Elements.Text type={"h6"} opacity={0.6}>$ 0.00</Elements.Text>
-                                {/* <Elements.Text type={"h6"}>{chain?.nativeCurrency?.symbol}</Elements.Text> */}
+                                {/* <Elements.Text type={"h6"} opacity={0.6}>
+                                    $ 0.00
+                                </Elements.Text> */}
                             </Layouts.Col>
                         </Layouts.Col>
                         <Layouts.Box padding={[2, "", "", ""]}>
@@ -184,19 +183,37 @@ export default function Home() {
                                             ],
                                             [
                                                 <>
-                                                    <Controls.Input left={{ children: <><Elements.Icon icon={'search'} /></> }} fold={false} />
+                                                    <Controls.Input
+                                                        left={{
+                                                            children: (
+                                                                <>
+                                                                    <Elements.Icon icon={"search"} />
+                                                                </>
+                                                            ),
+                                                        }}
+                                                        fold={false}
+                                                    />
                                                 </>,
                                             ],
                                         ],
                                     ]}
                                 />
                                 <Layouts.Contents.TabContainer
-                                    style={{flex: 1}}
+                                    style={{ flex: 1 }}
                                     contents={[
                                         {
                                             active: tab === "token",
-                                            style:{flex:1},
-                                            children: <Layouts.List list={[{ ...chain?.nativeCurrency, balance, address:zeroAddress }, ...Object.values(fungibles?.data || [])]} formatter={fungiblesList} fill />
+                                            style: { flex: 1 },
+                                            children: (
+                                                <Layouts.List
+                                                    list={[
+                                                        { ...chain?.nativeCurrency, balance, address: zeroAddress },
+                                                        ...Object.values(fungibles?.data || []),
+                                                    ]}
+                                                    formatter={fungiblesList}
+                                                    fill
+                                                />
+                                            ),
                                         },
                                     ]}
                                 />

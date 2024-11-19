@@ -1,6 +1,5 @@
 ﻿"use client";
 
-import CryptoJS from "crypto-js";
 import { useLayoutEffect, useState } from "react";
 import { Layouts } from "@coinmeca/ui/components";
 
@@ -18,10 +17,16 @@ export default function Welcome() {
     }, [provider]);
 
     const handleConfirm = (passcode: string) => {
-        const chains = format(getChainsByType("mainnet"));
-        if (chains) localStorage.setItem("coinmeca:wallet:chains", chains);
-        provider?.init(CryptoJS.SHA256(passcode).toString());
-        return true;
+        try {
+            const chains = format(getChainsByType("mainnet"));
+            if (chains) localStorage.setItem("coinmeca:wallet:chains", chains);
+            provider?.init(passcode);
+            setStage({ name: "create", level: 2 });
+            return true;
+        } catch (e) {
+            console.error(e);
+            return false;
+        }
     };
 
     return (

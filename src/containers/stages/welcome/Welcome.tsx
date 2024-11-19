@@ -20,7 +20,7 @@ export default function Welcome({ setStage }: Stage) {
             <Layouts.Col gap={2} align={"center"} style={{ padding: "4em" }} fill>
                 <Layouts.Col align={"center"} fill>
                     <Layouts.Col gap={4} align={"center"} fit>
-                        <Elements.Text type={"h3"}>Welcome</Elements.Text>
+                        <Elements.Text type={"h2"}>Welcome</Elements.Text>
                         <Elements.Text>
                             For smooth use, please set a password first.If it has been lost, it is impossible to use or recover all created wallets on this
                             passcode, so please enter it carefully.
