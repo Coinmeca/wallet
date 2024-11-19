@@ -220,10 +220,10 @@ export default function Home() {
                             </Layouts.Col>
                             <div style={{ position: "fixed", width: "-webkit-fill-available", left: 0, bottom: 0, margin: "2em" }}>
                                 <Layouts.Row gap={2} fill>
-                                    <Controls.Button type={"solid"} icon={"chevron-left-bold"} color={"green"}>
+                                    <Controls.Button type={"solid"} iconLeft={"income"} color={"green"}>
                                         Receive
                                     </Controls.Button>
-                                    <Controls.Button type={"solid"} icon={"chevron-right-bold"} color={"red"}>
+                                    <Controls.Button type={"solid"} iconRight={"outcome"} color={"red"}>
                                         Send
                                     </Controls.Button>
                                 </Layouts.Row>
