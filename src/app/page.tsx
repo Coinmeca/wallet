@@ -11,6 +11,7 @@ import { AnimatePresence } from "framer-motion";
 import { usePageLoader } from "hooks";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { zeroAddress } from "types";
 
 export default function Home() {
     const path = usePathname();
@@ -35,73 +36,68 @@ export default function Home() {
     const fungiblesList = useCallback(
         (tokens?: Asset[]) => {
             return [
-                ...(tokens && tokens?.length
-                    ? tokens
-                          ?.map(
-                              (t?: Asset) =>
-                                  typeof t === "object" && {
-                                      style: { padding: "1.5em" },
-                                      children: [
-                                          [
-                                              {
-                                                  gap: 1.5,
-                                                  children: [
-                                                      {
-                                                          fit: true,
-                                                          children: (
-                                                              <>
-                                                                  <Elements.Avatar
-                                                                      size={4}
-                                                                      img={`https://web3.coinmeca.net/${chain?.chainId}/${t?.address}/logo.svg`}
-                                                                  />
-                                                              </>
-                                                          ),
-                                                      },
-                                                      [
-                                                          [
-                                                              [
-                                                                  [
-                                                                      {
-                                                                          gap: 0,
-                                                                          children: [
-                                                                              <>
-                                                                                  <Elements.Text height={0}>{t?.symbol}</Elements.Text>
-                                                                              </>,
-                                                                              <>
-                                                                                  <Elements.Text height={0} opacity={0.6}>
-                                                                                      {t?.name}
-                                                                                  </Elements.Text>
-                                                                              </>,
-                                                                          ],
-                                                                      },
-                                                                  ],
-                                                              ],
-                                                              [
-                                                                  {
-                                                                      align: "right",
-                                                                      children: (
-                                                                          <>
-                                                                              <Elements.Text>
-                                                                                  {format(t?.balance || 0, "currency", {
-                                                                                      unit: 9,
-                                                                                      limit: 12,
-                                                                                      fix: 9,
-                                                                                  })}
-                                                                              </Elements.Text>
-                                                                          </>
-                                                                      ),
-                                                                  },
-                                                              ],
-                                                          ],
-                                                      ],
-                                                  ],
-                                              },
-                                          ],
-                                      ],
-                                  },
-                          )
-                          ?.filter((a) => a)
-                    : []),
+                ...(tokens?.map((t?: Asset) =>
+                        typeof t === "object" && {
+                            style: { padding: "1.5em" },
+                            children: [
+                                [
+                                    {
+                                        gap: 1.5,
+                                        children: [
+                                            {
+                                                fit: true,
+                                                children: (
+                                                    <>
+                                                        <Elements.Avatar
+                                                            size={4}
+                                                            img={`https://web3.coinmeca.net/${chain?.chainId}/${t?.address}/logo.svg`}
+                                                        />
+                                                    </>
+                                                ),
+                                            },
+                                            [
+                                                [
+                                                    [
+                                                        [
+                                                            {
+                                                                gap: 0,
+                                                                children: [
+                                                                    <>
+                                                                        <Elements.Text height={0}>{t?.symbol}</Elements.Text>
+                                                                    </>,
+                                                                    <>
+                                                                        <Elements.Text height={0} opacity={0.6}>
+                                                                            {t?.name}
+                                                                        </Elements.Text>
+                                                                    </>,
+                                                                ],
+                                                            },
+                                                        ],
+                                                    ],
+                                                    [
+                                                        {
+                                                            align: "right",
+                                                            children: (
+                                                                <>
+                                                                    <Elements.Text>
+                                                                        {format(t?.balance || 0, "currency", {
+                                                                            unit: 9,
+                                                                            limit: 12,
+                                                                            fix: 9,
+                                                                        })}
+                                                                    </Elements.Text>
+                                                                </>
+                                                            ),
+                                                        },
+                                                    ],
+                                                ],
+                                            ],
+                                        ],
+                                    },
+                                ],
+                            ],
+                        },
+                    )?.filter((a) => a) || []),
                 {
                     onClick: showAddFungible,
                     style: { padding: "1.75em 1.5em" },
@@ -133,6 +129,8 @@ export default function Home() {
         [tokens?.fungibles, fungibles],
     );
 
+    console.log(Object.values(fungibles?.data || []));
+
     return (
         <Layouts.Page snap>
             <AnimatePresence>
@@ -147,7 +145,8 @@ export default function Home() {
                                 maxHeight: "32em",
                             }}
                             fill>
-                            <Layouts.Col gap={2}>
+                                <Layouts.Col gap={2}>
+                                <Elements.Text type={"h6"}>BALANCE</Elements.Text>
                                 <Elements.Text type={"h3"}>
                                     {isLoading
                                         ? "~"
@@ -157,11 +156,12 @@ export default function Home() {
                                               fix: 9,
                                           })}
                                 </Elements.Text>
-                                <Elements.Text type={"h6"}>{chain?.nativeCurrency?.symbol}</Elements.Text>
+                                <Elements.Text type={"h6"} opacity={0.6}>$ 0.00</Elements.Text>
+                                {/* <Elements.Text type={"h6"}>{chain?.nativeCurrency?.symbol}</Elements.Text> */}
                             </Layouts.Col>
                         </Layouts.Col>
-                        <Layouts.Box padding={[2, "", "", ""]} fit>
-                            <Layouts.Col gap={0}>
+                        <Layouts.Box padding={[2, "", "", ""]}>
+                            <Layouts.Col gap={0} fill>
                                 <Layouts.Menu
                                     menu={[
                                         [
@@ -184,23 +184,23 @@ export default function Home() {
                                             ],
                                             [
                                                 <>
-                                                    <Controls.Tab active={tab === "activity"} onClick={() => router.push("/activity")} iconLeft={"search"} />
+                                                    <Controls.Input left={{ children: <><Elements.Icon icon={'search'} /></> }} fold={false} />
                                                 </>,
                                             ],
                                         ],
                                     ]}
                                 />
-                            </Layouts.Col>
-                            <Layouts.Contents.InnerContent scroll={false}>
                                 <Layouts.Contents.TabContainer
+                                    style={{flex: 1}}
                                     contents={[
                                         {
                                             active: tab === "token",
-                                            children: <Layouts.List list={Object.values(fungibles?.data || [{}])} formatter={fungiblesList} />,
+                                            style:{flex:1},
+                                            children: <Layouts.List list={[{ ...chain?.nativeCurrency, balance, address:zeroAddress }, ...Object.values(fungibles?.data || [])]} formatter={fungiblesList} fill />
                                         },
                                     ]}
                                 />
-                            </Layouts.Contents.InnerContent>
+                            </Layouts.Col>
                             <div style={{ position: "fixed", width: "-webkit-fill-available", left: 0, bottom: 0, margin: "2em" }}>
                                 <Layouts.Row gap={2} fill>
                                     <Controls.Button type={"solid"} icon={"chevron-left-bold"} color={"green"}>

@@ -74,7 +74,7 @@ export default function Init({ stage, setStage, exit, onConfirm, reset }: Stage 
                                                 <Layouts.Col gap={4} align={"center"} fill>
                                                     <Layouts.Col gap={4} align={"center"} fit>
                                                         <Elements.Text weight={"bold"} size={2}>
-                                                            NEW PASSCODE CONFIRM
+                                                            CONFIRM PASSCODE
                                                         </Elements.Text>
                                                         <Elements.Passcode
                                                             index={pass.confirm?.length || 0}
