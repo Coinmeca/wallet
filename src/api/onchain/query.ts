@@ -38,7 +38,7 @@ export const query = {
         queryOptions({
             queryKey: ["nonce", rpc, address],
             queryFn: async () =>
-                await fetcher.rpc(rpc!, "eth_getTransactionCount", [address, "pending"]).then((data) => data),
+                await fetcher.rpc(rpc!, "eth_getTransactionCount", [address, "pending"]).then((data) => Number(data || 0)),
             enabled: !!rpc && !!address,
         }),
 
