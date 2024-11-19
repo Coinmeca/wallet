@@ -23,9 +23,9 @@
         "discord": "tsx ./src/app/api/discord/register"
     },
     "dependencies": {
-        "@coinmeca/ui": "0.1.487",
-        "@coinmeca/wallet-provider": "^0.1.2",
-        "@coinmeca/wallet-sdk": "^0.1.2",
+        "@coinmeca/ui": "0.1.488",
+        "@coinmeca/wallet-provider": "^0.1.3",
+        "@coinmeca/wallet-sdk": "^0.1.3",
         "@ethereumjs/tx": "^5.4.0",
         "@ethereumjs/wallet": "^2.0.4",
         "@next/env": "^15.0.2",

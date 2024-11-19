@@ -10,7 +10,7 @@ import { Asset } from "types";
 export default function Fungibles() {
     const { account, chain, tokens } = useCoinmecaWalletProvider();
 
-    const [showAddFungible, closeAddFungible] = usePortal(() => <Modals.Add.Fungible onClose={closeAddFungible} />);
+    const [showAddFungible, closeAddFungible] = usePortal(() => <Modals.Fungible.Add onClose={closeAddFungible} />);
     const fungibles = GetErc20(chain?.rpcUrls?.[0], tokens?.fungibles, account?.address);
     const fungiblesList = useCallback(
         (tokens?: Asset[]) => {

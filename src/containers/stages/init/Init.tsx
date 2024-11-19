@@ -1,10 +1,11 @@
 ﻿"use client";
+import CryptoJS from "crypto-js";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useEffect, useState } from "react";
 import { Parts } from "@coinmeca/ui/index";
 import { Stage } from "..";
 
-export default function Init({ stage, setStage, exit, onConfirm, reset }: Stage & { exit: string;  onConfirm?: (passcode:string) => boolean, reset?:boolean}) {
+export default function Init({ stage, setStage, exit, onConfirm }: Stage & { exit: string; onConfirm?: (passcode: string) => boolean; reset?: boolean }) {
     const length = 6;
 
     const [pass, setPass] = useState<{ code: string; confirm?: string }>({ code: "" });
@@ -24,9 +25,8 @@ export default function Init({ stage, setStage, exit, onConfirm, reset }: Stage 
                             message: "The passcode you entered does not match the passcode initially entered.",
                         });
                     else {
-                        if(typeof onConfirm === 'function') onConfirm(pass.code);
-                        setStage({ name: "create", level: 2 });
-                        // setStage(telegram ? { name: "create", level: 2 } : { name: "create", level: 0 });                       
+                        if (typeof onConfirm === "function") onConfirm(CryptoJS.SHA256(pass.code).toString());
+                        // setStage(telegram ? { name: "create", level: 2 } : { name: "create", level: 0 });
                     }
                 }
             }
@@ -37,7 +37,7 @@ export default function Init({ stage, setStage, exit, onConfirm, reset }: Stage 
 
     useEffect(() => {
         return () => setPass({ code: "" });
-    }, [])
+    }, []);
 
     return (
         <Layouts.Contents.SlideContainer
@@ -74,7 +74,7 @@ export default function Init({ stage, setStage, exit, onConfirm, reset }: Stage 
                                                 <Layouts.Col gap={4} align={"center"} fill>
                                                     <Layouts.Col gap={4} align={"center"} fit>
                                                         <Elements.Text weight={"bold"} size={2}>
-                                                            NEW PASSCODE CONFIRM
+                                                            CONFIRM PASSCODE
                                                         </Elements.Text>
                                                         <Elements.Passcode
                                                             index={pass.confirm?.length || 0}

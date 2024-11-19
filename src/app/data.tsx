@@ -16,6 +16,7 @@ import { Modal } from "@coinmeca/ui/containers";
 import { Root } from "@coinmeca/ui/lib/style";
 import { useQueries } from "@tanstack/react-query";
 import { query } from "api/onchain/query";
+import { Modals } from "containers";
 
 export default function Data() {
     const router = useRouter();
@@ -35,6 +36,7 @@ export default function Data() {
     const [accountFilter, setAccountFilter] = useState<string>();
     const [chainFilter, setChainFilter] = useState<string>();
     const [appFilter, setAppFilter] = useState<string>();
+    const [showDisabledAccount, setShowDisabledAccount] = useState<boolean>(false);
 
     const isRequest = useMemo(() => path?.startsWith("/request"), [path]);
 
@@ -96,15 +98,29 @@ export default function Data() {
             });
     };
 
-    const AccountModal = (props: any) => {
-        return <Modal {...props} onClose={closeAccountModal} />;
+    const [openAccountEditModal, closeAccountEditModal] = usePortal((props: any) => <Modals.Account.Edit {...props} onClose={() => closeAccountEditModal()} />);
+    const [openAccountDisableModal, closeAccountDisableModal] = usePortal((props: any) => (
+        <Modals.Account.Edit {...props} onClose={() => closeAccountEditModal()} />
+    ));
+
+    const handleShowPrivateKey = (index: number) => {};
+
+    const handleAccountEdit = (a: Account) => {
+        openAccountEditModal({ account: a });
     };
-    const [openAccountModal, closeAccountModal] = usePortal((props: any) => <AccountModal {...props} />);
+
+    const handleAccountEnable = (a: Account) => {
+        provider?.changeAccountInfo({ ...a, disable: false });
+    };
+
+    const handleAccountDisable = (a: Account) => {
+        provider?.changeAccountInfo({ ...a, disable: true });
+    };
 
     const accountlist = useCallback(
         (accounts: Account[] = []) => {
             if (accounts?.length) {
-                return accounts.map((a: Account, i: number) => {
+                return (showDisabledAccount ? accounts : accounts.filter((a) => !a?.disable)).map((a: Account, i: number) => {
                     const selected = account?.address?.toLowerCase() === a?.address?.toLowerCase();
                     return {
                         onClick: !selected && (() => {}),
@@ -199,14 +215,6 @@ export default function Data() {
                                         fit: true,
                                         children: [
                                             {
-                                                children: [],
-                                            },
-                                        ],
-                                    },
-                                    {
-                                        fit: true,
-                                        children: [
-                                            {
                                                 gap: 0,
                                                 fit: true,
                                                 style: { pointerEvents: "initial", maxWitdth: "max-content" },
@@ -220,10 +228,21 @@ export default function Data() {
                                                             options={[
                                                                 { icon: "key", value: "Show Private Key" },
                                                                 { icon: "write", value: "Edit Account Name" },
-                                                                { icon: "x", value: `Delete This ${a?.name}` },
+                                                                a?.disable
+                                                                    ? { icon: "show", value: `Enable ${a?.name}` }
+                                                                    : { icon: "hide", value: `Disable ${a?.name}` },
                                                             ]}
                                                             onClickItem={(e: any, v: any, k: number) => {
-                                                                console.log(k);
+                                                                switch (k) {
+                                                                    case 0:
+                                                                        return handleShowPrivateKey(a?.index);
+                                                                    case 1:
+                                                                        return handleAccountEdit(a);
+                                                                    case 2:
+                                                                        return handleAccountDisable(a);
+                                                                    default:
+                                                                        return;
+                                                                }
                                                             }}
                                                             responsive={responsive}
                                                             chevron={false}
@@ -243,7 +262,7 @@ export default function Data() {
                 });
             }
         },
-        [account, accounts, balance],
+        [account, accounts, balance, showDisabledAccount],
     );
 
     const applist = useCallback(
@@ -497,6 +516,13 @@ export default function Data() {
                                   />
                                   <Layouts.List list={filter(accounts, accountFilter)} formatter={accountlist} />
                                   <Layouts.Col style={{ padding: "4em", paddingTop: "0" }} fit>
+                                      {accounts?.filter((a) => a?.disable)?.length && (
+                                          <Controls.Button
+                                              iconLeft={showDisabledAccount ? "hide" : "show"}
+                                              onClick={() => setShowDisabledAccount(!showDisabledAccount)}>
+                                              {showDisabledAccount ? "Hide" : "Show"} disabled accounts
+                                          </Controls.Button>
+                                      )}
                                       <Controls.Button
                                           type={"line"}
                                           iconLeft={"plus-small-bold"}
@@ -551,8 +577,11 @@ export default function Data() {
                                                           <Controls.Button scale={1.125} style={{ padding: "0.5em 1em" }} onClick={() => setSetting("apps")}>
                                                               Connected Apps
                                                           </Controls.Button>
-                                                          <Controls.Button scale={1.125} style={{ padding: "0.5em 1em" }} onClick={() => router.push("/reset")}>
-                                                              Reset Passcode
+                                                          <Controls.Button
+                                                              scale={1.125}
+                                                              style={{ padding: "0.5em 1em" }}
+                                                              onClick={() => router.push("/change")}>
+                                                              Change Passcode
                                                           </Controls.Button>
                                                       </Layouts.Col>
                                                       <Controls.Button

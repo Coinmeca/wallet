@@ -1,4 +1,3 @@
-
 export interface Asset {
     type?: string;
     address?: string;
@@ -7,3 +6,5 @@ export interface Asset {
     decimals?: number;
     balance?: number;
 }
+
+export const zeroAddress = "0x0000000000000000000000000000000000000000";
