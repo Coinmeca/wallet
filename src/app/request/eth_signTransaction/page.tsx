@@ -11,6 +11,7 @@ import { GetMaxFeePerGas } from "api/onchain";
 import { format } from "@coinmeca/ui/lib/utils";
 import { useQueries } from "@tanstack/react-query";
 import { query } from "api/onchain/query";
+import { sanitizeBigIntToHex } from "utils";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({
@@ -57,7 +58,7 @@ export default function EthSignTransaction() {
     const [error, setError] = useState<any>();
 
     const [{ data: nonce }, { data: gasPrice, isLoading: isGasPriceLoading }, { data: estimateGas, isLoading: isEstimateGasLoading }] = useQueries({
-        queries: [query.nonce(chain?.rpcUrls[0], signer?.address), query.gasPrice(chain?.rpcUrls[0]), query.estimateGas(chain?.rpcUrls[0], tx)],
+        queries: [query.nonce(chain?.rpcUrls[0], signer?.address), query.gasPrice(chain?.rpcUrls[0]), query.estimateGas(chain?.rpcUrls[0], sanitizeBigIntToHex(tx))],
     });
     const {
         data: { maxPriorityFeePerGas, maxFeePerGas },
