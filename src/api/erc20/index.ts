@@ -1,4 +1,4 @@
-﻿import { useQueries, useQuery, UseQueryOptions } from "@tanstack/react-query";
+﻿import { QueryKey, useQueries, useQuery, UseQueryOptions } from "@tanstack/react-query";
 import { query } from "./query";
 
 export function GetErc20(rpc?: string, erc20?: (string | undefined)[], owner?: string) {
@@ -9,17 +9,17 @@ export function GetErc20(rpc?: string, erc20?: (string | undefined)[], owner?: s
     const validTokens = Array.isArray(erc20) ? erc20.filter((a) => a) : [];
 
     // Build `queryConfigs` based on tokens available
-    const queryConfigs: UseQueryOptions<any, Error, any, any[]>[] = validTokens.flatMap((token) => [
-        query.name(rpc, token),
-        query.symbol(rpc, token),
-        query.decimals(rpc, token),
-        ...(owner ? [query.balanceOf(rpc, token, owner)] : []),
-    ]);
+    const queryConfigs = validTokens.flatMap((token) => {
+        return [
+            query.name(rpc, token),
+            query.symbol(rpc, token),
+            query.decimals(rpc, token),
+            ...(owner ? [query.balanceOf(rpc, token, owner)] : []),
+        ] as UseQueryOptions<any, Error, any, QueryKey>[];
+    });
 
-    // Always call `useQueries` regardless of conditions
     results = useQueries({ queries: queryConfigs });
 
-    // Process data if there are valid tokens
     if (validTokens.length > 0) {
         data = validTokens.reduce((acc, address, index) => {
             if (address) {
@@ -36,7 +36,6 @@ export function GetErc20(rpc?: string, erc20?: (string | undefined)[], owner?: s
 
         data = Object.keys(data).length > 0 ? data : undefined;
     }
-
     return {
         isError: results?.some((result: any) => result?.isError),
         isPaused: results?.some((result: any) => result?.isPaused),
