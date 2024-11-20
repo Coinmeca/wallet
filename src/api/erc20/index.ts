@@ -5,10 +5,7 @@ export function GetErc20(rpc?: string, erc20?: (string | undefined)[], owner?: s
     let data;
     let results: any;
 
-    // Ensure `erc20` is always an array, even if empty
     const validTokens = Array.isArray(erc20) ? erc20.filter((a) => a) : [];
-
-    // Build `queryConfigs` based on tokens available
     const queryConfigs = validTokens.flatMap((token) => {
         return [
             query.name(rpc, token),
