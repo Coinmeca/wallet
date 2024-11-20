@@ -11,6 +11,7 @@ import { useMessageHandler, useTelegram } from "hooks";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
+import { sanitizeBigIntToHex } from "utils";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({
@@ -57,7 +58,7 @@ export default function EthSendTransaction() {
     const [error, setError] = useState<any>();
 
     const [{ data: nonce }, { data: gasPrice, isLoading: isGasPriceLoading }, { data: estimateGas, isLoading: isEstimateGasLoading }] = useQueries({
-        queries: [query.nonce(chain?.rpcUrls[0], signer?.address), query.gasPrice(chain?.rpcUrls[0]), query.estimateGas(chain?.rpcUrls[0], tx)],
+        queries: [query.nonce(chain?.rpcUrls[0], signer?.address), query.gasPrice(chain?.rpcUrls[0]), query.estimateGas(chain?.rpcUrls[0], sanitizeBigIntToHex(tx))],
     });
 
     const {

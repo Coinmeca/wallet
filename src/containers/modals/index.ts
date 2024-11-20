@@ -1,2 +1,3 @@
-﻿export * as Account from './account';
-export * as Fungible from './fungible';
+﻿export * as Account from "./account";
+export * as App from "./app";
+export * as Fungible from "./fungible";

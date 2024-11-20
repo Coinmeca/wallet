@@ -40,7 +40,7 @@ export default function Lock(props?: { onUnlock?: Function }) {
             />
         );
     };
-    const [showResetConfirm, closeResetConfirm] = usePortal(<ResetModal />);
+    const [openResetConfirm, closeResetConfirm] = usePortal(<ResetModal />);
 
     return (
         <Layouts.Contents.SlideContainer
@@ -61,7 +61,7 @@ export default function Lock(props?: { onUnlock?: Function }) {
                                             <Elements.Text weight={"bold"} color={"red"}>
                                                 {error.message}
                                             </Elements.Text>
-                                            <Controls.Button onClick={showResetConfirm} fit>
+                                            <Controls.Button onClick={openResetConfirm} fit>
                                                 Reset Passcode
                                             </Controls.Button>
                                         </Layouts.Col>

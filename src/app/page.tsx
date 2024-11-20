@@ -1,6 +1,7 @@
 "use client";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { usePortal } from "@coinmeca/ui/hooks";
+import { usePortal, useWindowSize } from "@coinmeca/ui/hooks";
+import { Root } from "@coinmeca/ui/lib/style";
 import { format } from "@coinmeca/ui/lib/utils";
 import { Asset } from "@coinmeca/ui/types";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
@@ -10,18 +11,20 @@ import { Modals } from "containers";
 import { AnimatePresence } from "framer-motion";
 import { usePageLoader } from "hooks";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { zeroAddress } from "types";
 
 export default function Home() {
     const path = usePathname();
     const router = useRouter();
 
+    const { windowSize } = useWindowSize();
     const { isLoad } = usePageLoader();
     const { account, chain, tokens } = useCoinmecaWalletProvider();
     const { data: balance, isLoading } = GetBalance(chain?.rpcUrls?.[0], account?.address);
 
     const [tab, setTab] = useState("token");
+    const responsive = useMemo(() => windowSize.width <= Root.Device.Tablet, [windowSize]);
 
     useEffect(() => {
         // fixme:
@@ -30,7 +33,7 @@ export default function Home() {
         if (path.startsWith("/nft")) setTab("nft");
     }, [path]);
 
-    const [showAddFungible, closeAddFungible] = usePortal(() => <Modals.Fungible.Add onClose={closeAddFungible} />);
+    const [openFungibleAdd, closeAddFungible] = usePortal(() => <Modals.Fungible.Add onClose={closeAddFungible} />);
 
     const fungibles = GetErc20(chain?.rpcUrls?.[0], tokens?.fungibles, account?.address);
     const fungiblesList = useCallback(
@@ -43,13 +46,16 @@ export default function Home() {
                             children: [
                                 [
                                     {
-                                        gap: 1.5,
+                                        gap: 1,
                                         children: [
                                             {
                                                 fit: true,
                                                 children: (
                                                     <>
-                                                        <Elements.Avatar size={4} img={`https://web3.coinmeca.net/${chain?.chainId}/${t?.address}/logo.svg`} />
+                                                        <Elements.Avatar
+                                                            size={3.5}
+                                                            img={`https://web3.coinmeca.net/${chain?.chainId}/${t?.address}/logo.svg`}
+                                                        />
                                                     </>
                                                 ),
                                             },
@@ -97,7 +103,7 @@ export default function Home() {
                         },
                 ) || []),
                 {
-                    onClick: showAddFungible,
+                    onClick: openFungibleAdd,
                     style: { padding: "1.75em 1.5em" },
                     children: [
                         [
@@ -108,7 +114,7 @@ export default function Home() {
                                         fit: true,
                                         children: (
                                             <Elements.Icon
-                                                scale={0.75}
+                                                scale={0.666}
                                                 icon={"plus-bold"}
                                                 style={{ padding: "0.5em", borderRadius: "100%", border: "0.1em solid rgb(var(--white))" }}
                                             />
@@ -127,15 +133,13 @@ export default function Home() {
         [tokens?.fungibles, fungibles],
     );
 
-    console.log(Object.values(fungibles?.data || []));
-
     return (
         <Layouts.Page snap>
             <AnimatePresence>
                 {isLoad && (
                     <>
                         <Layouts.Col
-                            align="center"
+                            align={"center"}
                             style={{
                                 scrollSnapAlign: "start",
                                 height: "24vh",
@@ -143,7 +147,7 @@ export default function Home() {
                                 maxHeight: "32em",
                             }}
                             fill>
-                            <Layouts.Col gap={2}>
+                            <Layouts.Col gap={2} style={{ ...(responsive && { padding: "4em 8em" }) }}>
                                 <Elements.Text type={"h6"}>Balance</Elements.Text>
                                 <Elements.Text type={"h3"}>
                                     {isLoading
