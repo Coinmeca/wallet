@@ -74,9 +74,16 @@ export default function Data() {
         },
     ];
 
+    const handleMobileMenu = (menu: string) => {
+        setMobileMenu(menu);
+        setAccountFilter("");
+        setChainFilter("");
+        setSetting("");
+    }
+
     const handleAccountChange = (account: Account) => {
         provider?.changeAccount(account?.index);
-        setMobileMenu("");
+        handleMobileMenu("");
     };
 
     const handleCopyAddress = (account: Account) => {
@@ -110,92 +117,99 @@ export default function Data() {
         provider?.changeAccountInfo({ ...a, disable: !a?.disable });
     };
 
+    const [openApprovalManage, closeApprovalManage] = usePortal((props: any) => <Modals.App.Approval {...props} onClose={() => closeApprovalManage()} />);
+
+    const handleApprovalManage = (app:App) => {
+        !!app && openApprovalManage({app});
+    }
+
+    const handleRevokeApp = (url?: string) => {
+        !!url && url !== "" && provider?.revokeApp(url);
+    }
+
     const accountlist = useCallback(
-        (accounts: Account[] = []) => {
-            if (accounts?.length) {
-                return (showDisabledAccount ? accounts : accounts.filter((a) => !a?.disable)).map((a: Account, i: number) => {
-                    const selected = account?.address?.toLowerCase() === a?.address?.toLowerCase();
-                    return {
-                        onClick: !selected && (() => {}),
-                        style: { padding: "2.5em clamp(2em, 5%, 8em)", ...(selected && { background: "transparent", pointerEvents: "none" }) },
-                        children: [
-                            [
-                                [
+        (accounts: Account[] = []) => (showDisabledAccount ? accounts : accounts.filter((a) => !a?.disable)).map((a: Account, i: number) => {
+            const selected = account?.address?.toLowerCase() === a?.address?.toLowerCase();
+            return {
+                key: i,
+                onClick: !selected && (() => {}),
+                style: { padding: "2.5em clamp(2em, 5%, 8em)", ...(selected && { background: "transparent", pointerEvents: "none" }) },
+                children: [
+                    [
+                        [
+                            {
+                                style: { overflow: "hidden" },
+                                children: [
                                     {
-                                        style: { overflow: "hidden" },
+                                        gap: 2,
+                                        style: selected ? { opacity: 0.3 } : {},
+                                        onClick: () => handleAccountChange(a),
                                         children: [
                                             {
-                                                gap: 2,
-                                                style: selected ? { opacity: 0.3 } : {},
-                                                onClick: () => handleAccountChange(a),
+                                                fit: true,
+                                                children: (
+                                                    <Elements.Avatar
+                                                        // color={colorMap}
+                                                        scale={1.25}
+                                                        size={2.5}
+                                                        // display={6}
+                                                        // ellipsis={" ... "}
+                                                        character={`${a?.index + 1}`}
+                                                        name={a?.address}
+                                                        stroke={0.2}
+                                                        hideName
+                                                    />
+                                                ),
+                                            },
+                                            {
+                                                gap: 0,
                                                 children: [
+                                                    <>
+                                                        <Elements.Text size={1.5} height={1.5} title={a?.name} fix>
+                                                            {a?.name}
+                                                        </Elements.Text>
+                                                    </>,
                                                     {
-                                                        fit: true,
-                                                        children: (
-                                                            <Elements.Avatar
-                                                                // color={colorMap}
-                                                                scale={1.25}
-                                                                size={2.5}
-                                                                // display={6}
-                                                                // ellipsis={" ... "}
-                                                                character={`${a?.index + 1}`}
-                                                                name={a?.address}
-                                                                stroke={0.2}
-                                                                hideName
-                                                            />
-                                                        ),
-                                                    },
-                                                    {
-                                                        gap: 0,
                                                         children: [
                                                             <>
-                                                                <Elements.Text size={1.5} height={1.5} title={a?.name} fix>
-                                                                    {a?.name}
+                                                                <Elements.Text
+                                                                    size={1.375}
+                                                                    height={1.5}
+                                                                    weight={"light"}
+                                                                    opacity={0.6}
+                                                                    title={a?.address}
+                                                                    fix>
+                                                                    {a?.address?.substring(0, a?.address?.startsWith("0x") ? 8 : 6) +
+                                                                        " ... " +
+                                                                        a?.address?.substring(a?.address?.length - 6, a?.address?.length)}
                                                                 </Elements.Text>
                                                             </>,
                                                             {
+                                                                align: "right",
                                                                 children: [
-                                                                    <>
-                                                                        <Elements.Text
-                                                                            size={1.375}
-                                                                            height={1.5}
-                                                                            weight={"light"}
-                                                                            opacity={0.6}
-                                                                            title={a?.address}
-                                                                            fix>
-                                                                            {a?.address?.substring(0, a?.address?.startsWith("0x") ? 8 : 6) +
-                                                                                " ... " +
-                                                                                a?.address?.substring(a?.address?.length - 6, a?.address?.length)}
-                                                                        </Elements.Text>
-                                                                    </>,
-                                                                    {
-                                                                        align: "right",
-                                                                        children: [
-                                                                            [
+                                                                    [
+                                                                        <>
+                                                                            <Elements.Text align={"right"} fix>
+                                                                                {balance[i]?.isLoading
+                                                                                    ? "~"
+                                                                                    : format(balance[i]?.data, "currency", {
+                                                                                            unit: 9,
+                                                                                            limit: 12,
+                                                                                            fix: 9,
+                                                                                        })}
+                                                                            </Elements.Text>
+                                                                        </>,
+                                                                        {
+                                                                            fit: true,
+                                                                            children: (
                                                                                 <>
-                                                                                    <Elements.Text align={"right"} fix>
-                                                                                        {balance[i]?.isLoading
-                                                                                            ? "~"
-                                                                                            : format(balance[i]?.data, "currency", {
-                                                                                                  unit: 9,
-                                                                                                  limit: 12,
-                                                                                                  fix: 9,
-                                                                                              })}
+                                                                                    <Elements.Text opacity={0.3} fit>
+                                                                                        {chain?.nativeCurrency?.symbol}
                                                                                     </Elements.Text>
-                                                                                </>,
-                                                                                {
-                                                                                    fit: true,
-                                                                                    children: (
-                                                                                        <>
-                                                                                            <Elements.Text opacity={0.3} fit>
-                                                                                                {chain?.nativeCurrency?.symbol}
-                                                                                            </Elements.Text>
-                                                                                        </>
-                                                                                    ),
-                                                                                },
-                                                                            ],
-                                                                        ],
-                                                                    },
+                                                                                </>
+                                                                            ),
+                                                                        },
+                                                                    ],
                                                                 ],
                                                             },
                                                         ],
@@ -204,65 +218,63 @@ export default function Data() {
                                             },
                                         ],
                                     },
+                                ],
+                            },
+                            {
+                                fit: true,
+                                children: [
                                     {
+                                        gap: 0,
                                         fit: true,
+                                        style: { pointerEvents: "initial", maxWitdth: "max-content" },
                                         children: [
-                                            {
-                                                gap: 0,
-                                                fit: true,
-                                                style: { pointerEvents: "initial", maxWitdth: "max-content" },
-                                                children: [
-                                                    <>
-                                                        <Controls.Button icon={"copy"} onClick={() => handleCopyAddress(a)} />
-                                                    </>,
-                                                    <>
-                                                        <Controls.Dropdown
-                                                            type={"more"}
-                                                            options={[
-                                                                { icon: "key", value: "Show Private Key" },
-                                                                { icon: "write", value: "Edit Account Name" },
-                                                                a?.disable
-                                                                    ? { icon: "show", value: `Enable ${a?.name}` }
-                                                                    : { icon: "hide", value: `Disable ${a?.name}` },
-                                                            ]}
-                                                            onClickItem={(e: any, v: any, k: number) => {
-                                                                switch (k) {
-                                                                    case 0:
-                                                                        return handleShowPrivateKey(a?.index);
-                                                                    case 1:
-                                                                        return handleAccountEdit(a);
-                                                                    case 2:
-                                                                        return handleAccountState(a);
-                                                                    default:
-                                                                        return;
-                                                                }
-                                                            }}
-                                                            responsive={responsive}
-                                                            chevron={false}
-                                                            fix
-                                                            fit
-                                                        />
-                                                        {/* <Controls.Button icon={"more"} /> */}
-                                                    </>,
-                                                ],
-                                            },
+                                            <>
+                                                <Controls.Button icon={"copy"} onClick={() => handleCopyAddress(a)} />
+                                            </>,
+                                            <>
+                                                <Controls.Dropdown
+                                                    type={"more"}
+                                                    options={[
+                                                        { icon: "key", value: "Show Private Key" },
+                                                        { icon: "write", value: "Edit Account Name" },
+                                                        a?.disable
+                                                            ? { icon: "show", value: `Enable ${a?.name}` }
+                                                            : { icon: "hide", value: `Disable ${a?.name}` },
+                                                    ]}
+                                                    onClickItem={(e: any, v: any, k: number) => {
+                                                        switch (k) {
+                                                            case 0:
+                                                                return handleShowPrivateKey(a?.index);
+                                                            case 1:
+                                                                return handleAccountEdit(a);
+                                                            case 2:
+                                                                return handleAccountState(a);
+                                                            default:
+                                                                return;
+                                                        }
+                                                    }}
+                                                    responsive={responsive}
+                                                    chevron={false}
+                                                    fix
+                                                    fit
+                                                />
+                                                {/* <Controls.Button icon={"more"} /> */}
+                                            </>,
                                         ],
                                     },
                                 ],
-                            ],
+                            },
                         ],
-                    };
-                });
-            }
-        },
+                    ],
+                ],
+            };
+        }),
         [account, accounts, balance, showDisabledAccount],
     );
 
     const applist = useCallback(
-        (apps: Account[] = []) => {
-            if (apps?.length) {
-                return apps.map((app: App) => {
-                    return {
+        (apps: Account[] = []) => apps.map((app: App, i:number) => ({
+                        key: i,
                         onClick: () => {},
                         style: { padding: "2.5em clamp(2em, 5%, 8em)" },
                         children: [
@@ -324,11 +336,16 @@ export default function Data() {
                                                         <Controls.Dropdown
                                                             type={"more"}
                                                             options={[
-                                                                { icon: "copy", value: "Edit Allowed Accounts" },
-                                                                { icon: "power", value: `Delete This ${account?.name}` },
+                                                                { icon: "identity", value: "Manage approvals" },
+                                                                { icon: "power", value: `Revoke ${app?.name}` },
                                                             ]}
                                                             onClickItem={(e: any, v: any, k: number) => {
-                                                                console.log(k);
+                                                                switch (k) {
+                                                                    case 0:
+                                                                        return handleApprovalManage(app);
+                                                                    case 1:
+                                                                        return handleRevokeApp(app?.url)
+                                                                }
                                                             }}
                                                             responsive={responsive}
                                                             chevron={false}
@@ -344,22 +361,20 @@ export default function Data() {
                                 ],
                             ],
                         ],
-                    };
-                });
-            }
-        },
+                    })
+                ),
         [apps],
     );
 
     const chainlist = useCallback(
         (chains: Chain[] = []) => {
-            if (chains?.length) {
-                return chains.map((c: Chain) => ({
+            chains?.map((c: Chain, i:number) => ({
+                    key: i,
+                    style: { padding: "2.5em clamp(2em, 5%, 8em)", ...(provider?.chain?.chainId === c?.chainId && { opacity: 0.3, pointerEvents: "none" }) },
                     onClick: () => {
                         provider?.changeChain(c?.chainId);
-                        setMobileMenu("");
+                        handleMobileMenu("");
                     },
-                    style: { padding: "2.5em clamp(2em, 5%, 8em)", ...(provider?.chain?.chainId === c?.chainId && { opacity: 0.3, pointerEvents: "none" }) },
                     children: [
                         [
                             {
@@ -375,8 +390,7 @@ export default function Data() {
                             },
                         ],
                     ],
-                }));
-            }
+            }));
         },
         [chain, chains],
     );
@@ -388,27 +402,27 @@ export default function Data() {
             !isRequest && isLoad && account
                 ? {
                       active: mobileMenu === "menu",
-                      onClick: () => (mobileMenu === "menu" ? setMobileMenu("") : setMobileMenu("menu")),
+                      onClick: () => (mobileMenu === "menu" ? handleMobileMenu("") : handleMobileMenu("menu")),
                       children: [
                           {
                               name: "Activity",
                               href: "/activity",
-                              onClick: () => setMobileMenu(""),
+                              onClick: () => handleMobileMenu(""),
                           },
                           {
                               name: "Token",
                               href: "/token",
-                              onClick: () => setMobileMenu(""),
+                              onClick: () => handleMobileMenu(""),
                           },
                           {
                               name: "NFT",
                               href: "/nft",
-                              onClick: () => setMobileMenu(""),
+                              onClick: () => handleMobileMenu(""),
                           },
                           {
                               name: "Test",
                               href: "/test",
-                              onClick: () => setMobileMenu(""),
+                              onClick: () => handleMobileMenu(""),
                           },
                       ],
                   }
@@ -428,7 +442,7 @@ export default function Data() {
                           <>
                               {/* <Controls.Tab
                         onClick={() => {
-                            if (!sidebar && mobileMenu !== "") setMobileMenu("");
+                            if (!sidebar && mobileMenu !== "") handleMobileMenu("");
                             setSidebar(!sidebar);
                         }}
                         active={sidebar}
@@ -442,7 +456,7 @@ export default function Data() {
                                       <Layouts.Row gap={0} fit>
                                           <Controls.Tab
                                               active={mobileMenu === "accounts"}
-                                              onClick={() => setMobileMenu(mobileMenu === "accounts" ? "" : "accounts")}
+                                              onClick={() => handleMobileMenu(mobileMenu === "accounts" ? "" : "accounts")}
                                               toggle>
                                               {mobileMenu === "accounts" ? (
                                                   <Layouts.Row gap={0.5} align={"middle"}>
@@ -470,7 +484,7 @@ export default function Data() {
                               <Layouts.Row gap={0} align={"right"}>
                                   <Controls.Tab
                                       active={mobileMenu === "chains"}
-                                      onClick={() => setMobileMenu(mobileMenu === "chains" ? "" : "chains")}
+                                      onClick={() => handleMobileMenu(mobileMenu === "chains" ? "" : "chains")}
                                       toggle
                                       fit>
                                       {mobileMenu === "chains" ? (
@@ -482,7 +496,7 @@ export default function Data() {
                                   </Controls.Tab>
                                   <Controls.Tab
                                       active={mobileMenu === "setting"}
-                                      onClick={() => setMobileMenu(mobileMenu === "setting" ? "" : "setting")}
+                                      onClick={() => handleMobileMenu(mobileMenu === "setting" ? "" : "setting")}
                                       iconLeft={"gear"}
                                       show={"tablet"}
                                       toggle
