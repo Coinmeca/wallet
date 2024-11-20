@@ -1,5 +1,6 @@
 ﻿import { queryOptions } from "@tanstack/react-query";
 import { fetcher } from "api";
+import { sanitizeBigIntToHex } from "utils";
 
 export const query = {
     rpcUrls: () =>
@@ -13,32 +14,27 @@ export const query = {
                         rpcUrl: [chain.rpc[0]],
                     }));
                 }),
-            staleTime: 10 * 60 * 1000
+            staleTime: 10 * 60 * 1000,
         }),
 
     accountType: (rpc?: string, address?: string) =>
         queryOptions({
             queryKey: ["accountType", address],
-            queryFn: async () =>
-                (await fetcher.rpc(rpc!, "eth_getCode", [address, "latest"])) === "0x" ? "eoa" : "ca",
+            queryFn: async () => ((await fetcher.rpc(rpc!, "eth_getCode", [address, "latest"])) === "0x" ? "eoa" : "ca"),
             enabled: !!address,
         }),
 
     balance: (rpc?: string, address?: string) =>
         queryOptions({
             queryKey: ["balance", rpc, address],
-            queryFn: async () =>
-                await fetcher.rpc(rpc!, "eth_getBalance", [address, "latest"]).then((data) =>
-                    data ? Number(data) / 1e18 : 0
-                ),
+            queryFn: async () => await fetcher.rpc(rpc!, "eth_getBalance", [address, "latest"]).then((data) => (data ? Number(data) / 1e18 : 0)),
             enabled: !!rpc && !!address,
         }),
 
     nonce: (rpc?: string, address?: string) =>
         queryOptions({
             queryKey: ["nonce", rpc, address],
-            queryFn: async () =>
-                await fetcher.rpc(rpc!, "eth_getTransactionCount", [address, "pending"]).then((data) => Number(data || 0)),
+            queryFn: async () => await fetcher.rpc(rpc!, "eth_getTransactionCount", [address, "pending"]).then((data) => Number(data || 0)),
             enabled: !!rpc && !!address,
         }),
 
@@ -57,9 +53,9 @@ export const query = {
         queryOptions({
             queryKey: ["estimateGas", params],
             queryFn: async () =>
-                await fetcher.rpc(rpc!, "eth_estimateGas", Array.isArray(params) ? params : [params]).then((data) => ({
+                await fetcher.rpc(rpc!, "eth_estimateGas", sanitizeBigIntToHex(Array.isArray(params) ? params : [params])).then((data) => ({
                     raw: Number(data || 0),
-                    format: data ? Number(data) / 1e9 : 0
+                    format: data ? Number(data) / 1e9 : 0,
                 })),
             enabled: !!rpc && !!params,
         }),
@@ -77,7 +73,7 @@ export const query = {
             queryFn: async () =>
                 await fetcher.rpc(rpc!, "eth_maxPriorityFeePerGas").then((data) => ({
                     raw: Number(data || 0),
-                    format: data ? Number(data) / 1e9 : 0
+                    format: data ? Number(data) / 1e9 : 0,
                 })),
             enabled: !!rpc,
         }),

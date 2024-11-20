@@ -1,6 +1,5 @@
 ﻿"use client";
 import { StrictMode } from "react";
-import { Analytics } from "@vercel/analytics/react";
 import { Notification, Theme, WindowSize } from "@coinmeca/ui/contexts";
 import { Style } from "@coinmeca/ui/lib";
 import { MessageHandler, StorageProvider, TelegramProvider } from "contexts";
@@ -35,7 +34,6 @@ export default function Providers({ children }: { children: any }) {
                     </StorageProvider>
                 </TelegramProvider>
             </WindowSize>
-            <Analytics />
         </StrictMode>
     );
 }

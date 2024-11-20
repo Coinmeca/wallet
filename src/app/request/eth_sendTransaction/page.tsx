@@ -5,7 +5,7 @@ import { format } from "@coinmeca/ui/lib/utils";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { Account, TransactionParams } from "@coinmeca/wallet-sdk/types";
 import { useQueries } from "@tanstack/react-query";
-import { GetMaxFeePerGas, GetMaxPriorityFeePerGas } from "api/onchain";
+import { GetEstimateGas, GetGasPrice, GetMaxFeePerGas, GetMaxPriorityFeePerGas, GetNonce } from "api/onchain";
 import { query } from "api/onchain/query";
 import { useMessageHandler, useTelegram } from "hooks";
 import Image from "next/image";
@@ -56,9 +56,10 @@ export default function EthSendTransaction() {
     const [level, setLevel] = useState(0);
     const [error, setError] = useState<any>();
 
-    // const [, , { data: estimateGas, isLoading: isEstimateGasLoading }] = useQueries({
-    //     queries: [query.nonce(chain?.rpcUrls[0], signer?.address), query.gasPrice(chain?.rpcUrls[0]), query.estimateGas(chain?.rpcUrls[0], tx)],
-    // });
+    const [{ data: nonce }, { data: gasPrice, isLoading: isGasPriceLoading }, { data: estimateGas, isLoading: isEstimateGasLoading }] = useQueries({
+        queries: [query.nonce(chain?.rpcUrls[0], signer?.address), query.gasPrice(chain?.rpcUrls[0]), query.estimateGas(chain?.rpcUrls[0], tx)],
+    });
+
     const {
         data: { maxPriorityFeePerGas, maxFeePerGas },
     } = GetMaxFeePerGas(chain?.rpcUrls[0]);
@@ -78,10 +79,10 @@ export default function EthSendTransaction() {
                 ?.sign(
                     {
                         to: params?.to,
-                        data: BigInt(params?.data),
-                        // nonce: BigInt(nonce || 0),
-                        // gasLimit: BigInt(estimateGas?.raw || 0),
-                        // gasPrice: BigInt(gasPrice?.raw || 0),
+                        data: params?.data,
+                        nonce: BigInt(nonce || 0),
+                        gasLimit: BigInt(estimateGas?.raw || 0),
+                        gasPrice: BigInt(gasPrice?.raw || 0),
                         chainId: Number(params?.chainId || chain?.chainId),
                         maxFeePerGas: BigInt(maxFeePerGas?.raw || 0),
                         maxPriorityFeePerGas: BigInt(maxPriorityFeePerGas?.raw || 0),
@@ -283,13 +284,13 @@ export default function EthSendTransaction() {
                                                             Gas Price
                                                         </Elements.Text>
                                                         <Elements.Text>
-                                                            {/* {isGasPriceLoading
+                                                            {isGasPriceLoading
                                                                 ? "~"
                                                                 : format(gasPrice?.format, "currency", {
                                                                       unit: 9,
                                                                       limit: 12,
                                                                       fix: 9,
-                                                                  })} */}
+                                                                  })}
                                                         </Elements.Text>
                                                     </Layouts.Col>
                                                     <Layouts.Col gap={0.5}>
@@ -297,13 +298,13 @@ export default function EthSendTransaction() {
                                                             Estimated Gas
                                                         </Elements.Text>
                                                         <Elements.Text>
-                                                            {/* {isEstimateGasLoading
+                                                            {isEstimateGasLoading
                                                                 ? "~"
                                                                 : format(estimateGas?.format, "currency", {
                                                                       unit: 9,
                                                                       limit: 12,
                                                                       fix: 9,
-                                                                  })} */}
+                                                                  })}
                                                         </Elements.Text>
                                                     </Layouts.Col>
                                                     <Layouts.Col gap={0.5}>
@@ -312,13 +313,13 @@ export default function EthSendTransaction() {
                                                         </Elements.Text>
                                                         <Layouts.Row gap={1} fix>
                                                             <Elements.Text style={{ flex: "initial" }} fix>
-                                                                {/* {isGasPriceLoading || isEstimateGasLoading
+                                                                {isGasPriceLoading || isEstimateGasLoading
                                                                     ? "~"
                                                                     : format((gasPrice?.format || 0) * (estimateGas?.format || 0), "currency", {
                                                                           unit: 9,
                                                                           limit: 12,
                                                                           fix: 9,
-                                                                      })} */}
+                                                                      })}
                                                             </Elements.Text>
                                                             <Elements.Text opacity={0.6} fit>
                                                                 {chain?.nativeCurrency?.symbol}
