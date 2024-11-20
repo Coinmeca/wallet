@@ -99,9 +99,6 @@ export default function Data() {
     };
 
     const [openAccountEditModal, closeAccountEditModal] = usePortal((props: any) => <Modals.Account.Edit {...props} onClose={() => closeAccountEditModal()} />);
-    const [openAccountDisableModal, closeAccountDisableModal] = usePortal((props: any) => (
-        <Modals.Account.Edit {...props} onClose={() => closeAccountEditModal()} />
-    ));
 
     const handleShowPrivateKey = (index: number) => {};
 
@@ -109,12 +106,8 @@ export default function Data() {
         openAccountEditModal({ account: a });
     };
 
-    const handleAccountEnable = (a: Account) => {
-        provider?.changeAccountInfo({ ...a, disable: false });
-    };
-
-    const handleAccountDisable = (a: Account) => {
-        provider?.changeAccountInfo({ ...a, disable: true });
+    const handleAccountState = (a: Account) => {
+        provider?.changeAccountInfo({ ...a, disable: !a?.disable });
     };
 
     const accountlist = useCallback(
@@ -239,7 +232,7 @@ export default function Data() {
                                                                     case 1:
                                                                         return handleAccountEdit(a);
                                                                     case 2:
-                                                                        return handleAccountDisable(a);
+                                                                        return handleAccountState(a);
                                                                     default:
                                                                         return;
                                                                 }
@@ -516,13 +509,13 @@ export default function Data() {
                                   />
                                   <Layouts.List list={filter(accounts, accountFilter)} formatter={accountlist} />
                                   <Layouts.Col style={{ padding: "4em", paddingTop: "0" }} fit>
-                                      {accounts?.filter((a) => a?.disable)?.length && (
+                                      {accounts?.filter((a) => a?.disable)?.length ? (
                                           <Controls.Button
                                               iconLeft={showDisabledAccount ? "hide" : "show"}
                                               onClick={() => setShowDisabledAccount(!showDisabledAccount)}>
                                               {showDisabledAccount ? "Hide" : "Show"} disabled accounts
                                           </Controls.Button>
-                                      )}
+                                      ) : <></>}
                                       <Controls.Button
                                           type={"line"}
                                           iconLeft={"plus-small-bold"}

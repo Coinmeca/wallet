@@ -4,7 +4,7 @@ import { Address } from "viem";
 
 export const pattern = {
     chainId: /^[0-9]+$/,
-    address: /^[a-zA-Z0-9]+$/
+    address: /^[a-zA-Z0-9]+$/,
 };
 
 export const enable = (...checks: boolean[]): boolean => checks.every(Boolean);
@@ -12,34 +12,38 @@ export const enable = (...checks: boolean[]): boolean => checks.every(Boolean);
 export const valid = {
     chainId: (...chainId: (number | string | undefined)[]) => {
         if (!chainId || chainId === undefined || chainId === null) return false;
-        if (typeof chainId === 'string' || typeof chainId === 'number') chainId = [chainId];
-        return enable(...chainId?.map((c?: number | string) => {
-            if (!c || c === undefined || c === null) return false;
-            if (typeof c !== 'string' && typeof c !== 'number') return false;
-            if (c === '' || c === '-' || c === 'undefined' || c === 'null' || c === 'NaN') return false;
-            if (!pattern.chainId.test(c?.toString())) return false;
-            if (isNaN(parseInt(c?.toString()))) return false;
-            return true;
-        }));
+        if (typeof chainId === "string" || typeof chainId === "number") chainId = [chainId];
+        return enable(
+            ...chainId?.map((c?: number | string) => {
+                if (!c || c === undefined || c === null) return false;
+                if (typeof c !== "string" && typeof c !== "number") return false;
+                if (c === "" || c === "-" || c === "undefined" || c === "null" || c === "NaN") return false;
+                if (!pattern.chainId.test(c?.toString())) return false;
+                if (isNaN(parseInt(c?.toString()))) return false;
+                return true;
+            }),
+        );
     },
     address: (...address: (Address | string | undefined)[]) => {
         if (!address || address === undefined || address === null) return false;
-        if (typeof address === 'string') address = [address];
-        return enable(...address?.map((a?: string) => {
-            if (!a || a === undefined || a === null) return false;
-            if (typeof a !== 'string') return false;
-            if (a === '' || a === '-' || a === 'undefined' || a === 'null' || a === 'NaN') return false;
-            if (!a?.startsWith('0x')) return false;
-            if (!pattern.address.test(a)) return false;
-            if (a?.length < 42) return false;
-            if (a?.length > 42) return false;
-            return true;
-        }));
+        if (typeof address === "string") address = [address];
+        return enable(
+            ...address?.map((a?: string) => {
+                if (!a || a === undefined || a === null) return false;
+                if (typeof a !== "string") return false;
+                if (a === "" || a === "-" || a === "undefined" || a === "null" || a === "NaN") return false;
+                if (!a?.startsWith("0x")) return false;
+                if (!pattern.address.test(a)) return false;
+                if (a?.length < 42) return false;
+                if (a?.length > 42) return false;
+                return true;
+            }),
+        );
     },
-}
+};
 
 export const decodeHexToString = (hex: string) => {
-    let str = '';
+    let str = "";
     for (let i = 0; i < hex.length; i += 2) {
         const charCode = parseInt(hex.substr(i, 2), 16);
         if (charCode >= 32 && charCode <= 126) {
@@ -51,6 +55,21 @@ export const decodeHexToString = (hex: string) => {
 
 export const decodeHexToNumber = (hex: string) => parseInt(hex, 16);
 
+export const toHexString = (value: BigInt): string => {
+    return "0x" + value.toString(16); // Converts BigInt to hexadecimal string with 0x prefix
+};
+
+export const sanitizeBigIntToHex = (obj: any): any => {
+    if (typeof obj === "bigint") {
+        return toHexString(obj);
+    } else if (Array.isArray(obj)) {
+        return obj.map(sanitizeBigIntToHex);
+    } else if (typeof obj === "object" && obj !== null) {
+        return Object.fromEntries(Object.entries(obj).map(([key, value]) => [key, sanitizeBigIntToHex(value)]));
+    }
+    return obj;
+};
+
 export type ObjectFilter = { key?: string | string[]; value?: string | string[] } | undefined;
 export type Filter = ObjectFilter | string[] | string | ObjectFilter[] | undefined;
 
@@ -59,20 +78,15 @@ export type ItemType = {
 };
 
 // Common logic for filtering or finding
-export const f = <T extends ItemType>(
-    array: T[],
-    filter: Filter | undefined,
-    findOne: boolean
-): T[] | T | undefined => {
+export const f = <T extends ItemType>(array: T[], filter: Filter | undefined, findOne: boolean): T[] | T | undefined => {
     if (!array.length) return findOne ? undefined : [];
 
     // Utility function to get the value from a nested key
     const getNestedValue = (obj: any, keyPath: string): any => {
-        return keyPath.split('.').reduce((acc, key) => acc?.[key], obj);
+        return keyPath.split(".").reduce((acc, key) => acc?.[key], obj);
     };
 
-    const includesValue = (value: any, filter: string) =>
-        value?.toString().toLowerCase().includes(filter.toLowerCase());
+    const includesValue = (value: any, filter: string) => value?.toString().toLowerCase().includes(filter.toLowerCase());
 
     const objectFilter = (item: T, filter: ObjectFilter): boolean => {
         if (!filter) return true;
@@ -82,41 +96,35 @@ export const f = <T extends ItemType>(
         const values = Array.isArray(value) ? value : value ? [value] : [];
 
         if (keys.length && values.length) {
-            return keys.some(k =>
-                values.some(v => includesValue(getNestedValue(item, k), v))
-            );
+            return keys.some((k) => values.some((v) => includesValue(getNestedValue(item, k), v)));
         }
         if (keys.length) {
-            return keys.some(k => getNestedValue(item, k) !== undefined);
+            return keys.some((k) => getNestedValue(item, k) !== undefined);
         }
         if (values.length) {
-            return values.some(v =>
-                Object.values(item).some(value => includesValue(value, v))
-            );
+            return values.some((v) => Object.values(item).some((value) => includesValue(value, v)));
         }
         return true; // No key and no value provided, return the item
     };
 
     const checkItem = (item: T): boolean => {
-        if (typeof filter === 'string') {
-            return Object.values(item).some(value => includesValue(value, filter));
+        if (typeof filter === "string") {
+            return Object.values(item).some((value) => includesValue(value, filter));
         }
 
         if (Array.isArray(filter)) {
-            if (filter.every(f => typeof f === 'string')) {
+            if (filter.every((f) => typeof f === "string")) {
                 // If filter is an array of strings
-                return Object.values(item).some(value =>
-                    filter.some(f => includesValue(value, f as string))
-                );
+                return Object.values(item).some((value) => filter.some((f) => includesValue(value, f as string)));
             }
 
-            if (filter.every(f => typeof f === 'object' && f !== null)) {
+            if (filter.every((f) => typeof f === "object" && f !== null)) {
                 // If filter is an array of object filters, apply them sequentially
-                return filter.every(f => objectFilter(item, f as ObjectFilter));
+                return filter.every((f) => objectFilter(item, f as ObjectFilter));
             }
         }
 
-        if (typeof filter === 'object' && filter !== null) {
+        if (typeof filter === "object" && filter !== null) {
             return objectFilter(item, filter as ObjectFilter);
         }
 
@@ -222,7 +230,13 @@ export const openWindow = (target: string, args?: { width?: number; height?: num
 
 export function parseChainId(chain: number | string | Chain): number {
     if (!chain) return 0;
-    return typeof chain === "string" ? (chain.startsWith("0x") ? Number(chain) : parseInt(chain)) : typeof chain === "number" ? chain : parseChainId(chain?.chainId);
+    return typeof chain === "string"
+        ? chain.startsWith("0x")
+            ? Number(chain)
+            : parseInt(chain)
+        : typeof chain === "number"
+        ? chain
+        : parseChainId(chain?.chainId);
 }
 
 export function formatChainId(chain: number | string | Chain): string {
@@ -232,8 +246,8 @@ export function formatChainId(chain: number | string | Chain): string {
             ? chain
             : formatChainId(parseInt(chain))
         : typeof chain === "number"
-            ? `0x${chain?.toString(16)}`
-            : formatChainId(chain?.chainId);
+        ? `0x${chain?.toString(16)}`
+        : formatChainId(chain?.chainId);
 }
 
 export const isMobile = () => {

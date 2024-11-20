@@ -73,8 +73,8 @@ export default function Page() {
                 ?.sign(
                     {
                         to: params?.to,
-                        data: BigInt(params?.data),
-                        nonce: BigInt(nonce),
+                        data: params?.data,
+                        nonce: BigInt(nonce || 0),
                         gasLimit: BigInt(estimateGas?.raw || 0),
                         gasPrice: BigInt(gasPrice?.raw || 0),
                         chainId: Number(params?.chainId || chain?.chainId),

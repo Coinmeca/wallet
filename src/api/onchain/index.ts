@@ -70,5 +70,5 @@ export function GetMaxFeePerGas(rpc?: string) {
                 ...maxPriorityResult?.data,
             },
         },
-    }
+    };
 }
