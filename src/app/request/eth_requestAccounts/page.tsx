@@ -31,7 +31,7 @@ export default function Page() {
                 {
                     method,
                     error: "User rejected the request",
-                    id:messageId,
+                    id: messageId,
                 },
                 "*",
             );
@@ -49,7 +49,7 @@ export default function Page() {
                     {
                         method,
                         result,
-                        id:messageId,
+                        id: messageId,
                     },
                     "*",
                 );
@@ -62,7 +62,7 @@ export default function Page() {
                     {
                         method,
                         error,
-                        id:messageId,
+                        id: messageId,
                     },
                     "*",
                 );
@@ -70,8 +70,6 @@ export default function Page() {
                 setLevel(2);
             });
     };
-
-    console.log({ message, params, app });
 
     return app ? (
         <Layouts.Contents.SlideContainer

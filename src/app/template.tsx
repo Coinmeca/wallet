@@ -10,16 +10,17 @@ import Data from "./data";
 import Lock from "./lock/page";
 
 export default function RootTemplate({ children, params }: { children: any; params: any }) {
-    const { header, toastlist } = Data();
+    const { header, sidebars, side, toastlist } = Data();
     const { isLoad, isAccess } = useGuard();
 
     return isLoad ? (
         <Frames.Frame
             header={{ type: "custom", children: <Containers.Header {...header} /> }}
+            sidebar={sidebars}
+            side={side}
             align={"right"}
             background={{ img: { src: 2 } }}
             // background={{ img: { src: 2 }, filter: { color: "black", opacity: 0.3 } }}
-            side={56}
             toast={toastlist}>
             <Layouts.Page>
                 <AnimatePresence>{isAccess ? children : <Lock params={{}} />}</AnimatePresence>

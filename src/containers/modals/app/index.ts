@@ -1,3 +1,4 @@
 ﻿import Approval from "./approval";
+import Revoke from './revoke'
 
-export { Approval };
+export { Approval, Revoke };

@@ -10,7 +10,7 @@ import { Asset } from "types";
 export default function Fungibles() {
     const { account, chain, tokens } = useCoinmecaWalletProvider();
 
-    const [showAddFungible, closeAddFungible] = usePortal(() => <Modals.Fungible.Add onClose={closeAddFungible} />);
+    const [openFungibleAdd, closeAddFungible] = usePortal(() => <Modals.Fungible.Add onClose={closeAddFungible} />);
     const fungibles = GetErc20(chain?.rpcUrls?.[0], tokens?.fungibles, account?.address);
     const fungiblesList = useCallback(
         (tokens?: Asset[]) => {
@@ -81,7 +81,7 @@ export default function Fungibles() {
                     )
                     ?.filter((a) => a),
                 {
-                    onClick: showAddFungible,
+                    onClick: openFungibleAdd,
                     style: { padding: "1.75em 1.5em" },
                     children: [
                         [
