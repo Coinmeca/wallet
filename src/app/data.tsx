@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useCallback, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useNotification, usePortal, useWindowSize } from "@coinmeca/ui/hooks";
+import { useMobile, useNotification, usePortal, useWindowSize } from "@coinmeca/ui/hooks";
 import { Avatar } from "@coinmeca/ui/components/elements";
 import { Account, App, Chain } from "@coinmeca/wallet-sdk/types";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
@@ -12,7 +12,6 @@ import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import Coinmeca from "assets/coinmeca.svg";
 import { usePageLoader } from "hooks";
 import { filter, format } from "@coinmeca/ui/lib/utils";
-import { Modal } from "@coinmeca/ui/containers";
 import { Root } from "@coinmeca/ui/lib/style";
 import { useQueries } from "@tanstack/react-query";
 import { query } from "api/onchain/query";
@@ -23,6 +22,8 @@ export default function Data() {
     const path = usePathname();
 
     const { windowSize } = useWindowSize();
+    const { isMobile } = useMobile();
+
     const { isLoad } = usePageLoader();
     const { provider, account, accounts, chain, chains, apps } = useCoinmecaWalletProvider();
     const { toasts, addToast } = useNotification();
@@ -44,7 +45,8 @@ export default function Data() {
         queries: (accounts || [])?.map((a) => query.balance(chain?.rpcUrls?.[0], a?.address)),
     });
 
-    const colorMap = path?.startsWith("/asset") ? "red" : path?.startsWith("/exchange") ? "orange" : path?.startsWith("/treasury") ? "blue" : "var(--rainbow)";
+    const colorMap = "var(--rainbow)";
+    // const colorMap = provider?.isLocked || path?.startsWith("/request") ?  "var(--rainbow)" : path?.startsWith("/") ? "red" : path?.startsWith("/token") ? "orange" : path?.startsWith("/nft") ? "blue" : path?.startsWith("/activity") ? "orange" : "var(--rainbow)";
 
     const responsive = windowSize.width <= Root.Device.Tablet;
     const languages = [
@@ -397,7 +399,7 @@ export default function Data() {
 
     const header = {
         color: colorMap,
-        logo: isRequest || !isLoad || !account,
+        logo: windowSize?.width > Root.Device.Tablet || isRequest || !isLoad || !account,
         menu:
             !isRequest && isLoad && account
                 ? {
