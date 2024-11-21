@@ -58,7 +58,11 @@ export default function EthSendTransaction() {
     const [error, setError] = useState<any>();
 
     const [{ data: nonce }, { data: gasPrice, isLoading: isGasPriceLoading }, { data: estimateGas, isLoading: isEstimateGasLoading }] = useQueries({
-        queries: [query.nonce(chain?.rpcUrls[0], signer?.address), query.gasPrice(chain?.rpcUrls[0]), query.estimateGas(chain?.rpcUrls[0], sanitizeBigIntToHex(tx))],
+        queries: [
+            query.nonce(chain?.rpcUrls[0], signer?.address),
+            query.gasPrice(chain?.rpcUrls[0]),
+            query.estimateGas(chain?.rpcUrls[0], sanitizeBigIntToHex(tx)),
+        ],
     });
 
     const {
@@ -138,6 +142,8 @@ export default function EthSendTransaction() {
                 "*",
             );
     };
+
+    console.log({ params });
 
     return auth && app && signer && tx ? (
         <Layouts.Contents.SlideContainer
