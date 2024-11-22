@@ -25,6 +25,10 @@ export function GetLastBlock(rpc?: string) {
     return useQuery(query.lastBlock(rpc));
 }
 
+export function GetReceipt(rpc?: string, txHash?: string) {
+    return useQuery(query.receipt(rpc, txHash));
+}
+
 export function GetMaxPriorityFeePerGas(rpc?: string) {
     return useQuery(query.maxPriorityFeePerGas(rpc));
 }

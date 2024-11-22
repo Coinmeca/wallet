@@ -11,7 +11,7 @@ import { GetMaxFeePerGas } from "api/onchain";
 import { format } from "@coinmeca/ui/lib/utils";
 import { useQueries } from "@tanstack/react-query";
 import { query } from "api/onchain/query";
-import { sanitizeBigIntToHex } from "utils";
+import { sanitizeBigIntToHex, short } from "utils";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({
@@ -41,7 +41,7 @@ export interface Transaction {
 }
 
 const method = "eth_signTransaction";
-const timeout = 3000;
+const timeout  = 5000;
 
 export default function EthSignTransaction() {
     const router = useRouter();
@@ -220,9 +220,7 @@ export default function EthSignTransaction() {
                                                         {signer?.name}
                                                     </Elements.Text>
                                                     <Elements.Text type={"strong"} height={0} align={"left"} opacity={0.6}>
-                                                        {signer?.address?.substring(0, signer?.address.startsWith("0x") ? 8 : 6) +
-                                                            " ... " +
-                                                            signer?.address?.substring(signer?.address?.length - 6, signer?.address?.length)}
+                                                        {short(signer?.address)}
                                                     </Elements.Text>
                                                 </Layouts.Col>
                                             </Layouts.Row>
@@ -242,7 +240,7 @@ export default function EthSignTransaction() {
                                                         background: "rgba(var(--white),.15)",
                                                     }}>
                                                     <Elements.Avatar
-                                                        character={tx?.to?.startsWith("0x") ? tx?.to?.substring(2, 4) : tx?.to?.substring(0, 2)}
+                                                        character={short(tx?.to, {length: 2, front: true})}
                                                         name={"To"}
                                                         hideName
                                                     />
@@ -252,9 +250,7 @@ export default function EthSignTransaction() {
                                                         To
                                                     </Elements.Text>
                                                     <Elements.Text type={"strong"} height={0} align={"left"} opacity={0.6}>
-                                                        {tx?.to?.substring(0, tx?.to?.startsWith("0x") ? 8 : 6) +
-                                                            " ... " +
-                                                            tx?.to?.substring(tx?.to?.length - 6, tx?.to?.length)}
+                                                        {short(tx?.to)}
                                                     </Elements.Text>
                                                 </Layouts.Col>
                                             </Layouts.Row>
@@ -388,9 +384,7 @@ export default function EthSignTransaction() {
                                             <Elements.Text type={"h3"}>Complete</Elements.Text>
                                             <Elements.Text size={1} weight={"bold"}>
                                                 <Elements.Text opacity={0.6}>
-                                                    {txHash?.substring(0, txHash?.startsWith("0x") ? 8 : 6) +
-                                                        "..." +
-                                                        txHash?.substring(txHash?.length - 6, txHash?.length)}
+                                                    {short(txHash)}
                                                 </Elements.Text>{" "}
                                                 <Elements.Text opacity={0.6}>Selected chain was switched from</Elements.Text>{" "}
                                                 <Elements.Text>{app?.name}</Elements.Text> <Elements.Text opacity={0.6}>to</Elements.Text>{" "}

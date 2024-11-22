@@ -2,6 +2,19 @@
 import { Chain } from "@coinmeca/wallet-sdk/types";
 import { Address } from "viem";
 
+export const short = (value?: string, options?: { length?: number; ellipsis?: string; front?: boolean; back?: boolean }) => {
+    if (!value) return;
+    const length = options?.length || 6;
+    const ellipsis = options?.ellipsis || " ... ";
+    const front = options?.front;
+    const back = options?.back;
+    return (
+        (front || !back ? value?.substring(0, value?.startsWith("0x") ? length + 2 : length) : "") +
+        (front || back ? "" : ellipsis) +
+        (!front || back ? value?.substring(value?.length - length, value?.length) : "")
+    );
+};
+
 export const pattern = {
     chainId: /^[0-9]+$/,
     address: /^[a-zA-Z0-9]+$/,

@@ -25,8 +25,6 @@ export default function Main() {
 
     const tab = useCallback((target:string) => path?.startsWith(`/${target}`),[path])
 
-    console.log(account?.tx);
-
     return (
         <Layouts.Page snap>
             <AnimatePresence>

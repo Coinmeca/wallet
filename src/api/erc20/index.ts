@@ -5,8 +5,8 @@ export function GetErc20(rpc?: string, erc20?: (string | undefined)[], owner?: s
     let data;
     let results: any;
 
-    const validTokens = Array.isArray(erc20) ? erc20.filter((a) => a) : [];
-    const queryConfigs = validTokens.flatMap((token) => {
+    const tokens = Array.isArray(erc20) ? erc20.filter((a) => a) : [];
+    const queries = tokens.flatMap((token) => {
         return [
             query.name(rpc, token),
             query.symbol(rpc, token),
@@ -15,10 +15,10 @@ export function GetErc20(rpc?: string, erc20?: (string | undefined)[], owner?: s
         ] as UseQueryOptions<any, Error, any, QueryKey>[];
     });
 
-    results = useQueries({ queries: queryConfigs });
+    results = useQueries({ queries });
 
-    if (validTokens.length > 0) {
-        data = validTokens.reduce((acc, address, index) => {
+    if (tokens.length > 0) {
+        data = tokens.reduce((acc, address, index) => {
             if (address) {
                 acc[address] = {
                     address,

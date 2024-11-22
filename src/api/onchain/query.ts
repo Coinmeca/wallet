@@ -77,4 +77,11 @@ export const query = {
                 })),
             enabled: !!rpc,
         }),
+
+    receipt: (rpc?: string, txHash?: string) =>
+        queryOptions({
+            queryKey: ["receipt", rpc],
+            queryFn: async () => await fetcher.rpc(rpc!, "eth_getTransactionReceipt", [txHash]).then((data) => data),
+            enabled: !!rpc && !!txHash,
+        }),
 };

@@ -109,11 +109,7 @@ export default function Welcome() {
                 //                                         style={{ padding: "0.5em", borderRadius: "4em", background: "rgba(var(--white),.15)" }}
                 //                                     />
                 //                                     <Elements.Text type={"h6"}>
-                //                                         {account?.address &&
-                //                                             `${account.address.substring(
-                //                                                 0,
-                //                                                 account.address.startsWith("0x") ? 6 : 4,
-                //                                             )} ... ${account.address.substring(account.address.length - 4, account.address.length)}`}
+                //                                         {short(account?.address)}
                 //                                     </Elements.Text>
                 //                                 </Layouts.Col>
                 //                             </Layouts.Col>

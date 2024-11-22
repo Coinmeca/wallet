@@ -16,6 +16,7 @@ import { useQueries } from "@tanstack/react-query";
 import { query } from "api/onchain/query";
 import { Modals } from "containers";
 import { PageLoader } from "hooks/usePageLoader";
+import { short } from "utils";
 
 export default function Data({isLoad, isRequest, isProxy, isMenu}: PageLoader) {
     const router = useRouter();
@@ -192,9 +193,7 @@ export default function Data({isLoad, isRequest, isProxy, isMenu}: PageLoader) {
                                                                         opacity={0.6}
                                                                         title={a?.address}
                                                                         fix>
-                                                                        {a?.address?.substring(0, a?.address?.startsWith("0x") ? 8 : 6) +
-                                                                            " ... " +
-                                                                            a?.address?.substring(a?.address?.length - 6, a?.address?.length)}
+                                                                        {short(a?.address)}
                                                                     </Elements.Text>
                                                                 </>,
                                                                 {
