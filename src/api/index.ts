@@ -30,7 +30,7 @@ const fetcher = {
                 },
                 body: JSON.stringify({
                     jsonrpc: "2.0",
-                    id: new Date().getTime(),
+                    id: `${method}-${new Date().getTime()}`,
                     method,
                     params,
                 }),
@@ -41,7 +41,8 @@ const fetcher = {
                 if (data.result) {
                     return data.result; // Return the actual result from the RPC response
                 } else {
-                    throw new Error("RPC response did not contain a result.");
+                    throw new Error((data?.error as any)?.message || data?.error);
+                    // throw new Error("RPC response did not contain a result.");
                 }
             } else {
                 throw new Error(`RPC Error: ${response.statusText}`);

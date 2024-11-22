@@ -86,9 +86,9 @@ export default function EthSendTransaction() {
                         to: params?.to,
                         data: params?.data,
                         nonce: BigInt(nonce || 0),
+                        chainId: Number(params?.chainId || chain?.chainId),
                         gasLimit: BigInt(estimateGas?.raw || 0),
                         gasPrice: BigInt(gasPrice?.raw || 0),
-                        chainId: Number(params?.chainId || chain?.chainId),
                         maxFeePerGas: BigInt(maxFeePerGas?.raw || 0),
                         maxPriorityFeePerGas: BigInt(maxPriorityFeePerGas?.raw || 0),
                     } as any,
@@ -301,6 +301,7 @@ export default function EthSendTransaction() {
                                                     <Layouts.Col gap={0.5}>
                                                         <Elements.Text type={"desc"} weight={"bold"} opacity={0.6}>
                                                             Estimated Gas
+                                                            {/* // error: if 0, wrong tx */}
                                                         </Elements.Text>
                                                         <Elements.Text>
                                                             {isEstimateGasLoading

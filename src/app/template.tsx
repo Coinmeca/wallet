@@ -4,14 +4,20 @@ import { Contents, Layouts } from "@coinmeca/ui/components";
 import { Frames } from "@coinmeca/ui/containers";
 import { AnimatePresence } from "framer-motion";
 
-import { useGuard } from "hooks";
+import { useGuard, usePageLoader } from "hooks";
 import { Containers } from "index";
 import Data from "./data";
 import Lock from "./lock/page";
+import Main from "./page";
+import { useMemo } from "react";
 
-export default function RootTemplate({ children, params }: { children: any; params: any }) {
-    const { header, sidebars, side, toastlist } = Data();
+export default function RootTemplate({children}:any) {
+    const page = usePageLoader();
+
+    const { header, sidebars, side, toastlist } = Data(page);
     const { isLoad, isAccess } = useGuard();
+
+    const contents = useMemo(() => isAccess ? page.isMenu ? <Main /> : children : <Lock params={{}} />,[isAccess, page, children]) 
 
     return isLoad ? (
         <Frames.Frame
@@ -23,7 +29,7 @@ export default function RootTemplate({ children, params }: { children: any; para
             // background={{ img: { src: 2 }, filter: { color: "black", opacity: 0.3 } }}
             toast={toastlist}>
             <Layouts.Page>
-                <AnimatePresence>{isAccess ? children : <Lock params={{}} />}</AnimatePresence>
+                <AnimatePresence>{contents}</AnimatePresence>
             </Layouts.Page>
         </Frames.Frame>
     ) : (

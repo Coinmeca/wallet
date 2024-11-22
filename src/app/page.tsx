@@ -1,139 +1,31 @@
 "use client";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { usePortal, useWindowSize } from "@coinmeca/ui/hooks";
+import { useWindowSize } from "@coinmeca/ui/hooks";
 import { Root } from "@coinmeca/ui/lib/style";
 import { format } from "@coinmeca/ui/lib/utils";
-import { Asset } from "@coinmeca/ui/types";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { GetBalance } from "api/account";
-import { GetErc20 } from "api/erc20";
-import { Modals } from "containers";
 import { AnimatePresence } from "framer-motion";
 import { usePageLoader } from "hooks";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { zeroAddress } from "types";
+import Token from "./token/page";
+import Activity from "./activity/page";
 
-export default function Home() {
+export default function Main() {
     const path = usePathname();
     const router = useRouter();
 
     const { windowSize } = useWindowSize();
     const { isLoad } = usePageLoader();
-    const { account, chain, tokens } = useCoinmecaWalletProvider();
+    const { account, chain } = useCoinmecaWalletProvider();
     const { data: balance, isLoading } = GetBalance(chain?.rpcUrls?.[0], account?.address);
 
-    const [tab, setTab] = useState("token");
     const responsive = useMemo(() => windowSize.width <= Root.Device.Tablet, [windowSize]);
 
+    const tab = useCallback((target:string) => path?.startsWith(`/${target}`),[path])
+
     console.log(account?.tx);
-
-    useEffect(() => {
-        // fixme:
-        if (path.startsWith("/")) setTab("token");
-        if (path.startsWith("/token")) setTab("token");
-        if (path.startsWith("/nft")) setTab("nft");
-    }, [path]);
-
-    const [openFungibleAdd, closeAddFungible] = usePortal(() => <Modals.Fungible.Add onClose={closeAddFungible} />);
-
-    const fungibles = GetErc20(chain?.rpcUrls?.[0], tokens?.fungibles, account?.address);
-    const fungiblesList = useCallback(
-        (tokens?: Asset[]) => {
-            return [
-                ...(tokens?.map(
-                    (t?: Asset) =>
-                        typeof t === "object" && {
-                            style: { padding: "1.5em" },
-                            children: [
-                                [
-                                    {
-                                        gap: 1,
-                                        children: [
-                                            {
-                                                fit: true,
-                                                children: (
-                                                    <>
-                                                        <Elements.Avatar
-                                                            size={3.5}
-                                                            img={`https://web3.coinmeca.net/${chain?.chainId}/${t?.address}/logo.svg`}
-                                                        />
-                                                    </>
-                                                ),
-                                            },
-                                            [
-                                                [
-                                                    [
-                                                        [
-                                                            {
-                                                                gap: 0,
-                                                                children: [
-                                                                    <>
-                                                                        <Elements.Text height={0}>{t?.symbol}</Elements.Text>
-                                                                    </>,
-                                                                    <>
-                                                                        <Elements.Text height={0} opacity={0.6}>
-                                                                            {t?.name}
-                                                                        </Elements.Text>
-                                                                    </>,
-                                                                ],
-                                                            },
-                                                        ],
-                                                    ],
-                                                    [
-                                                        {
-                                                            align: "right",
-                                                            children: (
-                                                                <>
-                                                                    <Elements.Text>
-                                                                        {format(t?.balance || 0, "currency", {
-                                                                            unit: 9,
-                                                                            limit: 12,
-                                                                            fix: 9,
-                                                                        })}
-                                                                    </Elements.Text>
-                                                                </>
-                                                            ),
-                                                        },
-                                                    ],
-                                                ],
-                                            ],
-                                        ],
-                                    },
-                                ],
-                            ],
-                        },
-                ) || []),
-                {
-                    onClick: openFungibleAdd,
-                    style: { padding: "1.75em 1.5em" },
-                    children: [
-                        [
-                            {
-                                gap: 1.5,
-                                children: [
-                                    {
-                                        fit: true,
-                                        children: (
-                                            <Elements.Icon
-                                                scale={0.666}
-                                                icon={"plus-bold"}
-                                                style={{ padding: "0.5em", borderRadius: "100%", border: "0.1em solid rgb(var(--white))" }}
-                                            />
-                                        ),
-                                    },
-                                    <>
-                                        <Elements.Text>Add Fungible Token</Elements.Text>
-                                    </>,
-                                ],
-                            },
-                        ],
-                    ],
-                },
-            ];
-        },
-        [tokens?.fungibles, fungibles],
-    );
 
     return (
         <Layouts.Page snap>
@@ -172,17 +64,17 @@ export default function Home() {
                                         [
                                             [
                                                 <>
-                                                    <Controls.Tab active={tab === "token"} onClick={() => router.push("/token")}>
+                                                    <Controls.Tab active={tab("token")} onClick={() => router.push("/token")}>
                                                         Token
                                                     </Controls.Tab>
                                                 </>,
                                                 <>
-                                                    <Controls.Tab active={tab === "nft"} onClick={() => router.push("/nft")}>
+                                                    <Controls.Tab active={tab("nft")} onClick={() => router.push("/nft")}>
                                                         NFT
                                                     </Controls.Tab>
                                                 </>,
                                                 <>
-                                                    <Controls.Tab active={tab === "activity"} onClick={() => router.push("/activity")}>
+                                                    <Controls.Tab active={tab("activity")} onClick={() => router.push("/activity")}>
                                                         Activity
                                                     </Controls.Tab>
                                                 </>,
@@ -208,17 +100,16 @@ export default function Home() {
                                     style={{ flex: 1 }}
                                     contents={[
                                         {
-                                            active: tab === "token",
+                                            active: tab("token"),
                                             style: { flex: 1 },
                                             children: (
-                                                <Layouts.List
-                                                    list={[
-                                                        { ...chain?.nativeCurrency, balance, address: zeroAddress },
-                                                        ...Object.values(fungibles?.data || []),
-                                                    ]}
-                                                    formatter={fungiblesList}
-                                                    fill
-                                                />
+                                                <Token />
+                                            ),
+                                        }, {
+                                            active: tab("activity"),
+                                            style: { flex: 1 },
+                                            children: (
+                                                <Activity />
                                             ),
                                         },
                                     ]}

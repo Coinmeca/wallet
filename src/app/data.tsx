@@ -4,26 +4,24 @@ import Image from "next/image";
 import { useCallback, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useMobile, useNotification, usePortal, useWindowSize } from "@coinmeca/ui/hooks";
+import { useNotification, usePortal, useWindowSize } from "@coinmeca/ui/hooks";
 import { Avatar } from "@coinmeca/ui/components/elements";
 import { Account, App, Chain } from "@coinmeca/wallet-sdk/types";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 
 import Coinmeca from "assets/coinmeca.svg";
-import { usePageLoader } from "hooks";
 import { filter, format } from "@coinmeca/ui/lib/utils";
 import { Root } from "@coinmeca/ui/lib/style";
 import { useQueries } from "@tanstack/react-query";
 import { query } from "api/onchain/query";
 import { Modals } from "containers";
-import { Modal } from "@coinmeca/ui/containers";
+import { PageLoader } from "hooks/usePageLoader";
 
-export default function Data() {
+export default function Data({isLoad, isRequest, isProxy, isMenu}: PageLoader) {
     const router = useRouter();
     const path = usePathname();
 
     const { windowSize } = useWindowSize();
-    const { isLoad } = usePageLoader();
     const { provider, account, accounts, chain, chains, apps } = useCoinmecaWalletProvider();
     const { toasts, addToast } = useNotification();
 
@@ -38,7 +36,6 @@ export default function Data() {
     const [appFilter, setAppFilter] = useState<string>();
     const [showDisabledAccount, setShowDisabledAccount] = useState<boolean>(false);
 
-    const isRequest = useMemo(() => path?.startsWith("/request"), [path]);
     const responsive = useMemo(() => windowSize.width <= Root.Device.Tablet, [windowSize]);
 
     const balance = useQueries({
