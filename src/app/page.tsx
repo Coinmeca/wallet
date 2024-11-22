@@ -26,6 +26,8 @@ export default function Home() {
     const [tab, setTab] = useState("token");
     const responsive = useMemo(() => windowSize.width <= Root.Device.Tablet, [windowSize]);
 
+    console.log(account?.tx);
+
     useEffect(() => {
         // fixme:
         if (path.startsWith("/")) setTab("token");
