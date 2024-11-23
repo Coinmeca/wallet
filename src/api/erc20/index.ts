@@ -1,50 +1,65 @@
-﻿import { QueryKey, useQueries, useQuery, UseQueryOptions } from "@tanstack/react-query";
+﻿import { useQueries, useQuery, UseQueryResult } from "@tanstack/react-query";
 import { query } from "./query";
+import { useCallback } from "react";
 
-export function GetErc20(rpc?: string, erc20?: (string | undefined)[], owner?: string) {
-    let data;
-    let results: any;
+export function GetErc20(rpc?: string, erc20?: string | (string | undefined)[], owner?: string): [
+    { [address: string]: UseQueryResult<any, Error>; },
+    ((address?: string) => UseQueryResult<any, Error>)
+] {
+    let tokens = Array.isArray(erc20) ? erc20.filter((a) => a) : erc20 && erc20 !== "" ? [erc20] : undefined;
+    let tokenMap: { [address: string]: UseQueryResult<any, Error> } = {};
+    tokens?.filter((t) => t && t !== '');
 
-    const tokens = Array.isArray(erc20) ? erc20.filter((a) => a) : [];
-    const queries = tokens.flatMap((token) => {
-        return [
-            query.name(rpc, token),
-            query.symbol(rpc, token),
-            query.decimals(rpc, token),
-            ...(owner ? [query.balanceOf(rpc, token, owner)] : []),
-        ] as UseQueryOptions<any, Error, any, QueryKey>[];
-    });
+    const result = useQueries({ queries: tokens?.map((token) => query.token(rpc, token, owner)) || [] });
+    result?.forEach((token, i) => tokenMap[token?.data?.address || 'undefined'] = result[i]);
 
-    results = useQueries({ queries });
-
-    if (tokens.length > 0) {
-        data = tokens.reduce((acc, address, index) => {
-            if (address) {
-                acc[address] = {
-                    address,
-                    name: results[index * 4]?.data,
-                    symbol: results[index * 4 + 1]?.data,
-                    decimals: results[index * 4 + 2]?.data,
-                    balance: owner ? results[index * 4 + 3]?.data : undefined,
-                };
-            }
-            return acc;
-        }, {} as Record<string, any>);
-
-        data = Object.keys(data).length > 0 ? data : undefined;
-    }
-    return {
-        isError: results?.some((result: any) => result?.isError),
-        isPaused: results?.some((result: any) => result?.isPaused),
-        isPending: results?.some((result: any) => result?.isPending),
-        isLoading: results?.some((result: any) => result?.isLoading),
-        isFetching: results?.some((result: any) => result?.isFetching),
-        isFetched: results?.some((result: any) => result?.isFetched),
-        isSuccess: results?.every((result: any) => result?.isSuccess),
-        isRefetching: results?.every((result: any) => result?.isRefetching),
-        data,
-    };
+    return [tokenMap, useCallback((address?: string) => tokenMap[address || 'undefined'], [tokenMap])];
 }
+
+// export function GetErc20(rpc?: string, erc20?: (string | undefined)[], owner?: string) {
+//     let data;
+//     let results: any;
+
+//     const tokens = Array.isArray(erc20) ? erc20.filter((a) => a) : [];
+//     const queries = tokens.flatMap((token) => {
+//         return [
+//             query.name(rpc, token),
+//             query.symbol(rpc, token),
+//             query.decimals(rpc, token),
+//             ...(owner ? [query.balanceOf(rpc, token, owner)] : []),
+//         ] as UseQueryOptions<any, Error, any, QueryKey>[];
+//     });
+
+//     results = useQueries({ queries });
+
+//     if (tokens.length > 0) {
+//         data = tokens.reduce((acc, address, index) => {
+//             if (address) {
+//                 acc[address] = {
+//                     address,
+//                     name: results[index * 4]?.data,
+//                     symbol: results[index * 4 + 1]?.data,
+//                     decimals: results[index * 4 + 2]?.data,
+//                     balance: owner ? results[index * 4 + 3]?.data : undefined,
+//                 };
+//             }
+//             return acc;
+//         }, {} as Record<string, any>);
+
+//         data = Object.keys(data).length > 0 ? data : undefined;
+//     }
+//     return {
+//         isError: results?.some((result: any) => result?.isError),
+//         isPaused: results?.some((result: any) => result?.isPaused),
+//         isPending: results?.some((result: any) => result?.isPending),
+//         isLoading: results?.some((result: any) => result?.isLoading),
+//         isFetching: results?.some((result: any) => result?.isFetching),
+//         isFetched: results?.some((result: any) => result?.isFetched),
+//         isSuccess: results?.every((result: any) => result?.isSuccess),
+//         isRefetching: results?.every((result: any) => result?.isRefetching),
+//         data,
+//     };
+// }
 
 export function GetErc20Name(rpc?: string, erc20?: string) {
     return useQuery(query.name(rpc, erc20));

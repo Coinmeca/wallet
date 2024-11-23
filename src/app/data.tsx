@@ -25,7 +25,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
     const [value, setValue] = useState<number>(0);
     const [tab, setTab] = useState<string>("icon");
     const [active, setActive] = useState(false);
-    const [mobileMenu, setMobileMenu] = useState("");
+    const [sideMenu, setSideMenu] = useState("");
     const [setting, setSetting] = useState("");
 
     const [appFilter, setAppFilter] = useState<string>();
@@ -70,8 +70,8 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
         },
     ];
 
-    const handleMobileMenu = (menu: string) => {
-        setMobileMenu(menu);
+    const handlesideMenu = (menu: string) => {
+        setSideMenu(menu);
         if (responsive) {
             setSearchFilter("");
             setSetting("");
@@ -200,9 +200,9 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
     );
 
     const [searchFilter, setSearchFilter] = useState<string>();
-    const Search = () => (
+    const search = () => (
         <Controls.Input
-            placeholder={"Search chain by id or name..."}
+            placeholder={sideMenu === "accounts" ? "Search account by name or address..." : "Search chain by id or name..."}
             value={searchFilter}
             onChange={(e: any, v: string) => setSearchFilter(v)}
             left={{ children: <Elements.Icon icon={"search"} style={{ marginRight: "0.5em", padding: "0.333em 0" }} /> }}
@@ -218,28 +218,28 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
         menu:
             !isRequest && isLoad && account
                 ? {
-                      active: mobileMenu === "menu",
-                      onClick: () => (mobileMenu === "menu" ? handleMobileMenu("") : handleMobileMenu("menu")),
+                      active: sideMenu === "menu",
+                      onClick: () => (sideMenu === "menu" ? handlesideMenu("") : handlesideMenu("menu")),
                       children: [
                           {
                               name: "Activity",
                               href: "/activity",
-                              onClick: () => handleMobileMenu(""),
+                              onClick: () => handlesideMenu(""),
                           },
                           {
                               name: "Token",
                               href: "/token",
-                              onClick: () => handleMobileMenu(""),
+                              onClick: () => handlesideMenu(""),
                           },
                           {
                               name: "NFT",
                               href: "/nft",
-                              onClick: () => handleMobileMenu(""),
+                              onClick: () => handlesideMenu(""),
                           },
                           {
                               name: "Test",
                               href: "/test",
-                              onClick: () => handleMobileMenu(""),
+                              onClick: () => handlesideMenu(""),
                           },
                       ],
                   }
@@ -256,10 +256,10 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                   {account?.address && (
                                       <Layouts.Row gap={0} fit>
                                           <Controls.Tab
-                                              active={mobileMenu === "accounts"}
-                                              onClick={() => handleMobileMenu(mobileMenu === "accounts" ? "" : "accounts")}
+                                              active={sideMenu === "accounts"}
+                                              onClick={() => handlesideMenu(sideMenu === "accounts" ? "" : "accounts")}
                                               toggle>
-                                              {mobileMenu === "accounts" ? (
+                                              {sideMenu === "accounts" ? (
                                                   <Layouts.Row gap={0.5} align={"middle"}>
                                                       <Elements.Icon icon={"x"} scale={0.666} />
                                                       <Elements.Text size={1}>Close Account List</Elements.Text>
@@ -276,19 +276,15 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                                   />
                                               )}
                                           </Controls.Tab>
-                                          {mobileMenu !== "accounts" && (
+                                          {sideMenu !== "accounts" && (
                                               <Controls.Button icon={"copy"} title={"Copy address"} onClick={() => handleCopyAddress(account)} />
                                           )}
                                       </Layouts.Row>
                                   )}
                               </Layouts.Row>
                               <Layouts.Row gap={0} align={"right"}>
-                                  <Controls.Tab
-                                      active={mobileMenu === "chains"}
-                                      onClick={() => handleMobileMenu(mobileMenu === "chains" ? "" : "chains")}
-                                      toggle
-                                      fit>
-                                      {mobileMenu === "chains" ? (
+                                  <Controls.Tab active={sideMenu === "chains"} onClick={() => handlesideMenu(sideMenu === "chains" ? "" : "chains")} toggle fit>
+                                      {sideMenu === "chains" ? (
                                           <Elements.Icon icon={"x"} scale={0.666} />
                                       ) : (
                                           <Elements.Avatar scale={0.666} size={2.5} img={chain?.logo || ""} />
@@ -296,8 +292,8 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                       )}
                                   </Controls.Tab>
                                   <Controls.Tab
-                                      active={mobileMenu === "setting"}
-                                      onClick={() => handleMobileMenu(mobileMenu === "setting" ? "" : "setting")}
+                                      active={sideMenu === "setting"}
+                                      onClick={() => handlesideMenu(sideMenu === "setting" ? "" : "setting")}
                                       iconLeft={"gear"}
                                       show={"tablet"}
                                       toggle
@@ -312,15 +308,15 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
             responsive && !isRequest && isLoad
                 ? [
                       {
-                          active: mobileMenu === "accounts",
-                          children: <Sidebars.Accounts search={<Search />} searchFilter={searchFilter} responsive={responsive} />,
+                          active: sideMenu === "accounts",
+                          children: <Sidebars.Accounts search={search()} searchFilter={searchFilter} responsive={responsive} />,
                       },
                       {
-                          active: mobileMenu === "chains",
-                          children: <Sidebars.Chains search={Search} searchFilter={searchFilter} responsive={responsive} />,
+                          active: sideMenu === "chains",
+                          children: <Sidebars.Chains search={search()} searchFilter={searchFilter} responsive={responsive} />,
                       },
                       {
-                          active: mobileMenu === "setting",
+                          active: sideMenu === "setting",
                           children: (
                               <Layouts.Contents.SlideContainer
                                   contents={[
@@ -405,22 +401,22 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                               // setSidebar(false);
                           }
                       },
-                      active: !!mobileMenu && mobileMenu !== "",
+                      active: !!sideMenu && sideMenu !== "",
                       swipe: {
                           style: { marginTop: "5em" },
                           //   onActive: (e: any, active: boolean) => setSidebar(active),
                       },
                       children: [
                           {
-                              active: mobileMenu === "accounts",
-                              children: <Sidebars.Accounts search={Search} searchFilter={searchFilter} responsive={responsive} />,
+                              active: sideMenu === "accounts",
+                              children: <Sidebars.Accounts search={search()} searchFilter={searchFilter} responsive={responsive} />,
                           },
                           {
-                              active: mobileMenu === "chains",
-                              children: <Sidebars.Chains search={Search} searchFilter={searchFilter} responsive={responsive} />,
+                              active: sideMenu === "chains",
+                              children: <Sidebars.Chains search={search()} searchFilter={searchFilter} responsive={responsive} />,
                           },
                           {
-                              active: mobileMenu === "setting",
+                              active: sideMenu === "setting",
                               children: (
                                   <Layouts.Contents.SlideContainer
                                       contents={[
@@ -498,10 +494,10 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                       ],
                   },
                   // upper: {
-                  //     active: mobileMenu === "notify",
+                  //     active: sideMenu === "notify",
                   //     children: [
                   //         {
-                  //             active: mobileMenu === "notify",
+                  //             active: sideMenu === "notify",
                   //             children: <Sidebars.Notification list={notis} count={count} />,
                   //         },
                   //     ],
@@ -561,7 +557,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
     };
 
     const toastlist = {
-        active: toasts && toasts?.length > 0 && mobileMenu !== "notify",
+        active: toasts && toasts?.length > 0 && sideMenu !== "notify",
         list: toasts,
         swipe: true,
     };

@@ -14,29 +14,32 @@ export default function Activity() {
     const { account, chain, tx, provider } = useCoinmecaWalletProvider();
     const txs = useQueries({ queries: tx?.filter(({ status }) => status === "pending")?.map(({ hash }) => query.receipt(chain?.rpcUrls?.[0], hash)) || [] });
     const txlist = useMemo(
-        () =>
-            tx?.map((tx) => {
-                const data = txs?.find(({ data }) => data?.transactionHash?.toLowerCase() === tx?.hash?.toLowerCase())?.data;
-                if (!data) return tx;
-                const blockNumber = data?.blockNumber ? Number(data?.blockNumber) : "-";
-                const status = !!data?.status ? (data?.status === "0x1" ? "success" : "failure") : tx?.status;
-                const gasUsed = data?.gasUsed ? Number(data?.gasUsed) : "-";
-                const cumulativeGasUsed = data?.cumulativeGasUsed ? Number(data?.cumulativeGasUsed) : "-";
-                const effectiveGasPrice = data?.effectiveGasPrice ? Number(data?.effectiveGasPrice) : "-";
-                console.log({ tx, data });
-                return {
-                    hash: tx?.hash,
-                    time: tx?.time,
-                    to: data?.to,
-                    category: data?.contractAddress ? "deploy" : tx?.category,
-                    contractAddress: data?.contractAddress,
-                    blockNumber,
-                    gasUsed,
-                    status,
-                    cumulativeGasUsed,
-                    effectiveGasPrice,
-                };
-            }),
+        (): TransactionReceipt[] =>
+            tx
+                ?.map((tx) => {
+                    const data = txs?.find(({ data }) => data?.transactionHash?.toLowerCase() === tx?.hash?.toLowerCase())?.data;
+                    if (!data) return tx;
+                    const blockNumber = data?.blockNumber ? Number(data?.blockNumber) : "-";
+                    const status = !!data?.status ? (data?.status === "0x1" ? "success" : "failure") : tx?.status;
+                    const gasUsed = data?.gasUsed ? Number(data?.gasUsed) : "-";
+                    const cumulativeGasUsed = data?.cumulativeGasUsed ? Number(data?.cumulativeGasUsed) : "-";
+                    const effectiveGasPrice = data?.effectiveGasPrice ? Number(data?.effectiveGasPrice) : "-";
+                    console.log({ tx, data });
+                    return {
+                        no: tx?.no,
+                        hash: tx?.hash,
+                        time: tx?.time,
+                        to: data?.to,
+                        category: data?.contractAddress ? "deploy" : tx?.category,
+                        contractAddress: data?.contractAddress,
+                        blockNumber,
+                        gasUsed,
+                        status,
+                        cumulativeGasUsed,
+                        effectiveGasPrice,
+                    };
+                })
+                ?.filter((tx) => tx) || [],
         [tx, txs],
     );
 
@@ -47,8 +50,6 @@ export default function Activity() {
                 ?.flatMap(({ hash, to }) => [query.receipt(chain?.rpcUrls?.[0], hash), query.typeOf(chain?.rpcUrls?.[0], to)]) || [],
     });
 
-    const { sorting, sortArrow, setSort } = useSort();
-
     console.log({ test });
 
     useEffect(() => {
@@ -56,8 +57,6 @@ export default function Activity() {
             provider?.updateReceipts(txlist, { address: account?.address, chainId: chain?.chainId });
         };
     }, [txlist]);
-
-    console.log({ tx });
 
     const color = useCallback(
         (status?: string) => {
@@ -110,9 +109,9 @@ export default function Activity() {
                                                         children: [
                                                             <>
                                                                 <Elements.Text height={0} case={"capital"}>
-                                                                    {tx?.category}
-                                                                    {/* Contract Interaction */}
-                                                                    {/* {short(tx?.hash)} */}
+                                                                    {tx?.category && tx?.category !== ""
+                                                                        ? tx?.category
+                                                                        : `Transaction${tx?.no ? ` ${tx?.no}` : ""}`}
                                                                 </Elements.Text>
                                                             </>,
                                                             <>
@@ -167,7 +166,9 @@ export default function Activity() {
         [tx],
     );
 
+    const { sorting, sortArrow, setSort } = useSort();
     const sorts = {
+        blockNumber: { key: "blockNumber", type: "number" },
         action: { key: "category", type: "string" },
         status: { key: "status", type: "string" },
         time: { key: "time", type: "number" },
@@ -176,19 +177,24 @@ export default function Activity() {
 
     return (
         <Layouts.Col gap={0}>
-            <Layouts.Row fix>
-                <Controls.Tab iconLeft={sortArrow(sorts.action)} onClick={() => setSort(sorts.action)}>
-                    Action
-                </Controls.Tab>
-                <Controls.Tab iconLeft={sortArrow(sorts.status)} onClick={() => setSort(sorts.status)}>
-                    Status
-                </Controls.Tab>
-                <Controls.Tab iconLeft={sortArrow(sorts.time)} onClick={() => setSort(sorts.time)}>
-                    Time
-                </Controls.Tab>
-                <Controls.Tab iconLeft={sortArrow(sorts.gas)} onClick={() => setSort(sorts.gas)}>
-                    Gas Used
-                </Controls.Tab>
+            <Layouts.Row gap={1} fix style={{ overflow: "auto hidden" }}>
+                <Layouts.Row gap={0} fix>
+                    <Controls.Tab iconLeft={sortArrow(sorts.blockNumber)} onClick={() => setSort(sorts.blockNumber)}>
+                        Block Number
+                    </Controls.Tab>
+                    <Controls.Tab iconLeft={sortArrow(sorts.action)} onClick={() => setSort(sorts.action)}>
+                        Action
+                    </Controls.Tab>
+                    <Controls.Tab iconLeft={sortArrow(sorts.status)} onClick={() => setSort(sorts.status)}>
+                        Status
+                    </Controls.Tab>
+                    <Controls.Tab iconLeft={sortArrow(sorts.time)} onClick={() => setSort(sorts.time)}>
+                        Time
+                    </Controls.Tab>
+                    <Controls.Tab iconLeft={sortArrow(sorts.gas)} onClick={() => setSort(sorts.gas)}>
+                        Gas Used
+                    </Controls.Tab>
+                </Layouts.Row>
             </Layouts.Row>
             <Layouts.Divider />
             <Layouts.Contents.InnerContent>

@@ -8,9 +8,11 @@ import { GetBalance } from "api/account";
 import { AnimatePresence } from "framer-motion";
 import { usePageLoader } from "hooks";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
+
 import Token from "./token/page";
 import Activity from "./activity/page";
+import Nft from "./nft/page";
 
 export default function Main() {
     const path = usePathname();
@@ -22,10 +24,7 @@ export default function Main() {
     const { data: balance, isLoading } = GetBalance(chain?.rpcUrls?.[0], account?.address);
 
     const responsive = useMemo(() => windowSize.width <= Root.Device.Tablet, [windowSize]);
-
     const tab = useCallback((target: string) => path?.startsWith(`/${target}`), [path]);
-
-    const handleDetail = () => {};
 
     return (
         <Layouts.Page snap>
@@ -66,39 +65,42 @@ export default function Main() {
                                             <Layouts.Col gap={0} fill>
                                                 <Layouts.Menu
                                                     menu={[
-                                                        [
-                                                            [
-                                                                <>
-                                                                    <Controls.Tab active={tab("token")} onClick={() => router.push("/token")}>
-                                                                        Token
-                                                                    </Controls.Tab>
-                                                                </>,
-                                                                <>
-                                                                    <Controls.Tab active={tab("nft")} onClick={() => router.push("/nft")}>
-                                                                        NFT
-                                                                    </Controls.Tab>
-                                                                </>,
-                                                                <>
-                                                                    <Controls.Tab active={tab("activity")} onClick={() => router.push("/activity")}>
-                                                                        Activity
-                                                                    </Controls.Tab>
-                                                                </>,
+                                                        {
+                                                            style: { padding: "1em 0" },
+                                                            children: [
+                                                                [
+                                                                    <>
+                                                                        <Controls.Tab active={tab("token")} onClick={() => router.push("/token")}>
+                                                                            Token
+                                                                        </Controls.Tab>
+                                                                    </>,
+                                                                    <>
+                                                                        <Controls.Tab active={tab("nft")} onClick={() => router.push("/nft")}>
+                                                                            NFT
+                                                                        </Controls.Tab>
+                                                                    </>,
+                                                                    <>
+                                                                        <Controls.Tab active={tab("activity")} onClick={() => router.push("/activity")}>
+                                                                            Activity
+                                                                        </Controls.Tab>
+                                                                    </>,
+                                                                ],
+                                                                [
+                                                                    <>
+                                                                        <Controls.Input
+                                                                            left={{
+                                                                                children: (
+                                                                                    <>
+                                                                                        <Elements.Icon icon={"search"} />
+                                                                                    </>
+                                                                                ),
+                                                                            }}
+                                                                            fold={false}
+                                                                        />
+                                                                    </>,
+                                                                ],
                                                             ],
-                                                            [
-                                                                <>
-                                                                    <Controls.Input
-                                                                        left={{
-                                                                            children: (
-                                                                                <>
-                                                                                    <Elements.Icon icon={"search"} />
-                                                                                </>
-                                                                            ),
-                                                                        }}
-                                                                        fold={false}
-                                                                    />
-                                                                </>,
-                                                            ],
-                                                        ],
+                                                        },
                                                     ]}
                                                 />
                                                 <Layouts.Contents.TabContainer
@@ -108,6 +110,11 @@ export default function Main() {
                                                             active: tab("token"),
                                                             style: { flex: 1 },
                                                             children: <Token />,
+                                                        },
+                                                        {
+                                                            active: tab("nft"),
+                                                            style: { flex: 1 },
+                                                            children: <Nft />,
                                                         },
                                                         {
                                                             active: tab("activity"),

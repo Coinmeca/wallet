@@ -10,6 +10,7 @@ import { dehydrate, HydrationBoundary, QueryClientProvider } from "@tanstack/rea
 import { getQueryClient } from "api";
 import { GetErc20 } from "api/erc20";
 import { States } from "@coinmeca/ui/components/contents";
+import { GetErc721 } from "api/erc721";
 
 export interface Fungible {
     standard?: any;
@@ -32,42 +33,53 @@ export default function Add(props: Fungible) {
         <CoinmecaWalletContextProvider>
             <QueryClientProvider {...{ client }}>
                 <HydrationBoundary state={dehydrate(client)}>
-                    <FungibleAddModal {...props} />
+                    <NonFungibleAddModal {...props} />
                 </HydrationBoundary>
             </QueryClientProvider>
         </CoinmecaWalletContextProvider>
     );
 }
 
-function FungibleAddModal(props: Fungible) {
+function NonFungibleAddModal(props: Fungible) {
     const { provider, chain, account } = useCoinmecaWalletProvider();
 
     const [address, setAddress] = useState<string>();
     const [validate, setValidate] = useState<Validate | undefined>({ state: false });
 
-    const [token, setToken] = useState<string>();
+    const [token, setToken] = useState<{ address?: string; id?: string }>();
     const [loading, setLoading] = useState<boolean>(false);
     const [process, setProcess] = useState<boolean | null>(null);
 
-    const [tokens, getToken] = GetErc20("https://sepolia-rollup.arbitrum.io/rpc", [token], account?.address);
+    const [tokens, getToken] = GetErc721("https://sepolia-rollup.arbitrum.io/rpc", token?.address && token?.id ? { [token.address]: [token.id] } : undefined);
     const asset = getToken(address);
-    const pattern = /^[a-zA-Z0-9]+$/;
+    const pattern = {
+        address: /^[a-zA-Z0-9]+$/,
+        number: /^[0-9]+$/,
+    };
 
-    const handleValidate = (a?: string) => {
+    const handleValidateAddress = (a?: string) => {
         if (address === a || asset?.isFetching) return;
         let check: Validate = { state: false };
         if (!!a && a !== "" && a !== "0" && a !== "0x") {
             if (!a?.startsWith("0x")) check = { state: true, message: "The typed a form of a Token Contract is Invalid." };
-            else if (!pattern.test(a)) check = { state: true, message: "The unacceptable charater is used in a form." };
+            else if (!pattern.address.test(a)) check = { state: true, message: "The unacceptable charater is used in a form." };
             else if (a?.length < 42) check = { state: true, message: "The a is too short." };
             else if (a?.length > 42) check = { state: true, message: "The a is too long." };
         }
         setValidate(check);
-        if (address !== a) setAddress(() => (a === "" ? undefined : a));
+        if (address !== a) setToken((state) => ({ ...state, address: a === "" ? undefined : a }));
+    };
+
+    const handleValidateId = (a?: string) => {
+        let check: Validate = { state: false };
+        if (!!a && a !== "" && a !== "0" && a !== "0x") {
+            if (!pattern.number.test(a)) check = { state: true, message: "The unacceptable charater is used in a form." };
+        }
+        if (address !== a) setToken((state) => ({ ...state, id: a === "" ? undefined : a }));
     };
 
     const handleAddToken = (e: any) => {
-        provider?.addFungibleAsset(asset?.data?.address);
+        provider?.addNonFungibleAsset(token?.address!, token?.id!);
         props?.onClose?.(e);
     };
 
@@ -82,11 +94,11 @@ function FungibleAddModal(props: Fungible) {
             address !== "0" &&
             address !== "0x" &&
             address?.length === 42 &&
-            pattern.test(address) &&
+            pattern.address.test(address) &&
             address?.startsWith("0x") &&
             address !== token
         )
-            setToken(address);
+            setToken((state) => ({ ...state, address }));
     }, [address]);
 
     useEffect(() => {
@@ -130,7 +142,7 @@ function FungibleAddModal(props: Fungible) {
                                                     </Elements.Text>
                                                     <Controls.Input
                                                         placeholder={"0xA1z2b3Y4C5x6d7E8..."}
-                                                        onChange={(e: any, v: string) => handleValidate(v)}
+                                                        onChange={(e: any, v: string) => handleValidateAddress(v)}
                                                         value={address}
                                                         error={validate?.state}
                                                         lock={asset?.isFetching || (address && asset?.data)}
@@ -155,21 +167,43 @@ function FungibleAddModal(props: Fungible) {
                                                                       style: { maxWidth: 0, opacity: 0 },
                                                                   }
                                                         }
-                                                        // right={
-                                                        //     address && address?.length > 0
-                                                        //         ? {
-                                                        //               style: { pointerEvents: "initial" },
-                                                        //               children: (
-                                                        //                   <Controls.Button
-                                                        //                       icon={"x"}
-                                                        //                       onClick={() => {
-                                                        //                           setAddress("");
-                                                        //                       }}
-                                                        //                   />
-                                                        //               ),
-                                                        //           }
-                                                        //         : undefined
-                                                        // }
+                                                        clearable
+                                                        autoFocus
+                                                    />
+                                                </Layouts.Col>
+                                                <Layouts.Col gap={1}>
+                                                    <Elements.Text type={"desc"} align={"left"}>
+                                                        Token Id
+                                                    </Elements.Text>
+                                                    <Controls.Input
+                                                        placeholder={""}
+                                                        type={"number"}
+                                                        align={"right"}
+                                                        onChange={(e: any, v: string) => handleValidateId(v)}
+                                                        value={address}
+                                                        error={validate?.state}
+                                                        lock={asset?.isFetching || (address && asset?.data)}
+                                                        message={{
+                                                            color: "red",
+                                                            children: validate?.message,
+                                                        }}
+                                                        left={
+                                                            asset?.isFetching || (address && asset)
+                                                                ? {
+                                                                      children: (
+                                                                          <Elements.Icon
+                                                                              icon={address && asset ? "check-bold" : validate?.state ? "x" : "loading"}
+                                                                              color={address && asset && "green"}
+                                                                              style={{
+                                                                                  ...(!(address && asset) && !validate?.state && { opacity: 0.45 }),
+                                                                              }}
+                                                                          />
+                                                                      ),
+                                                                  }
+                                                                : {
+                                                                      style: { maxWidth: 0, opacity: 0 },
+                                                                  }
+                                                        }
                                                         clearable
                                                         autoFocus
                                                     />

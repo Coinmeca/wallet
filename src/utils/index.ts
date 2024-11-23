@@ -2,6 +2,11 @@
 import { Chain } from "@coinmeca/wallet-sdk/types";
 import { Address } from "viem";
 
+export const isVideo = (url: string) => {
+    const videoExtensions = ['.mp4', '.webm', '.avi', '.mov', '.mkv'];
+    return videoExtensions.some(ext => url.toLowerCase().endsWith(ext));
+};
+
 export const short = (value?: string, options?: { length?: number; ellipsis?: string; front?: boolean; back?: boolean }) => {
     if (!value) return;
     const length = options?.length || 6;
@@ -248,8 +253,8 @@ export function parseChainId(chain: number | string | Chain): number {
             ? Number(chain)
             : parseInt(chain)
         : typeof chain === "number"
-        ? chain
-        : parseChainId(chain?.chainId);
+            ? chain
+            : parseChainId(chain?.chainId);
 }
 
 export function formatChainId(chain: number | string | Chain): string {
@@ -259,8 +264,8 @@ export function formatChainId(chain: number | string | Chain): string {
             ? chain
             : formatChainId(parseInt(chain))
         : typeof chain === "number"
-        ? `0x${chain?.toString(16)}`
-        : formatChainId(chain?.chainId);
+            ? `0x${chain?.toString(16)}`
+            : formatChainId(chain?.chainId);
 }
 
 export const isMobile = () => {

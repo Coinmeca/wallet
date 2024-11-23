@@ -241,7 +241,14 @@ export default function Page() {
                                                         borderRadius: "100%",
                                                         background: "rgba(var(--white),.15)",
                                                     }}>
-                                                    <Elements.Avatar character={short(tx?.to, { length: 2, front: true })} name={"To"} hideName />
+                                                    <Elements.Avatar
+                                                        character={short(tx?.to?.startsWith("0x") ? tx?.to?.substring(2, tx?.to?.length) : tx?.to, {
+                                                            length: 2,
+                                                            front: true,
+                                                        })}
+                                                        name={"To"}
+                                                        hideName
+                                                    />
                                                 </div>
                                                 <Layouts.Col gap={0} align={"center"}>
                                                     <Elements.Text type={"h6"} height={0} align={"left"}>

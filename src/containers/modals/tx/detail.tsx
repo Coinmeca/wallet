@@ -64,17 +64,17 @@ const TxDetailModal = (props?: any) => {
                             <Layouts.Row gap={1} fix>
                                 <Layouts.Col align={"left"} gap={0}>
                                     <Elements.Text height={1.5} case={"capital"}>
-                                        {tx?.category || "Contract Interaction"}
+                                        {tx?.category && tx?.category !== "" ? tx?.category : `Transaction${tx?.no ? ` ${tx?.no}` : ""}`}
                                     </Elements.Text>
                                     <Elements.Text height={1.5} color={color} case={"capital"}>
                                         {tx?.status}
                                     </Elements.Text>
                                 </Layouts.Col>
-                                <Layouts.Col gap={0}>
-                                    <Elements.Text height={1.5} opacity={0.3} align={"right"}>
+                                <Layouts.Col gap={0} style={{ maxWidth: "max-content" }}>
+                                    <Elements.Text type={"desc"} height={1.5} opacity={0.6} align={"right"}>
                                         {date[0]}
                                     </Elements.Text>
-                                    <Elements.Text height={1.5} opacity={0.3} align={"right"}>
+                                    <Elements.Text type={"desc"} height={1.5} opacity={0.6} align={"right"}>
                                         {date[1]}
                                     </Elements.Text>
                                 </Layouts.Col>
@@ -107,58 +107,61 @@ const TxDetailModal = (props?: any) => {
                                 <Elements.Text align={"right"}>{short(tx?.to)}</Elements.Text>
                             </Layouts.Row>
                             <Layouts.Divider />
-                            <Layouts.Row gap={1} fix>
-                                <Elements.Text opacity={0.3} fit>
-                                    Quantity
-                                </Elements.Text>
-                                <Elements.Text align={"right"} color={color}>
-                                    {format(tx?.quantity, "currency", { unit: 9, limit: 12, fix: 3 })}
-                                </Elements.Text>
-                                <Elements.Text opacity={0.3} align={"left"} style={{ maxWidth: "6em" }}>
-                                    {tx?.base?.symbol}
-                                </Elements.Text>
-                            </Layouts.Row>
-                            <Layouts.Divider />
-                            <Layouts.Row gap={1} fix>
+                            <Layouts.Row gap={1}>
                                 <Elements.Text opacity={0.3} fit>
                                     Gas Used
                                 </Elements.Text>
-                                <Elements.Text align={"right"}>{format(tx?.gasUsed, "currency", { unit: 9, limit: 12, fix: 3 })}</Elements.Text>
-                                <Elements.Text opacity={0.3} align={"left"} style={{ maxWidth: "6em" }}>
-                                    {chain?.nativeCurrency?.symbol}
-                                </Elements.Text>
+                                <Layouts.Row gap={1} align={"right"} style={{ minWidth: "max-content" }} fix>
+                                    <Elements.Text align={"right"} fix>
+                                        {format(tx?.gasUsed, "currency", { unit: 9, limit: 12, fix: 3 })}
+                                    </Elements.Text>
+                                    {/* <Elements.Text opacity={0.3} align={"left"} style={{ maxWidth: "6em" }}>
+                                        {chain?.nativeCurrency?.symbol}
+                                    </Elements.Text> */}
+                                </Layouts.Row>
                             </Layouts.Row>
-                            <Layouts.Row gap={1} fix>
+                            <Layouts.Row gap={1}>
                                 <Elements.Text opacity={0.3} fit>
                                     Cumulative Gas Used
                                 </Elements.Text>
-                                <Elements.Text align={"right"}>{format(tx?.effectiveGasPrice, "currency", { unit: 9, limit: 12, fix: 3 })}</Elements.Text>
-                                <Elements.Text opacity={0.3} align={"left"} style={{ maxWidth: "6em" }}>
-                                    {chain?.nativeCurrency?.symbol}
-                                </Elements.Text>
+                                <Layouts.Row gap={1} align={"right"} style={{ minWidth: "max-content" }} fix>
+                                    <Elements.Text align={"right"} fix>
+                                        {format(tx?.effectiveGasPrice, "currency", { unit: 9, limit: 12, fix: 3 })}
+                                    </Elements.Text>
+                                    {/* <Elements.Text opacity={0.3} align={"left"} style={{ maxWidth: "6em" }}>
+                                        {chain?.nativeCurrency?.symbol}
+                                    </Elements.Text> */}
+                                </Layouts.Row>
                             </Layouts.Row>
-                            <Layouts.Row gap={1} fix>
+                            <Layouts.Row gap={1}>
                                 <Elements.Text opacity={0.3} fit>
                                     Effective Gas Price
                                 </Elements.Text>
-                                <Elements.Text align={"right"}>{format(tx?.effectiveGasPrice, "currency", { unit: 9, limit: 12, fix: 3 })}</Elements.Text>
-                                <Elements.Text opacity={0.3} align={"left"} style={{ maxWidth: "6em" }}>
-                                    {chain?.nativeCurrency?.symbol}
-                                </Elements.Text>
+                                <Layouts.Row gap={1} align={"right"} style={{ minWidth: "max-content" }} fix>
+                                    <Elements.Text align={"right"} fix>
+                                        {format(tx?.effectiveGasPrice, "currency", { unit: 9, limit: 12, fix: 3 })}
+                                    </Elements.Text>
+                                    {/* <Elements.Text opacity={0.3} align={"left"} style={{ maxWidth: "6em" }}>
+                                        {chain?.nativeCurrency?.symbol}
+                                    </Elements.Text> */}
+                                </Layouts.Row>
                             </Layouts.Row>
-                            <Layouts.Row gap={1} fix>
+                            <Layouts.Divider />
+                            <Layouts.Row gap={1}>
                                 <Elements.Text opacity={0.3} fit>
                                     Total Cost
                                 </Elements.Text>
-                                <Elements.Text align={"right"}>
-                                    {format((tx?.gasUsed * tx?.effectiveGasPrice) / decimals, "currency", {
-                                        limit: 12,
-                                        fix: 3,
-                                    })}
-                                </Elements.Text>
-                                <Elements.Text opacity={0.3} align={"left"} style={{ maxWidth: "6em" }}>
-                                    {chain?.nativeCurrency?.symbol}
-                                </Elements.Text>
+                                <Layouts.Row gap={1} align={"right"} style={{ minWidth: "max-content" }} fix>
+                                    <Elements.Text align={"right"} fix>
+                                        {format((tx?.gasUsed * tx?.effectiveGasPrice) / decimals, "currency", {
+                                            limit: 12,
+                                            fix: 3,
+                                        })}
+                                    </Elements.Text>
+                                    <Elements.Text opacity={0.3} align={"left"} style={{ maxWidth: "6em" }}>
+                                        {chain?.nativeCurrency?.symbol}
+                                    </Elements.Text>
+                                </Layouts.Row>
                             </Layouts.Row>
                         </Layouts.Col>
                     </Layouts.Contents.InnerContent>

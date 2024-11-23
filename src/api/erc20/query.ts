@@ -7,7 +7,7 @@ export const query = {
         queryOptions({
             queryKey: [`${erc20}_token`, rpc, erc20, owner],
             queryFn: async () => {
-                const [nameResult, symbolResult, decimalsResult, balanceResult] = await Promise.allSettled([
+                const [name, symbol, decimals, balance] = await Promise.allSettled([
                     fetcher.rpc(rpc!, "eth_call", [
                         {
                             to: erc20,
@@ -50,13 +50,15 @@ export const query = {
                     return str;
                 };
 
-                const decodeHexToNumber = (hex: string) => parseInt(hex, 16);
+                const d = decimals.status === "fulfilled" ? Number(decimals.value.toString()) : null;
+                const b = balance && balance.status === "fulfilled" ? Number(balance.value.toString()) : null;
 
                 return {
-                    name: nameResult.status === "fulfilled" ? decodeHexToString(nameResult.value.toString().slice(66)) : null,
-                    symbol: symbolResult.status === "fulfilled" ? decodeHexToString(symbolResult.value.toString().slice(66)) : null,
-                    decimals: decimalsResult.status === "fulfilled" ? decodeHexToNumber(decimalsResult.value.toString()) : null,
-                    balance: balanceResult && balanceResult.status === "fulfilled" ? decodeHexToNumber(balanceResult.value.toString()) : null,
+                    address: erc20,
+                    name: name.status === "fulfilled" ? decodeHexToString(name.value.toString().slice(66)) : null,
+                    symbol: symbol.status === "fulfilled" ? decodeHexToString(symbol.value.toString().slice(66)) : null,
+                    decimals: d,
+                    balance: (d && b) ? b / (10 ** d) : null,
                 };
             },
             enabled: !!rpc && !!erc20,
