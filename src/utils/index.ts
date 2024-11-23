@@ -1,6 +1,6 @@
 ﻿import CryptoJS from "crypto-js";
 import { Chain } from "@coinmeca/wallet-sdk/types";
-import { Address } from "viem";
+import { Address, toBytes } from "viem";
 
 export const isVideo = (url: string) => {
     const videoExtensions = ['.mp4', '.webm', '.avi', '.mov', '.mkv'];
@@ -60,26 +60,95 @@ export const valid = {
     },
 };
 
-export const decodeHexToString = (hex: string) => {
-    let str = "";
-    for (let i = 0; i < hex.length; i += 2) {
-        const charCode = parseInt(hex.substr(i, 2), 16);
-        if (charCode >= 32 && charCode <= 126) {
-            str += String.fromCharCode(charCode);
+export const hex = {
+    toBytes: (value: string) => {
+        const bytes: number[] = [];
+        value = value.replace(/[^0-9A-Fa-f]/g, '');
+        for (let i = 0; i < value.length; i += 2) {
+            const byte = parseInt(value.substring(i, 2), 16);
+            if (!isNaN(byte)) bytes.push(byte);
+        }
+        return bytes;
+    },
+    toString: (value: string) => {
+        let str = "";
+        for (let i = 0; i < value.length; i += 2) {
+            const charCode = parseInt(value.substring(i, 2), 16);
+            if (charCode >= 32 && charCode <= 126) {
+                str += String.fromCharCode(charCode);
+            }
+        }
+        return str
+    },
+    toNumber: (value: string) => Number(value),
+    toBase64: (value: string) => {
+        console.log(1);
+        value = value.startsWith('0x') ? value.slice(2) : value;
+        console.log("After slicing 0x:", value);
+
+        const bytes = hex.toBytes(value);
+        console.log("Bytes after hex.toBytes:", bytes);
+
+        console.log(2);
+        // Check if the bytes array is empty
+        if (bytes.length === 0) {
+            console.log("Bytes array is empty!");
+        }
+
+        while (bytes[0] === 0) {
+            console.log("Removing leading zero");
+            bytes.shift();
+        }
+
+        console.log("After removing leading zeros:", bytes);
+
+        while (bytes[bytes.length - 1] === 0) {
+            console.log("Removing trailing zero");
+            bytes.pop();
+        }
+
+        console.log("After removing trailing zeros:", bytes);
+
+        const result = btoa(String.fromCharCode.apply(null, bytes));
+        console.log("Base64 result:", result);
+
+        return result;
+    }
+
+}
+
+export const bigInt = {
+    toHex: (value: BigInt): string => {
+        return "0x" + value.toString(16);
+    },
+}
+
+export const base64 = {
+    toJson: (base64String: string): any => {
+        // Check if the base64 string has the data URI prefix
+        const prefix = "data:application/json;base64,";
+        if (base64String.startsWith(prefix)) {
+            // Remove the prefix if it's already present
+            base64String = base64String.slice(prefix.length);
+        }
+
+        // Decode the base64 string to a regular string
+        const decodedString = atob(base64String);
+
+        // Parse the decoded string as JSON
+        try {
+            const json = JSON.parse(decodedString);
+            return json;
+        } catch (error) {
+            console.error("Failed to parse JSON:", error);
+            return null;
         }
     }
-    return str;
-};
-
-export const decodeHexToNumber = (hex: string) => parseInt(hex, 16);
-
-export const toHexString = (value: BigInt): string => {
-    return "0x" + value.toString(16); // Converts BigInt to hexadecimal string with 0x prefix
-};
+}
 
 export const sanitizeBigIntToHex = (obj: any): any => {
     if (typeof obj === "bigint") {
-        return toHexString(obj);
+        return bigInt.toHex(obj);
     } else if (Array.isArray(obj)) {
         return obj.map(sanitizeBigIntToHex);
     } else if (typeof obj === "object" && obj !== null) {

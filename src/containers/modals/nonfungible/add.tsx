@@ -44,7 +44,7 @@ function NonFungibleAddModal(props: Fungible) {
     const { provider, chain, account } = useCoinmecaWalletProvider();
 
     const [address, setAddress] = useState<string>();
-    const [validate, setValidate] = useState<Validate | undefined>({ state: false });
+    const [validate, setValidate] = useState<{ address?: Validate; id?: Validate } | undefined>({ address: { state: false }, id: { state: false } });
 
     const [token, setToken] = useState<{ address?: string; id?: string }>();
     const [loading, setLoading] = useState<boolean>(false);
@@ -66,7 +66,7 @@ function NonFungibleAddModal(props: Fungible) {
             else if (a?.length < 42) check = { state: true, message: "The a is too short." };
             else if (a?.length > 42) check = { state: true, message: "The a is too long." };
         }
-        setValidate(check);
+        setValidate((state) => ({ ...state, address: check }));
         if (address !== a) setToken((state) => ({ ...state, address: a === "" ? undefined : a }));
     };
 
@@ -75,6 +75,7 @@ function NonFungibleAddModal(props: Fungible) {
         if (!!a && a !== "" && a !== "0" && a !== "0x") {
             if (!pattern.number.test(a)) check = { state: true, message: "The unacceptable charater is used in a form." };
         }
+        setValidate((state) => ({ ...state, id: check }));
         if (address !== a) setToken((state) => ({ ...state, id: a === "" ? undefined : a }));
     };
 
@@ -144,21 +145,23 @@ function NonFungibleAddModal(props: Fungible) {
                                                         placeholder={"0xA1z2b3Y4C5x6d7E8..."}
                                                         onChange={(e: any, v: string) => handleValidateAddress(v)}
                                                         value={address}
-                                                        error={validate?.state}
+                                                        error={validate?.address?.state}
                                                         lock={asset?.isFetching || (address && asset?.data)}
                                                         message={{
                                                             color: "red",
-                                                            children: validate?.message,
+                                                            children: validate?.address?.message,
                                                         }}
                                                         left={
                                                             asset?.isFetching || (address && asset)
                                                                 ? {
                                                                       children: (
                                                                           <Elements.Icon
-                                                                              icon={address && asset ? "check-bold" : validate?.state ? "x" : "loading"}
+                                                                              icon={
+                                                                                  address && asset ? "check-bold" : validate?.address?.state ? "x" : "loading"
+                                                                              }
                                                                               color={address && asset && "green"}
                                                                               style={{
-                                                                                  ...(!(address && asset) && !validate?.state && { opacity: 0.45 }),
+                                                                                  ...(!(address && asset) && !validate?.address?.state && { opacity: 0.45 }),
                                                                               }}
                                                                           />
                                                                       ),
@@ -181,21 +184,21 @@ function NonFungibleAddModal(props: Fungible) {
                                                         align={"right"}
                                                         onChange={(e: any, v: string) => handleValidateId(v)}
                                                         value={address}
-                                                        error={validate?.state}
+                                                        error={validate?.id?.state}
                                                         lock={asset?.isFetching || (address && asset?.data)}
                                                         message={{
                                                             color: "red",
-                                                            children: validate?.message,
+                                                            children: validate?.id?.message,
                                                         }}
                                                         left={
                                                             asset?.isFetching || (address && asset)
                                                                 ? {
                                                                       children: (
                                                                           <Elements.Icon
-                                                                              icon={address && asset ? "check-bold" : validate?.state ? "x" : "loading"}
+                                                                              icon={address && asset ? "check-bold" : validate?.id?.state ? "x" : "loading"}
                                                                               color={address && asset && "green"}
                                                                               style={{
-                                                                                  ...(!(address && asset) && !validate?.state && { opacity: 0.45 }),
+                                                                                  ...(!(address && asset) && !validate?.id?.state && { opacity: 0.45 }),
                                                                               }}
                                                                           />
                                                                       ),
@@ -204,8 +207,8 @@ function NonFungibleAddModal(props: Fungible) {
                                                                       style: { maxWidth: 0, opacity: 0 },
                                                                   }
                                                         }
+                                                        clearPosition="left"
                                                         clearable
-                                                        autoFocus
                                                     />
                                                 </Layouts.Col>
                                             </Layouts.Col>

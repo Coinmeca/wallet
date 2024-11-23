@@ -9,27 +9,16 @@ export function GetErc721(
         { [address: string]: { [tokenId: string]: UseQueryResult<any, Error> } },
         (address?: string, tokenId?: string) => UseQueryResult<any, Error> | undefined
     ] {
-    let tokens = Array.isArray(erc721) ? erc721.filter((a) => a) : erc721 ? [erc721] : undefined;
-    let tokenMap: { [address: string]: { [tokenId: string]: UseQueryResult<any, Error> } } = {};
+    const tokens = Array.isArray(erc721) ? erc721.filter((entry) => entry).flatMap((entry) => Object.entries(entry!)) : erc721 ? Object.entries(erc721) : undefined;
+    const tokenMap: { [address: string]: { [tokenId: string]: UseQueryResult<any, Error> } } = {};
 
-    const results = useQueries({
-        queries: tokens
-            ?.flatMap((entry) =>
-                entry
-                    ? Object.entries(entry).flatMap(([address, tokenIds]) =>
-                        tokenIds.map((tokenId) => ({ address, tokenId }))
-                    )
-                    : []
-            )
-            ?.map(({ address, tokenId }) =>
-                query.token(rpc, address, tokenId)
-            ) || []
+    const queries = tokens?.flatMap(([address, tokenIds]) => tokenIds?.map((tokenId) => (query.token(rpc, address, tokenId))) || []) || [];
+    const results = useQueries({ queries });
+
+    console.log({ tokens, results });
+    results?.forEach(({ data }, i) => {
+        if (!tokenMap[data?.address || 'undefined']) tokenMap[data?.address || 'undefined'] = {};
+        tokenMap[data?.address || 'undefined'][data?.tokenId || 'undefined'] = results?.[i];
     });
-
-    tokens?.forEach((token, i) => {
-        const address = Object.keys(token || {})[0]
-        tokenMap[address || "undefined"][token?.[address || 'undefined'][i] || 'undefined'] = results?.[i];
-    });
-
     return [tokenMap, useCallback((address?: string, tokenId?: string) => tokenMap?.[address || "undefined"]?.[tokenId || "undefined"], [tokenMap])];
 }

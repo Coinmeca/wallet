@@ -1,6 +1,6 @@
 ﻿import { queryOptions } from "@tanstack/react-query";
 import { fetcher } from "api";
-import { decodeHexToNumber, decodeHexToString } from "utils";
+import { hex } from "utils";
 
 export const query = {
     token: (rpc?: string, erc20?: string, owner?: string) =>
@@ -38,25 +38,13 @@ export const query = {
                     ]) : Promise.resolve(undefined),
                 ]);
 
-                // Decode values
-                const decodeHexToString = (hex: string) => {
-                    let str = '';
-                    for (let i = 0; i < hex.length; i += 2) {
-                        const charCode = parseInt(hex.substr(i, 2), 16);
-                        if (charCode >= 32 && charCode <= 126) {
-                            str += String.fromCharCode(charCode);
-                        }
-                    }
-                    return str;
-                };
-
                 const d = decimals.status === "fulfilled" ? Number(decimals.value.toString()) : null;
                 const b = balance && balance.status === "fulfilled" ? Number(balance.value.toString()) : null;
 
                 return {
                     address: erc20,
-                    name: name.status === "fulfilled" ? decodeHexToString(name.value.toString().slice(66)) : null,
-                    symbol: symbol.status === "fulfilled" ? decodeHexToString(symbol.value.toString().slice(66)) : null,
+                    name: name.status === "fulfilled" ? hex.toString(name.value.toString().slice(66)) : null,
+                    symbol: symbol.status === "fulfilled" ? hex.toString(symbol.value.toString().slice(66)) : null,
                     decimals: d,
                     balance: (d && b) ? b / (10 ** d) : null,
                 };
@@ -73,7 +61,7 @@ export const query = {
                     data: "0x06fdde03" // `name()`
                 },
                 "latest",
-            ]).then((result) => decodeHexToString(result?.toString().slice(66))),
+            ]).then((result) => hex.toString(result?.toString().slice(66))),
             enabled: !!rpc && !!erc20,
         }),
 
@@ -86,7 +74,7 @@ export const query = {
                     data: "0x95d89b41" // `symbol()`
                 },
                 "latest",
-            ]).then((result) => decodeHexToString(result?.toString().slice(66))),
+            ]).then((result) => hex.toString(result?.toString().slice(66))),
             enabled: !!rpc && !!erc20,
         }),
 
@@ -99,7 +87,7 @@ export const query = {
                     data: "0x313ce567" // `decimals()`
                 },
                 "latest",
-            ]).then((result) => decodeHexToNumber(result.toString())),
+            ]).then((result) => hex.toNumber(result.toString())),
             enabled: !!rpc && !!erc20,
         }),
 
@@ -112,7 +100,7 @@ export const query = {
                     data: `0x70a08231000000000000000000000000${owner?.slice(2)}` // `balanceOf(address)` selector
                 },
                 "latest",
-            ]).then((result) => decodeHexToNumber(result.toString())),
+            ]).then((result) => hex.toNumber(result.toString())),
             enabled: !!rpc && !!erc20 && !!owner,
         }),
 };
