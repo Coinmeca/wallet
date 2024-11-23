@@ -86,14 +86,12 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                     title: `Copy address`,
                     message: `The address of ${account.name} copied.`,
                 });
-                // addToast(toast.alert.copy.success);
             })
             .catch(function (err) {
                 addToast({
                     title: `Copy address`,
                     message: `Failed to copy the address of ${account.name}.`,
                 });
-                // addToast(toast.alert.copy.failure);
             });
     };
 
@@ -202,7 +200,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
     );
 
     const [searchFilter, setSearchFilter] = useState<string>();
-    const search = () => (
+    const Search = () => (
         <Controls.Input
             placeholder={"Search chain by id or name..."}
             value={searchFilter}
@@ -246,11 +244,6 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                       ],
                   }
                 : undefined,
-        // option: {
-        //     active: true,
-        //     children: (
-        //     ),
-        // },
         side:
             !isRequest && isLoad && account
                 ? {
@@ -320,11 +313,11 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                 ? [
                       {
                           active: mobileMenu === "accounts",
-                          children: <Sidebars.Accounts search={search} searchFilter={searchFilter} responsive={responsive} />,
+                          children: <Sidebars.Accounts search={<Search />} searchFilter={searchFilter} responsive={responsive} />,
                       },
                       {
                           active: mobileMenu === "chains",
-                          children: <Sidebars.Chains search={search} searchFilter={searchFilter} responsive={responsive} />,
+                          children: <Sidebars.Chains search={Search} searchFilter={searchFilter} responsive={responsive} />,
                       },
                       {
                           active: mobileMenu === "setting",
@@ -420,11 +413,11 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                       children: [
                           {
                               active: mobileMenu === "accounts",
-                              children: <Sidebars.Accounts search={search} searchFilter={searchFilter} responsive={responsive} />,
+                              children: <Sidebars.Accounts search={Search} searchFilter={searchFilter} responsive={responsive} />,
                           },
                           {
                               active: mobileMenu === "chains",
-                              children: <Sidebars.Chains search={search} searchFilter={searchFilter} responsive={responsive} />,
+                              children: <Sidebars.Chains search={Search} searchFilter={searchFilter} responsive={responsive} />,
                           },
                           {
                               active: mobileMenu === "setting",
