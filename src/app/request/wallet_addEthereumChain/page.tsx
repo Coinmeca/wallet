@@ -32,7 +32,7 @@ await window.ethereum.providerMap.get("CoinmecaWallet").request({method:"wallet_
 */
 
 const method = "wallet_addEthereumChain";
-const timeout  = 5000;
+const timeout = 5000;
 
 export default function Page() {
     const router = useRouter();
@@ -53,7 +53,7 @@ export default function Page() {
             {
                 method,
                 ...(level === 0 ? { error: "User rejected the request" } : { result: level === 1 ? true : newChain?.chainId }),
-                id:messageId,
+                id: messageId,
             },
             "*",
         );
@@ -61,10 +61,10 @@ export default function Page() {
 
     const handleClose = () => {
         result();
-        if (isPopup) {
-            if (telegram) telegram?.close();
-            window?.close();
-        } else router.push("/");
+        // if (isPopup) {
+        if (telegram) telegram?.close();
+        window?.close();
+        // } else router.push("/");
     };
 
     const handleAddChain = async () => {
@@ -78,7 +78,7 @@ export default function Page() {
                     {
                         method,
                         error,
-                        id:messageId,
+                        id: messageId,
                     },
                     "*",
                 );
@@ -96,7 +96,7 @@ export default function Page() {
                     {
                         method,
                         result,
-                        id:messageId,
+                        id: messageId,
                     },
                     "*",
                 );
@@ -109,7 +109,7 @@ export default function Page() {
                     {
                         method,
                         error,
-                        id:messageId,
+                        id: messageId,
                     },
                     "*",
                 );
@@ -132,7 +132,8 @@ export default function Page() {
                 nativeCurrency.decimals &&
                 rpcUrls &&
                 rpcUrls.length > 0
-            ) setNewChain({...params, chainId: parseChainId(chainId)} as Chain);
+            )
+                setNewChain({ ...params, chainId: parseChainId(chainId) } as Chain);
         }
     }, []);
 

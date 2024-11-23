@@ -115,7 +115,8 @@ export default function Page() {
     };
 
     const handleApprove = async () => {
-        const method = "erc20_approve";
+        // approve
+        const method = "eth_sendTransaction";
         console.log(
             method,
             await adapter?.request({
@@ -127,7 +128,7 @@ export default function Page() {
                         data: "0x095ea7b3000000000000000000000000428d55b528a2d39c143ec51055e7e0531d02aa81ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                     },
                 ],
-            })
+            }),
         );
     };
 
@@ -155,13 +156,13 @@ export default function Page() {
                     //     data: "0x7b56c2b200000000000000000000000094b1f182d48dd9d84e1ab0ee3a593364595bb4ec00000000000000000000000000000000000000000000000000000002540be400",
                     // },
                     // order
-                    {                     
+                    {
                         from: account?.address,
                         to: "0x284079c19f888f12f9d56955e466f2736a7f1994",
                         data: "0x05b102e3000000000000000000000000d42b5e48d0e2c265a87adf7e08d2fcd9c62ff17b0000000000000000000000000000000000000000000000000de0b6b3a7640000",
                     },
                 ],
-            })
+            }),
         );
     };
 

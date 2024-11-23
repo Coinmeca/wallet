@@ -17,11 +17,11 @@ export const query = {
             staleTime: 10 * 60 * 1000,
         }),
 
-    accountType: (rpc?: string, address?: string) =>
+    typeOf: (rpc?: string, address?: string) =>
         queryOptions({
             queryKey: ["accountType", address],
             queryFn: async () => ((await fetcher.rpc(rpc!, "eth_getCode", [address, "latest"])) === "0x" ? "eoa" : "ca"),
-            enabled: !!address,
+            enabled: !!rpc && !!address,
         }),
 
     balance: (rpc?: string, address?: string) =>

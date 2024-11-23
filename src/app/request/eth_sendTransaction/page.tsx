@@ -127,10 +127,10 @@ export default function EthSendTransaction() {
     };
 
     const handleClose = () => {
-        if (isPopup) {
-            if (telegram) telegram?.close();
-            window?.close();
-        } else router.push("/");
+        // if (isPopup) {
+        if (telegram) telegram?.close();
+        window?.close();
+        // } else router.push("/");
         if (level < 2)
             window?.opener?.postMessage(
                 {
@@ -249,11 +249,7 @@ export default function EthSendTransaction() {
                                                         borderRadius: "100%",
                                                         background: "rgba(var(--white),.15)",
                                                     }}>
-                                                    <Elements.Avatar
-                                                        character={short(tx?.to, {length: 2, front: true})}
-                                                        name={"To"}
-                                                        hideName
-                                                    />
+                                                    <Elements.Avatar character={short(tx?.to, { length: 2, front: true })} name={"To"} hideName />
                                                 </div>
                                                 <Layouts.Col gap={0} align={"center"}>
                                                     <Elements.Text type={"h6"} height={0} align={"left"}>
@@ -394,9 +390,7 @@ export default function EthSendTransaction() {
                                         <Layouts.Col gap={4} align={"center"} fit>
                                             <Elements.Text type={"h3"}>Complete</Elements.Text>
                                             <Elements.Text size={1} weight={"bold"}>
-                                                <Elements.Text opacity={0.6}>
-                                                    {short(txHash)}
-                                                </Elements.Text>{" "}
+                                                <Elements.Text opacity={0.6}>{short(txHash)}</Elements.Text>{" "}
                                                 <Elements.Text opacity={0.6}>Selected chain was switched from</Elements.Text>{" "}
                                                 <Elements.Text>{app?.name}</Elements.Text> <Elements.Text opacity={0.6}>to</Elements.Text>{" "}
                                                 <Elements.Text>{` ${tx?.to}`}</Elements.Text>

@@ -1,6 +1,10 @@
 ﻿import { useQueries, useQuery } from "@tanstack/react-query";
 import { query } from "./query";
 
+export function AccountType(rpc?: string, address?: string) {
+    return useQuery(query.typeOf(rpc, address));
+}
+
 export function GetRpcUrls() {
     return useQuery(query.rpcUrls());
 }
@@ -11,10 +15,6 @@ export function GetGasPrice(rpc?: string) {
 
 export function GetEstimateGas(rpc?: string, params?: any) {
     return useQuery(query.estimateGas(rpc, params));
-}
-
-export function AccountType(rpc?: string, address?: string) {
-    return useQuery(query.accountType(rpc, address));
 }
 
 export function GetNonce(rpc?: string, address?: string) {

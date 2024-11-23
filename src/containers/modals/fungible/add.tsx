@@ -214,7 +214,16 @@ function FungibleAddModal(props: Fungible) {
                                                             {t?.name}
                                                         </Elements.Text>
                                                         {/* <Elements.Text >{t?.decimals}</Elements.Text> */}
-                                                        {t?.balance && <Elements.Text>{t.balance / 10 ** (t?.decimals || 1)}</Elements.Text>}
+                                                        {t?.balance ? (
+                                                            <Layouts.Row gap={1}>
+                                                                <Elements.Text align={"right"}>{t.balance / 10 ** (t?.decimals || 1)}</Elements.Text>
+                                                                <Elements.Text align={"left"} opacity={0.6} case={"upper"}>
+                                                                    {t?.symbol}
+                                                                </Elements.Text>
+                                                            </Layouts.Row>
+                                                        ) : (
+                                                            <></>
+                                                        )}
                                                     </Layouts.Col>
                                                 </Layouts.Col>
                                             ))}

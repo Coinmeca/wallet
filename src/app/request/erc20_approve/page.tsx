@@ -3,14 +3,14 @@
 import { Contents, Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { format } from "@coinmeca/ui/lib/utils";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
-import { Account, TransactionParams } from "@coinmeca/wallet-sdk/types";
+import { Account, selectors, TransactionParams } from "@coinmeca/wallet-sdk/types";
 import { useQueries } from "@tanstack/react-query";
 import { GetMaxFeePerGas } from "api/onchain";
 import { query } from "api/onchain/query";
 import { useMessageHandler, useTelegram } from "hooks";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
 import { short } from "utils";
 
 /*
@@ -27,7 +27,7 @@ await window.ethereum.providerMap.get("CoinmecaWallet").request({
 */
 
 const method = "erc20_approve";
-const timeout  = 5000;
+const timeout = 5000;
 
 export default function Page() {
     const router = useRouter();
@@ -131,6 +131,8 @@ export default function Page() {
                 "*",
             );
     };
+
+    const selector = useMemo(() => selectors?.[params?.data?.substring(0, 10)], [params]);
 
     return auth && app && signer && tx ? (
         <Layouts.Contents.SlideContainer
@@ -239,11 +241,7 @@ export default function Page() {
                                                         borderRadius: "100%",
                                                         background: "rgba(var(--white),.15)",
                                                     }}>
-                                                    <Elements.Avatar
-                                                        character={short(tx?.to, {length: 2, front: true})}
-                                                        name={"To"}
-                                                        hideName
-                                                    />
+                                                    <Elements.Avatar character={short(tx?.to, { length: 2, front: true })} name={"To"} hideName />
                                                 </div>
                                                 <Layouts.Col gap={0} align={"center"}>
                                                     <Elements.Text type={"h6"} height={0} align={"left"}>
@@ -393,9 +391,7 @@ export default function Page() {
                                         <Layouts.Col gap={4} align={"center"} fit>
                                             <Elements.Text type={"h3"}>Complete</Elements.Text>
                                             <Elements.Text size={1} weight={"bold"}>
-                                                <Elements.Text opacity={0.6}>
-                                                    {short(txHash)}
-                                                </Elements.Text>{" "}
+                                                <Elements.Text opacity={0.6}>{short(txHash)}</Elements.Text>{" "}
                                                 <Elements.Text opacity={0.6}>Selected chain was switched from</Elements.Text>{" "}
                                                 <Elements.Text>{app?.name}</Elements.Text> <Elements.Text opacity={0.6}>to</Elements.Text>{" "}
                                                 <Elements.Text>{` ${tx?.to}`}</Elements.Text>
@@ -471,7 +467,6 @@ export default function Page() {
             <Layouts.Col gap={2} align={"center"} fill>
                 <Layouts.Contents.InnerContent padding={[4, 4, 0]}>
                     <Layouts.Col fill>
-                        {console.log({ auth, app, signer, tx })}
                         <Layouts.Col align={"center"} style={{ flex: 1 }}>
                             <Layouts.Col gap={8} align={"center"} fit>
                                 <div

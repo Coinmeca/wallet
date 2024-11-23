@@ -47,7 +47,9 @@ const TxDetailModal = (props?: any) => {
             default:
                 return;
         }
-    }, [tx])
+    }, [tx]);
+
+    const decimals = 10 ** (chain?.nativeCurrency?.decimals || 18);
 
     return (
         <Modal
@@ -57,15 +59,14 @@ const TxDetailModal = (props?: any) => {
                     <Layouts.Contents.InnerContent
                         style={{
                             fontFeatureSettings: `'tnum' on, 'lnum' on`,
-                        }}
-                    >
+                        }}>
                         <Layouts.Col gap={1}>
                             <Layouts.Row gap={1} fix>
                                 <Layouts.Col align={"left"} gap={0}>
-                                    <Elements.Text height={1.5}>
-                                        {tx?.category || 'Contract Interaction'}
+                                    <Elements.Text height={1.5} case={"capital"}>
+                                        {tx?.category || "Contract Interaction"}
                                     </Elements.Text>
-                                    <Elements.Text height={1.5} color={color} case={'capital'}>
+                                    <Elements.Text height={1.5} color={color} case={"capital"}>
                                         {tx?.status}
                                     </Elements.Text>
                                 </Layouts.Col>
@@ -83,13 +84,21 @@ const TxDetailModal = (props?: any) => {
                                 <Elements.Text opacity={0.3} fit>
                                     Block Number
                                 </Elements.Text>
-                                <Elements.Text align={"right"}>{tx?.blockNumber}</Elements.Text>
+                                <Elements.Text
+                                    align={"right"}
+                                    href={chain?.blockExplorerUrls?.length ? `${chain?.blockExplorerUrls}/block/${tx?.blockNumber}` : undefined}>
+                                    #{tx?.blockNumber}
+                                </Elements.Text>
                             </Layouts.Row>
                             <Layouts.Row gap={1} fix>
                                 <Elements.Text opacity={0.3} fit>
                                     Tx Hash
                                 </Elements.Text>
-                                <Elements.Text align={"right"} href={chain?.blockExplorerUrls?.length ? `${chain?.blockExplorerUrls}/tx/${tx?.hash}` : undefined}>{short(tx?.hash)}</Elements.Text>
+                                <Elements.Text
+                                    align={"right"}
+                                    href={chain?.blockExplorerUrls?.length ? `${chain?.blockExplorerUrls}/tx/${tx?.hash}` : undefined}>
+                                    {short(tx?.hash)}
+                                </Elements.Text>
                             </Layouts.Row>
                             <Layouts.Row gap={1} fix>
                                 <Elements.Text opacity={0.3} fit>
@@ -114,33 +123,41 @@ const TxDetailModal = (props?: any) => {
                                 <Elements.Text opacity={0.3} fit>
                                     Gas Used
                                 </Elements.Text>
-                                <Elements.Text align={"right"}>
-                                    {format(tx?.gasUsed, "currency", { unit: 9, limit: 12, fix: 3 })}
-                                </Elements.Text>
+                                <Elements.Text align={"right"}>{format(tx?.gasUsed, "currency", { unit: 9, limit: 12, fix: 3 })}</Elements.Text>
                                 <Elements.Text opacity={0.3} align={"left"} style={{ maxWidth: "6em" }}>
-                                    {tx?.quote?.symbol}
+                                    {chain?.nativeCurrency?.symbol}
                                 </Elements.Text>
                             </Layouts.Row>
                             <Layouts.Row gap={1} fix>
                                 <Elements.Text opacity={0.3} fit>
                                     Cumulative Gas Used
                                 </Elements.Text>
-                                <Elements.Text align={"right"}>
-                                    {format(tx?.effectiveGasPrice, "currency", { unit: 9, limit: 12, fix: 3 })}
-                                </Elements.Text>
+                                <Elements.Text align={"right"}>{format(tx?.effectiveGasPrice, "currency", { unit: 9, limit: 12, fix: 3 })}</Elements.Text>
                                 <Elements.Text opacity={0.3} align={"left"} style={{ maxWidth: "6em" }}>
-                                    {tx?.quote?.symbol}
+                                    {chain?.nativeCurrency?.symbol}
                                 </Elements.Text>
                             </Layouts.Row>
                             <Layouts.Row gap={1} fix>
                                 <Elements.Text opacity={0.3} fit>
                                     Effective Gas Price
                                 </Elements.Text>
+                                <Elements.Text align={"right"}>{format(tx?.effectiveGasPrice, "currency", { unit: 9, limit: 12, fix: 3 })}</Elements.Text>
+                                <Elements.Text opacity={0.3} align={"left"} style={{ maxWidth: "6em" }}>
+                                    {chain?.nativeCurrency?.symbol}
+                                </Elements.Text>
+                            </Layouts.Row>
+                            <Layouts.Row gap={1} fix>
+                                <Elements.Text opacity={0.3} fit>
+                                    Total Cost
+                                </Elements.Text>
                                 <Elements.Text align={"right"}>
-                                    {format(tx?.effectiveGasPrice, "currency", { unit: 9, limit: 12, fix: 3 })}
+                                    {format((tx?.gasUsed * tx?.effectiveGasPrice) / decimals, "currency", {
+                                        limit: 12,
+                                        fix: 3,
+                                    })}
                                 </Elements.Text>
                                 <Elements.Text opacity={0.3} align={"left"} style={{ maxWidth: "6em" }}>
-                                    {tx?.quote?.symbol}
+                                    {chain?.nativeCurrency?.symbol}
                                 </Elements.Text>
                             </Layouts.Row>
                         </Layouts.Col>
@@ -148,7 +165,8 @@ const TxDetailModal = (props?: any) => {
                     <Layouts.Row gap={2} style={{ marginTop: "2em" }} fix>
                         <Controls.Button onClick={handleClose}>Close</Controls.Button>
                     </Layouts.Row>
-                </Layouts.Col>}
+                </Layouts.Col>
+            }
             onClose={handleClose}
             close
         />

@@ -41,7 +41,7 @@ export interface Transaction {
 }
 
 const method = "eth_signTransaction";
-const timeout  = 5000;
+const timeout = 5000;
 
 export default function EthSignTransaction() {
     const router = useRouter();
@@ -58,7 +58,11 @@ export default function EthSignTransaction() {
     const [error, setError] = useState<any>();
 
     const [{ data: nonce }, { data: gasPrice, isLoading: isGasPriceLoading }, { data: estimateGas, isLoading: isEstimateGasLoading }] = useQueries({
-        queries: [query.nonce(chain?.rpcUrls[0], signer?.address), query.gasPrice(chain?.rpcUrls[0]), query.estimateGas(chain?.rpcUrls[0], sanitizeBigIntToHex(tx))],
+        queries: [
+            query.nonce(chain?.rpcUrls[0], signer?.address),
+            query.gasPrice(chain?.rpcUrls[0]),
+            query.estimateGas(chain?.rpcUrls[0], sanitizeBigIntToHex(tx)),
+        ],
     });
     const {
         data: { maxPriorityFeePerGas, maxFeePerGas },
@@ -117,10 +121,10 @@ export default function EthSignTransaction() {
     };
 
     const handleClose = () => {
-        if (isPopup) {
-            if (telegram) telegram?.close();
-            window?.close();
-        } else router.push("/");
+        // if (isPopup) {
+        if (telegram) telegram?.close();
+        window?.close();
+        // } else router.push("/");
         if (level < 2)
             window?.opener?.postMessage(
                 {
@@ -239,11 +243,7 @@ export default function EthSignTransaction() {
                                                         borderRadius: "100%",
                                                         background: "rgba(var(--white),.15)",
                                                     }}>
-                                                    <Elements.Avatar
-                                                        character={short(tx?.to, {length: 2, front: true})}
-                                                        name={"To"}
-                                                        hideName
-                                                    />
+                                                    <Elements.Avatar character={short(tx?.to, { length: 2, front: true })} name={"To"} hideName />
                                                 </div>
                                                 <Layouts.Col gap={0} align={"center"}>
                                                     <Elements.Text type={"h6"} height={0} align={"left"}>
@@ -383,9 +383,7 @@ export default function EthSignTransaction() {
                                         <Layouts.Col gap={4} align={"center"} fit>
                                             <Elements.Text type={"h3"}>Complete</Elements.Text>
                                             <Elements.Text size={1} weight={"bold"}>
-                                                <Elements.Text opacity={0.6}>
-                                                    {short(txHash)}
-                                                </Elements.Text>{" "}
+                                                <Elements.Text opacity={0.6}>{short(txHash)}</Elements.Text>{" "}
                                                 <Elements.Text opacity={0.6}>Selected chain was switched from</Elements.Text>{" "}
                                                 <Elements.Text>{app?.name}</Elements.Text> <Elements.Text opacity={0.6}>to</Elements.Text>{" "}
                                                 <Elements.Text>{` ${tx?.to}`}</Elements.Text>
