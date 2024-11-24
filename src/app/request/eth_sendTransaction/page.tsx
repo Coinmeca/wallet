@@ -109,7 +109,7 @@ export default function EthSendTransaction() {
             }
             setTxHash(result);
             setLevel(2);
-            // setTimeout(handleClose, timeout);
+            setTimeout(handleClose, timeout);
         } catch (error: any) {
             console.log(error);
             error = error?.message || error;
