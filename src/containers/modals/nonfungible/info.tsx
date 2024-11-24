@@ -92,6 +92,7 @@ function NonFungibleInfoModal(props: Info) {
                         <Layouts.Contents.GridContainer gap={1} direction={"row"} width={{ min: "clamp(16em, 25%, 32em)" }}>
                             {attributes?.map((trait: Attribute, i: number) => (
                                 <Layouts.Col
+                                    key={i}
                                     gap={0}
                                     align={"center"}
                                     style={{
