@@ -2,7 +2,6 @@
 
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useNotification, usePortal, useWindowSize } from "@coinmeca/ui/hooks";
-import { Root } from "@coinmeca/ui/lib/style";
 import { filter, format } from "@coinmeca/ui/lib/utils";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { Account } from "@coinmeca/wallet-sdk/types";
@@ -10,10 +9,20 @@ import { useQueries } from "@tanstack/react-query";
 import { query } from "api/onchain/query";
 import { Modals } from "containers";
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import { short } from "utils";
 
-export default function Accounts({ search, searchFilter, responsive }: { search: any; searchFilter?: string; responsive: boolean }) {
+export default function Accounts({
+    search,
+    searchFilter,
+    responsive,
+    onClose,
+}: {
+    search: any;
+    searchFilter?: string;
+    responsive: boolean;
+    onClose?: Function;
+}) {
     const { windowSize } = useWindowSize();
     const { provider, chain, account, accounts } = useCoinmecaWalletProvider();
     const { addToast } = useNotification();
@@ -28,7 +37,7 @@ export default function Accounts({ search, searchFilter, responsive }: { search:
 
     const handleAccountChange = (account: Account) => {
         provider?.changeAccount(account?.index);
-        // handleMobileMenu("");
+        onClose?.();
     };
 
     const handleCopyAddress = (account: Account) => {

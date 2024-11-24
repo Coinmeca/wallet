@@ -1,12 +1,11 @@
 ﻿"use client";
 
-import { useCallback, useMemo, useState } from "react";
-import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
+import { useState } from "react";
+import { Layouts } from "@coinmeca/ui/components";
 import { Modal } from "@coinmeca/ui/containers";
 import { CoinmecaWalletContextProvider, useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { dehydrate, HydrationBoundary, QueryClientProvider } from "@tanstack/react-query";
 import { getQueryClient } from "api";
-import { short } from "utils";
 
 export interface Edit {
     onClose: Function;

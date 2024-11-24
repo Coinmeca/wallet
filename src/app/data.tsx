@@ -19,7 +19,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
     const path = usePathname();
 
     const { windowSize } = useWindowSize();
-    const { provider, account, accounts, chain, chains, apps } = useCoinmecaWalletProvider();
+    const { provider, account, chain, apps } = useCoinmecaWalletProvider();
     const { toasts, addToast } = useNotification();
 
     const [value, setValue] = useState<number>(0);
@@ -221,11 +221,11 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
         () => [
             {
                 active: sideMenu === "accounts",
-                children: <Sidebars.Accounts search={search()} searchFilter={searchFilter} responsive={responsive} />,
+                children: <Sidebars.Accounts search={search()} searchFilter={searchFilter} responsive={responsive} onClose={() => setSideMenu("")} />,
             },
             {
                 active: sideMenu === "chains",
-                children: <Sidebars.Chains search={search()} searchFilter={searchFilter} responsive={responsive} />,
+                children: <Sidebars.Chains search={search()} searchFilter={searchFilter} responsive={responsive} onClose={() => setSideMenu("")} />,
             },
         ],
         [search, searchFilter, responsive],
