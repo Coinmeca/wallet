@@ -6,12 +6,12 @@ import { CoinmecaWalletContextProvider, useCoinmecaWalletProvider } from "@coinm
 import { dehydrate, HydrationBoundary, QueryClientProvider } from "@tanstack/react-query";
 import { getQueryClient } from "api";
 
-export interface Approval {
+export interface Revoke {
     onClose: Function;
     close?: boolean;
 }
 
-export default function Approval(props: Approval) {
+export default function Revoke(props: Revoke) {
     const client = getQueryClient();
 
     return (

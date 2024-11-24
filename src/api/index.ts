@@ -41,8 +41,9 @@ const fetcher = {
                 if (data.result) {
                     return data.result; // Return the actual result from the RPC response
                 } else {
-                    throw new Error((data?.error as any)?.message || data?.error);
-                    // throw new Error("RPC response did not contain a result.");
+                    const error = (data?.error as any)?.message || "RPC response did not contain a result.";
+                    console.error("RPC Error:", error);
+                    throw new Error(error); // Improved error handling with the error message
                 }
             } else {
                 throw new Error(`RPC Error: ${response.statusText}`);

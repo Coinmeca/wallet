@@ -34,13 +34,13 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
     const colorMap = responsive
         ? "var(--rainbow)"
         : provider?.isLocked || path?.startsWith("/request")
-        ? "var(--rainbow)"
+        ? "red"
         : path?.startsWith("/token")
-        ? "orange"
-        : path?.startsWith("/nft")
         ? "green"
-        : path?.startsWith("/activity")
+        : path?.startsWith("/nft")
         ? "blue"
+        : path?.startsWith("/activity")
+        ? "orange"
         : "var(--rainbow)";
 
     const languages = [
@@ -222,11 +222,6 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                       onClick: () => (sideMenu === "menu" ? handlesideMenu("") : handlesideMenu("menu")),
                       children: [
                           {
-                              name: "Activity",
-                              href: "/activity",
-                              onClick: () => handlesideMenu(""),
-                          },
-                          {
                               name: "Token",
                               href: "/token",
                               onClick: () => handlesideMenu(""),
@@ -237,8 +232,8 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                               onClick: () => handlesideMenu(""),
                           },
                           {
-                              name: "Test",
-                              href: "/test",
+                              name: "Activity",
+                              href: "/activity",
                               onClick: () => handlesideMenu(""),
                           },
                       ],

@@ -3,18 +3,29 @@
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { usePortal, useSort } from "@coinmeca/ui/hooks";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
-import { Asset } from "@coinmeca/ui/types";
 import { useCallback } from "react";
-import { format } from "@coinmeca/ui/lib/utils";
+import { filter, format } from "@coinmeca/ui/lib/utils";
 import { Modals } from "containers";
 import { GetErc20 } from "api/erc20";
 import { zeroAddress } from "types";
 import { GetBalance } from "api/account";
 
-export default function Token() {
+interface Token {
+    filter?: string;
+}
+
+export default function Token(props: Token) {
     const { account, chain, tokens } = useCoinmecaWalletProvider();
+    const { sorting, sortArrow, setSort } = useSort();
+
     const { data: balance } = GetBalance(chain?.rpcUrls?.[0], account?.address);
     const [fungibles] = GetErc20(chain?.rpcUrls?.[0], tokens?.fungibles, account?.address);
+
+    const sorts = {
+        name: { key: "name", type: "string" },
+        symbol: { key: "symbol", type: "string" },
+        balance: { key: "balance", type: "number" },
+    };
 
     const [openFungibleAdd, closeAddFungible] = usePortal(() => <Modals.Fungible.Add onClose={closeAddFungible} />);
     const formatter = useCallback(
@@ -116,13 +127,6 @@ export default function Token() {
         [tokens?.fungibles, fungibles],
     );
 
-    const { sorting, sortArrow, setSort } = useSort();
-    const sorts = {
-        name: { key: "name", type: "string" },
-        symbol: { key: "symbol", type: "string" },
-        balance: { key: "balance", type: "number" },
-    };
-
     return (
         <Layouts.Col gap={0}>
             <Layouts.Row gap={1} fix style={{ overflow: "auto hidden" }}>
@@ -140,12 +144,15 @@ export default function Token() {
             </Layouts.Row>
             <Layouts.Divider />
             <Layouts.List
-                list={sorting([
-                    { ...chain?.nativeCurrency, balance, address: zeroAddress },
-                    ...Object.values(fungibles)
-                        ?.map(({ data }) => data)
-                        .filter((t) => t),
-                ])}
+                list={filter(
+                    sorting([
+                        { ...chain?.nativeCurrency, balance, address: zeroAddress },
+                        ...Object.values(fungibles)
+                            ?.map(({ data }) => data)
+                            .filter((t) => t),
+                    ]),
+                    props?.filter,
+                )}
                 formatter={formatter}
                 fill
             />

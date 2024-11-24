@@ -8,7 +8,7 @@ import { GetBalance } from "api/account";
 import { AnimatePresence } from "framer-motion";
 import { usePageLoader } from "hooks";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import Token from "./token/page";
 import Activity from "./activity/page";
@@ -22,6 +22,7 @@ export default function Main() {
     const { isLoad } = usePageLoader();
     const { account, chain } = useCoinmecaWalletProvider();
     const { data: balance, isLoading } = GetBalance(chain?.rpcUrls?.[0], account?.address);
+    const [searchFilter, setSearchFilter] = useState("");
 
     const responsive = useMemo(() => windowSize.width <= Root.Device.Tablet, [windowSize]);
     const tab = useCallback((target: string) => path?.startsWith(`/${target}`), [path]);
@@ -64,6 +65,7 @@ export default function Main() {
                                         <Layouts.Box padding={[2, "", "", ""]}>
                                             <Layouts.Col gap={0} fill>
                                                 <Layouts.Menu
+                                                    style={{ position: "relative" }}
                                                     menu={[
                                                         {
                                                             style: { padding: "1em 0" },
@@ -95,7 +97,9 @@ export default function Main() {
                                                                                     </>
                                                                                 ),
                                                                             }}
-                                                                            fold={false}
+                                                                            onChange={(e: any, v: any) => setSearchFilter(v)}
+                                                                            fold={responsive}
+                                                                            clearable
                                                                         />
                                                                     </>,
                                                                 ],
@@ -109,17 +113,17 @@ export default function Main() {
                                                         {
                                                             active: tab("token"),
                                                             style: { flex: 1 },
-                                                            children: <Token />,
+                                                            children: <Token filter={searchFilter} />,
                                                         },
                                                         {
                                                             active: tab("nft"),
                                                             style: { flex: 1 },
-                                                            children: <Nft />,
+                                                            children: <Nft filter={searchFilter} />,
                                                         },
                                                         {
                                                             active: tab("activity"),
                                                             style: { flex: 1 },
-                                                            children: <Activity />,
+                                                            children: <Activity filter={searchFilter} />,
                                                         },
                                                     ]}
                                                 />

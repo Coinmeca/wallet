@@ -70,51 +70,13 @@ export const hex = {
         }
         return bytes;
     },
-    toString: (hex: string) => {
-        let str = "";
-        for (let i = 0; i < hex.length; i += 2) {
-            const charCode = parseInt(hex.substr(i, 2), 16);
-            if (charCode >= 32 && charCode <= 126) {
-                str += String.fromCharCode(charCode);
-            }
-        }
-        return str;
+    toString: (value: string) => {
+        if (!value || !value.length) return value;
+        let data = value?.slice(64);
+        if (data.length % 2 !== 0) data = '0' + data;
+        return (Buffer.from(data, 'hex')).toString('utf8');
     },
     toNumber: (value: string) => Number(value),
-    toBase64: (value: string) => {
-        console.log(1);
-        value = value.startsWith('0x') ? value.slice(2) : value;
-        console.log("After slicing 0x:", value);
-
-        const bytes = hex.toBytes(value);
-        console.log("Bytes after hex.toBytes:", bytes);
-
-        console.log(2);
-        // Check if the bytes array is empty
-        if (bytes.length === 0) {
-            console.log("Bytes array is empty!");
-        }
-
-        while (bytes[0] === 0) {
-            console.log("Removing leading zero");
-            bytes.shift();
-        }
-
-        console.log("After removing leading zeros:", bytes);
-
-        while (bytes[bytes.length - 1] === 0) {
-            console.log("Removing trailing zero");
-            bytes.pop();
-        }
-
-        console.log("After removing trailing zeros:", bytes);
-
-        const result = btoa(String.fromCharCode.apply(null, bytes));
-        console.log("Base64 result:", result);
-
-        return result;
-    }
-
 }
 
 export const bigInt = {
@@ -124,24 +86,19 @@ export const bigInt = {
 }
 
 export const base64 = {
-    toJson: (base64String: string): any => {
-        // Check if the base64 string has the data URI prefix
-        const prefix = "data:application/json;base64,";
-        if (base64String.startsWith(prefix)) {
-            // Remove the prefix if it's already present
-            base64String = base64String.slice(prefix.length);
-        }
-
-        // Decode the base64 string to a regular string
-        const decodedString = atob(base64String);
-
-        // Parse the decoded string as JSON
+    toJson: (value: string): any => {
         try {
-            const json = JSON.parse(decodedString);
-            return json;
-        } catch (error) {
-            console.error("Failed to parse JSON:", error);
-            return null;
+            value = value?.split(',')?.[1]?.replace(/[^A-Za-z0-9+/=]/g, '');
+            return JSON.parse(
+                new TextDecoder().decode(
+                    Uint8Array.from(
+                        atob(value?.padEnd(value?.length + (4 - value?.length % 4) % 4, '=')),
+                        (char) => char.charCodeAt(0)
+                    )
+                )
+            );
+        } catch (e) {
+            console.log(e);
         }
     }
 }

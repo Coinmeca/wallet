@@ -1,3 +1,4 @@
 ﻿import Add from './add';
+import Info from './info';
 
-export { Add };
+export { Add, Info };

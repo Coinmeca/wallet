@@ -11,7 +11,7 @@ import { getQueryClient } from "api";
 import { GetErc20 } from "api/erc20";
 import { States } from "@coinmeca/ui/components/contents";
 
-export interface Fungible {
+export interface Add {
     standard?: any;
     onAsset?: Function;
     onProcess?: Function;
@@ -25,7 +25,7 @@ interface Validate {
     message?: string;
 }
 
-export default function Add(props: Fungible) {
+export default function Add(props: Add) {
     const client = getQueryClient();
 
     return (
@@ -39,7 +39,7 @@ export default function Add(props: Fungible) {
     );
 }
 
-function FungibleAddModal(props: Fungible) {
+function FungibleAddModal(props: Add) {
     const { provider, chain, account } = useCoinmecaWalletProvider();
 
     const [address, setAddress] = useState<string>();

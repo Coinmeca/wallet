@@ -9,12 +9,13 @@ import { getQueryClient } from "api";
 import { useMemo } from "react";
 import { short } from "utils";
 
-export interface Approval {
+export interface Detail {
+    [x: string | number | symbol]: any;
     onClose: Function;
     close?: boolean;
 }
 
-export default function Detail(props: Approval) {
+export default function Detail(props: Detail) {
     const client = getQueryClient();
 
     return (
@@ -27,7 +28,7 @@ export default function Detail(props: Approval) {
         </CoinmecaWalletContextProvider>
     );
 }
-const TxDetailModal = (props?: any) => {
+const TxDetailModal = (props?: Detail) => {
     const { provider, chain } = useCoinmecaWalletProvider();
     const tx = props?.tx;
     const date = (format(tx?.time, "date") as string).split(" ");
@@ -96,6 +97,7 @@ const TxDetailModal = (props?: any) => {
                                 </Elements.Text>
                                 <Elements.Text
                                     align={"right"}
+                                    title={tx?.hash}
                                     href={chain?.blockExplorerUrls?.length ? `${chain?.blockExplorerUrls}/tx/${tx?.hash}` : undefined}>
                                     {short(tx?.hash)}
                                 </Elements.Text>

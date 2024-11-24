@@ -4,14 +4,20 @@ import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { usePortal, useSort } from "@coinmeca/ui/hooks";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { useCallback, useEffect, useMemo } from "react";
-import { format } from "@coinmeca/ui/lib/utils";
+import { filter, format } from "@coinmeca/ui/lib/utils";
 import { Modals } from "containers";
 import { TransactionReceipt } from "@coinmeca/wallet-sdk/types";
 import { useQueries } from "@tanstack/react-query";
 import { query } from "api/onchain/query";
 
-export default function Activity() {
+interface Activity {
+    filter?: string;
+}
+
+export default function Activity(props: Activity) {
     const { account, chain, tx, provider } = useCoinmecaWalletProvider();
+    const { sorting, sortArrow, setSort } = useSort();
+
     const txs = useQueries({ queries: tx?.filter(({ status }) => status === "pending")?.map(({ hash }) => query.receipt(chain?.rpcUrls?.[0], hash)) || [] });
     const txlist = useMemo(
         (): TransactionReceipt[] =>
@@ -166,7 +172,6 @@ export default function Activity() {
         [tx],
     );
 
-    const { sorting, sortArrow, setSort } = useSort();
     const sorts = {
         blockNumber: { key: "blockNumber", type: "number" },
         action: { key: "category", type: "string" },
@@ -198,7 +203,7 @@ export default function Activity() {
             </Layouts.Row>
             <Layouts.Divider />
             <Layouts.Contents.InnerContent>
-                <Layouts.List list={sorting(txlist)} formatter={formatter} fill />
+                <Layouts.List list={filter(sorting(txlist), props?.filter)} formatter={formatter} fill />
             </Layouts.Contents.InnerContent>
         </Layouts.Col>
     );

@@ -15,7 +15,6 @@ export function GetErc721(
     const queries = tokens?.flatMap(([address, tokenIds]) => tokenIds?.map((tokenId) => (query.token(rpc, address, tokenId))) || []) || [];
     const results = useQueries({ queries });
 
-    console.log({ tokens, results });
     results?.forEach(({ data }, i) => {
         if (!tokenMap[data?.address || 'undefined']) tokenMap[data?.address || 'undefined'] = {};
         tokenMap[data?.address || 'undefined'][data?.tokenId || 'undefined'] = results?.[i];
