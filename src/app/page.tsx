@@ -5,14 +5,11 @@ import { Root } from "@coinmeca/ui/lib/style";
 import { format } from "@coinmeca/ui/lib/utils";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { GetBalance } from "api/account";
+import { Activity, Nft, Token } from "containers/pages";
 import { AnimatePresence } from "framer-motion";
 import { usePageLoader } from "hooks";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
-
-import Token from "./token/page";
-import Activity from "./activity/page";
-import Nft from "./nft/page";
 
 export default function Main() {
     const path = usePathname();
