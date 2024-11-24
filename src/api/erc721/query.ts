@@ -1,6 +1,6 @@
 ﻿import { queryOptions } from "@tanstack/react-query";
 import { fetcher } from "api";
-import { decodeHexToString, isVideo } from "utils";
+import { hex, isVideo } from "utils";
 
 export const query = {
     token: (rpc?: string, erc721?: string, tokenId?: string) =>
@@ -24,54 +24,16 @@ export const query = {
                         "latest",
                     ])
                 ]);
-
                 console.log({ tokenURI, ownerOf });
 
-                const hexToBytes = (hex: string) => {
-                    const bytes: number[] = [];
-                    // Ensure the input string is valid hex by removing non-hex characters (if any)
-                    const cleanHex = hex.replace(/[^0-9A-Fa-f]/g, '');  // Remove non-hex characters
-                    for (let i = 0; i < cleanHex.length; i += 2) {
-                        const byte = parseInt(cleanHex.substring(i, 2), 16);
-                        if (!isNaN(byte)) {
-                            bytes.push(byte);
-                        }
-                    }
-                    return bytes;
-                };
+                try {
 
-                console.log(123);
-                const decodeBase64StringFromHex = (hex: string) => {
-                    console.log(1);
-                    // Remove '0x' if present at the start of the hex string
-                    const cleanHex = hex.startsWith('0x') ? hex.slice(2) : hex;
-
-                    console.log(2);
-                    // Convert hex to a byte array
-                    const uriBytes = hexToBytes(cleanHex);
-
-                    console.log(3);
-                    // Convert byte array to string
-                    const uriString = String.fromCharCode.apply(null, uriBytes);
-
-                    console.log(4);
-                    // Now, uriString should contain a string like "data:application/json;base64,<base64Data>"
-                    // Find the actual base64-encoded string after 'data:application/json;base64,'
-                    const base64Prefix = "data:application/json;base64,";
-                    if (uriString.startsWith(base64Prefix)) {
-                        const base64Data = uriString.slice(base64Prefix.length);
-                        return `data:application/json;base64,${base64Data}`;
-                    }
-
-                    console.log(5, { base64Prefix, uriString });
-                    // If the format doesn't match, return an error or handle it as needed
-                    throw new Error("Invalid format: The URI does not have the expected 'data:application/json;base64,' prefix");
+                    const test = tokenURI?.status === 'fulfilled' ? tokenURI?.value?.slice(3) : ''
+                    console.log(test);
+                    console.log(hex.toString(test));
+                } catch (error) {
+                    console.log({ error })
                 }
-
-
-                const base64String = decodeBase64StringFromHex(tokenURI?.status === "fulfilled" ? tokenURI?.value?.toString()?.slice(66) : '');
-
-                console.log(base64String);
 
                 // Check if the URI needs further parsing or adjustment
                 // let parsedTokenURI = null;

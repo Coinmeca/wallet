@@ -70,15 +70,15 @@ export const hex = {
         }
         return bytes;
     },
-    toString: (value: string) => {
+    toString: (hex: string) => {
         let str = "";
-        for (let i = 0; i < value.length; i += 2) {
-            const charCode = parseInt(value.substring(i, 2), 16);
+        for (let i = 0; i < hex.length; i += 2) {
+            const charCode = parseInt(hex.substr(i, 2), 16);
             if (charCode >= 32 && charCode <= 126) {
                 str += String.fromCharCode(charCode);
             }
         }
-        return str
+        return str;
     },
     toNumber: (value: string) => Number(value),
     toBase64: (value: string) => {
