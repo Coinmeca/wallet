@@ -36,6 +36,6 @@
         "downlevelIteration": false,
         "typeRoots": ["src/types", "node_modules/@types"]
     },
-    "include": ["src", "next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "next.config.js"],
-    "exclude": ["node_modules", "packages", "ui-kit", "wallet-provider", "wallet-sdk"]
+    "include": ["src", "next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "wallet-sdk/rollup.config.js"],
+    "exclude": ["node_modules", "packages", "ui-kit", "wallet-sdk"]
 }
