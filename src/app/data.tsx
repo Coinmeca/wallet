@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import Image from "next/image";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useLayoutEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useNotification, usePortal, useWindowSize } from "@coinmeca/ui/hooks";
@@ -28,8 +28,10 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
     const [sideMenu, setSideMenu] = useState("");
     const [setting, setSetting] = useState("");
 
+    const [isClient, setIsClient] = useState(false);
+
     const [appFilter, setAppFilter] = useState<string>();
-    const responsive = useMemo(() => windowSize.width <= Root.Device.Tablet, [windowSize]);
+    const responsive = useMemo(() => isClient && windowSize.width <= Root.Device.Tablet, [windowSize]);
 
     const colorMap = responsive
         ? "var(--rainbow)"
@@ -69,6 +71,10 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
             code: "ko",
         },
     ];
+
+    useLayoutEffect(() => {
+        setIsClient(true);
+    }, []);
 
     const handlesideMenu = (menu: string) => {
         setSideMenu(menu);
@@ -211,6 +217,20 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
         />
     );
 
+    const sideContents = useMemo(
+        () => [
+            {
+                active: sideMenu === "accounts",
+                children: <Sidebars.Accounts search={search()} searchFilter={searchFilter} responsive={responsive} />,
+            },
+            {
+                active: sideMenu === "chains",
+                children: <Sidebars.Chains search={search()} searchFilter={searchFilter} responsive={responsive} />,
+            },
+        ],
+        [search, searchFilter, responsive],
+    );
+
     const side = 56;
     const header = {
         color: colorMap,
@@ -224,16 +244,19 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                           {
                               name: "Token",
                               href: "/token",
+                              active: path?.startsWith("/token"),
                               onClick: () => handlesideMenu(""),
                           },
                           {
                               name: "NFT",
                               href: "/nft",
+                              active: path?.startsWith("/nft"),
                               onClick: () => handlesideMenu(""),
                           },
                           {
                               name: "Activity",
                               href: "/activity",
+                              active: path?.startsWith("/activity"),
                               onClick: () => handlesideMenu(""),
                           },
                       ],
@@ -302,14 +325,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
         panels:
             responsive && !isRequest && isLoad
                 ? [
-                      {
-                          active: sideMenu === "accounts",
-                          children: <Sidebars.Accounts search={search()} searchFilter={searchFilter} responsive={responsive} />,
-                      },
-                      {
-                          active: sideMenu === "chains",
-                          children: <Sidebars.Chains search={search()} searchFilter={searchFilter} responsive={responsive} />,
-                      },
+                      ...sideContents,
                       {
                           active: sideMenu === "setting",
                           children: (
@@ -390,26 +406,19 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                   active: true,
                   lower: {
                       width: 48,
+                      active: !!sideMenu && sideMenu !== "",
                       onBlur: (e: any) => {
                           console.log("e", e);
                           if (!e.currentTarget.contains(e.relatedTarget)) {
                               // setSidebar(false);
                           }
                       },
-                      active: !!sideMenu && sideMenu !== "",
                       swipe: {
                           style: { marginTop: "5em" },
                           //   onActive: (e: any, active: boolean) => setSidebar(active),
                       },
                       children: [
-                          {
-                              active: sideMenu === "accounts",
-                              children: <Sidebars.Accounts search={search()} searchFilter={searchFilter} responsive={responsive} />,
-                          },
-                          {
-                              active: sideMenu === "chains",
-                              children: <Sidebars.Chains search={search()} searchFilter={searchFilter} responsive={responsive} />,
-                          },
+                          ...sideContents,
                           {
                               active: sideMenu === "setting",
                               children: (
