@@ -4,13 +4,15 @@ import { Contents, Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { format } from "@coinmeca/ui/lib/utils";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { Account, TransactionParams } from "@coinmeca/wallet-sdk/types";
+import { selectors } from "@coinmeca/wallet-sdk/selectors";
 import { useQueries } from "@tanstack/react-query";
 import { GetMaxFeePerGas } from "api/onchain";
 import { query } from "api/onchain/query";
 import { useMessageHandler, useTelegram } from "hooks";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
+import { short } from "utils";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({
@@ -26,7 +28,7 @@ await window.ethereum.providerMap.get("CoinmecaWallet").request({
 */
 
 const method = "erc20_approve";
-const timeout = 1000;
+const timeout = 5000;
 
 export default function Page() {
     const router = useRouter();
@@ -131,6 +133,8 @@ export default function Page() {
             );
     };
 
+    const selector = useMemo(() => selectors?.[params?.data?.substring(0, 10)], [params]);
+
     return auth && app && signer && tx ? (
         <Layouts.Contents.SlideContainer
             contents={[
@@ -219,9 +223,7 @@ export default function Page() {
                                                         {signer?.name}
                                                     </Elements.Text>
                                                     <Elements.Text type={"strong"} height={0} align={"left"} opacity={0.6}>
-                                                        {signer?.address?.substring(0, signer?.address.startsWith("0x") ? 8 : 6) +
-                                                            " ... " +
-                                                            signer?.address?.substring(signer?.address?.length - 6, signer?.address?.length)}
+                                                        {short(signer?.address)}
                                                     </Elements.Text>
                                                 </Layouts.Col>
                                             </Layouts.Row>
@@ -241,7 +243,10 @@ export default function Page() {
                                                         background: "rgba(var(--white),.15)",
                                                     }}>
                                                     <Elements.Avatar
-                                                        character={tx?.to?.startsWith("0x") ? tx?.to?.substring(2, 4) : tx?.to?.substring(0, 2)}
+                                                        character={short(tx?.to?.startsWith("0x") ? tx?.to?.substring(2, tx?.to?.length) : tx?.to, {
+                                                            length: 2,
+                                                            front: true,
+                                                        })}
                                                         name={"To"}
                                                         hideName
                                                     />
@@ -251,9 +256,7 @@ export default function Page() {
                                                         To
                                                     </Elements.Text>
                                                     <Elements.Text type={"strong"} height={0} align={"left"} opacity={0.6}>
-                                                        {tx?.to?.substring(0, tx?.to?.startsWith("0x") ? 8 : 6) +
-                                                            " ... " +
-                                                            tx?.to?.substring(tx?.to?.length - 6, tx?.to?.length)}
+                                                        {short(tx?.to)}
                                                     </Elements.Text>
                                                 </Layouts.Col>
                                             </Layouts.Row>
@@ -292,9 +295,7 @@ export default function Page() {
                                                         </Elements.Text>
                                                         <Layouts.Row gap={1} align={"center"} fix>
                                                             <Elements.Text align={"left"} title={spender}>
-                                                                {spender?.substring(0, spender.startsWith("0x") ? 8 : 6) +
-                                                                    " ... " +
-                                                                    spender?.substring(spender?.length - 6, spender?.length)}
+                                                                {short(spender)}
                                                             </Elements.Text>
                                                             <Controls.Button icon={"copy"} fit />
                                                         </Layouts.Row>
@@ -398,11 +399,7 @@ export default function Page() {
                                         <Layouts.Col gap={4} align={"center"} fit>
                                             <Elements.Text type={"h3"}>Complete</Elements.Text>
                                             <Elements.Text size={1} weight={"bold"}>
-                                                <Elements.Text opacity={0.6}>
-                                                    {txHash?.substring(0, txHash?.startsWith("0x") ? 8 : 6) +
-                                                        "..." +
-                                                        txHash?.substring(txHash?.length - 6, txHash?.length)}
-                                                </Elements.Text>{" "}
+                                                <Elements.Text opacity={0.6}>{short(txHash)}</Elements.Text>{" "}
                                                 <Elements.Text opacity={0.6}>Selected chain was switched from</Elements.Text>{" "}
                                                 <Elements.Text>{app?.name}</Elements.Text> <Elements.Text opacity={0.6}>to</Elements.Text>{" "}
                                                 <Elements.Text>{` ${tx?.to}`}</Elements.Text>
@@ -478,7 +475,6 @@ export default function Page() {
             <Layouts.Col gap={2} align={"center"} fill>
                 <Layouts.Contents.InnerContent padding={[4, 4, 0]}>
                     <Layouts.Col fill>
-                        {console.log({ auth, app, signer, tx })}
                         <Layouts.Col align={"center"} style={{ flex: 1 }}>
                             <Layouts.Col gap={8} align={"center"} fit>
                                 <div

@@ -53,8 +53,8 @@
         "@types/telegram-web-app": "^7.8.0",
         "eslint": "8.57.1",
         "eslint-config-next": "14.2.16",
-        "tsx": "^4.19.1",
-        "typescript": "^5.6.3"
+        "ts-node": "^10.9.2",
+        "typescript": "^5.7.2"
     },
     "packageManager": "yarn@4.5.1"
 }

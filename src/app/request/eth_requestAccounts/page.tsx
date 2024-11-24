@@ -13,7 +13,7 @@ await window.ethereum.providerMap.get("CoinmecaWallet").request({method: 'eth_re
 */
 
 const method = "eth_requestAccounts";
-const timeout = 3000;
+const timeout = 5000;
 
 export default function Page() {
     const router = useRouter();
@@ -35,10 +35,10 @@ export default function Page() {
                 },
                 "*",
             );
-        if (isPopup) {
-            if (telegram) telegram?.close();
-            window?.close();
-        } else router.push("/");
+        // if (isPopup) {
+        if (telegram) telegram?.close();
+        window?.close();
+        // } else router.push("/");
     };
 
     const handleConnect = async () => {
@@ -128,13 +128,7 @@ export default function Page() {
                                                                 <Elements.Text size={1} weight={"bold"}>
                                                                     <Elements.Text opacity={0.6}>Connect</Elements.Text>{" "}
                                                                     <Elements.Text>{account?.name}</Elements.Text>{" "}
-                                                                    <Elements.Text opacity={0.6}>
-                                                                        (
-                                                                        {account?.address?.substring(0, account?.address?.startsWith("0x") ? 8 : 6) +
-                                                                            "..." +
-                                                                            account?.address?.substring(account?.address?.length - 6, account?.address?.length)}
-                                                                        ) to
-                                                                    </Elements.Text>{" "}
+                                                                    <Elements.Text opacity={0.6}>(short(account?.address)) to</Elements.Text>{" "}
                                                                     <Elements.Text>{app?.name}</Elements.Text>{" "}
                                                                     <Elements.Text opacity={0.6}>
                                                                         ({app?.url}). Please check out the information of app and allow connections only to apps
@@ -154,13 +148,7 @@ export default function Page() {
                                                                 <Elements.Text size={1} weight={"bold"}>
                                                                     <Elements.Text opacity={0.6}>Comepete to connect</Elements.Text>{" "}
                                                                     <Elements.Text>{account?.name}</Elements.Text>{" "}
-                                                                    <Elements.Text opacity={0.6}>
-                                                                        (
-                                                                        {account?.address?.substring(0, account?.address?.startsWith("0x") ? 8 : 6) +
-                                                                            "..." +
-                                                                            account?.address?.substring(account?.address?.length - 6, account?.address?.length)}
-                                                                        ) to
-                                                                    </Elements.Text>{" "}
+                                                                    <Elements.Text opacity={0.6}>(short(account?.address)) to</Elements.Text>{" "}
                                                                     <Elements.Text>{app?.name}</Elements.Text>{" "}
                                                                     <Elements.Text opacity={0.6}>({app?.url}).</Elements.Text>
                                                                 </Elements.Text>

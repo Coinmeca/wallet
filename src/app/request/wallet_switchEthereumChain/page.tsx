@@ -14,7 +14,7 @@ await window.ethereum.providerMap.get("CoinmecaWallet").request({method:"wallet_
 */
 
 const method = "wallet_switchEthereumChain";
-const timeout = 3000;
+const timeout = 5000;
 
 export default function Page() {
     const router = useRouter();
@@ -30,16 +30,16 @@ export default function Page() {
     const [error, setError] = useState<any>();
 
     const handleClose = () => {
-        if (isPopup) {
-            if (telegram) telegram?.close();
-            window?.close();
-        } else router.push("/");
+        // if (isPopup) {
+        if (telegram) telegram?.close();
+        window?.close();
+        // } else router.push("/");
         if (level < 2)
             window?.opener?.postMessage(
                 {
                     method,
                     ...(level === 0 ? { error: "User rejected the request" } : {}),
-                    id:messageId,
+                    id: messageId,
                 },
                 "*",
             );
@@ -54,7 +54,7 @@ export default function Page() {
                     {
                         method,
                         result,
-                        id:messageId,
+                        id: messageId,
                     },
                     "*",
                 );
@@ -77,7 +77,6 @@ export default function Page() {
     };
 
     useLayoutEffect(() => {
-        console.log({ params });
         setSelectedChain(chain);
         if (params?.chainId) setNewChain(chains?.find((c) => c?.chainId === params.chainId));
     }, []);

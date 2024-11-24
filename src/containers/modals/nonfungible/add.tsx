@@ -10,6 +10,7 @@ import { dehydrate, HydrationBoundary, QueryClientProvider } from "@tanstack/rea
 import { getQueryClient } from "api";
 import { GetErc20 } from "api/erc20";
 import { States } from "@coinmeca/ui/components/contents";
+import { GetErc721 } from "api/erc721";
 
 export interface Add {
     standard?: any;
@@ -32,43 +33,60 @@ export default function Add(props: Add) {
         <CoinmecaWalletContextProvider>
             <QueryClientProvider {...{ client }}>
                 <HydrationBoundary state={dehydrate(client)}>
-                    <FungibleAddModal {...props} />
+                    <NonFungibleAddModal {...props} />
                 </HydrationBoundary>
             </QueryClientProvider>
         </CoinmecaWalletContextProvider>
     );
 }
 
-function FungibleAddModal(props: Add) {
+function NonFungibleAddModal(props: Add) {
     const { provider, chain, account } = useCoinmecaWalletProvider();
 
-    const [address, setAddress] = useState<string>();
-    const [validate, setValidate] = useState<Validate | undefined>({ state: false });
+    const [validate, setValidate] = useState<{ address?: Validate; id?: Validate } | undefined>({ address: { state: false }, id: { state: false } });
 
-    const [token, setToken] = useState<string>();
+    const [token, setToken] = useState<{ address?: string; id?: string }>();
     const [loading, setLoading] = useState<boolean>(false);
     const [process, setProcess] = useState<boolean | null>(null);
 
-    const [tokens, getToken] = GetErc20("https://sepolia-rollup.arbitrum.io/rpc", [token], account?.address);
-    const asset = getToken(address);
-    const pattern = /^[a-zA-Z0-9]+$/;
+    const [tokens, getToken] = GetErc721("https://sepolia-rollup.arbitrum.io/rpc", token?.address && token?.id ? { [token.address]: [token.id] } : undefined);
+    const asset = getToken(token?.address, token?.id);
+    const pattern = {
+        address: /^[a-zA-Z0-9]+$/,
+        number: /^[0-9]+$/,
+    };
 
-    const handleValidate = (a?: string) => {
-        if (address === a || asset?.isFetching) return;
+    const handleValidateAddress = (a?: string) => {
+        if (token?.address === a || asset?.isFetching) return;
         let check: Validate = { state: false };
         if (!!a && a !== "" && a !== "0" && a !== "0x") {
             if (!a?.startsWith("0x")) check = { state: true, message: "The typed a form of a Token Contract is Invalid." };
-            else if (!pattern.test(a)) check = { state: true, message: "The unacceptable charater is used in a form." };
+            else if (!pattern.address.test(a)) check = { state: true, message: "The unacceptable charater is used in a form." };
             else if (a?.length < 42) check = { state: true, message: "The a is too short." };
             else if (a?.length > 42) check = { state: true, message: "The a is too long." };
         }
-        setValidate(check);
-        if (address !== a) setAddress(() => (a === "" ? undefined : a));
+        setValidate((state) => ({ ...state, address: check }));
+        if (token?.address !== a) setToken((state) => ({ ...state, address: a === "" ? undefined : a }));
+    };
+
+    const handleValidateId = (id?: string) => {
+        let check: Validate = { state: false };
+        if (!!id && id !== "" && id !== "0" && id !== "0x") {
+            if (!pattern.number.test(id)) check = { state: true, message: "The unacceptable charater is used in a form." };
+            if (isNaN(Number(id))) check = { state: true, message: "The token ID is invalid format." };
+        }
+        setValidate((state) => ({ ...state, id: check }));
+        if (token?.id !== id) setToken((state) => ({ ...state, id: id === "" ? undefined : id }));
     };
 
     const handleAddToken = (e: any) => {
-        provider?.addFungibleAsset(asset?.data?.address);
-        props?.onClose?.(e);
+        try {
+            provider?.addNonFungibleAsset(asset?.data?.address!, asset?.data?.tokenId!);
+            props?.onClose?.(e);
+        } catch (error) {
+            console.log(error);
+            setProcess(false);
+        }
     };
 
     const handleClose = (e: any) => {
@@ -76,26 +94,31 @@ function FungibleAddModal(props: Add) {
     };
 
     useEffect(() => {
+        const address = token?.address;
         if (
             !!address &&
             address !== "" &&
             address !== "0" &&
             address !== "0x" &&
             address?.length === 42 &&
-            pattern.test(address) &&
+            pattern.address.test(address) &&
             address?.startsWith("0x") &&
             address !== token
         )
-            setToken(address);
-    }, [address]);
+            setToken((state) => ({ ...state, address }));
+    }, [token?.address]);
 
     useEffect(() => {
-        if ((asset?.isFetching || asset?.isLoading) && !tokens) {
-            setProcess(null);
-            setLoading(true);
-        }
-        if (loading && asset?.isSuccess && tokens) {
-            setLoading(false);
+        if (asset?.data?.isInvalid) setProcess(false);
+        else {
+            if ((asset?.isFetching || asset?.isLoading) && !tokens) {
+                setProcess(null);
+                setLoading(true);
+            }
+            if (loading && asset?.isSuccess && tokens) {
+                if (asset?.data?.isInvalid) setProcess(false);
+                setLoading(false);
+            }
         }
         // else if (!loading && tokens) {
         // setLoading(false);
@@ -105,7 +128,6 @@ function FungibleAddModal(props: Add) {
         // setProcess(false);
         // }
     }, [asset?.isFetching, asset?.isLoading, asset?.isError, asset?.isSuccess, tokens, loading]);
-    console.log({ asset });
 
     return (
         <Modals.Process
@@ -130,23 +152,23 @@ function FungibleAddModal(props: Add) {
                                                     </Elements.Text>
                                                     <Controls.Input
                                                         placeholder={"0xA1z2b3Y4C5x6d7E8..."}
-                                                        onChange={(e: any, v: string) => handleValidate(v)}
-                                                        value={address}
-                                                        error={validate?.state}
-                                                        lock={asset?.isFetching || (address && asset?.data)}
+                                                        onChange={(e: any, v: string) => handleValidateAddress(v)}
+                                                        value={token?.address}
+                                                        error={validate?.address?.state}
+                                                        lock={asset?.isFetching || asset?.data}
                                                         message={{
                                                             color: "red",
-                                                            children: validate?.message,
+                                                            children: validate?.address?.message,
                                                         }}
                                                         left={
-                                                            asset?.isFetching || (address && asset)
+                                                            asset?.isFetching || asset?.data
                                                                 ? {
                                                                       children: (
                                                                           <Elements.Icon
-                                                                              icon={address && asset ? "check-bold" : validate?.state ? "x" : "loading"}
-                                                                              color={address && asset && "green"}
+                                                                              icon={asset ? "check-bold" : validate?.address?.state ? "x" : "loading"}
+                                                                              color={asset && "green"}
                                                                               style={{
-                                                                                  ...(!(address && asset) && !validate?.state && { opacity: 0.45 }),
+                                                                                  ...(!asset?.data && !validate?.id?.state && { opacity: 0.45 }),
                                                                               }}
                                                                           />
                                                                       ),
@@ -155,23 +177,45 @@ function FungibleAddModal(props: Add) {
                                                                       style: { maxWidth: 0, opacity: 0 },
                                                                   }
                                                         }
-                                                        // right={
-                                                        //     address && address?.length > 0
-                                                        //         ? {
-                                                        //               style: { pointerEvents: "initial" },
-                                                        //               children: (
-                                                        //                   <Controls.Button
-                                                        //                       icon={"x"}
-                                                        //                       onClick={() => {
-                                                        //                           setAddress("");
-                                                        //                       }}
-                                                        //                   />
-                                                        //               ),
-                                                        //           }
-                                                        //         : undefined
-                                                        // }
                                                         clearable
                                                         autoFocus
+                                                    />
+                                                </Layouts.Col>
+                                                <Layouts.Col gap={1}>
+                                                    <Elements.Text type={"desc"} align={"left"}>
+                                                        Token ID
+                                                    </Elements.Text>
+                                                    <Controls.Input
+                                                        placeholder={""}
+                                                        type={"number"}
+                                                        align={"right"}
+                                                        onChange={(e: any, v: string) => handleValidateId(v)}
+                                                        value={token?.id}
+                                                        error={validate?.id?.state}
+                                                        lock={asset?.isFetching || asset?.data}
+                                                        message={{
+                                                            color: "red",
+                                                            children: validate?.id?.message,
+                                                        }}
+                                                        left={
+                                                            asset?.isFetching || asset?.data
+                                                                ? {
+                                                                      children: (
+                                                                          <Elements.Icon
+                                                                              icon={asset?.data ? "check-bold" : validate?.id?.state ? "x" : "loading"}
+                                                                              color={asset?.data && "green"}
+                                                                              style={{
+                                                                                  ...(!asset?.data && !validate?.id?.state && { opacity: 0.45 }),
+                                                                              }}
+                                                                          />
+                                                                      ),
+                                                                  }
+                                                                : {
+                                                                      style: { maxWidth: 0, opacity: 0 },
+                                                                  }
+                                                        }
+                                                        clearPosition="left"
+                                                        clearable
                                                     />
                                                 </Layouts.Col>
                                             </Layouts.Col>
@@ -193,11 +237,11 @@ function FungibleAddModal(props: Add) {
                                         {asset?.data && (
                                             <Layouts.Col align={"center"}>
                                                 <Image
-                                                    src={`https://web3.coinmeca.net/${chain?.chainId}/${asset?.data?.address?.toLowerCase()}/logo.svg`}
                                                     width={0}
                                                     height={0}
-                                                    alt={asset?.data?.symbol}
-                                                    style={{ width: "6em", height: "6em" }}
+                                                    src={asset?.isLoading ? require("../../../assets/animation/loading.gif") : asset?.data?.image}
+                                                    alt={asset?.data?.tokenId || ""}
+                                                    style={{ width: "100%", height: "100%", maxHeight: "50vh" }}
                                                 />
                                                 <Layouts.Col gap={1}>
                                                     <Elements.Text type={"h6"} height={0}>

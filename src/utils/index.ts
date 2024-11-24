@@ -1,6 +1,24 @@
 ﻿import CryptoJS from "crypto-js";
 import { Chain } from "@coinmeca/wallet-sdk/types";
-import { Address } from "viem";
+import { Address, toBytes } from "viem";
+
+export const isVideo = (url: string) => {
+    const videoExtensions = ['.mp4', '.webm', '.avi', '.mov', '.mkv'];
+    return videoExtensions.some(ext => url.toLowerCase().endsWith(ext));
+};
+
+export const short = (value?: string, options?: { length?: number; ellipsis?: string; front?: boolean; back?: boolean }) => {
+    if (!value) return;
+    const length = options?.length || 6;
+    const ellipsis = options?.ellipsis || " ... ";
+    const front = options?.front;
+    const back = options?.back;
+    return (
+        (front || !back ? value?.substring(0, value?.startsWith("0x") ? length + 2 : length) : "") +
+        (front || back ? "" : ellipsis) +
+        (!front || back ? value?.substring(value?.length - length, value?.length) : "")
+    );
+};
 
 export const pattern = {
     chainId: /^[0-9]+$/,
@@ -42,110 +60,58 @@ export const valid = {
     },
 };
 
-export const decodeHexToString = (hex: string) => {
-    let str = "";
-    for (let i = 0; i < hex.length; i += 2) {
-        const charCode = parseInt(hex.substr(i, 2), 16);
-        if (charCode >= 32 && charCode <= 126) {
-            str += String.fromCharCode(charCode);
+export const hex = {
+    toBytes: (value: string) => {
+        const bytes: number[] = [];
+        value = value.replace(/[^0-9A-Fa-f]/g, '');
+        for (let i = 0; i < value.length; i += 2) {
+            const byte = parseInt(value.substring(i, 2), 16);
+            if (!isNaN(byte)) bytes.push(byte);
+        }
+        return bytes;
+    },
+    toString: (value: string) => {
+        if (!value || !value.length) return value;
+        let data = value?.slice(64);
+        if (data.length % 2 !== 0) data = '0' + data;
+        return (Buffer.from(data, 'hex')).toString('utf8');
+    },
+    toNumber: (value: string) => Number(value),
+}
+
+export const bigInt = {
+    toHex: (value: BigInt): string => {
+        return "0x" + value.toString(16);
+    },
+}
+
+export const base64 = {
+    toJson: (value: string): any => {
+        try {
+            value = value?.split(',')?.[1]?.replace(/[^A-Za-z0-9+/=]/g, '');
+            return JSON.parse(
+                new TextDecoder().decode(
+                    Uint8Array.from(
+                        atob(value?.padEnd(value?.length + (4 - value?.length % 4) % 4, '=')),
+                        (char) => char.charCodeAt(0)
+                    )
+                )
+            );
+        } catch (e) {
+            console.log(e);
         }
     }
-    return str;
-};
-
-export const decodeHexToNumber = (hex: string) => parseInt(hex, 16);
-
-export const toHexString = (value: BigInt): string => {
-    return "0x" + value.toString(16); // Converts BigInt to hexadecimal string with 0x prefix
-};
+}
 
 export const sanitizeBigIntToHex = (obj: any): any => {
     if (typeof obj === "bigint") {
-        return toHexString(obj);
+        return bigInt.toHex(obj);
     } else if (Array.isArray(obj)) {
         return obj.map(sanitizeBigIntToHex);
     } else if (typeof obj === "object" && obj !== null) {
         return Object.fromEntries(Object.entries(obj).map(([key, value]) => [key, sanitizeBigIntToHex(value)]));
     }
     return obj;
-};
-
-export type ObjectFilter = { key?: string | string[]; value?: string | string[] } | undefined;
-export type Filter = ObjectFilter | string[] | string | ObjectFilter[] | undefined;
-
-export type ItemType = {
-    [key: string]: any; // Define specific keys and their types as needed
-};
-
-// Common logic for filtering or finding
-export const f = <T extends ItemType>(array: T[], filter: Filter | undefined, findOne: boolean): T[] | T | undefined => {
-    if (!array.length) return findOne ? undefined : [];
-
-    // Utility function to get the value from a nested key
-    const getNestedValue = (obj: any, keyPath: string): any => {
-        return keyPath.split(".").reduce((acc, key) => acc?.[key], obj);
-    };
-
-    const includesValue = (value: any, filter: string) => value?.toString().toLowerCase().includes(filter.toLowerCase());
-
-    const objectFilter = (item: T, filter: ObjectFilter): boolean => {
-        if (!filter) return true;
-
-        const { key, value } = filter;
-        const keys = Array.isArray(key) ? key : key ? [key] : [];
-        const values = Array.isArray(value) ? value : value ? [value] : [];
-
-        if (keys.length && values.length) {
-            return keys.some((k) => values.some((v) => includesValue(getNestedValue(item, k), v)));
-        }
-        if (keys.length) {
-            return keys.some((k) => getNestedValue(item, k) !== undefined);
-        }
-        if (values.length) {
-            return values.some((v) => Object.values(item).some((value) => includesValue(value, v)));
-        }
-        return true; // No key and no value provided, return the item
-    };
-
-    const checkItem = (item: T): boolean => {
-        if (typeof filter === "string") {
-            return Object.values(item).some((value) => includesValue(value, filter));
-        }
-
-        if (Array.isArray(filter)) {
-            if (filter.every((f) => typeof f === "string")) {
-                // If filter is an array of strings
-                return Object.values(item).some((value) => filter.some((f) => includesValue(value, f as string)));
-            }
-
-            if (filter.every((f) => typeof f === "object" && f !== null)) {
-                // If filter is an array of object filters, apply them sequentially
-                return filter.every((f) => objectFilter(item, f as ObjectFilter));
-            }
-        }
-
-        if (typeof filter === "object" && filter !== null) {
-            return objectFilter(item, filter as ObjectFilter);
-        }
-
-        return false;
-    };
-
-    if (findOne) {
-        return array.find(checkItem);
-    } else {
-        return array.filter(checkItem);
-    }
-};
-
-// Filter function
-export const filter = <T extends ItemType = ItemType>(array: T[] = [], filter?: Filter): T[] => {
-    return f(array, filter, false) as T[];
-};
-
-// Find function
-export const find = <T extends ItemType = ItemType>(array: T[] = [], filter?: Filter): T | undefined => {
-    return f(array, filter, true) as T | undefined;
 };
 
 export const objectToUrlParams = (obj: { [x: string | number | symbol]: any }) => {
@@ -227,28 +193,6 @@ export const openWindow = (target: string, args?: { width?: number; height?: num
 
     return newWindow;
 };
-
-export function parseChainId(chain: number | string | Chain): number {
-    if (!chain) return 0;
-    return typeof chain === "string"
-        ? chain.startsWith("0x")
-            ? Number(chain)
-            : parseInt(chain)
-        : typeof chain === "number"
-        ? chain
-        : parseChainId(chain?.chainId);
-}
-
-export function formatChainId(chain: number | string | Chain): string {
-    if (!chain) return chain as any;
-    return typeof chain === "string"
-        ? chain.startsWith("0x")
-            ? chain
-            : formatChainId(parseInt(chain))
-        : typeof chain === "number"
-        ? `0x${chain?.toString(16)}`
-        : formatChainId(chain?.chainId);
-}
 
 export const isMobile = () => {
     const browser = () => ((global || window) as any)?.navigator?.userAgent || ((global || window) as any)?.navigator?.vendor; /*|| window?.opera*/

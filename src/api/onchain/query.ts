@@ -17,24 +17,24 @@ export const query = {
             staleTime: 10 * 60 * 1000,
         }),
 
-    accountType: (rpc?: string, address?: string) =>
+    typeOf: (rpc?: string, address?: string) =>
         queryOptions({
             queryKey: ["accountType", address],
-            queryFn: async () => ((await fetcher.rpc(rpc!, "eth_getCode", [address, "latest"])) === "0x" ? "eoa" : "ca"),
-            enabled: !!address,
+            queryFn: async () => (await fetcher.rpc(rpc!, "eth_getCode", [address, "latest"]).then(data => data === "0x" ? "eoa" : "ca")),
+            enabled: !!rpc && !!address,
         }),
 
     balance: (rpc?: string, address?: string) =>
         queryOptions({
             queryKey: ["balance", rpc, address],
-            queryFn: async () => await fetcher.rpc(rpc!, "eth_getBalance", [address, "latest"]).then((data) => (data ? Number(data) / 1e18 : 0)),
+            queryFn: async () => await fetcher.rpc(rpc!, "eth_getBalance", [address, "latest"]).then(data => (data ? Number(data) / 1e18 : 0)),
             enabled: !!rpc && !!address,
         }),
 
     nonce: (rpc?: string, address?: string) =>
         queryOptions({
             queryKey: ["nonce", rpc, address],
-            queryFn: async () => await fetcher.rpc(rpc!, "eth_getTransactionCount", [address, "pending"]).then((data) => Number(data || 0)),
+            queryFn: async () => await fetcher.rpc(rpc!, "eth_getTransactionCount", [address, "pending"]).then(data => Number(data || 0)),
             enabled: !!rpc && !!address,
         }),
 
@@ -42,7 +42,7 @@ export const query = {
         queryOptions({
             queryKey: ["gasPrice", rpc],
             queryFn: async () =>
-                await fetcher.rpc(rpc!, "eth_gasPrice").then((data) => ({
+                await fetcher.rpc(rpc!, "eth_gasPrice").then(data => ({
                     raw: Number(data || 0),
                     format: data ? Number(data) / 1e9 : 0,
                 })),
@@ -53,7 +53,7 @@ export const query = {
         queryOptions({
             queryKey: ["estimateGas", params],
             queryFn: async () =>
-                await fetcher.rpc(rpc!, "eth_estimateGas", sanitizeBigIntToHex(Array.isArray(params) ? params : [params])).then((data) => ({
+                await fetcher.rpc(rpc!, "eth_estimateGas", sanitizeBigIntToHex(Array.isArray(params) ? params : [params])).then(data => ({
                     raw: Number(data || 0),
                     format: data ? Number(data) / 1e9 : 0,
                 })),
@@ -71,10 +71,17 @@ export const query = {
         queryOptions({
             queryKey: ["maxPriorityFeePerGas", rpc],
             queryFn: async () =>
-                await fetcher.rpc(rpc!, "eth_maxPriorityFeePerGas").then((data) => ({
+                await fetcher.rpc(rpc!, "eth_maxPriorityFeePerGas").then(data => ({
                     raw: Number(data || 0),
                     format: data ? Number(data) / 1e9 : 0,
                 })),
             enabled: !!rpc,
+        }),
+
+    receipt: (rpc?: string, txHash?: string) =>
+        queryOptions({
+            queryKey: ["receipt", rpc],
+            queryFn: async () => await fetcher.rpc(rpc!, "eth_getTransactionReceipt", [txHash]).then(data => data),
+            enabled: !!rpc && !!txHash,
         }),
 };

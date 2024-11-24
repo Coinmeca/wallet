@@ -6,6 +6,7 @@ import { Modal } from "@coinmeca/ui/containers";
 import { CoinmecaWalletContextProvider, useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { dehydrate, HydrationBoundary, QueryClientProvider } from "@tanstack/react-query";
 import { getQueryClient } from "api";
+import { short } from "utils";
 
 export interface Approval {
     onClose: Function;
@@ -91,9 +92,7 @@ const ApprovalManageModal = (props: any) => {
                                                                 opacity={0.6}
                                                                 title={account?.address}
                                                                 fix>
-                                                                {account?.address?.substring(0, account?.address?.startsWith("0x") ? 8 : 6) +
-                                                                    " ... " +
-                                                                    account?.address?.substring(account?.address?.length - 6, account?.address?.length)}
+                                                                    {short(account?.address)}
                                                             </Elements.Text>
                                                         </>,
                                                     ],
