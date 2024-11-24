@@ -114,84 +114,6 @@ export const sanitizeBigIntToHex = (obj: any): any => {
     return obj;
 };
 
-export type ObjectFilter = { key?: string | string[]; value?: string | string[] } | undefined;
-export type Filter = ObjectFilter | string[] | string | ObjectFilter[] | undefined;
-
-export type ItemType = {
-    [key: string]: any; // Define specific keys and their types as needed
-};
-
-// Common logic for filtering or finding
-export const f = <T extends ItemType>(array: T[], filter: Filter | undefined, findOne: boolean): T[] | T | undefined => {
-    if (!array.length) return findOne ? undefined : [];
-
-    // Utility function to get the value from a nested key
-    const getNestedValue = (obj: any, keyPath: string): any => {
-        return keyPath.split(".").reduce((acc, key) => acc?.[key], obj);
-    };
-
-    const includesValue = (value: any, filter: string) => value?.toString().toLowerCase().includes(filter.toLowerCase());
-
-    const objectFilter = (item: T, filter: ObjectFilter): boolean => {
-        if (!filter) return true;
-
-        const { key, value } = filter;
-        const keys = Array.isArray(key) ? key : key ? [key] : [];
-        const values = Array.isArray(value) ? value : value ? [value] : [];
-
-        if (keys.length && values.length) {
-            return keys.some((k) => values.some((v) => includesValue(getNestedValue(item, k), v)));
-        }
-        if (keys.length) {
-            return keys.some((k) => getNestedValue(item, k) !== undefined);
-        }
-        if (values.length) {
-            return values.some((v) => Object.values(item).some((value) => includesValue(value, v)));
-        }
-        return true; // No key and no value provided, return the item
-    };
-
-    const checkItem = (item: T): boolean => {
-        if (typeof filter === "string") {
-            return Object.values(item).some((value) => includesValue(value, filter));
-        }
-
-        if (Array.isArray(filter)) {
-            if (filter.every((f) => typeof f === "string")) {
-                // If filter is an array of strings
-                return Object.values(item).some((value) => filter.some((f) => includesValue(value, f as string)));
-            }
-
-            if (filter.every((f) => typeof f === "object" && f !== null)) {
-                // If filter is an array of object filters, apply them sequentially
-                return filter.every((f) => objectFilter(item, f as ObjectFilter));
-            }
-        }
-
-        if (typeof filter === "object" && filter !== null) {
-            return objectFilter(item, filter as ObjectFilter);
-        }
-
-        return false;
-    };
-
-    if (findOne) {
-        return array.find(checkItem);
-    } else {
-        return array.filter(checkItem);
-    }
-};
-
-// Filter function
-export const filter = <T extends ItemType = ItemType>(array: T[] = [], filter?: Filter): T[] => {
-    return f(array, filter, false) as T[];
-};
-
-// Find function
-export const find = <T extends ItemType = ItemType>(array: T[] = [], filter?: Filter): T | undefined => {
-    return f(array, filter, true) as T | undefined;
-};
-
 export const objectToUrlParams = (obj: { [x: string | number | symbol]: any }) => {
     const params = new URLSearchParams();
     for (const key in obj) {
@@ -271,28 +193,6 @@ export const openWindow = (target: string, args?: { width?: number; height?: num
 
     return newWindow;
 };
-
-export function parseChainId(chain: number | string | Chain): number {
-    if (!chain) return 0;
-    return typeof chain === "string"
-        ? chain.startsWith("0x")
-            ? Number(chain)
-            : parseInt(chain)
-        : typeof chain === "number"
-            ? chain
-            : parseChainId(chain?.chainId);
-}
-
-export function formatChainId(chain: number | string | Chain): string {
-    if (!chain) return chain as any;
-    return typeof chain === "string"
-        ? chain.startsWith("0x")
-            ? chain
-            : formatChainId(parseInt(chain))
-        : typeof chain === "number"
-            ? `0x${chain?.toString(16)}`
-            : formatChainId(chain?.chainId);
-}
 
 export const isMobile = () => {
     const browser = () => ((global || window) as any)?.navigator?.userAgent || ((global || window) as any)?.navigator?.vendor; /*|| window?.opera*/

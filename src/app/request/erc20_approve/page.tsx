@@ -3,7 +3,8 @@
 import { Contents, Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { format } from "@coinmeca/ui/lib/utils";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
-import { Account, selectors, TransactionParams } from "@coinmeca/wallet-sdk/types";
+import { Account, TransactionParams } from "@coinmeca/wallet-sdk/types";
+import { selectors } from "@coinmeca/wallet-sdk/selectors";
 import { useQueries } from "@tanstack/react-query";
 import { GetMaxFeePerGas } from "api/onchain";
 import { query } from "api/onchain/query";
