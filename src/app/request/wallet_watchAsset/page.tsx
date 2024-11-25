@@ -66,19 +66,19 @@ export default function Page() {
             );
             setLevel(1);
             setTimeout(handleClose, timeout);
-            return;
+        } else {
+            const error = "Asset data is something wrong.";
+            console.log(error);
+            window?.opener?.postMessage(
+                {
+                    method,
+                    error,
+                    id: messageId,
+                },
+                "*",
+            );
+            setError(error);
         }
-        const error = "Asset data is something wrong.";
-        console.log(error);
-        window?.opener?.postMessage(
-            {
-                method,
-                error,
-                id: messageId,
-            },
-            "*",
-        );
-        setError(error);
     };
 
     return params ? (
