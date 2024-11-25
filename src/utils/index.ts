@@ -76,7 +76,10 @@ export const hex = {
         if (data.length % 2 !== 0) data = '0' + data;
         return (Buffer.from(data, 'hex')).toString('utf8');
     },
-    toNumber: (value: string) => Number(value),
+    toNumber: (value: string) => {
+        const result = Number(value);
+        return isNaN(result) ? null : result;
+    },
 }
 
 export const bigInt = {

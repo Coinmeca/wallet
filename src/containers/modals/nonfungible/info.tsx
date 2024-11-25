@@ -1,17 +1,15 @@
 ﻿"use client";
 
-import { useState } from "react";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { CoinmecaWalletContextProvider, useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { dehydrate, HydrationBoundary, QueryClientProvider } from "@tanstack/react-query";
 
 import { getQueryClient } from "api";
 import { Modal } from "@coinmeca/ui/containers";
-import { Attribute, AttributesObject } from "types";
+import { Attribute } from "types";
 import { short } from "utils";
 import Image from "next/image";
 import { useWindowSize } from "@coinmeca/ui/hooks";
-import { Root } from "@coinmeca/ui/lib/style";
 
 export interface Info {
     [x: string | number | symbol]: any;

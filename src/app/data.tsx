@@ -19,7 +19,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
     const path = usePathname();
 
     const { windowSize } = useWindowSize();
-    const { provider, account, accounts, chain, chains, apps } = useCoinmecaWalletProvider();
+    const { provider, account, chain, apps } = useCoinmecaWalletProvider();
     const { toasts, addToast } = useNotification();
 
     const [value, setValue] = useState<number>(0);
@@ -31,7 +31,9 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
     const [isClient, setIsClient] = useState(false);
 
     const [appFilter, setAppFilter] = useState<string>();
-    const responsive = useMemo(() => isClient && windowSize.width <= Root.Device.Tablet, [windowSize]);
+
+    const desktop = isClient && windowSize.width > Root.Device.Desktop - 1;
+    const responsive = isClient && windowSize.width <= Root.Device.Tablet;
 
     const colorMap = responsive
         ? "var(--rainbow)"
@@ -202,7 +204,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                     ],
                 ],
             })),
-        [apps],
+        [apps, responsive],
     );
 
     const [searchFilter, setSearchFilter] = useState<string>();
@@ -220,12 +222,12 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
     const sideContents = useMemo(
         () => [
             {
-                active: sideMenu === "accounts",
-                children: <Sidebars.Accounts search={search()} searchFilter={searchFilter} responsive={responsive} />,
+                active: (desktop && (sideMenu === "" || sideMenu === "accounts")) || sideMenu === "accounts",
+                children: <Sidebars.Accounts search={search()} searchFilter={searchFilter} responsive={responsive} onClose={() => setSideMenu("")} />,
             },
             {
                 active: sideMenu === "chains",
-                children: <Sidebars.Chains search={search()} searchFilter={searchFilter} responsive={responsive} />,
+                children: <Sidebars.Chains search={search()} searchFilter={searchFilter} responsive={responsive} onClose={() => setSideMenu("")} />,
             },
         ],
         [search, searchFilter, responsive],
@@ -274,9 +276,9 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                   {account?.address && (
                                       <Layouts.Row gap={0} fit>
                                           <Controls.Tab
-                                              active={sideMenu === "accounts"}
-                                              onClick={() => handlesideMenu(sideMenu === "accounts" ? "" : "accounts")}
-                                              toggle>
+                                              active={desktop || sideMenu === "accounts"}
+                                              toggle={!desktop}
+                                              onClick={() => !desktop && handlesideMenu(sideMenu === "accounts" ? "" : "accounts")}>
                                               {sideMenu === "accounts" ? (
                                                   <Layouts.Row gap={0.5} align={"middle"}>
                                                       <Elements.Icon icon={"x"} scale={0.666} />
@@ -337,13 +339,24 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                               <Layouts.Col style={{ padding: "4em" }} reverse fill>
                                                   <Layouts.Col gap={6}>
                                                       <Layouts.Col gap={6}>
-                                                          <Controls.Button scale={1.125} style={{ padding: "0.5em 1em" }} onClick={() => router.push("/test")}>
+                                                          <Controls.Button
+                                                              align={"left"}
+                                                              scale={1.125}
+                                                              style={{ padding: "0.5em 1em" }}
+                                                              onClick={() => router.push("/test")}>
                                                               Test
                                                           </Controls.Button>
-                                                          <Controls.Button scale={1.125} style={{ padding: "0.5em 1em" }} onClick={() => setSetting("apps")}>
+                                                          <Controls.Button
+                                                              align={"left"}
+                                                              iconLeft={"blockchain"}
+                                                              scale={1.125}
+                                                              style={{ padding: "0.5em 1em" }}
+                                                              onClick={() => setSetting("apps")}>
                                                               Connected Apps
                                                           </Controls.Button>
                                                           <Controls.Button
+                                                              align={"left"}
+                                                              iconLeft={"sheild-star"}
                                                               scale={1.125}
                                                               style={{ padding: "0.5em 1em" }}
                                                               onClick={() => router.push("/change")}>
@@ -352,6 +365,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                                       </Layouts.Col>
                                                       <Controls.Button
                                                           type={"line"}
+                                                          iconLeft={"lock"}
                                                           scale={1.125}
                                                           style={{ padding: "0.5em 1em" }}
                                                           onClick={() => {
@@ -431,12 +445,14 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                                       <Layouts.Col gap={6}>
                                                           <Layouts.Col gap={6}>
                                                               <Controls.Button
+                                                                  align={"left"}
                                                                   scale={1.125}
                                                                   style={{ padding: "0.5em 1em" }}
                                                                   onClick={() => router.push("/test")}>
                                                                   Test
                                                               </Controls.Button>
                                                               <Controls.Button
+                                                                  align={"left"}
                                                                   scale={1.125}
                                                                   style={{ padding: "0.5em 1em" }}
                                                                   onClick={() => setSetting("apps")}>
@@ -444,12 +460,14 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                                               </Controls.Button>
                                                               <Controls.Button
                                                                   scale={1.125}
+                                                                  align={"left"}
                                                                   style={{ padding: "0.5em 1em" }}
                                                                   onClick={() => router.push("/change")}>
                                                                   Change Passcode
                                                               </Controls.Button>
                                                           </Layouts.Col>
                                                           <Controls.Button
+                                                              align={"left"}
                                                               type={"line"}
                                                               scale={1.125}
                                                               style={{ padding: "0.5em 1em" }}

@@ -109,7 +109,8 @@ function NonFungibleAddModal(props: Add) {
     }, [token?.address]);
 
     useEffect(() => {
-        if (asset?.data?.isInvalid) setProcess(false);
+        console.log(asset?.isError, asset?.data?.isInvalid);
+        if (asset?.isError || asset?.data?.isInvalid) setProcess(false);
         else {
             if ((asset?.isFetching || asset?.isLoading) && !tokens) {
                 setProcess(null);

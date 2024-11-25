@@ -108,7 +108,7 @@ export default function Main() {
                                                     style={{ flex: 1 }}
                                                     contents={[
                                                         {
-                                                            active: tab("token"),
+                                                            active: tab("/") || tab("token"),
                                                             style: { flex: 1 },
                                                             children: <Token filter={searchFilter} />,
                                                         },

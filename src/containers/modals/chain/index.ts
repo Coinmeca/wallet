@@ -1,3 +1,4 @@
-﻿import Edit from './edit';
+﻿import Add from './add';
+import Edit from './edit';
 
-export { Edit }
+export { Add, Edit }
