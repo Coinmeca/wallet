@@ -278,8 +278,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                           <Controls.Tab
                                               active={desktop || sideMenu === "accounts"}
                                               toggle={!desktop}
-                                              onClick={() => !desktop && handlesideMenu(sideMenu === "accounts" ? "" : "accounts")}
-                                          >
+                                              onClick={() => !desktop && handlesideMenu(sideMenu === "accounts" ? "" : "accounts")}>
                                               {sideMenu === "accounts" ? (
                                                   <Layouts.Row gap={0.5} align={"middle"}>
                                                       <Elements.Icon icon={"x"} scale={0.666} />
@@ -340,13 +339,24 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                               <Layouts.Col style={{ padding: "4em" }} reverse fill>
                                                   <Layouts.Col gap={6}>
                                                       <Layouts.Col gap={6}>
-                                                          <Controls.Button scale={1.125} style={{ padding: "0.5em 1em" }} onClick={() => router.push("/test")}>
+                                                          <Controls.Button
+                                                              align={"left"}
+                                                              scale={1.125}
+                                                              style={{ padding: "0.5em 1em" }}
+                                                              onClick={() => router.push("/test")}>
                                                               Test
                                                           </Controls.Button>
-                                                          <Controls.Button scale={1.125} style={{ padding: "0.5em 1em" }} onClick={() => setSetting("apps")}>
+                                                          <Controls.Button
+                                                              align={"left"}
+                                                              iconLeft={"blockchain"}
+                                                              scale={1.125}
+                                                              style={{ padding: "0.5em 1em" }}
+                                                              onClick={() => setSetting("apps")}>
                                                               Connected Apps
                                                           </Controls.Button>
                                                           <Controls.Button
+                                                              align={"left"}
+                                                              iconLeft={"sheild-star"}
                                                               scale={1.125}
                                                               style={{ padding: "0.5em 1em" }}
                                                               onClick={() => router.push("/change")}>
@@ -355,6 +365,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                                       </Layouts.Col>
                                                       <Controls.Button
                                                           type={"line"}
+                                                          iconLeft={"lock"}
                                                           scale={1.125}
                                                           style={{ padding: "0.5em 1em" }}
                                                           onClick={() => {
@@ -434,12 +445,14 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                                       <Layouts.Col gap={6}>
                                                           <Layouts.Col gap={6}>
                                                               <Controls.Button
+                                                                  align={"left"}
                                                                   scale={1.125}
                                                                   style={{ padding: "0.5em 1em" }}
                                                                   onClick={() => router.push("/test")}>
                                                                   Test
                                                               </Controls.Button>
                                                               <Controls.Button
+                                                                  align={"left"}
                                                                   scale={1.125}
                                                                   style={{ padding: "0.5em 1em" }}
                                                                   onClick={() => setSetting("apps")}>
@@ -447,12 +460,14 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                                               </Controls.Button>
                                                               <Controls.Button
                                                                   scale={1.125}
+                                                                  align={"left"}
                                                                   style={{ padding: "0.5em 1em" }}
                                                                   onClick={() => router.push("/change")}>
                                                                   Change Passcode
                                                               </Controls.Button>
                                                           </Layouts.Col>
                                                           <Controls.Button
+                                                              align={"left"}
                                                               type={"line"}
                                                               scale={1.125}
                                                               style={{ padding: "0.5em 1em" }}

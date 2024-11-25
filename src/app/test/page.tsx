@@ -179,38 +179,38 @@ export default function Page() {
                     {
                         types: {
                             EIP712Domain: [
-                                { name: 'name', type: 'string' },
-                                { name: 'version', type: 'string' },
-                                { name: 'chainId', type: 'uint256' },
-                                { name: 'verifyingContract', type: 'address' },
+                                { name: "name", type: "string" },
+                                { name: "version", type: "string" },
+                                { name: "chainId", type: "uint256" },
+                                { name: "verifyingContract", type: "address" },
                             ],
                             Person: [
-                                { name: 'name', type: 'string' },
-                                { name: 'wallet', type: 'address' }
+                                { name: "name", type: "string" },
+                                { name: "wallet", type: "address" },
                             ],
                             Mail: [
-                                { name: 'from', type: 'Person' },
-                                { name: 'to', type: 'Person' },
-                                { name: 'contents', type: 'string' }
+                                { name: "from", type: "Person" },
+                                { name: "to", type: "Person" },
+                                { name: "contents", type: "string" },
                             ],
                         },
-                        primaryType: 'Mail',
+                        primaryType: "Mail",
                         domain: {
-                            name: 'Ether Mail',
-                            version: '1',
+                            name: "Ether Mail",
+                            version: "1",
                             chainId: 1,
-                            verifyingContract: '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC',
+                            verifyingContract: "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC",
                         },
                         message: {
                             from: {
-                                name: 'Cow',
-                                wallet: '0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826',
+                                name: "Cow",
+                                wallet: "0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826",
                             },
                             to: {
-                                name: 'Bob',
-                                wallet: '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB',
+                                name: "Bob",
+                                wallet: "0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB",
                             },
-                            contents: 'Hello, Bob!',
+                            contents: "Hello, Bob!",
                         },
                     },
                 ],
@@ -294,17 +294,15 @@ export default function Page() {
             method,
             await adapter?.request({
                 method,
-                params: [
-                    {
-                        type: "ERC20",
-                        options: {
-                            address: "0xb60e8dd61c5d32be8058bb8eb970870f07233155",
-                            symbol: "FOO",
-                            decimals: 18,
-                            image: "https://foo.io/token-image.svg",
-                        },
+                params: {
+                    type: "ERC20",
+                    options: {
+                        address: "0xB0dC252702809dB49eda2B0F2F58A1708ca3E0D1",
+                        symbol: "FOO",
+                        decimals: 18,
+                        image: "https://foo.io/token-image.svg",
                     },
-                ],
+                },
             }),
         );
     };

@@ -53,9 +53,7 @@ export default function Welcome() {
                                                                 scale={3}
                                                                 style={{ padding: "0.5em", borderRadius: "4em", background: "rgba(var(--white),.15)" }}
                                                             />
-                                                            <Elements.Text type={"h6"}>
-                                                                {short(account?.address)}
-                                                            </Elements.Text>
+                                                            <Elements.Text type={"h6"}>{short(account?.address)}</Elements.Text>
                                                         </Layouts.Col>
                                                     </Layouts.Col>
                                                     <Layouts.Col gap={0} align={"center"} fill>

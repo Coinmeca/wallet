@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { useMessageHandler, useTelegram } from "hooks";
+import { short } from "utils";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({method: 'eth_requestAccounts'})
@@ -128,7 +129,7 @@ export default function Page() {
                                                                 <Elements.Text size={1} weight={"bold"}>
                                                                     <Elements.Text opacity={0.6}>Connect</Elements.Text>{" "}
                                                                     <Elements.Text>{account?.name}</Elements.Text>{" "}
-                                                                    <Elements.Text opacity={0.6}>(short(account?.address)) to</Elements.Text>{" "}
+                                                                    <Elements.Text opacity={0.6}>({short(account?.address)}) to</Elements.Text>{" "}
                                                                     <Elements.Text>{app?.name}</Elements.Text>{" "}
                                                                     <Elements.Text opacity={0.6}>
                                                                         ({app?.url}). Please check out the information of app and allow connections only to apps
@@ -148,7 +149,7 @@ export default function Page() {
                                                                 <Elements.Text size={1} weight={"bold"}>
                                                                     <Elements.Text opacity={0.6}>Comepete to connect</Elements.Text>{" "}
                                                                     <Elements.Text>{account?.name}</Elements.Text>{" "}
-                                                                    <Elements.Text opacity={0.6}>(short(account?.address)) to</Elements.Text>{" "}
+                                                                    <Elements.Text opacity={0.6}>({short(account?.address)}) to</Elements.Text>{" "}
                                                                     <Elements.Text>{app?.name}</Elements.Text>{" "}
                                                                     <Elements.Text opacity={0.6}>({app?.url}).</Elements.Text>
                                                                 </Elements.Text>

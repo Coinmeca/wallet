@@ -45,8 +45,8 @@ export const query = {
                     address: erc20,
                     name: name.status === "fulfilled" ? hex.toString(name.value.toString().slice(66)) : null,
                     symbol: symbol.status === "fulfilled" ? hex.toString(symbol.value.toString().slice(66)) : null,
-                    decimals: d,
-                    balance: (d && b) ? b / (10 ** d) : null,
+                    decimals: (d && !isNaN(d)) ? d : null,
+                    balance: (d && !isNaN(d) && b) ? b / (10 ** d) : null,
                 };
             },
             enabled: !!rpc && !!erc20,

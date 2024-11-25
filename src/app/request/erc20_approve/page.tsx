@@ -7,7 +7,7 @@ import { Account, TransactionParams } from "@coinmeca/wallet-sdk/types";
 import { selectors } from "@coinmeca/wallet-sdk/selectors";
 import { useQueries } from "@tanstack/react-query";
 import { GetMaxFeePerGas } from "api/onchain";
-import { query } from "api/onchain/query";
+import { query } from "api/query";
 import { useMessageHandler, useTelegram } from "hooks";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -47,8 +47,18 @@ export default function Page() {
     const [txHash, setTxHash] = useState<string>("");
     const [error, setError] = useState<any>();
 
-    const [{ data: nonce }, { data: gasPrice, isLoading: isGasPriceLoading }, { data: estimateGas, isLoading: isEstimateGasLoading }] = useQueries({
-        queries: [query.nonce(chain?.rpcUrls[0], signer?.address), query.gasPrice(chain?.rpcUrls[0]), query.estimateGas(chain?.rpcUrls[0], tx)],
+    const [
+        { data: nonce },
+        { data: gasPrice, isLoading: isGasPriceLoading },
+        { data: estimateGas, isLoading: isEstimateGasLoading },
+        { data: decimals, isLoading: isDecimalsLoading },
+    ] = useQueries({
+        queries: [
+            query.onchain.nonce(chain?.rpcUrls[0], signer?.address),
+            query.onchain.gasPrice(chain?.rpcUrls[0]),
+            query.onchain.estimateGas(chain?.rpcUrls[0], tx),
+            query.erc20.decimals(chain?.rpcUrls[0], params?.to),
+        ],
     });
     const {
         data: { maxPriorityFeePerGas, maxFeePerGas },
@@ -281,12 +291,13 @@ export default function Page() {
                                                             Amount
                                                         </Elements.Text>
                                                         <Elements.Text>
-                                                            {amount}
-                                                            {/* {format(amount, "currency", {
-                                                                unit: 9,
-                                                                limit: 12,
-                                                                fix: 9,
-                                                            })} */}
+                                                            {amount && decimals
+                                                                ? format(amount / 10 ** (decimals || 1), "currency", {
+                                                                      unit: 9,
+                                                                      limit: 12,
+                                                                      fix: 9,
+                                                                  })
+                                                                : `${amount} (no decimals)`}
                                                         </Elements.Text>
                                                     </Layouts.Col>
                                                     <Layouts.Col gap={0}>
