@@ -31,7 +31,9 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
     const [isClient, setIsClient] = useState(false);
 
     const [appFilter, setAppFilter] = useState<string>();
-    const responsive = useMemo(() => isClient && windowSize.width <= Root.Device.Tablet, [windowSize]);
+
+    const desktop = isClient && windowSize.width > Root.Device.Desktop - 1;
+    const responsive = isClient && windowSize.width <= Root.Device.Tablet;
 
     const colorMap = responsive
         ? "var(--rainbow)"
@@ -202,7 +204,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                     ],
                 ],
             })),
-        [apps],
+        [apps, responsive],
     );
 
     const [searchFilter, setSearchFilter] = useState<string>();
@@ -220,7 +222,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
     const sideContents = useMemo(
         () => [
             {
-                active: sideMenu === "accounts",
+                active: (desktop && (sideMenu === "" || sideMenu === "accounts")) || sideMenu === "accounts",
                 children: <Sidebars.Accounts search={search()} searchFilter={searchFilter} responsive={responsive} onClose={() => setSideMenu("")} />,
             },
             {
@@ -274,9 +276,10 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                   {account?.address && (
                                       <Layouts.Row gap={0} fit>
                                           <Controls.Tab
-                                              active={sideMenu === "accounts"}
-                                              onClick={() => handlesideMenu(sideMenu === "accounts" ? "" : "accounts")}
-                                              toggle>
+                                              active={desktop || sideMenu === "accounts"}
+                                              toggle={!desktop}
+                                              onClick={() => !desktop && handlesideMenu(sideMenu === "accounts" ? "" : "accounts")}
+                                          >
                                               {sideMenu === "accounts" ? (
                                                   <Layouts.Row gap={0.5} align={"middle"}>
                                                       <Elements.Icon icon={"x"} scale={0.666} />

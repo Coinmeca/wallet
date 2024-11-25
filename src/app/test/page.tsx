@@ -139,10 +139,10 @@ export default function Page() {
             await adapter?.request({
                 method,
                 params: [
-                    // Signer's address
-                    "0x94b1f182d48dd9d84e1ab0ee3a593364595bb4ec",
                     // Message to sign
                     "Hello, Ethereum!",
+                    // Signer's address
+                    "0x94b1f182d48dd9d84e1ab0ee3a593364595bb4ec",
                 ],
             }),
         );
@@ -160,7 +160,7 @@ export default function Page() {
                     // Message to sign
                     "Hello, Personal Sign!",
                     // Signer's address
-                    "0x94b1f182d48dd9d84e1ab0ee3a593364595bb4ec",
+                    account?.address,
                 ],
             }),
         );
@@ -175,29 +175,42 @@ export default function Page() {
             await adapter?.request({
                 method,
                 params: [
-                    "0x94b1f182d48dd9d84e1ab0ee3a593364595bb4ec",
+                    account?.address,
                     {
-                        domain: {
-                            name: "Example Domain",
-                            version: "1",
-                            chainId: 421614, // Arbitrary chain ID for testing
-                            verifyingContract: "0x1234567890abcdef1234567890abcdef12345678",
-                        },
                         types: {
                             EIP712Domain: [
-                                { name: "name", type: "string" },
-                                { name: "version", type: "string" },
-                                { name: "chainId", type: "uint256" },
-                                { name: "verifyingContract", type: "address" },
+                                { name: 'name', type: 'string' },
+                                { name: 'version', type: 'string' },
+                                { name: 'chainId', type: 'uint256' },
+                                { name: 'verifyingContract', type: 'address' },
                             ],
-                            Message: [
-                                { name: "content", type: "string" },
-                                { name: "timestamp", type: "uint256" },
+                            Person: [
+                                { name: 'name', type: 'string' },
+                                { name: 'wallet', type: 'address' }
+                            ],
+                            Mail: [
+                                { name: 'from', type: 'Person' },
+                                { name: 'to', type: 'Person' },
+                                { name: 'contents', type: 'string' }
                             ],
                         },
+                        primaryType: 'Mail',
+                        domain: {
+                            name: 'Ether Mail',
+                            version: '1',
+                            chainId: 1,
+                            verifyingContract: '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC',
+                        },
                         message: {
-                            content: "Hello, EIP-712!",
-                            timestamp: 1234567890,
+                            from: {
+                                name: 'Cow',
+                                wallet: '0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826',
+                            },
+                            to: {
+                                name: 'Bob',
+                                wallet: '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB',
+                            },
+                            contents: 'Hello, Bob!',
                         },
                     },
                 ],

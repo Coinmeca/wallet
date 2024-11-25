@@ -45,16 +45,15 @@ const AccountEditModal = (props: any) => {
     const handleChange = (name?: string) => {
         if (init) {
             name = name?.trim();
-            if (name && name !== "" && name?.length) {
-                setName(name);
-                setError({ state: false });
-            } else setError({ state: true, message: "Account name cannot be blank." });
+            setName(name);
+            if (!name || !name?.length || name === "") setError({ state: true, message: "Account name cannot be blank." });
+            else setError({ state: false });
         } else if (name?.length) setInit(true);
     };
 
     const handleSave = (e: any) => {
         if (name && name !== "" && name?.length) {
-            provider?.changeAccountInfo({ ...account, name });
+            provider?.updateAccount({ ...account, name });
             handleClose(e);
         } else setError({ state: true, message: "Account name cannot be blank." });
     };
@@ -62,21 +61,36 @@ const AccountEditModal = (props: any) => {
     return (
         <Modal {...props} title={"Account Info Edit"} onClose={handleClose} close>
             <Layouts.Col gap={2}>
-                <Layouts.Col gap={1}>
-                    <Elements.Text size={1.5} height={0}>
-                        {account?.name}
-                    </Elements.Text>
-                    <Elements.Text height={0} opacity={0.6} fix>
-                        {account?.address}
-                    </Elements.Text>
-                </Layouts.Col>
+                {console.log({name},name?.length)}
+                <Layouts.Row gap={2}>
+                    <Elements.Avatar
+                        scale={1.25}
+                        size={3}
+                        stroke={0.2}
+                        character={`${account?.index + 1}`}
+                        name={name?.length ? name : account?.name}
+                        style={{maxWidth:'max-content'}}
+                        hideName
+                    />
+                    <Layouts.Col gap={0} align={'left'}>
+                        <Elements.Text height={0} size={1.5}>
+                            {name?.length ? name : account?.name}
+                        </Elements.Text>
+                        <Elements.Text height={0} opacity={0.6} fix>
+                            {account?.address}
+                        </Elements.Text>
+                    </Layouts.Col>
+                </Layouts.Row>
                 <Controls.Input
                     placeholder={"Please enter a new name of this account."}
                     type={"text"}
                     length={20}
                     onChange={(e: any, v: string) => handleChange(v)}
                     error={error?.state}
-                    message={error?.message}
+                    message={{
+                        color:"red",
+                        children: error?.message
+                    }}
                 />
                 <Layouts.Row>
                     <Controls.Button onClick={handleClose}>Cancel</Controls.Button>

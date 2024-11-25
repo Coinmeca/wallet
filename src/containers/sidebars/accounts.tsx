@@ -23,7 +23,6 @@ export default function Accounts({
     responsive: boolean;
     onClose?: Function;
 }) {
-    const { windowSize } = useWindowSize();
     const { provider, chain, account, accounts } = useCoinmecaWalletProvider();
     const { addToast } = useNotification();
 
