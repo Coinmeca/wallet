@@ -65,7 +65,7 @@ export default function Accounts({
     };
 
     const handleAccountState = (a: Account) => {
-        provider?.changeAccountInfo({ ...a, disable: !a?.disable });
+        provider?.updateAccount({ ...a, disable: !a?.disable });
     };
 
     const accountlist = useCallback(
