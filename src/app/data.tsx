@@ -286,7 +286,6 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                                   </Layouts.Row>
                                               ) : (
                                                   <Elements.Avatar
-                                                      // color={colorMap}
                                                       scale={0.666}
                                                       size={2.5}
                                                       display={6}
@@ -307,8 +306,11 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                       {sideMenu === "chains" ? (
                                           <Elements.Icon icon={"x"} scale={0.666} />
                                       ) : (
-                                          <Elements.Avatar scale={0.666} size={2.5} img={chain?.logo || ""} />
-                                          // <Elements.Avatar scale={0.666} size={2.5} img={`https://web3.coinmeca.net/${chain?.chainId}/logo.svg`} />
+                                          <Elements.Avatar
+                                              scale={0.666}
+                                              size={2.5}
+                                              img={chain?.logo || `https://web3.coinmeca.net/${chain?.chainId}/logo.svg`}
+                                          />
                                       )}
                                   </Controls.Tab>
                                   <Controls.Tab
