@@ -55,20 +55,18 @@ export default function Page() {
     };
 
     const handleAddAsset = async () => {
-        if (asset?.data?.address) {
-            if (provider?.addFungibleAsset(asset?.data?.address)) {
-                window?.opener?.postMessage(
-                    {
-                        method,
-                        result: true,
-                        id: messageId,
-                    },
-                    "*",
-                );
-                setLevel(1);
-                setTimeout(handleClose, timeout);
-                return;
-            }
+        if (asset?.data?.address && provider?.addFungibleAsset(asset?.data?.address)) {
+            window?.opener?.postMessage(
+                {
+                    method,
+                    result: true,
+                    id: messageId,
+                },
+                "*",
+            );
+            setLevel(1);
+            setTimeout(handleClose, timeout);
+            return;
         }
         const error = "Asset data is something wrong.";
         console.log(error);
