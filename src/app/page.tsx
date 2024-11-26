@@ -55,76 +55,78 @@ export default function Main() {
                                                           })}
                                                 </Elements.Text>
                                                 {/* <Elements.Text type={"h6"} opacity={0.6}>
-                                    $ 0.00
-                                </Elements.Text> */}
+                                                    $ 0.00
+                                                </Elements.Text> */}
                                             </Layouts.Col>
                                         </Layouts.Col>
-                                        <Layouts.Box padding={[2, "", "", ""]}>
-                                            <Layouts.Col gap={0} fill>
-                                                <Layouts.Menu
-                                                    style={{ position: "relative" }}
-                                                    menu={[
-                                                        {
-                                                            style: { padding: "1em 0" },
-                                                            children: [
-                                                                [
-                                                                    <>
-                                                                        <Controls.Tab active={tab("token")} onClick={() => router.push("/token")}>
-                                                                            Token
-                                                                        </Controls.Tab>
-                                                                    </>,
-                                                                    <>
-                                                                        <Controls.Tab active={tab("nft")} onClick={() => router.push("/nft")}>
-                                                                            NFT
-                                                                        </Controls.Tab>
-                                                                    </>,
-                                                                    <>
-                                                                        <Controls.Tab active={tab("activity")} onClick={() => router.push("/activity")}>
-                                                                            Activity
-                                                                        </Controls.Tab>
-                                                                    </>,
+                                        <Layouts.Box padding={[2, "", "", ""]} fit>
+                                            <Layouts.Contents.InnerContent>
+                                                <Layouts.Col gap={0} fill>
+                                                    <Layouts.Menu
+                                                        style={{ position: "relative" }}
+                                                        menu={[
+                                                            {
+                                                                style: { padding: "1em 0" },
+                                                                children: [
+                                                                    [
+                                                                        <>
+                                                                            <Controls.Tab active={path === '/' || tab("token")} onClick={() => router.push("/token")}>
+                                                                                Token
+                                                                            </Controls.Tab>
+                                                                        </>,
+                                                                        <>
+                                                                            <Controls.Tab active={tab("nft")} onClick={() => router.push("/nft")}>
+                                                                                NFT
+                                                                            </Controls.Tab>
+                                                                        </>,
+                                                                        <>
+                                                                            <Controls.Tab active={tab("activity")} onClick={() => router.push("/activity")}>
+                                                                                Activity
+                                                                            </Controls.Tab>
+                                                                        </>,
+                                                                    ],
+                                                                    [
+                                                                        <>
+                                                                            <Controls.Input
+                                                                                left={{
+                                                                                    children: (
+                                                                                        <>
+                                                                                            <Elements.Icon icon={"search"} />
+                                                                                        </>
+                                                                                    ),
+                                                                                }}
+                                                                                onChange={(e: any, v: any) => setSearchFilter(v)}
+                                                                                fold={responsive}
+                                                                                clearable
+                                                                            />
+                                                                        </>,
+                                                                    ],
                                                                 ],
-                                                                [
-                                                                    <>
-                                                                        <Controls.Input
-                                                                            left={{
-                                                                                children: (
-                                                                                    <>
-                                                                                        <Elements.Icon icon={"search"} />
-                                                                                    </>
-                                                                                ),
-                                                                            }}
-                                                                            onChange={(e: any, v: any) => setSearchFilter(v)}
-                                                                            fold={responsive}
-                                                                            clearable
-                                                                        />
-                                                                    </>,
-                                                                ],
-                                                            ],
-                                                        },
-                                                    ]}
-                                                />
-                                                <Layouts.Contents.TabContainer
-                                                    style={{ flex: 1 }}
-                                                    contents={[
-                                                        {
-                                                            active: tab("/") || tab("token"),
-                                                            style: { flex: 1 },
-                                                            children: <Token filter={searchFilter} />,
-                                                        },
-                                                        {
-                                                            active: tab("nft"),
-                                                            style: { flex: 1 },
-                                                            children: <Nft filter={searchFilter} />,
-                                                        },
-                                                        {
-                                                            active: tab("activity"),
-                                                            style: { flex: 1 },
-                                                            children: <Activity filter={searchFilter} />,
-                                                        },
-                                                    ]}
-                                                />
-                                            </Layouts.Col>
+                                                            },
+                                                        ]}
+                                                    />
+                                                    <Layouts.Contents.TabContainer
+                                                        style={{ flex: 1 }}
+                                                        contents={[
+                                                            {
+                                                                active: path === '/' || tab("token"),
+                                                                style: { flex: 1 },
+                                                                children: <Token filter={searchFilter} />,
+                                                            },
+                                                            {
+                                                                active: tab("nft"),
+                                                                style: { flex: 1 },
+                                                                children: <Nft filter={searchFilter} />,
+                                                            },
+                                                            {
+                                                                active: tab("activity"),
+                                                                style: { flex: 1 },
+                                                                children: <Activity filter={searchFilter} />,
+                                                            },
+                                                        ]}
+                                                    />
+                                                </Layouts.Col>
+                                            </Layouts.Contents.InnerContent>
                                         </Layouts.Box>
                                     </>
                                 ),

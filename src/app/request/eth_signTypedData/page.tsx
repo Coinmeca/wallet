@@ -1,52 +1,27 @@
 "use client";
 
-import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useMessageHandler, useTelegram } from "hooks";
 import Image from "next/image";
 import { useLayoutEffect, useState } from "react";
-import { Account } from "@coinmeca/wallet-sdk/types";
+import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
+import { format } from "@coinmeca/ui/lib/utils";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
-import { short } from "utils";
+import { Account } from "@coinmeca/wallet-sdk/types";
 import { valid } from "@coinmeca/wallet-sdk/utils";
 
-/*
-await window.ethereum.providerMap.get("CoinmecaWallet").request({
-        method: 'eth_signTransaction',
-        params: [
-          {
-            from: '0xc8b95755888a2be3f8fa19251f241a1e8b74f933',
-            to: '0x0000000000000000000000000000000000000000',
-            value: '0x0',
-            gasLimit: '0x5028',
-            maxFeePerGas: '0x2540be400',
-            maxPriorityFeePerGas: '0x3b9aca00',
-          },
-        ],
-      })
-*/
+import { useMessageHandler, useTelegram } from "hooks";
+import { camelToTitleCase, short } from "utils";
 
-export interface Transaction {
-    from: string;
-    to: string;
-    value: string;
-    gas: string;
-    gasPrice: string;
-    data?: string;
-    maxFeePerGas?: number;
-    maxPriorityFeePerGas?: number;
-}
-
-const method = "personal_sign";
+const method = "eth_signTypedData";
 const timeout = 5000;
 
-export default function PersonalSign() {
+export default function Page() {
     const { telegram } = useTelegram();
     const { provider } = useCoinmecaWalletProvider();
     const { app, params, messageId } = useMessageHandler();
 
-    const [message, setMessage] = useState<string>();
-    const [signer, setSigner] = useState<Account>();
+    const [data, setData] = useState<any>();
     const [auth, setAuth] = useState<boolean>();
+    const [signer, setSigner] = useState<Account>();
 
     const [level, setLevel] = useState(0);
     const [error, setError] = useState<any>();
@@ -57,15 +32,20 @@ export default function PersonalSign() {
             const _0 = valid.address(params[0]);
             const _1 = valid.address(params[1]);
 
-            let message;
+            let data;
             let address;
 
             if (_0 || _1) {
-                _1 ? ((message = params[0]), (address = params[1])) : ((message = params[1]), (address = params[0]));
+                _1 ? ((data = params[0]), (address = params[1])) : ((data = params[1]), (address = params[0]));
 
                 setAuth(app?.url ? provider?.allowance(app?.url, address) : false);
                 setSigner(provider?.account(address));
-                setMessage(message);
+
+                if (data && data !== "") {
+                    setData(typeof data === "string" ? JSON.parse(data) : data);
+                    const chainId = Number(data?.domain?.chainId);
+                    if (!isNaN(chainId)) provider?.switchEthereumChain(chainId);
+                }
             }
         }
     }, []);
@@ -73,7 +53,7 @@ export default function PersonalSign() {
     const handleSign = async () => {
         setLevel(1);
         await provider
-            ?.signMessage([message!, signer!.address])
+            ?.signTypedData(app?.url!, data, 4, signer?.address) // fixme: app.url?
             .then((result) => {
                 window?.opener?.postMessage(
                     {
@@ -117,7 +97,147 @@ export default function PersonalSign() {
             );
     };
 
-    return auth && app && signer && message ? (
+    const DisplayTypedData = ({ typedData }: any) => {
+        const renderValue = (value: any, type: any) => {
+            // Parse value based on type
+            if (type === "string") {
+                return (
+                    <Elements.Text align={"right"} fix>
+                        {valid.address(value) ? short(value) : value}
+                    </Elements.Text>
+                );
+            }
+            if (type === "address") {
+                return (
+                    <Elements.Text align={"right"} fix>
+                        {valid.address(value) ? short(value) : value}
+                    </Elements.Text>
+                );
+            }
+            if (type === "uint256") {
+                return (
+                    <Elements.Text align={"right"} fix>
+                        {format(value, "currency")}
+                    </Elements.Text>
+                );
+            }
+            return Object.entries(value).map(([key, value]) => (
+                <Layouts.Row key={key} style={{ flexBasis: "100%" }}>
+                    <Elements.Text opacity={0.6} fit>
+                        {camelToTitleCase(key)}
+                    </Elements.Text>
+                    <Layouts.Row key={key}>
+                        {Array.isArray(value) ? value.map((item) => renderType(item.name, item.value)) : renderValue(value, typeof value)}
+                    </Layouts.Row>
+                </Layouts.Row>
+            ));
+        };
+
+        const renderType = (type: any, value: any) => {
+            return (
+                <div key={type}>
+                    <strong>{type}</strong>: {renderValue(value, type)}
+                </div>
+            );
+        };
+
+        return (
+            <Layouts.Col gap={1}>
+                <Layouts.Box
+                    style={{
+                        "--white": "255,255,255",
+                        "--black": "0, 0, 0",
+                        background: "rgba(var(--black),.3)",
+                        maxHeight: "max-content",
+                        padding: "clamp(2em, 7.5%, 4em)",
+                        width: "auto",
+                        height: "auto",
+                    }}
+                    fit>
+                    <Layouts.Col gap={2}>
+                        <Elements.Text type={"desc"}>Domain</Elements.Text>
+                        <Layouts.Col gap={2}>
+                            {Object.entries(typedData.domain).map(([key, value]) =>
+                                Array.isArray(value) || typeof value === "object" ? (
+                                    <Layouts.Col key={key} gap={1}>
+                                        <Elements.Text opacity={0.6} case={"capital"} fit>
+                                            {camelToTitleCase(key)}
+                                        </Elements.Text>
+                                        <Layouts.Row
+                                            gap={1}
+                                            align={"right"}
+                                            style={!Array.isArray(value) && typeof value !== "object" ? { minWidth: "max-content" } : {}}
+                                            fix={!Array.isArray(value) && typeof value !== "object"}>
+                                            {Array.isArray(value) ? value.map((item) => renderType(item.name, item.value)) : renderValue(value, typeof value)}
+                                        </Layouts.Row>
+                                    </Layouts.Col>
+                                ) : (
+                                    <Layouts.Row key={key} gap={1}>
+                                        <Elements.Text opacity={0.6} case={"capital"} fit>
+                                            {camelToTitleCase(key)}
+                                        </Elements.Text>
+                                        <Layouts.Row
+                                            gap={1}
+                                            align={"right"}
+                                            style={!Array.isArray(value) && typeof value !== "object" ? { minWidth: "max-content" } : {}}
+                                            fix={!Array.isArray(value) && typeof value !== "object"}>
+                                            {Array.isArray(value) ? value.map((item) => renderType(item.name, item.value)) : renderValue(value, typeof value)}
+                                        </Layouts.Row>
+                                    </Layouts.Row>
+                                ),
+                            )}
+                        </Layouts.Col>
+                    </Layouts.Col>
+                </Layouts.Box>
+                <Layouts.Box
+                    style={{
+                        "--white": "255,255,255",
+                        "--black": "0, 0, 0",
+                        background: "rgba(var(--black),.3)",
+                        maxHeight: "max-content",
+                        padding: "clamp(2em, 7.5%, 4em)",
+                        width: "auto",
+                        height: "auto",
+                    }}
+                    fit>
+                    <Layouts.Col gap={2}>
+                        <Elements.Text type={"desc"}>Message</Elements.Text>
+                        {Object.entries(typedData.message).map(([key, value]) =>
+                            key === "contents" || Array.isArray(value) || typeof value === "object" ? (
+                                <Layouts.Col key={key} gap={2}>
+                                    <Elements.Text type={key === "contents" ? "desc" : undefined} opacity={1} fit>
+                                        {camelToTitleCase(key)}
+                                    </Elements.Text>
+                                    <Layouts.Row
+                                        gap={1}
+                                        align={key === "contents" ? "left" : "right"}
+                                        style={!Array.isArray(value) && typeof value !== "object" ? { minWidth: "max-content" } : {}}
+                                        fix={!Array.isArray(value) && typeof value !== "object"}>
+                                        {Array.isArray(value) ? value.map((item) => renderType(item.name, item.value)) : renderValue(value, typeof value)}
+                                    </Layouts.Row>
+                                </Layouts.Col>
+                            ) : (
+                                <Layouts.Row key={key} gap={2}>
+                                    <Elements.Text opacity={0.6} fit>
+                                        {camelToTitleCase(key)}
+                                    </Elements.Text>
+                                    <Layouts.Row
+                                        gap={1}
+                                        align={"right"}
+                                        style={{ minWidth: "max-content" }}
+                                        fix={!Array.isArray(value) && typeof value !== "object"}>
+                                        {Array.isArray(value) ? value.map((item) => renderType(item.name, item.value)) : renderValue(value, typeof value)}
+                                    </Layouts.Row>
+                                </Layouts.Row>
+                            ),
+                        )}
+                    </Layouts.Col>
+                </Layouts.Box>
+            </Layouts.Col>
+        );
+    };
+
+    return typeof data === "object" && auth && signer ? (
         <Layouts.Contents.SlideContainer
             contents={[
                 {
@@ -170,26 +290,7 @@ export default function PersonalSign() {
                                                     children: (
                                                         <Layouts.Col gap={8} style={{ flex: 1, height: "100%" }} fill>
                                                             <Layouts.Col style={level === 0 ? { minHeight: "max-content" } : {}} reverse fill>
-                                                                <Layouts.Box
-                                                                    style={{
-                                                                        "--white": "255,255,255",
-                                                                        "--black": "0, 0, 0",
-                                                                        background: "rgba(var(--white),.15)",
-                                                                        maxHeight: "max-content",
-                                                                        padding: "clamp(2em, 7.5%, 4em)",
-                                                                        width: "auto",
-                                                                        height: "auto",
-                                                                    }}
-                                                                    fit>
-                                                                    <Layouts.Col gap={2} align={"left"}>
-                                                                        <Layouts.Col gap={0.5}>
-                                                                            <Elements.Text type={"desc"} weight={"bold"} opacity={0.6}>
-                                                                                Message
-                                                                            </Elements.Text>
-                                                                            <Elements.Text>{message}</Elements.Text>
-                                                                        </Layouts.Col>
-                                                                    </Layouts.Col>
-                                                                </Layouts.Box>
+                                                                <DisplayTypedData typedData={data} />
                                                             </Layouts.Col>
                                                         </Layouts.Col>
                                                     ),

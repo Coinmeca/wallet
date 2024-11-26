@@ -1,7 +1,6 @@
 ﻿"use client";
 
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
 
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
@@ -17,11 +16,10 @@ const method = "wallet_switchEthereumChain";
 const timeout = 5000;
 
 export default function Page() {
-    const router = useRouter();
 
     const { telegram } = useTelegram();
     const { provider, chain, chains } = useCoinmecaWalletProvider();
-    const { isPopup, params, messageId } = useMessageHandler();
+    const {  params, messageId } = useMessageHandler();
 
     const [selectedChain, setSelectedChain] = useState<any>();
     const [newChain, setNewChain] = useState<Chain>();

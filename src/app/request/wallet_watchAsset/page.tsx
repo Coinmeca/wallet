@@ -65,7 +65,7 @@ export default function Page() {
                 "*",
             );
             setLevel(1);
-            setTimeout(handleClose, timeout);
+            // setTimeout(handleClose, timeout);
         } else {
             const error = "Asset data is something wrong.";
             console.log(error);

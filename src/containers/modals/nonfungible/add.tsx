@@ -1,14 +1,13 @@
 ﻿"use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { Modals } from "@coinmeca/ui/containers";
+import { Modal } from "@coinmeca/ui/containers";
 import { CoinmecaWalletContextProvider, useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { dehydrate, HydrationBoundary, QueryClientProvider } from "@tanstack/react-query";
 
 import { getQueryClient } from "api";
-import { GetErc20 } from "api/erc20";
 import { States } from "@coinmeca/ui/components/contents";
 import { GetErc721 } from "api/erc721";
 
@@ -46,10 +45,13 @@ function NonFungibleAddModal(props: Add) {
     const [validate, setValidate] = useState<{ address?: Validate; id?: Validate } | undefined>({ address: { state: false }, id: { state: false } });
 
     const [token, setToken] = useState<{ address?: string; id?: string }>();
+    const [fetch, setFetch] = useState<{ address?: string; id?: string }>();
+    
     const [loading, setLoading] = useState<boolean>(false);
     const [process, setProcess] = useState<boolean | null>(null);
+    const [error, setError] = useState<string>();
 
-    const [tokens, getToken] = GetErc721("https://sepolia-rollup.arbitrum.io/rpc", token?.address && token?.id ? { [token.address]: [token.id] } : undefined);
+    const [tokens, getToken] = GetErc721("https://sepolia-rollup.arbitrum.io/rpc", fetch?.address && fetch?.id ? { [fetch.address]: [fetch.id] } : undefined);
     const asset = getToken(token?.address, token?.id);
     const pattern = {
         address: /^[a-zA-Z0-9]+$/,
@@ -109,37 +111,54 @@ function NonFungibleAddModal(props: Add) {
     }, [token?.address]);
 
     useEffect(() => {
-        console.log(asset?.isError, asset?.data?.isInvalid);
-        if (asset?.isError || asset?.data?.isInvalid) setProcess(false);
-        else {
-            if ((asset?.isFetching || asset?.isLoading) && !tokens) {
-                setProcess(null);
-                setLoading(true);
-            }
-            if (loading && asset?.isSuccess && tokens) {
-                if (asset?.data?.isInvalid) setProcess(false);
-                setLoading(false);
+        if (process === null) {
+            if (loading) {
+                if (asset?.isSuccess) {
+                    if (asset?.data?.isInvalid) {
+                        setError("The provided address does not appear to be a valid NFT contract address. Please verify the address and try again.");
+                        setProcess(false);
+                    } else if (asset?.data?.owner?.toLowerCase() !== account?.address?.toLowerCase()) {
+                        setError("This account does not own this NFT. Please ensure the owner's address of the token.");
+                        setProcess(false);
+                    } else {
+                        setProcess(true);
+                    }
+                    setLoading(false);
+                } else if (asset?.isError) {
+                    setError("The data fetching is failed.");
+                    setProcess(false);
+                    setLoading(false);
+                };
             }
         }
-        // else if (!loading && tokens) {
-        // setLoading(false);
-        // setProcess(true);
-        // } else if (isError) {
-        // setLoading(false);
-        // setProcess(false);
-        // }
-    }, [asset?.isFetching, asset?.isLoading, asset?.isError, asset?.isSuccess, tokens, loading]);
+    }, [asset, tokens]);
+
+    console.log("fetching",asset?.isFetching,"isLoading",asset?.isLoading,{process, loading})
 
     return (
-        <Modals.Process
-            process={process}
-            title={!tokens ? "Add Token" : "Token Information"}
+        <Modal
+            title={!asset ? "Add Token" : "Token Information"}
             content={
                 <Layouts.Col gap={2} fill>
                     <Layouts.Contents.SlideContainer
                         contents={[
                             {
-                                active: !asset?.data,
+                                active: process === false,
+                                children: (
+                                    <States.Failure message={error || "Processing has failed."}>
+                                        <Controls.Button
+                                            onClick={(e: any) => {
+                                                setToken({});
+                                                setProcess(null);
+                                            }}
+                                        >
+                                            Go Back
+                                        </Controls.Button>
+                                    </States.Failure>
+                                )
+                            },
+                            {
+                                active: process === null && !loading,
                                 children: (
                                     <Layouts.Col gap={2}>
                                         <Elements.Text height={2} opacity={0.6} align={"center"}>
@@ -187,7 +206,7 @@ function NonFungibleAddModal(props: Add) {
                                                         Token ID
                                                     </Elements.Text>
                                                     <Controls.Input
-                                                        placeholder={""}
+                                                        placeholder={"#"}
                                                         type={"number"}
                                                         align={"right"}
                                                         onChange={(e: any, v: string) => handleValidateId(v)}
@@ -223,16 +242,22 @@ function NonFungibleAddModal(props: Add) {
                                         </Layouts.Contents.InnerContent>
                                         <Layouts.Row gap={2} fix>
                                             <Controls.Button onClick={handleClose}>Close</Controls.Button>
+                                            <Controls.Button onClick={() => {
+                                                setLoading(true);
+                                                setFetch(token);
+                                            }}>Comfirm</Controls.Button>
                                         </Layouts.Row>
                                     </Layouts.Col>
                                 ),
                             },
                             {
                                 active: loading,
-                                children: <States.Loading />,
+                                children: (
+                                    <States.Loading message={"Please wait until the processing is complete."} />
+                                )
                             },
                             {
-                                active: !!asset?.data && asset?.isSuccess,
+                                active: !!process,
                                 children: (
                                     <Layouts.Col>
                                         {asset?.data && (
@@ -245,24 +270,16 @@ function NonFungibleAddModal(props: Add) {
                                                     style={{ width: "100%", height: "100%", maxHeight: "50vh" }}
                                                 />
                                                 <Layouts.Col gap={1}>
-                                                    <Elements.Text type={"h6"} height={0}>
-                                                        {asset?.data?.symbol}
-                                                    </Elements.Text>
-                                                    <Elements.Text type={"strong"} height={0} opacity={0.6}>
-                                                        {asset?.data?.name}
-                                                    </Elements.Text>
-                                                    {/* <Elements.Text >{t?.decimals}</Elements.Text> */}
-                                                    {asset?.data?.decimals && asset?.data?.balance ? (
-                                                        <Layouts.Row gap={1}>
-                                                            <Elements.Text align={"right"}>
-                                                                {asset?.data.balance / 10 ** (asset?.data?.decimals || 1)}
-                                                            </Elements.Text>
-                                                            <Elements.Text align={"left"} opacity={0.6} case={"upper"}>
-                                                                {asset?.data?.symbol}
-                                                            </Elements.Text>
-                                                        </Layouts.Row>
-                                                    ) : (
-                                                        <></>
+                                                    {asset?.data?.url?.name && (
+                                                        <Elements.Text type={"h6"} height={0}>
+                                                            {asset?.data?.url?.name}
+                                                        </Elements.Text>
+                                                    )}
+                                                    {asset?.data?.tokenId && (
+                                                        <Elements.Text height={0}>
+                                                            <Elements.Text opacity={0.3}># </Elements.Text>
+                                                            {asset?.data?.tokenId}
+                                                        </Elements.Text>
                                                     )}
                                                 </Layouts.Col>
                                             </Layouts.Col>
@@ -280,18 +297,6 @@ function NonFungibleAddModal(props: Add) {
                     />
                 </Layouts.Col>
             }
-            failure={{
-                message: "Processing has failed.",
-                children: <Controls.Button onClick={(e: any) => {}}>Go Back</Controls.Button>,
-            }}
-            loading={{
-                // active: loading,
-                message: "Please wait until the processing is complete.",
-            }}
-            success={{
-                message: "Processing succeeded.",
-                children: <Controls.Button onClick={(e: any) => {}}>OK</Controls.Button>,
-            }}
             onClose={handleClose}
             close
         />

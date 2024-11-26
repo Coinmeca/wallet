@@ -1,10 +1,20 @@
 ﻿import CryptoJS from "crypto-js";
-import { Chain } from "@coinmeca/wallet-sdk/types";
-import { Address, toBytes } from "viem";
+import { Address } from "viem";
+
+export const camelToTitleCase = (value?: string) => {
+    if (!value || !value?.length) return value;
+    return value
+        .replace(/([a-z])([A-Z])/g, "$1 $2")
+        .replace(/([A-Z])([A-Z][a-z])/g, "$1 $2")
+        .replace(/_/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+};
 
 export const isVideo = (url: string) => {
-    const videoExtensions = ['.mp4', '.webm', '.avi', '.mov', '.mkv'];
-    return videoExtensions.some(ext => url.toLowerCase().endsWith(ext));
+    const videoExtensions = [".mp4", ".webm", ".avi", ".mov", ".mkv"];
+    return videoExtensions.some((ext) => url.toLowerCase().endsWith(ext));
 };
 
 export const short = (value?: string, options?: { length?: number; ellipsis?: string; front?: boolean; back?: boolean }) => {
@@ -63,7 +73,7 @@ export const valid = {
 export const hex = {
     toBytes: (value: string) => {
         const bytes: number[] = [];
-        value = value.replace(/[^0-9A-Fa-f]/g, '');
+        value = value.replace(/[^0-9A-Fa-f]/g, "");
         for (let i = 0; i < value.length; i += 2) {
             const byte = parseInt(value.substring(i, 2), 16);
             if (!isNaN(byte)) bytes.push(byte);
@@ -73,38 +83,35 @@ export const hex = {
     toString: (value: string) => {
         if (!value || !value.length) return value;
         let data = value?.slice(64);
-        if (data.length % 2 !== 0) data = '0' + data;
-        return (Buffer.from(data, 'hex')).toString('utf8');
+        if (data.length % 2 !== 0) data = "0" + data;
+        return Buffer.from(data, "hex").toString("utf8")?.trim();
     },
     toNumber: (value: string) => {
         const result = Number(value);
         return isNaN(result) ? null : result;
     },
-}
+};
 
 export const bigInt = {
     toHex: (value: BigInt): string => {
         return "0x" + value.toString(16);
     },
-}
+};
 
 export const base64 = {
     toJson: (value: string): any => {
         try {
-            value = value?.split(',')?.[1]?.replace(/[^A-Za-z0-9+/=]/g, '');
+            value = value?.split(",")?.[1]?.replace(/[^A-Za-z0-9+/=]/g, "");
             return JSON.parse(
                 new TextDecoder().decode(
-                    Uint8Array.from(
-                        atob(value?.padEnd(value?.length + (4 - value?.length % 4) % 4, '=')),
-                        (char) => char.charCodeAt(0)
-                    )
-                )
+                    Uint8Array.from(atob(value?.padEnd(value?.length + ((4 - (value?.length % 4)) % 4), "=")), (char) => char.charCodeAt(0)),
+                ),
             );
         } catch (e) {
             console.log(e);
         }
-    }
-}
+    },
+};
 
 export const sanitizeBigIntToHex = (obj: any): any => {
     if (typeof obj === "bigint") {

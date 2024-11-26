@@ -170,54 +170,72 @@ export default function Page() {
 
     const handleSignTypedDataV4 = async () => {
         const method = "eth_signTypedData_v4";
-        console.log(
-            method,
-            await adapter?.request({
-                method,
-                params: [
-                    account?.address,
-                    {
-                        types: {
-                            EIP712Domain: [
-                                { name: "name", type: "string" },
-                                { name: "version", type: "string" },
-                                { name: "chainId", type: "uint256" },
-                                { name: "verifyingContract", type: "address" },
-                            ],
-                            Person: [
-                                { name: "name", type: "string" },
-                                { name: "wallet", type: "address" },
-                            ],
-                            Mail: [
-                                { name: "from", type: "Person" },
-                                { name: "to", type: "Person" },
-                                { name: "contents", type: "string" },
-                            ],
-                        },
-                        primaryType: "Mail",
-                        domain: {
-                            name: "Ether Mail",
-                            version: "1",
-                            chainId: 1,
-                            verifyingContract: "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC",
-                        },
-                        message: {
-                            from: {
-                                name: "Cow",
-                                wallet: "0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826",
-                            },
-                            to: {
-                                name: "Bob",
-                                wallet: "0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB",
-                            },
-                            contents: "Hello, Bob!",
-                        },
+        const params = [
+            "0x6a9E5CAc3E72EEE92A2F7e97d70041BB94902Ad8",
+            {
+                types: {
+                    EIP712Domain: [
+                        { name: "name", type: "string" },
+                        { name: "version", type: "string" },
+                        { name: "chainId", type: "uint256" },
+                        { name: "verifyingContract", type: "address" },
+                    ],
+                    Person: [
+                        { name: "name", type: "string" },
+                        { name: "wallet", type: "address" },
+                    ],
+                    Mail: [
+                        { name: "from", type: "Person" },
+                        { name: "to", type: "Person" },
+                        { name: "contents", type: "string" },
+                    ],
+                },
+                primaryType: "Mail",
+                domain: {
+                    name: "Ether Mail",
+                    version: "1",
+                    chainId: 421614,
+                    verifyingContract: "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC",
+                },
+                message: {
+                    from: {
+                        name: "Cow",
+                        wallet: "0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826",
                     },
-                ],
+                    to: {
+                        name: "Bob",
+                        wallet: "0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB",
+                    },
+                    contents: "Hello, Bob!",
+                },
+            },
+        ];
+
+        let metamask: any;
+        let coinbase: any;
+        let coinmeca: any;
+
+        window.addEventListener("eip6963:announceProvider", (event: any) => {
+            if (event?.detail?.info?.name === "MetaMask") metamask = event?.detail?.provider;
+            if (event?.detail?.info?.name === "Coinbase Wallet") coinbase = event?.detail?.provider;
+            if (event?.detail?.info?.name === "Coinmeca Wallet") coinmeca = event?.detail?.provider;
+        });
+        window.dispatchEvent(new Event("eip6963:requestProvider"));
+
+        console.log(
+            await metamask?.request({
+                method,
+                params,
+            }),
+            await coinbase?.request({
+                method,
+                params,
+            }),
+            await coinmeca?.request({
+                method,
+                params,
             }),
         );
-        // result
-        // 0x{r}{s}{v}
     };
 
     const handleSignTransaction = async () => {
