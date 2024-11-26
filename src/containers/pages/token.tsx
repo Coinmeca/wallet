@@ -128,7 +128,7 @@ export default function Token(props: Token) {
     );
 
     return (
-        <Layouts.Col gap={0}>
+        <Layouts.Contents.InnerContent>
             <Layouts.Row gap={1} fix style={{ overflow: "auto hidden" }}>
                 <Layouts.Row gap={0} fix>
                     <Controls.Tab iconLeft={sortArrow(sorts.name)} onClick={() => setSort(sorts.name)}>
@@ -156,6 +156,6 @@ export default function Token(props: Token) {
                 formatter={formatter}
                 fill
             />
-        </Layouts.Col>
+        </Layouts.Contents.InnerContent>
     );
 }

@@ -29,7 +29,7 @@ export default function Nft(props: Nft) {
     };
 
     return (
-        <Layouts.Col gap={0}>
+        <Layouts.Contents.InnerContent>
             <Layouts.Row gap={1} fix style={{ overflow: "auto hidden" }}>
                 <Layouts.Row gap={0} fix>
                     <Controls.Tab iconLeft={sortArrow(sorts.name)} onClick={() => setSort(sorts.name)}>
@@ -86,6 +86,6 @@ export default function Nft(props: Nft) {
                     </Layouts.Col>
                 </Controls.Card>
             </Layouts.Contents.GridContainer>
-        </Layouts.Col>
+        </Layouts.Contents.InnerContent>
     );
 }

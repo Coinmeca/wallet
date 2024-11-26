@@ -3,9 +3,9 @@
 import { Contents, Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { format } from "@coinmeca/ui/lib/utils";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
-import { Account, TransactionParams } from "@coinmeca/wallet-sdk/types";
+import { Account } from "@coinmeca/wallet-sdk/types";
 import { useQueries } from "@tanstack/react-query";
-import { GetEstimateGas, GetGasPrice, GetMaxFeePerGas, GetMaxPriorityFeePerGas, GetNonce } from "api/onchain";
+import { GetMaxFeePerGas } from "api/onchain";
 import { query } from "api/onchain/query";
 import { useMessageHandler, useTelegram } from "hooks";
 import Image from "next/image";
@@ -48,7 +48,7 @@ export default function EthSendTransaction() {
 
     const { telegram } = useTelegram();
     const { provider, chain, account } = useCoinmecaWalletProvider();
-    const { auth, app, params, isPopup, messageId } = useMessageHandler();
+    const { auth, app, params, messageId } = useMessageHandler();
 
     const [tx, setTx] = useState<Transaction>();
     const [txHash, setTxHash] = useState<string>("");

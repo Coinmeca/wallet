@@ -21,7 +21,7 @@ export default function Page() {
 
     const { telegram } = useTelegram();
     const { provider, account } = useCoinmecaWalletProvider();
-    const { message, params, app, isPopup, messageId } = useMessageHandler();
+    const { app, messageId } = useMessageHandler();
 
     const [level, setLevel] = useState(0);
     const [error, setError] = useState<any>();

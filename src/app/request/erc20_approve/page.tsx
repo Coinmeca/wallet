@@ -51,7 +51,7 @@ export default function Page() {
         { data: nonce },
         { data: gasPrice, isLoading: isGasPriceLoading },
         { data: estimateGas, isLoading: isEstimateGasLoading },
-        { data: decimals, isLoading: isDecimalsLoading },
+        { data: decimals },
     ] = useQueries({
         queries: [
             query.onchain.nonce(chain?.rpcUrls[0], signer?.address),

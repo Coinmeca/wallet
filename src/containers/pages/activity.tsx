@@ -86,7 +86,7 @@ export default function Activity(props: Activity) {
         return () => {
             provider?.updateReceipts(txlist, { address: account?.address, chainId: chain?.chainId });
         };
-    }, [txlist]);
+    }, []);
 
     const [openTxDetail, closeTxDetail] = usePortal((props: any) => <Modals.Tx.Detail {...props} onClose={closeTxDetail} />);
     const formatter = useCallback(
@@ -180,7 +180,7 @@ export default function Activity(props: Activity) {
     );
 
     return (
-        <Layouts.Col gap={0}>
+        <Layouts.Contents.InnerContent>
             <Layouts.Row gap={1} fix style={{ overflow: "auto hidden" }}>
                 <Layouts.Row gap={0} fix>
                     <Controls.Tab iconLeft={sortArrow(sorts.blockNumber)} onClick={() => setSort(sorts.blockNumber)}>
@@ -201,9 +201,7 @@ export default function Activity(props: Activity) {
                 </Layouts.Row>
             </Layouts.Row>
             <Layouts.Divider />
-            <Layouts.Contents.InnerContent>
-                <Layouts.List list={filter(sorting(txlist), props?.filter)} formatter={formatter} fill />
-            </Layouts.Contents.InnerContent>
-        </Layouts.Col>
+            <Layouts.List list={filter(sorting(txlist), props?.filter)} formatter={formatter} fill />
+        </Layouts.Contents.InnerContent>
     );
 }

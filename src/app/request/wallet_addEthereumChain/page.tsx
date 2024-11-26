@@ -6,7 +6,6 @@ import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { Chain } from "@coinmeca/wallet-sdk/types";
 import { useMessageHandler, useTelegram } from "hooks";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { useLayoutEffect, useState } from "react";
 
 /*
@@ -35,11 +34,9 @@ const method = "wallet_addEthereumChain";
 const timeout = 5000;
 
 export default function Page() {
-    const router = useRouter();
-
     const { telegram } = useTelegram();
     const { provider, chain } = useCoinmecaWalletProvider();
-    const { isPopup, params, messageId } = useMessageHandler();
+    const { params, messageId } = useMessageHandler();
 
     const [selectedChain, setSelectedChain] = useState<any>();
     const [newChain, setNewChain] = useState<Chain>();
