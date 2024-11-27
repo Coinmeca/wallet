@@ -36,6 +36,8 @@ export interface MessageHandlerProps {
     prev: (id: string) => void;
 }
 
+const target = "coinmeca-wallet";
+
 export const RequestForm = {
     id: undefined,
     strategy: undefined,
@@ -73,10 +75,10 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
             portal.postMessage({ state: "ready" }, "*");
 
             const messageHandler = (event: MessageEvent) => {
-                if (event?.data && event?.data?.target === "coinmeca-wallet") {
+                if (event?.data && (!event.data.result || !event.data.close || !event.data.error) && event?.data?.target === "coinmeca-wallet") {
                     const { id, request } = event.data;
 
-                    if (!messages?.find((m) => m?.id === id) && (!strategy || strategy === event?.data.strategy)) {
+                    if (!messages?.find((m) => m?.id?.toLowerCase() === id?.toLowerCase()) && (!strategy || strategy === event?.data.strategy)) {
                         if (!strategy) setStrategy(event?.data?.strategy);
 
                         let auth = false;
@@ -91,13 +93,7 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
                         } else if (request?.params?.to) error = "Not found sender information.";
 
                         if (error) {
-                            portal?.postMessage(
-                                {
-                                    method: request?.method,
-                                    error,
-                                },
-                                "*",
-                            );
+                            portal?.postMessage({ target, method: request?.method, error }, "*");
                             if (strategy === "popup") {
                                 if (telegram) telegram?.close();
                                 window?.close();
@@ -113,13 +109,7 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
     useLayoutEffect(() => {
         if (strategy === "popup" && (!path?.startsWith("/lock") || !path?.startsWith("/welcome"))) {
             const handleUnload = () => {
-                portal?.postMessage(
-                    {
-                        close: true,
-                        error: "User rejected the request",
-                    },
-                    "*",
-                );
+                portal?.postMessage({ target, close: true, error: "User rejected the request" }, "*");
             };
             window.close();
             window.addEventListener("beforeunload", handleUnload);
@@ -143,15 +133,7 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
         (id: string, result: any) => {
             const message = messages?.find((m) => m?.id === id);
             if (message) {
-                portal?.postMessage(
-                    {
-                        id,
-                        result,
-                        method: message?.request.method,
-                        close: count === 1,
-                    },
-                    "*",
-                );
+                portal?.postMessage({ target, id, result, method: message?.request.method, close: count === 1 }, "*");
                 setMessages((state) => state?.filter((m) => m?.id !== id));
                 if (isProxy) portal?.document?.getElementById(`coinmeca-wallet-proxy-${id}`)?.remove();
             }
@@ -163,15 +145,7 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
         (id: string, error: any) => {
             const message = messages?.find((m) => m?.id === id);
             if (message) {
-                portal?.postMessage(
-                    {
-                        id,
-                        error,
-                        method: message?.request.method,
-                        close: true,
-                    },
-                    "*",
-                );
+                portal?.postMessage({ target, id, error, method: message?.request.method, close: true }, "*");
                 setMessages((state) => state?.filter((m) => m?.id !== id));
                 if (isProxy) portal?.document?.getElementById(`coinmeca-wallet-proxy-${id}`)?.remove();
             }
