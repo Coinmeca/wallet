@@ -1,13 +1,13 @@
 ﻿"use client";
 
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-
+import { useLayoutEffect, useMemo, useState } from "react";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
-import { useMessageHandler, useTelegram } from "hooks";
+
+import { useMessageHandler } from "hooks";
 import { short } from "utils";
+import { RequestForm } from "contexts/message";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({method: 'eth_requestAccounts'})
@@ -17,60 +17,39 @@ const method = "eth_requestAccounts";
 const timeout = 5000;
 
 export default function Page() {
-    const router = useRouter();
-
-    const { telegram } = useTelegram();
     const { provider, account } = useCoinmecaWalletProvider();
-    const { app, messageId } = useMessageHandler();
+    const { getRequest, getRequestById, success, failure, next } = useMessageHandler();
 
+    const [id, setId] = useState("");
     const [level, setLevel] = useState(0);
     const [error, setError] = useState<any>();
 
+    const { app } = useMemo(() => getRequestById(id), [id]);
+
     const handleClose = () => {
-        if (level === 0)
-            window?.opener?.postMessage(
-                {
-                    method,
-                    error: "User rejected the request",
-                    id: messageId,
-                },
-                "*",
-            );
-        // if (isPopup) {
-        if (telegram) telegram?.close();
-        window?.close();
-        // } else router.push("/");
+        if (level === 0) failure(id, "User rejected the request");
+        next(id);
     };
 
     const handleConnect = async () => {
         await provider
             ?.requestAccounts(app!)
             .then((result) => {
-                window?.opener?.postMessage(
-                    {
-                        method,
-                        result,
-                        id: messageId,
-                    },
-                    "*",
-                );
+                success(id, result);
                 setLevel(1);
                 setTimeout(handleClose, timeout);
             })
             .catch((error) => {
                 console.log(error);
-                window?.opener?.postMessage(
-                    {
-                        method,
-                        error,
-                        id: messageId,
-                    },
-                    "*",
-                );
+                failure(id, error);
                 setError(error);
                 setLevel(2);
             });
     };
+
+    useLayoutEffect(() => {
+        setId(getRequest(method)?.id);
+    }, []);
 
     return app ? (
         <Layouts.Contents.SlideContainer
@@ -104,14 +83,14 @@ export default function Page() {
                                                                 ? app?.logo || ""
                                                                 : require(`../../../assets/animation/${level === 1 ? "success" : "failure"}.gif`)
                                                         }
-                                                        alt={app.name || "Unknown"}
+                                                        alt={app?.name || "Unknown"}
                                                         style={{ width: "8em", height: "8em" }}
                                                     />
                                                 </div>
                                                 <Layouts.Col gap={1}>
-                                                    <Elements.Text type={"h6"}>{app.name || ""}</Elements.Text>
+                                                    <Elements.Text type={"h6"}>{app?.name || ""}</Elements.Text>
                                                     <Elements.Text type={"strong"} opacity={0.6}>
-                                                        {app.url}
+                                                        {app?.url}
                                                     </Elements.Text>
                                                 </Layouts.Col>
                                             </Layouts.Col>

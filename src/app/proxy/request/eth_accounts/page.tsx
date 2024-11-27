@@ -1,10 +1,11 @@
 ﻿"use client";
 
-import { useLayoutEffect, useState } from "react";
-
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { Contents } from "@coinmeca/ui/components";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
+
 import { useMessageHandler } from "hooks";
+import { MessageProps } from "contexts/message";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({method: 'eth_accounts'})
@@ -14,22 +15,13 @@ const method = "eth_accounts";
 
 export default function Page() {
     const { provider } = useCoinmecaWalletProvider();
-    const { app, messageId } = useMessageHandler();
+    const { getRequest, success, messages } = useMessageHandler();
+    const [request, setRequest] = useState<MessageProps>();
 
     useLayoutEffect(() => {
-        if (provider && messageId) {
-            window?.parent?.postMessage(
-                {
-                    method,
-                    result: provider?.accounts(app?.url) || [],
-                    id: messageId,
-                },
-                "*",
-            );
-            const iframe = window?.parent?.document?.getElementById(`coinmeca-wallet-proxy-${messageId}`);
-            if (iframe) iframe.remove();
-        }
-    }, [provider, messageId]);
+        if (!request?.id || request?.id === "") setRequest(getRequest(method));
+        else if (provider) success(request?.id, provider?.accounts(request?.request?.app?.url) || []);
+    }, [messages, provider]);
 
     return <Contents.States.Loading style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", zIndex: 10000, background: "black" }} />;
 }

@@ -1,16 +1,16 @@
 "use client";
 
+import Image from "next/image";
+import { useLayoutEffect, useMemo, useState } from "react";
 import { Contents, Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { format } from "@coinmeca/ui/lib/utils";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { Account } from "@coinmeca/wallet-sdk/types";
 import { useQueries } from "@tanstack/react-query";
+
+import { useMessageHandler } from "hooks";
 import { GetMaxFeePerGas } from "api/onchain";
 import { query } from "api/onchain/query";
-import { useMessageHandler, useTelegram } from "hooks";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useLayoutEffect, useState } from "react";
 import { sanitizeBigIntToHex, short } from "utils";
 
 /*
@@ -44,12 +44,10 @@ const method = "eth_sendTransaction";
 const timeout = 5000;
 
 export default function EthSendTransaction() {
-    const router = useRouter();
-
-    const { telegram } = useTelegram();
     const { provider, chain, account } = useCoinmecaWalletProvider();
-    const { auth, app, params, messageId } = useMessageHandler();
+    const { getRequest, getRequestById, success, failure, next } = useMessageHandler();
 
+    const [id, setId] = useState("");
     const [tx, setTx] = useState<Transaction>();
     const [txHash, setTxHash] = useState<string>("");
     const [signer, setSigner] = useState<Account>();
@@ -57,6 +55,7 @@ export default function EthSendTransaction() {
     const [level, setLevel] = useState(0);
     const [error, setError] = useState<any>();
 
+    const { params, app, auth } = getRequestById(id);
     const [{ data: nonce }, { data: gasPrice, isLoading: isGasPriceLoading }, { data: estimateGas, isLoading: isEstimateGasLoading }] = useQueries({
         queries: [
             query.nonce(chain?.rpcUrls[0], signer?.address),
@@ -69,13 +68,10 @@ export default function EthSendTransaction() {
         data: { maxPriorityFeePerGas, maxFeePerGas },
     } = GetMaxFeePerGas(chain?.rpcUrls[0]);
 
-    useLayoutEffect(() => {
-        if (params) {
-            if (params?.chainId) provider?.changeChain(params.chainId);
-            setTx(params);
-            setSigner(provider?.account(params?.from || account?.address));
-        }
-    }, []);
+    const handleClose = () => {
+        if (level < 2) failure(id, "User rejected the request");
+        next(id);
+    };
 
     const handleSign = async () => {
         setLevel(1);
@@ -95,52 +91,30 @@ export default function EthSendTransaction() {
                     signer!,
                 )
                 .then(async (tx: any) => await provider?.send(tx));
-            if (result) {
-                window?.opener?.postMessage(
-                    {
-                        method,
-                        result,
-                        id: messageId,
-                    },
-                    "*",
-                );
-            } else {
-                throw new Error(result);
-            }
+            if (result) success(id, result);
+            else throw new Error(result);
             setTxHash(result);
             setLevel(2);
             setTimeout(handleClose, timeout);
         } catch (error: any) {
             console.log(error);
-            error = error?.message || error;
-            window?.opener?.postMessage(
-                {
-                    method,
-                    error,
-                    id: messageId,
-                },
-                "*",
-            );
+            failure(id, error?.message || error);
             setError(error);
             setLevel(3);
         }
     };
 
-    const handleClose = () => {
-        // if (isPopup) {
-        if (telegram) telegram?.close();
-        window?.close();
-        // } else router.push("/");
-        if (level < 2)
-            window?.opener?.postMessage(
-                {
-                    method,
-                    ...(level === 0 ? { error: "User rejected the request" } : {}),
-                    id: messageId,
-                },
-                "*",
-            );
-    };
+    useLayoutEffect(() => {
+        const request = getRequest(method);
+        if (request?.request) {
+            const { params } = request.request;
+            if (params?.chainId) provider?.changeChain(params.chainId);
+
+            setTx(params);
+            setSigner(provider?.account(params?.from || account?.address));
+            setId(request?.id);
+        }
+    }, []);
 
     return auth && app && signer && tx ? (
         <Layouts.Contents.SlideContainer

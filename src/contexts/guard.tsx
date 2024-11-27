@@ -1,9 +1,8 @@
 ﻿"use client";
 
-import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
-import { useMessageHandler } from "hooks";
-import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useLayoutEffect, useState } from "react";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
+import { usePathname, useRouter } from "next/navigation";
 import { Account } from "viem";
 
 interface GuardContextProps {
@@ -25,7 +24,6 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const path = usePathname();
     const router = useRouter();
     const { provider } = useCoinmecaWalletProvider();
-    const { auth, message } = useMessageHandler();
 
     const [isInit, setIsInit] = useState<boolean>(false);
     const [isAccess, setIsAccess] = useState<boolean>(false);
@@ -79,13 +77,13 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }, [target]);
 
     useLayoutEffect(() => {
-        if (!isLoad && check && typeof check?.init !== "undefined" && typeof check?.access !== "undefined" && typeof auth !== "undefined") {
+        if (!isLoad && check && typeof check?.init !== "undefined" && typeof check?.access !== "undefined") {
             if (path?.startsWith("/proxy")) setIsLoad(true);
             else if (check.init === false && path?.startsWith("/welcome")) setIsLoad(true);
             else if (!check.access && path?.startsWith("/lock")) setIsLoad(true);
             else setIsLoad(true);
         }
-    }, [auth, check]);
+    }, [check]);
 
     return <GuardContext.Provider value={{ isInit, isAccess, isLoad, setIsAccess }}>{children}</GuardContext.Provider>;
 };

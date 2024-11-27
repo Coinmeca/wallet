@@ -286,10 +286,10 @@ export default function Page() {
             //     method,
             //     params,
             // }),
-            await coinbase?.request({
-                method,
-                params,
-            }),
+            // await coinbase?.request({
+            //     method,
+            //     params,
+            // }),
             await coinmeca?.request({
                 method,
                 params,

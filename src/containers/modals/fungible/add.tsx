@@ -95,12 +95,12 @@ function FungibleAddModal(props: Add) {
         console.log(1);
         if (process === null) {
             console.log(2);
-            if (loading || !asset?.isFetching && !asset?.isLoading) {
+            if (loading || (!asset?.isFetching && !asset?.isLoading)) {
                 console.log(3);
                 if (asset?.isSuccess) {
-                     console.log(4);
-                     setProcess(true);
-                     setLoading(false);
+                    console.log(4);
+                    setProcess(true);
+                    setLoading(false);
                 } else if (asset?.isError) {
                     console.log(5);
                     setProcess(false);
@@ -116,7 +116,7 @@ function FungibleAddModal(props: Add) {
             }
         }
     }, [asset, tokens]);
-    console.log("isLoading", asset?.isLoading, "fetching", asset?.isFetching, {loading, process})
+    console.log("isLoading", asset?.isLoading, "fetching", asset?.isFetching, { loading, process });
 
     return (
         <Modal
@@ -133,12 +133,11 @@ function FungibleAddModal(props: Add) {
                                             onClick={(e: any) => {
                                                 setToken(undefined);
                                                 setProcess(null);
-                                            }}
-                                        >
+                                            }}>
                                             Go Back
                                         </Controls.Button>
                                     </States.Failure>
-                                )
+                                ),
                             },
                             {
                                 active: process === null && !loading,
@@ -235,13 +234,13 @@ function FungibleAddModal(props: Add) {
                                                     </Layouts.Col>
                                                 </Layouts.Col>
                                                 <Layouts.Col gap={6}>
-                                                    {(asset?.data?.decimals && asset?.data?.balance) && (
+                                                    {asset?.data?.decimals && asset?.data?.balance && (
                                                         <div style={{ padding: "2em", background: "rgba(var(--white),0.05)" }}>
                                                             <Layouts.Row gap={1}>
                                                                 <Elements.Text opacity={0.3} fit>
                                                                     Balance
                                                                 </Elements.Text>
-                                                                <Layouts.Row gap={1} align={"right"} style={{ maxWidth:"100%" }} fix>
+                                                                <Layouts.Row gap={1} align={"right"} style={{ maxWidth: "100%" }} fix>
                                                                     <Elements.Text align={"right"} fix>
                                                                         {format(asset?.data.balance, "currency", {
                                                                             unit: 9,

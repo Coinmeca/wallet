@@ -1,16 +1,16 @@
 "use client";
 
-import { Contents, Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useMessageHandler, useTelegram } from "hooks";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
+import { Contents, Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { Account } from "@coinmeca/wallet-sdk/types";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
-import { GetMaxFeePerGas } from "api/onchain";
 import { format } from "@coinmeca/ui/lib/utils";
 import { useQueries } from "@tanstack/react-query";
+
+import { useMessageHandler } from "hooks";
 import { query } from "api/onchain/query";
+import { GetMaxFeePerGas } from "api/onchain";
 import { sanitizeBigIntToHex, short } from "utils";
 
 /*
@@ -44,19 +44,19 @@ const method = "eth_signTransaction";
 const timeout = 5000;
 
 export default function EthSignTransaction() {
-    const router = useRouter();
-
-    const { telegram } = useTelegram();
     const { provider, chain, account } = useCoinmecaWalletProvider();
-    const { auth, app, params, isPopup, messageId } = useMessageHandler();
+    const { getRequest, getRequestById, success, failure, next } = useMessageHandler();
 
+    const [id, setId] = useState("");
     const [tx, setTx] = useState<Transaction>();
+    // todo
     const [txHash, setTxHash] = useState<string>("");
     const [signer, setSigner] = useState<Account>();
 
     const [level, setLevel] = useState(0);
     const [error, setError] = useState<any>();
 
+    const { params, app, auth } = getRequestById(id);
     const [{ data: nonce }, { data: gasPrice, isLoading: isGasPriceLoading }, { data: estimateGas, isLoading: isEstimateGasLoading }] = useQueries({
         queries: [
             query.nonce(chain?.rpcUrls[0], signer?.address),
@@ -68,73 +68,55 @@ export default function EthSignTransaction() {
         data: { maxPriorityFeePerGas, maxFeePerGas },
     } = GetMaxFeePerGas(chain?.rpcUrls[0]);
 
-    useLayoutEffect(() => {
-        console.log({ params, auth, app });
-        if (params) {
-            if (params?.chainId) provider?.changeChain(params.chainId);
-            setTx(params);
-            setSigner(provider?.account(tx?.from || account?.address));
+    const handleClose = () => {
+        if (id) {
+            if (level < 2) failure(id, "User rejected the request");
+            next(id);
         }
-    }, []);
+    };
 
     const handleSign = async () => {
-        setLevel(1);
-        await provider
-            ?.sign(
-                {
-                    to: params?.to,
-                    data: params?.data,
-                    nonce: BigInt(nonce || 0),
-                    gasLimit: BigInt(estimateGas?.raw || 0),
-                    gasPrice: BigInt(gasPrice?.raw || 0),
-                    chainId: Number(params?.chainId || chain?.chainId),
-                    maxFeePerGas: BigInt(maxFeePerGas?.raw || 0),
-                    maxPriorityFeePerGas: BigInt(maxPriorityFeePerGas?.raw || 0),
-                } as any,
-                signer!,
-            )
-            .then((result) => {
-                window?.opener?.postMessage(
+        if (id) {
+            setLevel(1);
+            await provider
+                ?.sign(
                     {
-                        method,
-                        result,
-                        id: messageId,
-                    },
-                    "*",
-                );
-                setLevel(2);
-                setTimeout(handleClose, timeout);
-            })
-            .catch((error) => {
-                console.log(error);
-                window?.opener?.postMessage(
-                    {
-                        method,
-                        error: "Failed to signning",
-                        id: messageId,
-                    },
-                    "*",
-                );
-                setError(error);
-                setLevel(3);
-            });
+                        to: params?.to,
+                        data: params?.data,
+                        nonce: BigInt(nonce || 0),
+                        gasLimit: BigInt(estimateGas?.raw || 0),
+                        gasPrice: BigInt(gasPrice?.raw || 0),
+                        chainId: Number(params?.chainId || chain?.chainId),
+                        maxFeePerGas: BigInt(maxFeePerGas?.raw || 0),
+                        maxPriorityFeePerGas: BigInt(maxPriorityFeePerGas?.raw || 0),
+                    } as any,
+                    signer!,
+                )
+                .then((result) => {
+                    success(id, result);
+                    setLevel(2);
+                    setTimeout(handleClose, timeout);
+                })
+                .catch((error) => {
+                    console.log(error);
+                    failure(id, "Failed to signning");
+                    setError(error);
+                    setLevel(3);
+                });
+        }
     };
 
-    const handleClose = () => {
-        // if (isPopup) {
-        if (telegram) telegram?.close();
-        window?.close();
-        // } else router.push("/");
-        if (level < 2)
-            window?.opener?.postMessage(
-                {
-                    method,
-                    ...(level === 0 ? { error: "User rejected the request" } : {}),
-                    id: messageId,
-                },
-                "*",
-            );
-    };
+    useLayoutEffect(() => {
+        const request = getRequest(method);
+        if (request?.request) {
+            const { params } = request.request;
+            if (params?.chainId) provider?.changeChain(params.chainId);
+
+            setTx(params);
+            setSigner(provider?.account(tx?.from || account?.address));
+            setId(request?.id);
+        }
+    }, []);
 
     return auth && app && signer && tx ? (
         <Layouts.Contents.SlideContainer

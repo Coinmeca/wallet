@@ -1,18 +1,19 @@
 ﻿"use client";
 
+import Image from "next/image";
+import { useLayoutEffect, useMemo, useState } from "react";
 import { Contents, Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { format } from "@coinmeca/ui/lib/utils";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { Account, TransactionParams } from "@coinmeca/wallet-sdk/types";
 import { selectors } from "@coinmeca/wallet-sdk/selectors";
 import { useQueries } from "@tanstack/react-query";
-import { GetMaxFeePerGas } from "api/onchain";
+
+import { useMessageHandler } from "hooks";
 import { query } from "api/query";
-import { useMessageHandler, useTelegram } from "hooks";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useLayoutEffect, useMemo, useState } from "react";
+import { GetMaxFeePerGas } from "api/onchain";
 import { short } from "utils";
+import { RequestForm } from "contexts/message";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({
@@ -31,12 +32,10 @@ const method = "erc20_approve";
 const timeout = 5000;
 
 export default function Page() {
-    const router = useRouter();
-
-    const { telegram } = useTelegram();
     const { provider, chain, account } = useCoinmecaWalletProvider();
-    const { auth, app, params, isPopup, messageId } = useMessageHandler();
+    const { getRequest, getRequestById, success, failure, next } = useMessageHandler();
 
+    const [id, setId] = useState("");
     const [tx, setTx] = useState<TransactionParams>();
     const [level, setLevel] = useState(0);
     const [signer, setSigner] = useState<Account>();
@@ -47,36 +46,24 @@ export default function Page() {
     const [txHash, setTxHash] = useState<string>("");
     const [error, setError] = useState<any>();
 
-    const [
-        { data: nonce },
-        { data: gasPrice, isLoading: isGasPriceLoading },
-        { data: estimateGas, isLoading: isEstimateGasLoading },
-        { data: decimals },
-    ] = useQueries({
-        queries: [
-            query.onchain.nonce(chain?.rpcUrls[0], signer?.address),
-            query.onchain.gasPrice(chain?.rpcUrls[0]),
-            query.onchain.estimateGas(chain?.rpcUrls[0], tx),
-            query.erc20.decimals(chain?.rpcUrls[0], params?.to),
-        ],
-    });
+    const { params, app, auth } = useMemo(() => getRequestById(id), [id]);
+    const [{ data: nonce }, { data: gasPrice, isLoading: isGasPriceLoading }, { data: estimateGas, isLoading: isEstimateGasLoading }, { data: decimals }] =
+        useQueries({
+            queries: [
+                query.onchain.nonce(chain?.rpcUrls[0], signer?.address),
+                query.onchain.gasPrice(chain?.rpcUrls[0]),
+                query.onchain.estimateGas(chain?.rpcUrls[0], tx),
+                query.erc20.decimals(chain?.rpcUrls[0], tx?.to),
+            ],
+        });
     const {
         data: { maxPriorityFeePerGas, maxFeePerGas },
     } = GetMaxFeePerGas(chain?.rpcUrls[0]);
 
-    useLayoutEffect(() => {
-        if (params) {
-            console.log({ params, auth, app });
-            const { data } = params;
-            if (data) {
-                setSpender("0x" + data.slice(34, 74));
-                setAmount(Number(BigInt("0x" + data.slice(74, 138)).toString()));
-            }
-            if (params?.chainId) provider?.changeChain(params.chainId);
-            setTx(params);
-            setSigner(provider?.account(params?.from || account?.address));
-        }
-    }, []);
+    const handleClose = () => {
+        if (level < 2) failure(id, "User rejected the request");
+        next(id);
+    };
 
     const handleSign = async () => {
         setLevel(1);
@@ -96,54 +83,40 @@ export default function Page() {
                     signer!,
                 )
                 .then(async (tx: any) => await provider?.send(tx));
-            if (result) {
-                window?.opener?.postMessage(
-                    {
-                        method,
-                        result,
-                        id: messageId,
-                    },
-                    "*",
-                );
-            } else {
-                throw new Error(result);
-            }
+            if (result) success(id, result);
+            else throw new Error(result);
             setTxHash(result);
             setLevel(2);
             setTimeout(handleClose, timeout);
         } catch (error: any) {
             console.log(error);
-            error = error?.message || error;
-            window?.opener?.postMessage(
-                {
-                    method,
-                    error,
-                    id: messageId,
-                },
-                "*",
-            );
+            failure(id, error?.message || error);
             setError(error);
             setLevel(3);
         }
     };
 
-    const handleClose = () => {
-        if (isPopup) {
-            if (telegram) telegram?.close();
-            window?.close();
-        } else router.push("/");
-        if (level < 2)
-            window?.opener?.postMessage(
-                {
-                    method,
-                    ...(level === 0 ? { error: "User rejected the request" } : {}),
-                    id: messageId,
-                },
-                "*",
-            );
-    };
-
     const selector = useMemo(() => selectors?.[params?.data?.substring(0, 10)], [params]);
+
+    useLayoutEffect(() => {
+        const request = getRequest(method);
+        if (request?.request) {
+            const { params, auth, app } = request.request;
+            const { data } = params;
+
+            if (data) {
+                setSpender("0x" + data.slice(34, 74));
+                setAmount(Number(BigInt("0x" + data.slice(74, 138)).toString()));
+            }
+            if (params?.chainId) provider?.changeChain(params.chainId);
+
+            console.log({ params, auth, app });
+
+            setTx(params);
+            setSigner(provider?.account(params?.from || account?.address));
+            setId(request?.id);
+        }
+    }, []);
 
     return auth && app && signer && tx ? (
         <Layouts.Contents.SlideContainer
@@ -390,7 +363,7 @@ export default function Page() {
                                                     src={require("../../../assets/animation/success.gif")}
                                                     width={0}
                                                     height={0}
-                                                    alt={app.name || ""}
+                                                    alt={app?.name || ""}
                                                     style={{ width: "12em", height: "12em" }}
                                                 />
                                             </div>
