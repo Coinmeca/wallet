@@ -100,10 +100,21 @@ export default function Page() {
     const DisplayTypedData = ({ typedData }: any) => {
         const renderValue = (value: any, type: any) => {
             // Parse value based on type
+            if (type === "number") {
+                return (
+                    <Elements.Text align={"right"} fix>
+                        {format(value, "currency", {
+                            unit: 9,
+                            limit: 12,
+                            fix: 9,
+                        })}
+                    </Elements.Text>
+                );
+            }
             if (type === "string") {
                 return (
                     <Elements.Text align={"right"} fix>
-                        {valid.address(value) ? short(value) : value}
+                        {value?.startsWith("0x") && value?.length <= 20 ? short(value) : value}
                     </Elements.Text>
                 );
             }
