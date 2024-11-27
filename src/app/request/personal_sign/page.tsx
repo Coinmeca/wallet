@@ -296,7 +296,7 @@ export default function PersonalSign() {
                             <Layouts.Col gap={4} align={"center"} fit>
                                 <Elements.Text type={"h3"}>Invalid Request</Elements.Text>
                                 <Elements.Text weight={"bold"} opacity={0.6}>
-                                    {"The given app information is something wrong. Couldn't found the information of requested app?."}
+                                    {"The given app information is something wrong. Couldn't found the information of requested app."}
                                 </Elements.Text>
                             </Layouts.Col>
                         </Layouts.Col>

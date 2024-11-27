@@ -37,6 +37,7 @@ export default function Page() {
 
             if (_0 || _1) {
                 _1 ? ((data = params[0]), (address = params[1])) : ((data = params[1]), (address = params[0]));
+                data = typeof data === "string" && data?.startsWith('{"types":') ? JSON.parse(data) : data;
 
                 setAuth(app?.url ? provider?.allowance(app?.url, address) : false);
                 setSigner(provider?.account(address));
@@ -103,7 +104,7 @@ export default function Page() {
             if (type === "number") {
                 return (
                     <Elements.Text align={"right"} fix>
-                        {format(value, "currency", {
+                        {format(value, "number", {
                             unit: 9,
                             limit: 12,
                             fix: 9,
@@ -114,7 +115,7 @@ export default function Page() {
             if (type === "string") {
                 return (
                     <Elements.Text align={"right"} fix>
-                        {value?.startsWith("0x") && value?.length <= 20 ? short(value) : value}
+                        {value?.startsWith("0x") && value?.length >= 20 ? short(value) : value}
                     </Elements.Text>
                 );
             }
@@ -125,10 +126,14 @@ export default function Page() {
                     </Elements.Text>
                 );
             }
-            if (type === "uint256") {
+            if (type?.startsWith("int") || type?.startsWith("uint")) {
                 return (
                     <Elements.Text align={"right"} fix>
-                        {format(value, "currency")}
+                        {format(value, "number", {
+                            unit: 9,
+                            limit: 12,
+                            fix: 9,
+                        })}
                     </Elements.Text>
                 );
             }
@@ -408,7 +413,7 @@ export default function Page() {
                             <Layouts.Col gap={4} align={"center"} fit>
                                 <Elements.Text type={"h3"}>Invalid Request</Elements.Text>
                                 <Elements.Text weight={"bold"} opacity={0.6}>
-                                    {"The given app information is something wrong. Couldn't found the information of requested app?."}
+                                    {"The given app information is something wrong. Couldn't found the information of requested app."}
                                 </Elements.Text>
                             </Layouts.Col>
                         </Layouts.Col>
