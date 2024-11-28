@@ -49,15 +49,15 @@ export default function Main() {
         ],
     });
 
+    const {
+        data: { maxPriorityFeePerGas, maxFeePerGas },
+    } = GetMaxFeePerGas(chain?.rpcUrls[0]);
+
     const condition = useMemo(() => amount && parseNumber(amount) > 10 ** -(asset?.decimals || 1), [amount]);
     const fontSize = useMemo(() => {
         const size = (100 / (amount?.toString().length || 1)) * 1.5;
         return `${size > 8 ? 8 : size < 4 ? 4 : size}vw`;
     }, [amount]);
-
-    const {
-        data: { maxPriorityFeePerGas, maxFeePerGas },
-    } = GetMaxFeePerGas(chain?.rpcUrls[0]);
 
     const handleCancel = () => {
         setAmount("");
@@ -143,7 +143,7 @@ export default function Main() {
                                                                                             style={{
                                                                                                 fontSize,
                                                                                             }}
-                                                                                            opacity={amount === "0" ? 0.6 : amount?.length || 0.6}>
+                                                                                            opacity={amount === "0" ? 0.6 : amount?.toString()?.length || 0.6}>
                                                                                             {format(amount, "currency", {
                                                                                                 unit: 9,
                                                                                                 limit: 12,
@@ -152,13 +152,18 @@ export default function Main() {
                                                                                             })}
                                                                                         </Elements.Text>
                                                                                         <Controls.Button onClick={() => setAmount(asset?.balance)}>
-                                                                                            {/* <Elements.Text opacity={0.6}> */}
-                                                                                            {format(asset?.balance, "currency", {
-                                                                                                unit: 9,
-                                                                                                limit: 12,
-                                                                                                fix: 9,
-                                                                                            })}{" "}
-                                                                                            {asset?.symbol}
+                                                                                            {(asset?.balance || 0) <= parseNumber(amount || 0) ? (
+                                                                                                "MAX"
+                                                                                            ) : (
+                                                                                                <>
+                                                                                                    {format(asset?.balance, "currency", {
+                                                                                                        unit: 9,
+                                                                                                        limit: 12,
+                                                                                                        fix: 9,
+                                                                                                    })}{" "}
+                                                                                                    {asset?.symbol}
+                                                                                                </>
+                                                                                            )}
                                                                                             {/* </Elements.Text> */}
                                                                                         </Controls.Button>
                                                                                     </Layouts.Col>
@@ -350,6 +355,7 @@ export default function Main() {
                                                                                                     <Parts.Numberpads.Currency
                                                                                                         type="currency"
                                                                                                         value={amount}
+                                                                                                        max={asset?.balance}
                                                                                                         onChange={(e: any, v: any) => setAmount(v)}
                                                                                                     />
                                                                                                     <Layouts.Row gap={2}>
