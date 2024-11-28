@@ -21,7 +21,6 @@ import { Asset } from "types";
 import { sanitizeBigIntToHex, short } from "utils";
 
 export default function Main() {
-    const width = 64;
     const path = usePathname();
     const router = useRouter();
 
@@ -39,7 +38,6 @@ export default function Main() {
     const [amount, setAmount] = useState<string | number>();
     const [level, setLevel] = useState(0);
 
-    const condition = useMemo(() => amount && parseNumber(amount) > 10 ** -(asset?.decimals || 1), [amount]);
     const fontSize = useMemo(() => {
         const size = (100 / (amount?.toString().length || 1)) * 1.5;
         return `${size > 8 ? 8 : size < 4 ? 4 : size}vw`;
@@ -336,48 +334,6 @@ export default function Main() {
                                                                                     {
                                                                                         active: !!asset,
                                                                                         children: (
-                                                                                            <Layouts.Col
-                                                                                                gap={0}
-                                                                                                style={{ background: "rgba(var(--black),.45)", padding: "2em" }}
-                                                                                                fill>
-                                                                                                <Layouts.Col gap={0} fill>
-                                                                                                    <Parts.Numberpads.Currency
-                                                                                                        type="currency"
-                                                                                                        width={width}
-                                                                                                        value={amount}
-                                                                                                        max={asset?.balance}
-                                                                                                        onChange={(e: any, v: any) => setAmount(v)}
-                                                                                                    />
-                                                                                                    <Layouts.Row gap={2}>
-                                                                                                        <Controls.Button
-                                                                                                            onClick={() => {
-                                                                                                                setAsest(undefined);
-                                                                                                                setAmount("");
-                                                                                                            }}>
-                                                                                                            Back
-                                                                                                        </Controls.Button>
-                                                                                                        <Layouts.Row
-                                                                                                            style={{
-                                                                                                                ...(condition
-                                                                                                                    ? { maxWidth: "100%", opacity: 1 }
-                                                                                                                    : {
-                                                                                                                          maxWidth: 0,
-                                                                                                                          opacity: 0,
-                                                                                                                          marginLeft: "-2em",
-                                                                                                                          pointerEvents: "none",
-                                                                                                                          curosr: "default",
-                                                                                                                      }),
-                                                                                                                transition: ".3s ease",
-                                                                                                            }}>
-                                                                                                            <Controls.Button
-                                                                                                                type={"glass"}
-                                                                                                                onClick={handleConfirmAmount}>
-                                                                                                                Confirm
-                                                                                                            </Controls.Button>
-                                                                                                        </Layouts.Row>
-                                                                                                    </Layouts.Row>
-                                                                                                </Layouts.Col>
-                                                                                            </Layouts.Col>
                                                                                         ),
                                                                                     },
                                                                                 ]}

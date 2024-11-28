@@ -9,7 +9,7 @@ interface Contact extends Stage {
     onBack?: Function;
 }
 
-export default function Contact(props?: Contact) {
+export default function Contact(props: Contact) {
     const { accounts, contact } = useCoinmecaWalletProvider();
     const [address, setAddress] = useState<string>();
 
