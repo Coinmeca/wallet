@@ -70,7 +70,12 @@ export default function Main() {
             method: "eth_sendTransaction",
             to: asset?.address,
             from: account?.address,
-            data: `0xa9059cbb` + receipent.toLowerCase().padStart(64, "0") + BigInt(Number(amount)).toString(16).padStart(64, "0"),
+            data:
+                `0xa9059cbb` +
+                receipent.toLowerCase().padStart(64, "0") +
+                BigInt(Number(amount) * 10 ** (asset?.decimals || 0))
+                    .toString(16)
+                    .padStart(64, "0"),
             nonce: BigInt(nonce || 0),
             chainId: Number(chain?.chainId || 1),
             gasLimit: BigInt(estimateGas?.raw || 0),
@@ -143,15 +148,23 @@ export default function Main() {
                                                                                             style={{
                                                                                                 fontSize,
                                                                                             }}
-                                                                                            opacity={amount === "0" ? 0.6 : amount?.toString()?.length || 0.6}>
-                                                                                            {format(amount, "currency", {
-                                                                                                unit: 9,
-                                                                                                limit: 12,
-                                                                                                fix: 9,
-                                                                                                display: false,
-                                                                                            })}
+                                                                                            opacity={amount?.toString()?.length || 0.6}>
+                                                                                            {format(
+                                                                                                amount || 0,
+                                                                                                "currency",
+                                                                                                // !isNaN(Number(amount)) &&
+                                                                                                //     Number(amount) > 0 && {
+                                                                                                //         unit: 4,
+                                                                                                //         fix: 9,
+                                                                                                //     },
+                                                                                            )}
                                                                                         </Elements.Text>
                                                                                         <Controls.Button onClick={() => setAmount(asset?.balance)}>
+                                                                                            {console.log(
+                                                                                                asset?.balance || 0,
+                                                                                                parseNumber(amount || 0),
+                                                                                                (asset?.balance || 0) <= parseNumber(amount || 0),
+                                                                                            )}
                                                                                             {(asset?.balance || 0) <= parseNumber(amount || 0) ? (
                                                                                                 "MAX"
                                                                                             ) : (
@@ -226,7 +239,15 @@ export default function Main() {
                                                                                     {
                                                                                         active: !asset,
                                                                                         children: (
-                                                                                            <Layouts.Box padding={[2, "", "", ""]} fit>
+                                                                                            <Layouts.Box
+                                                                                                padding={
+                                                                                                    windowSize.width >= Root.Device.Desktop
+                                                                                                        ? [2, 8, 4]
+                                                                                                        : windowSize.width >= Root.Device.Mobile
+                                                                                                        ? [2, 4, 4]
+                                                                                                        : [1, 2, 2]
+                                                                                                }
+                                                                                                fit>
                                                                                                 <Layouts.Contents.InnerContent>
                                                                                                     <Layouts.Col gap={0} fill>
                                                                                                         <Layouts.Menu
