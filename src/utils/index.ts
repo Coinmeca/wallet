@@ -1,5 +1,4 @@
 ﻿import CryptoJS from "crypto-js";
-import { Address } from "viem";
 
 export const camelToTitleCase = (value?: string) => {
     if (!value || !value?.length) return value;
@@ -52,7 +51,7 @@ export const valid = {
             }),
         );
     },
-    address: (...address: (Address | string | undefined)[]) => {
+    address: (...address: (string | undefined)[]) => {
         if (!address || address === undefined || address === null) return false;
         if (typeof address === "string") address = [address];
         return enable(
