@@ -84,7 +84,10 @@ export const hex = {
         if (!value || !value.length) return value;
         let data = value?.slice(64);
         if (data.length % 2 !== 0) data = "0" + data;
-        return Buffer.from(data, "hex").toString("utf8")?.trim();
+        return Buffer.from(data, "hex")
+            .toString("utf8")
+            .replace(/[\x00\u0000]+/g, "")
+            .trim();
     },
     toNumber: (value: string) => {
         const result = Number(value);

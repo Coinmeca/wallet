@@ -34,6 +34,7 @@ export interface MessageHandlerProps {
     count: number;
     next: (id: string) => void;
     prev: (id: string) => void;
+    remove: (id: string) => void;
 }
 
 const target = "coinmeca-wallet";
@@ -134,7 +135,6 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
             const message = messages?.find((m) => m?.id === id);
             if (message) {
                 portal?.postMessage({ target, id, result, method: message?.request.method, close: count === 1 }, "*");
-                setMessages((state) => state?.filter((m) => m?.id !== id));
                 if (isProxy) portal?.document?.getElementById(`coinmeca-wallet-proxy-${id}`)?.remove();
             }
         },
@@ -146,7 +146,6 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
             const message = messages?.find((m) => m?.id === id);
             if (message) {
                 portal?.postMessage({ target, id, error, method: message?.request.method, close: true }, "*");
-                setMessages((state) => state?.filter((m) => m?.id !== id));
                 if (isProxy) portal?.document?.getElementById(`coinmeca-wallet-proxy-${id}`)?.remove();
             }
         },
@@ -187,6 +186,8 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
         [messages],
     );
 
+    const remove = useCallback((id: string) => setMessages((state) => state?.filter((m) => m?.id !== id)), [messages]);
+
     return (
         <MessageHandlerContext.Provider
             value={{
@@ -201,6 +202,7 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
                 count,
                 next,
                 prev,
+                remove,
             }}>
             {children}
         </MessageHandlerContext.Provider>

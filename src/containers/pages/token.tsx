@@ -7,11 +7,12 @@ import { useCallback } from "react";
 import { filter, format } from "@coinmeca/ui/lib/utils";
 import { Modals } from "containers";
 import { GetErc20 } from "api/erc20";
-import { zeroAddress } from "types";
+import { Asset, zeroAddress } from "types";
 import { GetBalance } from "api/account";
 
 interface Token {
     filter?: string;
+    onSelect?: Function;
 }
 
 export default function Token(props: Token) {
@@ -27,6 +28,10 @@ export default function Token(props: Token) {
         balance: { key: "balance", type: "number" },
     };
 
+    const handleSelect = (asset: Asset) => {
+        props?.onSelect?.(asset);
+    };
+
     const [openFungibleAdd, closeAddFungible] = usePortal(() => <Modals.Fungible.Add onClose={closeAddFungible} />);
     const formatter = useCallback(
         (tokens?: any[]) => {
@@ -36,6 +41,7 @@ export default function Token(props: Token) {
                         (t?: any) =>
                             typeof t === "object" && {
                                 style: { padding: "1.5em" },
+                                onClick: () => handleSelect(t),
                                 children: [
                                     [
                                         {

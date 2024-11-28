@@ -75,33 +75,32 @@ export default function EthSendTransaction() {
 
     const handleSign = async () => {
         setLevel(1);
-        try {
-            const result = await provider
-                ?.sign(
-                    {
-                        to: params?.to,
-                        data: params?.data,
-                        nonce: BigInt(nonce || 0),
-                        chainId: Number(params?.chainId || chain?.chainId),
-                        gasLimit: BigInt(estimateGas?.raw || 0),
-                        gasPrice: BigInt(gasPrice?.raw || 0),
-                        maxFeePerGas: BigInt(maxFeePerGas?.raw || 0),
-                        maxPriorityFeePerGas: BigInt(maxPriorityFeePerGas?.raw || 0),
-                    } as any,
-                    signer!,
-                )
-                .then(async (tx: any) => await provider?.send(tx));
-            if (result) success(id, result);
-            else throw new Error(result);
-            setTxHash(result);
-            setLevel(2);
-            setTimeout(handleClose, timeout);
-        } catch (error: any) {
-            console.log(error);
-            failure(id, error?.message || error);
-            setError(error);
-            setLevel(3);
-        }
+        await provider
+            ?.send(
+                {
+                    to: params?.to,
+                    data: params?.data,
+                    nonce: BigInt(nonce || 0),
+                    chainId: Number(params?.chainId || chain?.chainId),
+                    gasLimit: BigInt(estimateGas?.raw || 0),
+                    gasPrice: BigInt(gasPrice?.raw || 0),
+                    maxFeePerGas: BigInt(maxFeePerGas?.raw || 0),
+                    maxPriorityFeePerGas: BigInt(maxPriorityFeePerGas?.raw || 0),
+                } as any,
+                signer!,
+            )
+            .then((result) => {
+                success(id, result);
+                setTxHash(result);
+                setLevel(2);
+                setTimeout(handleClose, timeout);
+            })
+            .catch((error) => {
+                console.log(error);
+                failure(id, error?.message || error);
+                setError(error);
+                setLevel(3);
+            });
     };
 
     useLayoutEffect(() => {

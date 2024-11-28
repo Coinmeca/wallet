@@ -45,7 +45,7 @@ const timeout = 5000;
 
 export default function EthSignTransaction() {
     const { provider, chain, account } = useCoinmecaWalletProvider();
-    const { getRequest, getRequestById, success, failure, next } = useMessageHandler();
+    const { getRequest, getRequestById, success, failure, next, remove } = useMessageHandler();
 
     const [id, setId] = useState("");
     const [tx, setTx] = useState<Transaction>();
@@ -69,41 +69,37 @@ export default function EthSignTransaction() {
     } = GetMaxFeePerGas(chain?.rpcUrls[0]);
 
     const handleClose = () => {
-        if (id) {
-            if (level < 2) failure(id, "User rejected the request");
-            next(id);
-        }
+        if (level < 2) failure(id, "User rejected the request");
+        next(id);
     };
 
     const handleSign = async () => {
-        if (id) {
-            setLevel(1);
-            await provider
-                ?.sign(
-                    {
-                        to: params?.to,
-                        data: params?.data,
-                        nonce: BigInt(nonce || 0),
-                        gasLimit: BigInt(estimateGas?.raw || 0),
-                        gasPrice: BigInt(gasPrice?.raw || 0),
-                        chainId: Number(params?.chainId || chain?.chainId),
-                        maxFeePerGas: BigInt(maxFeePerGas?.raw || 0),
-                        maxPriorityFeePerGas: BigInt(maxPriorityFeePerGas?.raw || 0),
-                    } as any,
-                    signer!,
-                )
-                .then((result) => {
-                    success(id, result);
-                    setLevel(2);
-                    setTimeout(handleClose, timeout);
-                })
-                .catch((error) => {
-                    console.log(error);
-                    failure(id, "Failed to signning");
-                    setError(error);
-                    setLevel(3);
-                });
-        }
+        setLevel(1);
+        await provider
+            ?.sign(
+                {
+                    to: tx?.to,
+                    data: tx?.data,
+                    nonce: BigInt(nonce || 0),
+                    gasLimit: BigInt(estimateGas?.raw || 0),
+                    gasPrice: BigInt(gasPrice?.raw || 0),
+                    chainId: Number(params?.chainId || chain?.chainId),
+                    maxFeePerGas: BigInt(maxFeePerGas?.raw || 0),
+                    maxPriorityFeePerGas: BigInt(maxPriorityFeePerGas?.raw || 0),
+                } as any,
+                signer!,
+            )
+            .then((result) => {
+                success(id, result);
+                setLevel(2);
+                setTimeout(handleClose, timeout);
+            })
+            .catch((error) => {
+                console.log(error);
+                failure(id, "Failed to signning");
+                setError(error);
+                setLevel(3);
+            });
     };
 
     useLayoutEffect(() => {
@@ -116,7 +112,13 @@ export default function EthSignTransaction() {
             setSigner(provider?.account(tx?.from || account?.address));
             setId(request?.id);
         }
+
+        return () => remove(id);
     }, []);
+
+    {
+        console.log(auth, app, signer, tx);
+    }
 
     return auth && app && signer && tx ? (
         <Layouts.Contents.SlideContainer
