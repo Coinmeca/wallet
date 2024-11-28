@@ -6,6 +6,7 @@ import { Parts } from "@coinmeca/ui/index";
 import { Stage } from "..";
 
 export default function Init({ stage, setStage, exit, onConfirm }: Stage & { exit: string; onConfirm?: (passcode: string) => boolean; reset?: boolean }) {
+    const width = 64;
     const length = 6;
 
     const [pass, setPass] = useState<{ code: string; confirm?: string }>({ code: "" });
@@ -58,7 +59,14 @@ export default function Init({ stage, setStage, exit, onConfirm }: Stage & { exi
                                                         <Elements.Text weight={"bold"} size={2}>
                                                             NEW PASSCODE
                                                         </Elements.Text>
-                                                        <Elements.Passcode index={pass.code.length} length={length} error={error.state} gap={"5%"} effect />
+                                                        <Elements.Passcode
+                                                            width={width}
+                                                            index={pass.code.length}
+                                                            length={length}
+                                                            error={error.state}
+                                                            gap={"5%"}
+                                                            effect
+                                                        />
                                                         <Elements.Text weight={"bold"} opacity={0.6} style={{ marginTop: "2em" }}>
                                                             Please enter your passcode.
                                                         </Elements.Text>
@@ -77,6 +85,7 @@ export default function Init({ stage, setStage, exit, onConfirm }: Stage & { exi
                                                             CONFIRM PASSCODE
                                                         </Elements.Text>
                                                         <Elements.Passcode
+                                                            width={width}
                                                             index={pass.confirm?.length || 0}
                                                             length={length}
                                                             error={error.state}
@@ -117,6 +126,7 @@ export default function Init({ stage, setStage, exit, onConfirm }: Stage & { exi
                                                 <Layouts.Col fill>
                                                     <Parts.Numberpad
                                                         type="code"
+                                                        width={width}
                                                         value={stage.level === 0 ? pass.code : pass.confirm}
                                                         onChange={(e: any, v: any) => handleNumberClick(v)}
                                                     />

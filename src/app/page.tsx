@@ -5,7 +5,6 @@ import { Parts } from "@coinmeca/ui/index";
 import { Root } from "@coinmeca/ui/lib/style";
 import { format, parseNumber } from "@coinmeca/ui/lib/utils";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
-import { toBytes } from "@coinmeca/wallet-sdk/utils";
 import { useQueries } from "@tanstack/react-query";
 import { GetBalance } from "api/account";
 import { GetMaxFeePerGas } from "api/onchain";
@@ -20,6 +19,7 @@ import { Asset } from "types";
 import { sanitizeBigIntToHex, short } from "utils";
 
 export default function Main() {
+    const width = 64;
     const path = usePathname();
     const router = useRouter();
 
@@ -160,11 +160,6 @@ export default function Main() {
                                                                                             )}
                                                                                         </Elements.Text>
                                                                                         <Controls.Button onClick={() => setAmount(asset?.balance)}>
-                                                                                            {console.log(
-                                                                                                asset?.balance || 0,
-                                                                                                parseNumber(amount || 0),
-                                                                                                (asset?.balance || 0) <= parseNumber(amount || 0),
-                                                                                            )}
                                                                                             {(asset?.balance || 0) <= parseNumber(amount || 0) ? (
                                                                                                 "MAX"
                                                                                             ) : (
@@ -375,6 +370,7 @@ export default function Main() {
                                                                                                 <Layouts.Col gap={0} fill>
                                                                                                     <Parts.Numberpads.Currency
                                                                                                         type="currency"
+                                                                                                        width={width}
                                                                                                         value={amount}
                                                                                                         max={asset?.balance}
                                                                                                         onChange={(e: any, v: any) => setAmount(v)}
