@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useLayoutEffect, useState } from "react";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { usePathname, useRouter } from "next/navigation";
-import { Account } from "viem";
+import { Account } from "@coinmeca/wallet-sdk/types";
 
 interface GuardContextProps {
     isInit: boolean;
