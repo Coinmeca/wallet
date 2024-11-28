@@ -40,7 +40,8 @@ export default function Import({ setStage }: Stage) {
                                 <Controls.Input
                                     type={"password"}
                                     placeholder={"Please enter the private key of the wallet to be imported here."}
-                                    left={{ children: <Elements.Icon icon={"wallet"} /> }}
+                                    gap={2}
+                                    left={{ children: <Elements.Icon icon={"wallet"} scale={1.25} /> }}
                                     style={{ padding: "2em" }}
                                     onChange={(e: any, v: string) => handleImportWallet(v)}
                                     clearable

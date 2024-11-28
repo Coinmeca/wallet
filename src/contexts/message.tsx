@@ -76,10 +76,13 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
             portal.postMessage({ state: "ready" }, "*");
 
             const messageHandler = (event: MessageEvent) => {
+                console.log(event);
                 if (event?.data && (!event.data.result || !event.data.close || !event.data.error) && event?.data?.target === "coinmeca-wallet") {
                     const { id, request } = event.data;
 
-                    if (!messages?.find((m) => m?.id?.toLowerCase() === id?.toLowerCase()) && (!strategy || strategy === event?.data.strategy)) {
+                    console.log("received", event.data);
+
+                    if (!messages?.find((m) => m?.id?.toLowerCase().trim() === id?.toLowerCase().trim())) {
                         if (!strategy) setStrategy(event?.data?.strategy);
 
                         let auth = false;
@@ -103,15 +106,16 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
                     }
                 }
             };
+
             window.addEventListener("message", messageHandler);
+            // return () => window.removeEventListener("message", messageHandler);
         }
     }, [portal, provider]);
 
     useLayoutEffect(() => {
-        if (strategy === "popup" && (!path?.startsWith("/lock") || !path?.startsWith("/welcome"))) {
-            const handleUnload = () => {
-                portal?.postMessage({ target, close: true, error: "User rejected the request" }, "*");
-            };
+        if (strategy === "popup" && !path?.startsWith("/request") && !path?.startsWith("/lock") && !path?.startsWith("/welcome")) {
+            const handleUnload = () => portal?.postMessage({ target, close: true, error: "User rejected the request" }, "*");
+
             window.close();
             window.addEventListener("beforeunload", handleUnload);
             return () => window.removeEventListener("beforeunload", handleUnload);
@@ -162,12 +166,15 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
             if (isPopup) {
                 if (count > 1) {
                     const next = messages[(messages?.findIndex((m) => m?.id === id) + 1) % messages.length];
+                    console.log("stacked", { messages, next });
                     if (next?.id !== id) {
                         router.push(`/request/${next?.request?.method}`);
-                    } else close();
-                } else close();
+                    }
+                    //  else close();
+                }
+                //  else close();
             }
-            if (!strategy) close();
+            // if (!strategy) close();
         },
         [messages],
     );

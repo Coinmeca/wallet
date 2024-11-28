@@ -1,5 +1,6 @@
 ﻿import { queryOptions } from "@tanstack/react-query";
 import { fetcher } from "api";
+import { zeroAddress } from "types";
 import { hex } from "utils";
 
 export const query = {
@@ -31,12 +32,12 @@ export const query = {
                     ]),
                     owner
                         ? fetcher.rpc(rpc!, "eth_call", [
-                              {
-                                  to: erc20,
-                                  data: `0x70a08231000000000000000000000000${owner.slice(2)}`, // `balanceOf(address)`
-                              },
-                              "latest",
-                          ])
+                            {
+                                to: erc20,
+                                data: `0x70a08231000000000000000000000000${owner.slice(2)}`, // `balanceOf(address)`
+                            },
+                            "latest",
+                        ])
                         : Promise.resolve(undefined),
                 ]);
 
