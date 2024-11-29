@@ -16,3 +16,8 @@ export interface AttributesObject {
     [key: string]: string | number; // The object will have string keys and string or number values
 }
 export const zeroAddress = "0x0000000000000000000000000000000000000000";
+
+export interface Validate {
+    state?: boolean;
+    message?: string;
+}

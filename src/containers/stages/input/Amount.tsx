@@ -1,22 +1,22 @@
 ﻿import { Controls, Layouts } from "@coinmeca/ui/components";
 import { Parts } from "@coinmeca/ui/index";
 import { parseNumber } from "@coinmeca/ui/lib/utils";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Asset } from "types";
 
-interface AmmountInput {
-    asset: Asset;
-    amount: number;
+interface Amount {
+    asset?: Asset;
+    amount?: string | number;
     onChange?: Function;
     onConfirm?: Function;
     onBack?: Function;
 }
 
-export default function AmountInput(props: AmmountInput) {
+export default function Amount(props: Amount) {
     const width = 64;
     const asset = props?.asset;
-    const amount = props?.amount;
 
+    const amount = useMemo(() => (props?.amount ? props?.amount : undefined), [props?.amount]);
     const condition = useMemo(() => amount && parseNumber(amount) > 10 ** -(asset?.decimals || 1), [amount]);
 
     const handleBack = () => {
@@ -24,17 +24,17 @@ export default function AmountInput(props: AmmountInput) {
     };
 
     const handleConfirm = () => {
-        props?.onConfirm?.();
+        props?.onConfirm?.(parseNumber(amount));
     };
 
-    const handleChange = () => {
-        props?.onChange?.();
+    const handleChange = (v?: string) => {
+        props?.onChange?.(!v || v === "" ? undefined : v);
     };
 
     return (
         <Layouts.Col gap={0} style={{ background: "rgba(var(--black),.45)", padding: "2em" }} fill>
             <Layouts.Col gap={0} fill>
-                <Parts.Numberpads.Currency type="currency" width={width} value={amount} max={asset?.balance} onChange={handleChange} />
+                <Parts.Numberpads.Currency type="currency" width={width} value={amount} max={asset?.balance} onChange={(e: any, v: any) => handleChange(v)} />
                 <Layouts.Row gap={2}>
                     <Controls.Button onClick={handleBack}>Back</Controls.Button>
                     <Layouts.Row

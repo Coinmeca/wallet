@@ -12,8 +12,8 @@ import { format } from "@coinmeca/ui/lib/utils";
 
 interface Tx extends Stage {
     asset?: Asset;
-    amount: number;
-    recipient: string;
+    amount?: number;
+    recipient?: string;
     onBack?: Function;
     onComplete?: Function;
 }
@@ -21,8 +21,8 @@ interface Tx extends Stage {
 export default function Tx(props: Tx) {
     const level = props?.stage?.level || 0;
     const asset = props?.asset;
-    const amount = props.amount;
-    const recipient = props.recipient;
+    const amount = props.amount || 0;
+    const recipient = props.recipient || "";
 
     const { chain, account } = useCoinmecaWalletProvider();
     const [tx, setTx] = useState<any>();
@@ -98,7 +98,7 @@ export default function Tx(props: Tx) {
                                                         src={
                                                             level === 2
                                                                 ? `https://web3.coinmeca.net/${chain?.chainId}/${asset?.address?.toLowerCase()}/logo.svg`
-                                                                : require(`../assets/animation/${level === 3 ? "success" : "failure"}.gif`)
+                                                                : require(`../../../assets/animation/${level === 3 ? "success" : "failure"}.gif`)
                                                         }
                                                         alt={asset?.symbol || "Unknown"}
                                                         style={{ width: "8em", height: "8em" }}

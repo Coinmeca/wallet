@@ -11,6 +11,7 @@ import { getQueryClient } from "api";
 import { GetErc20 } from "api/erc20";
 import { States } from "@coinmeca/ui/components/contents";
 import { format } from "@coinmeca/ui/lib/utils";
+import { Validate } from "types";
 
 export interface Add {
     standard?: any;
@@ -19,11 +20,6 @@ export interface Add {
     onBack?: Function;
     onClose: Function;
     close?: boolean;
-}
-
-interface Validate {
-    state?: boolean;
-    message?: string;
 }
 
 export default function Add(props: Add) {
