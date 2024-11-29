@@ -4,12 +4,11 @@ import { useState } from "react";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { Account } from "@coinmeca/wallet-sdk/types";
+import { useNotification } from "@coinmeca/ui/hooks";
 
 import { pattern, short } from "utils";
 import { Validate } from "types";
 import { type Stage } from "..";
-import Image from "next/image";
-import { useNotification } from "@coinmeca/ui/hooks";
 
 interface Contact extends Stage {
     onSelect?: Function;
@@ -17,7 +16,7 @@ interface Contact extends Stage {
 }
 
 export default function Contact(props: Contact) {
-    const { accounts, contact } = useCoinmecaWalletProvider();
+    const { account, accounts, contact } = useCoinmecaWalletProvider();
     const { addToast } = useNotification();
     const [tab, setTab] = useState("wallet");
 
@@ -42,6 +41,7 @@ export default function Contact(props: Contact) {
 
     const handleSelect = (a?: string) => {
         props?.onSelect?.(a);
+        setAddress(undefined);
     };
 
     const handleCancel = () => {
@@ -52,11 +52,11 @@ export default function Contact(props: Contact) {
         <Layouts.Contents.SlideContainer
             contents={[
                 {
-                    active: !address,
+                    active: true,
                     children: (
                         <Layouts.Contents.InnerContent scroll={false}>
                             <Layouts.Col gap={0} style={{ background: "rgba(var(--black),0.45)" }} fill>
-                                <Layouts.Row gap={1} align={"left"} style={{ padding: "2em clamp(2em, 5%, 8em) 1.5em" }}>
+                                <Layouts.Row gap={0} align={"left"} style={{ padding: "0.5em clamp(1em, 2.5%, 4em)" }}>
                                     <Controls.Tab active={tab === "wallet"} onClick={() => setTab("wallet")} fit>
                                         My Wallets
                                     </Controls.Tab>
@@ -71,7 +71,7 @@ export default function Contact(props: Contact) {
                                             active: tab === "wallet",
                                             children: (
                                                 <Layouts.List
-                                                    list={accounts}
+                                                    list={accounts?.filter((a) => a?.address?.toLowerCase() !== account?.address?.toLowerCase())}
                                                     formatter={(accounts: Account[]) => {
                                                         return accounts?.map((a) => ({
                                                             style: { padding: "3em clamp(3em, 5%, 8em)" },
@@ -179,81 +179,21 @@ export default function Contact(props: Contact) {
                                                 scale={1.125}
                                                 onClick={() => {
                                                     const { state, message } = validating(address);
-                                                    console.log({ state, message });
                                                     if (state) addToast({ title: "Invalid Address", message });
-                                                    else setAddress(address);
+                                                    else handleSelect(address);
                                                 }}
                                             />
                                         ),
                                     }}
-                                    style={{ padding: "2em" }}
+                                    style={{ padding: "1em clamp(2em, 5%, 8em)" }}
                                     onChange={(e: any, v: any) => {
-                                        if (!validating(v)?.state) setAddress(v);
+                                        if (!validating(v)?.state) handleSelect(v);
                                     }}
                                     // lock={!!address}
                                 />
                                 <Layouts.Row gap={2} style={{ padding: "2em" }}>
                                     <Controls.Button onClick={handleBack}>Back</Controls.Button>
                                 </Layouts.Row>
-                            </Layouts.Col>
-                        </Layouts.Contents.InnerContent>
-                    ),
-                },
-                {
-                    active: !!address,
-                    children: (
-                        <Layouts.Contents.InnerContent scroll={false}>
-                            <Layouts.Col gap={2} align={"center"} fill>
-                                {/* Content omitted for brevity */}
-                                <Layouts.Contents.InnerContent padding={[4, 4, 0]}>
-                                    <Layouts.Col fill>
-                                        <Layouts.Col align={"center"} style={{ flex: 1 }}>
-                                            <Layouts.Col gap={8} align={"center"} fit>
-                                                <div
-                                                    style={{
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        justifyContent: "center",
-                                                        width: "8em",
-                                                        minHeight: "8em",
-                                                        padding: "2em",
-                                                        borderRadius: "100%",
-                                                        background: "rgba(var(--white),.15)",
-                                                    }}>
-                                                    <Elements.Icon icon={"identity"} scale={2} />
-                                                </div>
-                                                <Layouts.Col gap={1}>
-                                                    <Elements.Text type={"h6"}>{address || ""}</Elements.Text>
-                                                    <Elements.Text type={"strong"} opacity={0.6}>
-                                                        {address}
-                                                    </Elements.Text>
-                                                </Layouts.Col>
-                                            </Layouts.Col>
-                                        </Layouts.Col>
-                                        <Layouts.Col gap={0} align={"center"} style={{ height: "100%" }} fill>
-                                            <Layouts.Col gap={4} align={"center"} fit>
-                                                <Elements.Text type={"h3"}>Connect</Elements.Text>
-                                                <Elements.Text size={1} weight={"bold"}>
-                                                    <Elements.Text opacity={0.6}>Connect</Elements.Text> <Elements.Text>{address}</Elements.Text>{" "}
-                                                    <Elements.Text opacity={0.6}>({short(address)}) to</Elements.Text> <Elements.Text>{address}</Elements.Text>{" "}
-                                                    <Elements.Text opacity={0.6}>
-                                                        ({address}). Please check out the information of app and allow connections only to apps you trust.
-                                                    </Elements.Text>
-                                                </Elements.Text>
-                                            </Layouts.Col>
-                                        </Layouts.Col>
-                                    </Layouts.Col>
-                                </Layouts.Contents.InnerContent>
-                                <Layouts.Col gap={4} align={"center"} style={{ padding: "4em", paddingTop: 0 }}>
-                                    <Layouts.Row gap={2}>
-                                        <Controls.Button type={"glass"} onClick={handleCancel}>
-                                            Cancel
-                                        </Controls.Button>
-                                        <Controls.Button type={"line"} onClick={() => handleSelect(address)}>
-                                            Confirm
-                                        </Controls.Button>
-                                    </Layouts.Row>
-                                </Layouts.Col>
                             </Layouts.Col>
                         </Layouts.Contents.InnerContent>
                     ),

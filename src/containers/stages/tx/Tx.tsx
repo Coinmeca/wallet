@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { format } from "@coinmeca/ui/lib/utils";
@@ -12,6 +12,7 @@ import { GetMaxFeePerGas } from "api/onchain";
 import { sanitizeBigIntToHex, short } from "utils";
 import { Asset } from "types";
 import { Stage } from "..";
+import { TxData } from "@coinmeca/wallet-sdk/types";
 
 interface Tx extends Stage {
     asset?: Asset;
@@ -24,12 +25,22 @@ interface Tx extends Stage {
 export default function Tx(props: Tx) {
     const level = props?.stage?.level || 0;
     const asset = props?.asset;
-    const amount = props.amount || 0;
+    const amount = Number(props?.amount || 0) * 10 ** (asset?.decimals || 1);
     const recipient = props.recipient || "";
 
-    const { chain, account } = useCoinmecaWalletProvider();
-    const [tx, setTx] = useState<any>();
+    const { chain, account, provider } = useCoinmecaWalletProvider();
+    const [txHash, setTxHash] = useState<string>();
     const [error, setError] = useState<any>();
+
+    const tx = useMemo(() => {
+        return {
+            to: asset?.address,
+            data:
+                `0xa9059cbb` +
+                (recipient.startsWith("0x") ? recipient.slice(2) : recipient).toLowerCase().padStart(64, "0") +
+                BigInt(amount).toString(16).padStart(64, "0"),
+        };
+    }, [asset?.address, recipient]);
 
     const [{ data: nonce }, { data: gasPrice, isLoading: isGasPriceLoading }, { data: estimateGas, isLoading: isEstimateGasLoading }] = useQueries({
         queries: [
@@ -51,24 +62,26 @@ export default function Tx(props: Tx) {
         props?.onComplete?.();
     };
 
-    const handleSend = () => {
-        setTx({
-            method: "eth_sendTransaction",
-            to: asset?.address,
-            from: account?.address,
-            data:
-                `0xa9059cbb` +
-                recipient.toLowerCase().padStart(64, "0") +
-                BigInt(Number(amount) * 10 ** (asset?.decimals || 0))
-                    .toString(16)
-                    .padStart(64, "0"),
-            nonce: BigInt(nonce || 0),
-            chainId: Number(chain?.chainId || 1),
-            gasLimit: BigInt(estimateGas?.raw || 0),
-            gasPrice: BigInt(gasPrice?.raw || 0),
-            maxFeePerGas: BigInt(maxFeePerGas?.raw || 0),
-            maxPriorityFeePerGas: BigInt(maxPriorityFeePerGas?.raw || 0),
-        });
+    const handleSend = async () => {
+        console.log(tx);
+        await provider
+            ?.send(
+                {
+                    ...tx,
+                    nonce: BigInt(nonce || 0),
+                    chainId: Number(chain?.chainId),
+                    gasLimit: BigInt(estimateGas?.raw || 0),
+                    gasPrice: BigInt(gasPrice?.raw || 0),
+                    maxFeePerGas: BigInt(maxFeePerGas?.raw || 0),
+                    maxPriorityFeePerGas: BigInt(maxPriorityFeePerGas?.raw || 0),
+                } as TxData,
+                account?.address!,
+            )
+            .then((result) => {
+                console.log({ result });
+                setTxHash(result);
+            })
+            .catch((error) => setError(error));
     };
 
     return (
@@ -200,7 +213,7 @@ export default function Tx(props: Tx) {
                                                     ),
                                                 },
                                                 {
-                                                    active: level === 3,
+                                                    active: !!txHash,
                                                     children: (
                                                         <Layouts.Col gap={0} align={"center"} style={{ height: "100%" }} fill>
                                                             <Layouts.Col gap={4} align={"center"} fit>
@@ -217,7 +230,7 @@ export default function Tx(props: Tx) {
                                                     ),
                                                 },
                                                 {
-                                                    active: level === 4,
+                                                    active: !!error,
                                                     children: (
                                                         <Layouts.Col gap={0} align={"center"} style={{ height: "100%" }} fill>
                                                             <Layouts.Col gap={4} align={"center"} fit>
@@ -255,7 +268,7 @@ export default function Tx(props: Tx) {
                                                 ),
                                             },
                                             {
-                                                active: level > 2,
+                                                active: !!txHash || !!error,
                                                 children: (
                                                     <Layouts.Row gap={2}>
                                                         <Controls.Button type={"glass"} onClick={handleGoToMain}>
