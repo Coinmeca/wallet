@@ -56,7 +56,7 @@ export default function Contact(props: Contact) {
                     children: (
                         <Layouts.Contents.InnerContent scroll={false}>
                             <Layouts.Col gap={0} style={{ background: "rgba(var(--black),0.45)" }} fill>
-                                <Layouts.Row gap={1} align={"left"} style={{ padding: "2em clamp(2em, 5%, 8em) 1.5em" }}>
+                                <Layouts.Row gap={0} align={"left"} style={{ padding: "0.5em clamp(2em, 5%, 8em)" }}>
                                     <Controls.Tab active={tab === "wallet"} onClick={() => setTab("wallet")} fit>
                                         My Wallets
                                     </Controls.Tab>
@@ -179,14 +179,13 @@ export default function Contact(props: Contact) {
                                                 scale={1.125}
                                                 onClick={() => {
                                                     const { state, message } = validating(address);
-                                                    console.log({ state, message });
                                                     if (state) addToast({ title: "Invalid Address", message });
                                                     else handleSelect(address);
                                                 }}
                                             />
                                         ),
                                     }}
-                                    style={{ padding: "2em" }}
+                                    style={{ padding: "1em clamp(2em, 5%, 8em)" }}
                                     onChange={(e: any, v: any) => {
                                         if (!validating(v)?.state) handleSelect(v);
                                     }}

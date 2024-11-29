@@ -38,10 +38,6 @@ export default function Main() {
 
     const tab = useCallback((target: string) => path?.startsWith(`/${target}`), [path]);
     const responsive = useMemo(() => windowSize.width <= Root.Device.Tablet, [windowSize]);
-    const fontSize = useMemo(() => {
-        const size = (100 / (amount?.toString().length || 1)) * 1.5;
-        return `${size > 8 ? 8 : size < 4 ? 4 : size}vw`;
-    }, [amount]);
 
     const handleCancel = () => {
         setAsset(undefined);
@@ -284,116 +280,19 @@ export default function Main() {
                                             {
                                                 active: stage.level === 0,
                                                 children: (
-                                                    <>
-                                                        <Layouts.Col
-                                                            style={{
-                                                                scrollSnapAlign: "start",
-                                                                height: asset ? "50%" : "24vh",
-                                                                minHeight: "16em",
-                                                                maxHeight: asset ? "50%" : "32em",
-                                                                transition: ".3s ease",
-                                                            }}
-                                                            fill>
-                                                            <Layouts.Contents.SlideContainer
-                                                                vertical
-                                                                contents={[
-                                                                    {
-                                                                        active: !!asset,
-                                                                        style: {
-                                                                            display: "flex",
-                                                                            height: "-webkit-fill-available",
-                                                                            alignItems: "flex-start",
-                                                                            justifyContent: "center",
-                                                                        },
-                                                                        children: (
-                                                                            <Layouts.Col
-                                                                                gap={2}
-                                                                                align={"center"}
-                                                                                style={{
-                                                                                    ...(responsive && { padding: "4em 8em" }),
-                                                                                    maxHeight: "32em",
-                                                                                }}
-                                                                                fill>
-                                                                                <Layouts.Col align={"center"} fit>
-                                                                                    <Layouts.Row gap={0.5} fit>
-                                                                                        <Elements.Avatar
-                                                                                            size={2}
-                                                                                            img={`https://web3.coinmeca.net/${
-                                                                                                chain?.chainId
-                                                                                            }/${asset?.address?.toLowerCase()}/logo.svg`}
-                                                                                        />
-                                                                                        <Elements.Text type={"h6"}>{asset?.symbol}</Elements.Text>
-                                                                                    </Layouts.Row>
-                                                                                    <Layouts.Col gap={0}>
-                                                                                        <Elements.Text
-                                                                                            style={{
-                                                                                                fontSize,
-                                                                                            }}
-                                                                                            opacity={amount?.toString()?.length || 0.6}>
-                                                                                            {format(
-                                                                                                amount || 0,
-                                                                                                "currency",
-                                                                                                // !isNaN(Number(amount)) &&
-                                                                                                //     Number(amount) > 0 && {
-                                                                                                //         unit: 4,
-                                                                                                //         fix: 9,
-                                                                                                //     },
-                                                                                            )}
-                                                                                        </Elements.Text>
-                                                                                        <Controls.Button onClick={() => setAmount(asset?.balance)}>
-                                                                                            {(asset?.balance || 0) <= parseNumber(amount || 0) ? (
-                                                                                                "MAX"
-                                                                                            ) : (
-                                                                                                <>
-                                                                                                    {format(asset?.balance, "currency", {
-                                                                                                        unit: 9,
-                                                                                                        limit: 12,
-                                                                                                        fix: 9,
-                                                                                                    })}{" "}
-                                                                                                    {asset?.symbol}
-                                                                                                </>
-                                                                                            )}
-                                                                                            {/* </Elements.Text> */}
-                                                                                        </Controls.Button>
-                                                                                    </Layouts.Col>
-                                                                                </Layouts.Col>
-                                                                            </Layouts.Col>
-                                                                        ),
-                                                                    },
-                                                                ]}
-                                                            />
-                                                        </Layouts.Col>
-                                                        <Layouts.Contents.InnerContent
-                                                            style={{ scrollSnapAlign: "start", maxHeight: asset ? "50%" : "100%" }}
-                                                            scroll={false}>
-                                                            <Layouts.Contents.SlideContainer
-                                                                vertical
-                                                                offset={100}
-                                                                style={{ position: "absolute", width: "100%", height: "100%" }}
-                                                                contents={[
-                                                                    {
-                                                                        active: !asset,
-                                                                        children: <></>,
-                                                                    },
-                                                                    {
-                                                                        active: !!asset,
-                                                                        children: (
-                                                                            <Stages.Input.Amount
-                                                                                asset={asset}
-                                                                                amount={amount}
-                                                                                onChange={handleChangeAmount}
-                                                                                onConfirm={handleAmount}
-                                                                                onBack={() => {
-                                                                                    handleChangeAmount(undefined);
-                                                                                    setAsset(undefined);
-                                                                                }}
-                                                                            />
-                                                                        ),
-                                                                    },
-                                                                ]}
-                                                            />
-                                                        </Layouts.Contents.InnerContent>
-                                                    </>
+                                                    <Stages.Input.Amount
+                                                        asset={asset}
+                                                        amount={amount}
+                                                        min={10 ** -(asset?.decimals || 1)}
+                                                        max={asset?.balance}
+                                                        onChange={handleChangeAmount}
+                                                        onMax={handleChangeAmount}
+                                                        onConfirm={handleAmount}
+                                                        onBack={() => {
+                                                            handleChangeAmount(undefined);
+                                                            setAsset(undefined);
+                                                        }}
+                                                    />
                                                 ),
                                             },
                                             {

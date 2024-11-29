@@ -43,7 +43,7 @@ export default function Import({ setStage }: Stage) {
                                     placeholder={"Please enter the private key of the wallet to be imported here."}
                                     gap={2}
                                     left={{ children: <Elements.Icon icon={"wallet"} scale={1.25} /> }}
-                                    style={{ padding: "2em" }}
+                                    style={{ padding: "1em clamp(2em, 5%, 8em)" }}
                                     onChange={(e: any, v: string) => handleImportWallet(v)}
                                     clearable
                                 />
