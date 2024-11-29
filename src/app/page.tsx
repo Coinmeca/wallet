@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useWindowSize } from "@coinmeca/ui/hooks";
+import { useNotification, useWindowSize } from "@coinmeca/ui/hooks";
 import { Root } from "@coinmeca/ui/lib/style";
 import { format, parseNumber } from "@coinmeca/ui/lib/utils";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
@@ -15,13 +15,13 @@ import { GetBalance } from "api/account";
 import { usePageLoader } from "hooks";
 import { Asset, AssetType } from "types";
 
-export default function Main() {
+export default function Main({ params }: any) {
     const path = usePathname();
     const router = useRouter();
 
     const { windowSize } = useWindowSize();
     const { isLoad } = usePageLoader();
-    const { chain, account } = useCoinmecaWalletProvider();
+    const { provider, chain, account } = useCoinmecaWalletProvider();
     const { data: balance, isLoading } = GetBalance(chain?.rpcUrls?.[0], account?.address);
     const [searchFilter, setSearchFilter] = useState("");
 
@@ -33,6 +33,22 @@ export default function Main() {
 
     const tab = useCallback((target: string) => path?.startsWith(`/${target}`), [path]);
     const responsive = useMemo(() => windowSize.width <= Root.Device.Tablet, [windowSize]);
+
+    const { addToast } = useNotification();
+
+    const handleSelect = (a: Asset<any>) => {
+        switch (a?.type) {
+            case AssetType.ERC20:
+                if (!a?.balance) return addToast({ title: a?.name, message: "Insufficient balance to send asset." });
+            case AssetType.ERC721:
+                setAsset(a);
+                if (a?.type === AssetType?.ERC721)
+                    setStage((state) => ({
+                        ...state,
+                        level: 1,
+                    }));
+        }
+    };
 
     const handleCancel = () => {
         setAsset(undefined);
@@ -61,6 +77,10 @@ export default function Main() {
         setRecipient(undefined);
         setStage({ name: "", level: 0 });
     };
+
+    useEffect(() => {
+        handleCancel();
+    }, [path, provider, chain, account]);
 
     return (
         <Layouts.Page snap>
@@ -232,7 +252,7 @@ export default function Main() {
                                                                                                                         <Token
                                                                                                                             filter={searchFilter}
                                                                                                                             onSelect={(a: Asset) =>
-                                                                                                                                setAsset({
+                                                                                                                                handleSelect({
                                                                                                                                     ...a,
                                                                                                                                     type: AssetType.ERC20,
                                                                                                                                 })
@@ -246,16 +266,12 @@ export default function Main() {
                                                                                                                     children: (
                                                                                                                         <Nft
                                                                                                                             filter={searchFilter}
-                                                                                                                            onSelect={(a: Asset) => {
-                                                                                                                                setAsset({
+                                                                                                                            onSelect={(a: Asset) =>
+                                                                                                                                handleSelect({
                                                                                                                                     ...a,
                                                                                                                                     type: AssetType.ERC721,
-                                                                                                                                });
-                                                                                                                                setStage((state) => ({
-                                                                                                                                    ...state,
-                                                                                                                                    level: 1,
-                                                                                                                                }));
-                                                                                                                            }}
+                                                                                                                                })
+                                                                                                                            }
                                                                                                                         />
                                                                                                                     ),
                                                                                                                 },

@@ -16,11 +16,13 @@ export default function Accounts({
     search,
     searchFilter,
     responsive,
+    isMobile,
     onClose,
 }: {
     search: any;
     searchFilter?: string;
     responsive: boolean;
+    isMobile?: boolean;
     onClose?: Function;
 }) {
     const { provider, chain, account, accounts } = useCoinmecaWalletProvider();
@@ -195,7 +197,7 @@ export default function Accounts({
                                                                     return;
                                                             }
                                                         }}
-                                                        responsive={responsive}
+                                                        responsive={isMobile && responsive}
                                                         chevron={false}
                                                         fix
                                                         fit

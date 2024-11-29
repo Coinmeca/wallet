@@ -11,13 +11,12 @@ import Lock from "./lock/page";
 import Main from "./page";
 import { useMemo } from "react";
 
-export default function RootTemplate({children}:any) {
+export default function RootTemplate({ children, params }: any) {
     const page = usePageLoader();
-
     const { header, sidebars, side, toastlist } = Data(page);
     const { isLoad, isAccess } = useGuard();
 
-    const contents = useMemo(() => isAccess ? page.isMenu ? <Main /> : children : <Lock params={{}} />,[isAccess, page, children]) 
+    const contents = useMemo(() => (isAccess ? page.isMenu ? <Main /> : children : <Lock params={{}} />), [isAccess, page, children]);
 
     return isLoad ? (
         <Frames.Frame

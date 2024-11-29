@@ -8,7 +8,19 @@ import { Chain } from "@coinmeca/wallet-sdk/types";
 import { Modals } from "containers";
 import { useCallback } from "react";
 
-export default function Chains({ search, searchFilter, responsive, onClose }: { search: any; searchFilter?: string; responsive: boolean; onClose?: Function }) {
+export default function Chains({
+    search,
+    searchFilter,
+    responsive,
+    isMobile,
+    onClose,
+}: {
+    search: any;
+    searchFilter?: string;
+    responsive: boolean;
+    isMobile?: boolean;
+    onClose?: Function;
+}) {
     const { provider, chain, chains } = useCoinmecaWalletProvider();
 
     const [openChainEditModal, closeChainEditModal] = usePortal((props: any) => <Modals.Chain.Edit {...props} onClose={closeChainEditModal} close />);
@@ -57,7 +69,7 @@ export default function Chains({ search, searchFilter, responsive, onClose }: { 
                                                     return openChainRemoveModal({ chain });
                                             }
                                         }}
-                                        responsive={responsive}
+                                        responsive={isMobile && responsive}
                                         chevron={false}
                                         fix
                                         fit
