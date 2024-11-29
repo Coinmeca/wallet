@@ -238,6 +238,10 @@ export default function Tx(props: Tx) {
                                     <Layouts.Contents.SlideContainer
                                         contents={[
                                             {
+                                                active: level === 1,
+                                                children: <></>,
+                                            },
+                                            {
                                                 active: level === 2,
                                                 children: (
                                                     <Layouts.Row gap={2}>

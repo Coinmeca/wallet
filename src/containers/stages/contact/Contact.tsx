@@ -190,7 +190,7 @@ export default function Contact(props: Contact) {
                                     onChange={(e: any, v: any) => {
                                         if (!validating(v)?.state) setAddress(v);
                                     }}
-                                    lock={!!address}
+                                    // lock={!!address}
                                 />
                                 <Layouts.Row gap={2} style={{ padding: "2em" }}>
                                     <Controls.Button onClick={handleBack}>Back</Controls.Button>
