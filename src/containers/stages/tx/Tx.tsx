@@ -110,7 +110,6 @@ export default function Tx(props: Tx) {
     };
 
     const handleSend = async () => {
-        return setTxHash("0x1234567891234567891234567890");
         await provider
             ?.send(
                 {
