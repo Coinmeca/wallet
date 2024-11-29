@@ -1,10 +1,13 @@
-﻿import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
+﻿"use client";
+
+import { useState } from "react";
+import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { Account } from "@coinmeca/wallet-sdk/types";
-import { useState } from "react";
-import { type Stage } from "..";
+
 import { pattern } from "utils";
 import { Validate } from "types";
+import { type Stage } from "..";
 
 interface Contact extends Stage {
     onSelect?: Function;

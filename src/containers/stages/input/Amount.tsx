@@ -1,7 +1,9 @@
-﻿import { Controls, Layouts } from "@coinmeca/ui/components";
+﻿"use client";
+
+import { useMemo } from "react";
+import { Controls, Layouts } from "@coinmeca/ui/components";
 import { Parts } from "@coinmeca/ui/index";
 import { parseNumber } from "@coinmeca/ui/lib/utils";
-import { useMemo } from "react";
 import { Asset } from "types";
 
 interface Amount {
