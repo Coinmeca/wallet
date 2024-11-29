@@ -1,6 +1,6 @@
 "use client";
 
-import { Controls, Layouts } from "@coinmeca/ui/components";
+import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useCoinmecaWallet } from "@coinmeca/wallet-provider/adapter";
 import { getChainsByType } from "@coinmeca/wallet-provider/chains";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
@@ -352,7 +352,9 @@ export default function Page() {
 
     return (
         <Layouts.Col>
-            <div>{telegram ? `Success, Platform: ${telegram.platform}` : "Fail"}</div>
+            <Layouts.Box>
+                <Elements.Text>{telegram ? `Success, Platform: ${telegram.platform}` : "Fail"}</Elements.Text>
+            </Layouts.Box>
             <Controls.Button onClick={handleAddEthereumChain}>Add Ethereum Chain</Controls.Button>
             <Controls.Button onClick={switchEthereumChain}>Switch Ethereum Chain</Controls.Button>
             <Controls.Button onClick={handleEthAccounts}>Eth Accounts</Controls.Button>
@@ -371,12 +373,11 @@ export default function Page() {
             <Controls.Button onClick={handleRequest}>Biometric Request</Controls.Button>
             <Controls.Button onClick={handleAuthenticate}>Biometric Auth</Controls.Button>
             <Controls.Button onClick={handleClose}>Close</Controls.Button>
-            {authenticate && `Authenticate: ${authenticate}`}
-            <br />
-            {requestAccess && `Request Access: ${requestAccess}`}
-            <br />
-            {error && `Error: ${error}`}
-            <br />
+            <Layouts.Box>
+                <Elements.Text>{authenticate && `Authenticate: ${authenticate}`}</Elements.Text>
+                <Elements.Text>{requestAccess && `Request Access: ${requestAccess}`}</Elements.Text>
+                <Elements.Text>{error && `Error: ${error}`}</Elements.Text>
+            </Layouts.Box>
         </Layouts.Col>
     );
 }

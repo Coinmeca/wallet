@@ -1,12 +1,11 @@
 ﻿import { queryOptions } from "@tanstack/react-query";
 import { fetcher } from "api";
-import { zeroAddress } from "types";
-import { hex } from "utils";
+import { hex, valid } from "utils";
 
 export const query = {
     token: (rpc?: string, erc20?: string, owner?: string) =>
         queryOptions({
-            queryKey: [`${erc20}_token`, rpc, erc20, owner],
+            queryKey: [`${erc20}_token`, "erc20", rpc, erc20, owner],
             queryFn: async () => {
                 const [name, symbol, decimals, balance] = await Promise.allSettled([
                     fetcher.rpc(rpc!, "eth_call", [
@@ -52,12 +51,12 @@ export const query = {
                     balance: d && !isNaN(d) && b ? b / 10 ** d : null,
                 };
             },
-            enabled: !!rpc && !!erc20,
+            enabled: !!rpc && valid.address(erc20),
         }),
 
     name: (rpc?: string, erc20?: any) =>
         queryOptions({
-            queryKey: [`${erc20}_name`, "name", rpc, erc20],
+            queryKey: [`${erc20}_name`, "erc20", "name", rpc, erc20],
             queryFn: async () =>
                 fetcher
                     .rpc(rpc!, "eth_call", [
@@ -68,12 +67,12 @@ export const query = {
                         "latest",
                     ])
                     .then((result) => hex.toString(result?.toString().slice(66))),
-            enabled: !!rpc && !!erc20,
+            enabled: !!rpc && valid.address(erc20),
         }),
 
     symbol: (rpc?: string, erc20?: any) =>
         queryOptions({
-            queryKey: [`${erc20}_symbol`, "symbol", rpc, erc20],
+            queryKey: [`${erc20}_symbol`, "erc20", "symbol", rpc, erc20],
             queryFn: async () =>
                 fetcher
                     .rpc(rpc!, "eth_call", [
@@ -84,12 +83,12 @@ export const query = {
                         "latest",
                     ])
                     .then((result) => hex.toString(result?.toString().slice(66))),
-            enabled: !!rpc && !!erc20,
+            enabled: !!rpc && valid.address(erc20),
         }),
 
     decimals: (rpc?: string, erc20?: string) =>
         queryOptions({
-            queryKey: [`${erc20}_decimals`, "decimals", rpc, erc20],
+            queryKey: [`${erc20}_decimals`, "erc20", "decimals", rpc, erc20],
             queryFn: async () =>
                 fetcher
                     .rpc(rpc!, "eth_call", [
@@ -100,12 +99,12 @@ export const query = {
                         "latest",
                     ])
                     .then((result) => hex.toNumber(result.toString())),
-            enabled: !!rpc && !!erc20,
+            enabled: !!rpc && valid.address(erc20),
         }),
 
     balanceOf: (rpc?: string, erc20?: string, owner?: string) =>
         queryOptions({
-            queryKey: [`${erc20}_balanceOf`, "balanceOf", rpc, erc20, owner],
+            queryKey: [`${erc20}_balanceOf`, "erc20", "balanceOf", rpc, erc20, owner],
             queryFn: async () =>
                 fetcher
                     .rpc(rpc!, "eth_call", [
@@ -116,6 +115,6 @@ export const query = {
                         "latest",
                     ])
                     .then((result) => hex.toNumber(result.toString())),
-            enabled: !!rpc && !!erc20 && !!owner,
+            enabled: !!rpc && valid.address(erc20) && !!owner,
         }),
 };

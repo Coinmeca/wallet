@@ -1,24 +1,19 @@
 "use client";
+
+import { useCallback, useMemo, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useWindowSize } from "@coinmeca/ui/hooks";
-import { Parts } from "@coinmeca/ui/index";
 import { Root } from "@coinmeca/ui/lib/style";
 import { format, parseNumber } from "@coinmeca/ui/lib/utils";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
-import { Account } from "@coinmeca/wallet-sdk/types";
-import { useQueries } from "@tanstack/react-query";
-import { GetBalance } from "api/account";
-import { GetMaxFeePerGas } from "api/onchain";
-import { query } from "api/onchain/query";
+import { AnimatePresence } from "framer-motion";
+
 import { Stages } from "containers";
 import { Activity, Nft, Token } from "containers/pages";
-import { AnimatePresence } from "framer-motion";
+import { GetBalance } from "api/account";
 import { usePageLoader } from "hooks";
-import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
-import { Asset } from "types";
-import { sanitizeBigIntToHex, short } from "utils";
+import { Asset, AssetType } from "types";
 
 export default function Main() {
     const path = usePathname();
@@ -32,7 +27,7 @@ export default function Main() {
 
     const [stage, setStage] = useState<{ name: string; level: number }>({ name: "", level: 0 });
 
-    const [asset, setAsset] = useState<Asset>();
+    const [asset, setAsset] = useState<Asset<any>>();
     const [amount, setAmount] = useState<string | number>();
     const [recipient, setRecipient] = useState<string>();
 
@@ -60,9 +55,11 @@ export default function Main() {
         setStage({ name: "", level: 2 });
     };
 
-    const handleTransfer = () => {
-        setAmount("");
-        setStage({ name: "", level: 3 });
+    const handleComplete = () => {
+        setAsset(undefined);
+        setAmount(undefined);
+        setRecipient(undefined);
+        setStage({ name: "", level: 0 });
     };
 
     return (
@@ -106,13 +103,14 @@ export default function Main() {
                                                                         },
                                                                         children: (
                                                                             <Layouts.Col
-                                                                                gap={2}
-                                                                                align={"center"}
-                                                                                style={{ ...(responsive && { padding: "4em 8em" }), maxHeight: "32em" }}
+                                                                                align={responsive ? "center" : "left"}
+                                                                                style={{ padding: "4em 8em", maxHeight: "32em" }}
                                                                                 fill>
-                                                                                <Layouts.Col>
-                                                                                    <Elements.Text type={"h6"}>Balance</Elements.Text>
-                                                                                    <Elements.Text type={"h3"}>
+                                                                                <Layouts.Col gap={1}>
+                                                                                    <Elements.Text type={"h6"} height={0}>
+                                                                                        Balance
+                                                                                    </Elements.Text>
+                                                                                    <Elements.Text type={"h3"} height={0}>
                                                                                         {isLoading
                                                                                             ? "~"
                                                                                             : format(balance, "currency", {
@@ -234,7 +232,10 @@ export default function Main() {
                                                                                                                         <Token
                                                                                                                             filter={searchFilter}
                                                                                                                             onSelect={(a: Asset) =>
-                                                                                                                                setAsset({ ...a, type: "ft" })
+                                                                                                                                setAsset({
+                                                                                                                                    ...a,
+                                                                                                                                    type: AssetType.ERC20,
+                                                                                                                                })
                                                                                                                             }
                                                                                                                         />
                                                                                                                     ),
@@ -242,7 +243,21 @@ export default function Main() {
                                                                                                                 {
                                                                                                                     active: tab("nft"),
                                                                                                                     style: { flex: 1 },
-                                                                                                                    children: <Nft filter={searchFilter} />,
+                                                                                                                    children: (
+                                                                                                                        <Nft
+                                                                                                                            filter={searchFilter}
+                                                                                                                            onSelect={(a: Asset) => {
+                                                                                                                                setAsset({
+                                                                                                                                    ...a,
+                                                                                                                                    type: AssetType.ERC721,
+                                                                                                                                });
+                                                                                                                                setStage((state) => ({
+                                                                                                                                    ...state,
+                                                                                                                                    level: 1,
+                                                                                                                                }));
+                                                                                                                            }}
+                                                                                                                        />
+                                                                                                                    ),
                                                                                                                 },
                                                                                                                 {
                                                                                                                     active: tab("activity"),
@@ -278,7 +293,7 @@ export default function Main() {
                                     <Layouts.Contents.SlideContainer
                                         contents={[
                                             {
-                                                active: stage.level === 0,
+                                                active: stage.level === 0 && !asset?.tokenId,
                                                 children: (
                                                     <Stages.Input.Amount
                                                         asset={asset}
@@ -296,13 +311,21 @@ export default function Main() {
                                                 ),
                                             },
                                             {
-                                                active: stage.level === 1 && (amount as number) > 0,
+                                                active: stage.level === 1 && ((amount as number) > 0 || !!asset?.tokenId),
                                                 children: (
                                                     <Stages.Contact
                                                         stage={stage}
                                                         setStage={setStage}
                                                         onSelect={handleRecipient}
-                                                        onBack={() => setStage({ name: "", level: 0 })}
+                                                        onBack={() => {
+                                                            switch (asset?.type) {
+                                                                case AssetType.ERC20:
+                                                                    return setStage({ name: "", level: 0 });
+                                                                case AssetType.ERC721:
+                                                                    setAsset(undefined);
+                                                                    return setStage({ name: "", level: 0 });
+                                                            }
+                                                        }}
                                                     />
                                                 ),
                                             },
@@ -315,7 +338,7 @@ export default function Main() {
                                                         asset={asset}
                                                         amount={parseNumber(amount)}
                                                         recipient={recipient}
-                                                        onComplete={handleTransfer}
+                                                        onComplete={handleComplete}
                                                         onBack={() => {
                                                             setRecipient(undefined);
                                                             setStage({ name: "", level: 1 });

@@ -60,8 +60,8 @@ export default function Accounts({
 
     const handleShowPrivateKey = (index: number) => {};
 
-    const handleAccountEdit = (a: Account) => {
-        openAccountEditModal({ account: a });
+    const handleAccountEdit = (account: Account) => {
+        openAccountEditModal({ account });
     };
 
     const handleAccountState = (a: Account) => {

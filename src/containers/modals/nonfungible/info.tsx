@@ -13,6 +13,7 @@ import { useWindowSize } from "@coinmeca/ui/hooks";
 
 export interface Info {
     [x: string | number | symbol]: any;
+    onTransfer?: Function;
     onClose: Function;
     close?: boolean;
 }
@@ -35,7 +36,7 @@ function NonFungibleInfoModal(props: Info) {
     const { windowSize } = useWindowSize();
     const { chain } = useCoinmecaWalletProvider();
 
-    const handleClose = (e: any) => {
+    const handleClose = (e?: any) => {
         props?.onClose(e);
     };
 
@@ -178,6 +179,15 @@ function NonFungibleInfoModal(props: Info) {
                 )}
                 <Layouts.Row gap={2} style={{ marginTop: "2em" }} fix>
                     <Controls.Button onClick={handleClose}>Close</Controls.Button>
+                    {props?.onTransfer && (
+                        <Controls.Button
+                            onClick={(e: any) => {
+                                props?.onTransfer?.(data);
+                                handleClose(e);
+                            }}>
+                            Send
+                        </Controls.Button>
+                    )}
                 </Layouts.Row>
             </Layouts.Col>
         </Modal>

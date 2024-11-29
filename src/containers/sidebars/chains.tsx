@@ -11,29 +11,60 @@ import { useCallback } from "react";
 export default function Chains({ search, searchFilter, responsive, onClose }: { search: any; searchFilter?: string; responsive: boolean; onClose?: Function }) {
     const { provider, chain, chains } = useCoinmecaWalletProvider();
 
+    const [openChainEditModal, closeChainEditModal] = usePortal((props: any) => <Modals.Chain.Edit {...props} onClose={closeChainEditModal} close />);
+    const [openChainRemoveModal, closeChainRemoveModal] = usePortal((props: any) => <Modals.Chain.Remove {...props} onClose={closeChainRemoveModal} close />);
+
     const chainlist = useCallback(
         (chains: Chain[] = []) =>
-            chains?.map((c: Chain) => ({
-                style: {
-                    padding: responsive ? "2.5em clamp(2em, 5%, 8em)" : "2em 3em",
-                    ...(provider?.chain?.chainId === c?.chainId && { opacity: 0.3, pointerEvents: "none" }),
-                },
-                onClick: () => {
-                    provider?.changeChain(c?.chainId);
-                    onClose?.();
-                },
+            chains?.map((chain: Chain) => ({
+                style: { padding: responsive ? "2.5em clamp(2em, 5%, 8em)" : "2em 3em" },
+                onClick: provider?.chain?.chainId !== chain?.chainId && (() => {}),
                 children: [
                     [
-                        {
-                            children: (
-                                <Layouts.Row gap={2}>
-                                    <Layouts.Row gap={1} fit>
-                                        <Elements.Avatar img={c?.logo || `https://web3.coinmeca.net/${c?.chainId}/logo.svg`} />
-                                    </Layouts.Row>
-                                    <Elements.Text size={1.5}>{c?.chainName}</Elements.Text>
-                                </Layouts.Row>
-                            ),
-                        },
+                        [
+                            {
+                                style: { ...(provider?.chain?.chainId === chain?.chainId && { opacity: 0.3, pointerEvents: "none" }) },
+                                onClick: () => {
+                                    provider?.changeChain(chain?.chainId);
+                                    onClose?.();
+                                },
+                                children: (
+                                    <>
+                                        <Layouts.Row gap={2}>
+                                            <Layouts.Row gap={1} fit>
+                                                <Elements.Avatar img={chain?.logo || `https://web3.coinmeca.net/${chain?.chainId}/logo.svg`} />
+                                            </Layouts.Row>
+                                            <Elements.Text size={1.5}>{chain?.chainName}</Elements.Text>
+                                        </Layouts.Row>
+                                    </>
+                                ),
+                            },
+                            {
+                                fit: true,
+                                style: { pointerEvents: "initial", maxWitdth: "max-content" },
+                                children: (
+                                    <Controls.Dropdown
+                                        type={"more"}
+                                        options={[
+                                            { icon: "write", value: "Edit Chain Info" },
+                                            { icon: "bin", value: `Remove ${chain?.chainName}` },
+                                        ]}
+                                        onClickItem={(e: any, v: any, k: number) => {
+                                            switch (k) {
+                                                case 0:
+                                                    return openChainEditModal({ chain });
+                                                case 1:
+                                                    return openChainRemoveModal({ chain });
+                                            }
+                                        }}
+                                        responsive={responsive}
+                                        chevron={false}
+                                        fix
+                                        fit
+                                    />
+                                ),
+                            },
+                        ],
                     ],
                 ],
             })),

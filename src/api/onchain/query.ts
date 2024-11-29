@@ -1,6 +1,6 @@
 ﻿import { queryOptions } from "@tanstack/react-query";
 import { fetcher } from "api";
-import { sanitizeBigIntToHex } from "utils";
+import { sanitizeBigIntToHex, valid } from "utils";
 
 export const query = {
     rpcUrls: () =>
@@ -21,21 +21,21 @@ export const query = {
         queryOptions({
             queryKey: ["accountType", address],
             queryFn: async () => (await fetcher.rpc(rpc!, "eth_getCode", [address, "latest"]).then(data => data === "0x" ? "eoa" : "ca")),
-            enabled: !!rpc && !!address,
+            enabled: !!rpc && valid.address(address),
         }),
 
     balance: (rpc?: string, address?: string) =>
         queryOptions({
             queryKey: ["balance", rpc, address],
             queryFn: async () => await fetcher.rpc(rpc!, "eth_getBalance", [address, "latest"]).then(data => (data ? Number(data) / 1e18 : 0)),
-            enabled: !!rpc && !!address,
+            enabled: !!rpc && valid.address(address),
         }),
 
     nonce: (rpc?: string, address?: string) =>
         queryOptions({
             queryKey: ["nonce", rpc, address],
             queryFn: async () => await fetcher.rpc(rpc!, "eth_getTransactionCount", [address, "pending"]).then(data => Number(data || 0)),
-            enabled: !!rpc && !!address,
+            enabled: !!rpc && valid.address(address),
         }),
 
     gasPrice: (rpc?: string) =>
@@ -51,13 +51,12 @@ export const query = {
 
     estimateGas: (rpc?: string, params?: any) =>
         queryOptions({
-            queryKey: ["estimateGas", params],
-            queryFn: async () =>
-                await fetcher.rpc(rpc!, "eth_estimateGas", sanitizeBigIntToHex(Array.isArray(params) ? params : [params])).then(data => ({
-                    raw: Number(data || 0),
-                    format: data ? Number(data) / 1e9 : 0,
-                })),
-            enabled: !!rpc && !!params,
+            queryKey: ["estimateGas", rpc, params],
+            queryFn: async () => await fetcher.rpc(rpc!, "eth_estimateGas", sanitizeBigIntToHex(Array.isArray(params) ? params : [params])).then(data => ({
+                raw: Number(data || 0),
+                format: data ? Number(data) / 1e9 : 0,
+            })),
+            enabled: !!rpc && valid.tx(params),
         }),
 
     lastBlock: (rpc?: string) =>
@@ -80,7 +79,7 @@ export const query = {
 
     receipt: (rpc?: string, txHash?: string) =>
         queryOptions({
-            queryKey: ["receipt", rpc],
+            queryKey: ["receipt", rpc, txHash],
             queryFn: async () => await fetcher.rpc(rpc!, "eth_getTransactionReceipt", [txHash]).then(data => data),
             enabled: !!rpc && !!txHash,
         }),

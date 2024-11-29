@@ -1,11 +1,11 @@
 ﻿import { queryOptions } from "@tanstack/react-query";
 import { fetcher } from "api";
-import { base64, hex, isVideo } from "utils";
+import { base64, hex, isVideo, valid } from "utils";
 
 export const query = {
     token: (rpc?: string, erc721?: string, tokenId?: string) =>
         queryOptions({
-            queryKey: [`${erc721}_token`, rpc, erc721, tokenId],
+            queryKey: [`${erc721}_token`, "erc721", rpc, erc721, tokenId],
             queryFn: async () => {
                 const [tokenURI, ownerOf] = await Promise.allSettled([
                     fetcher.rpc(rpc!, "eth_call", [
@@ -24,7 +24,7 @@ export const query = {
                     ])
                 ]);
 
-                console.log({ erc721, tokenId }, `0xc87b56dd${BigInt(tokenId!).toString(16).padStart(64, '0')}`)
+                // console.log({ erc721, tokenId }, `0xc87b56dd${BigInt(tokenId!).toString(16).padStart(64, '0')}`)
 
                 let uri: Record<string, string | undefined> | undefined;
                 const metadata = tokenURI?.status === 'fulfilled' ? hex.toString(tokenURI?.value?.slice(66)) : undefined
@@ -40,7 +40,7 @@ export const query = {
                     // if (image?.startsWith("data:image/")) image = image;
                 }
 
-                console.log({ metadata, uri })
+                // console.log({ metadata, uri })
 
                 return {
                     uri,
@@ -51,12 +51,12 @@ export const query = {
                     owner: ownerOf?.status === "fulfilled" && ownerOf?.value?.length >= 66 ? `0x${ownerOf?.value?.toString()?.slice(-40)}` : undefined,
                 };
             },
-            enabled: !!rpc && !!erc721 && !!tokenId,
+            enabled: !!rpc && valid.address(erc721) && !!tokenId,
         }),
 
     ownerOf: (rpc?: string, erc721?: string, tokenId?: string) =>
         queryOptions({
-            queryKey: [`${erc721}_ownerOf`, rpc, erc721, tokenId],
+            queryKey: [`${erc721}_ownerOf`, "erc721", rpc, erc721, tokenId],
             queryFn: async () => await fetcher.rpc(rpc!, "eth_call", [
                 {
                     to: erc721,
@@ -64,6 +64,6 @@ export const query = {
                 },
                 "latest",
             ]).then(data => (data && data?.length >= 66) && `0x${data?.toString()?.slice(-40)}`),
-            enabled: !!rpc && !!erc721 && !!tokenId,
+            enabled: !!rpc && valid.address(erc721) && !!tokenId,
         })
 };
