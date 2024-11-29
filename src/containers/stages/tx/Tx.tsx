@@ -1,14 +1,17 @@
-﻿import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
+﻿"use client";
+
 import Image from "next/image";
-import { Stage } from "..";
-import { Asset } from "types";
-import { query } from "api/onchain/query";
-import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { useState } from "react";
-import { sanitizeBigIntToHex, short } from "utils";
-import { GetMaxFeePerGas } from "api/onchain";
-import { useQueries } from "@tanstack/react-query";
+import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { format } from "@coinmeca/ui/lib/utils";
+import { useQueries } from "@tanstack/react-query";
+
+import { query } from "api/onchain/query";
+import { GetMaxFeePerGas } from "api/onchain";
+import { sanitizeBigIntToHex, short } from "utils";
+import { Asset } from "types";
+import { Stage } from "..";
 
 interface Tx extends Stage {
     asset?: Asset;
