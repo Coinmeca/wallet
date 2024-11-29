@@ -192,7 +192,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                                                 return handleRevokeApp(app?.url);
                                                         }
                                                     }}
-                                                    responsive={responsive}
+                                                    responsive={isMobile && responsive}
                                                     chevron={false}
                                                     fix
                                                     fit
@@ -226,11 +226,27 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
         () => [
             {
                 active: (desktop && (sideMenu === "" || sideMenu === "accounts")) || sideMenu === "accounts",
-                children: <Sidebars.Accounts search={search()} searchFilter={searchFilter} responsive={responsive} onClose={() => setSideMenu("")} />,
+                children: (
+                    <Sidebars.Accounts
+                        search={search()}
+                        searchFilter={searchFilter}
+                        responsive={responsive}
+                        isMobile={isMobile}
+                        onClose={() => setSideMenu("")}
+                    />
+                ),
             },
             {
                 active: sideMenu === "chains",
-                children: <Sidebars.Chains search={search()} searchFilter={searchFilter} responsive={responsive} onClose={() => setSideMenu("")} />,
+                children: (
+                    <Sidebars.Chains
+                        search={search()}
+                        searchFilter={searchFilter}
+                        responsive={responsive}
+                        isMobile={isMobile}
+                        onClose={() => setSideMenu("")}
+                    />
+                ),
             },
         ],
         [search, searchFilter, responsive],

@@ -25,19 +25,19 @@ export default function Amount(props: Amount) {
     const asset = props?.asset;
     const responsive = props?.responsive || false;
     const min = (props?.min && parseNumber(props?.min)) || 0;
-    const max = props?.max ? parseNumber(props?.max) : undefined;
+    const max = typeof props?.max === "number" ? parseNumber(props?.max) : undefined;
 
     const { chain } = useCoinmecaWalletProvider();
 
     const amount = useMemo(() => {
         if (props?.amount) {
-            if (props.amount !== "" && max && parseNumber(props?.amount) >= max) return max;
+            if (props.amount !== "" && typeof max === "number" && parseNumber(props?.amount) >= max) return max;
             const decimals = props?.asset?.decimals || 0;
             const number = props?.amount?.toString()?.split(".");
             if (number?.[1]?.length > decimals) return [...(number[0] || "0"), ".", ...number[1]?.slice(0, decimals)].join("");
             return props?.amount;
         } else return undefined;
-    }, [props?.amount]);
+    }, [props?.amount, max]);
 
     const isMax = useMemo(() => {
         const amt = parseNumber(amount);
@@ -114,16 +114,15 @@ export default function Amount(props: Amount) {
                                                         ?.map((letter, i) => (
                                                             <motion.span
                                                                 key={i}
-                                                                style={{
-                                                                    display: "inline-block",
-                                                                    fontSize,
-                                                                    fontWeight: "bolder",
-                                                                    transform: "initial!important",
-                                                                }}
+                                                                layoutId={`number-${i}`}
                                                                 initial={{ scale: 1, x: 0, z: 0, y: "50%", opacity: 0 }}
                                                                 animate={{ scale: 1, x: 0, z: 0, y: 0, opacity: 1 }}
                                                                 exit={{ scale: 1, x: 0, z: 0, y: "-50%", opacity: 0 }}
                                                                 transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+                                                                style={{
+                                                                    fontSize,
+                                                                    fontWeight: "bolder",
+                                                                }}
                                                                 layout>
                                                                 {letter === " " ? "\u00A0" : letter}
                                                             </motion.span>
