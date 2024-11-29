@@ -9,6 +9,7 @@ import { usePortal } from "@coinmeca/ui/hooks";
 import { Modal } from "@coinmeca/ui/containers";
 
 export default function Lock(props?: { onUnlock?: Function }) {
+    const width = 64;
     const length = 6;
     const router = useRouter();
 
@@ -55,7 +56,7 @@ export default function Lock(props?: { onUnlock?: Function }) {
                                     <Elements.Text weight={"bold"} size={2}>
                                         PASSCODE
                                     </Elements.Text>
-                                    <Elements.Passcode index={code?.length || 0} length={length} error={error.state} gap={"5%"} effect />
+                                    <Elements.Passcode width={width} index={code?.length || 0} length={length} error={error.state} gap={"5%"} effect />
                                     {error.message !== "" && (
                                         <Layouts.Col gap={2} align={"center"}>
                                             <Elements.Text weight={"bold"} color={"red"}>
@@ -88,7 +89,13 @@ export default function Lock(props?: { onUnlock?: Function }) {
                                         <Layouts.Contents.InnerContent scroll={false}>
                                             <Layouts.Col gap={0} style={{ background: "rgba(var(--black),.45)", padding: "2em" }} fill>
                                                 <Layouts.Col fill>
-                                                    <Parts.Numberpad type="code" value={code} onChange={(e: any, v: any) => handleNumberClick(v)} shuffle />
+                                                    <Parts.Numberpad
+                                                        type="code"
+                                                        width={width}
+                                                        value={code}
+                                                        onChange={(e: any, v: any) => handleNumberClick(v)}
+                                                        shuffle
+                                                    />
                                                 </Layouts.Col>
                                             </Layouts.Col>
                                         </Layouts.Contents.InnerContent>

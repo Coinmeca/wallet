@@ -2,11 +2,11 @@
 
 import Image from "next/image";
 import { useLayoutEffect, useState } from "react";
-
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { Chain } from "@coinmeca/wallet-sdk/types";
-import { useMessageHandler, useTelegram } from "hooks";
+
+import { useMessageHandler } from "hooks";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({method:"wallet_addEthereumChain", params:[{chainId: '0x13e31'}]})
@@ -16,11 +16,10 @@ const method = "wallet_switchEthereumChain";
 const timeout = 5000;
 
 export default function Page() {
-
-    const { telegram } = useTelegram();
     const { provider, chain, chains } = useCoinmecaWalletProvider();
-    const {  params, messageId } = useMessageHandler();
+    const { getRequest, success, failure, next } = useMessageHandler();
 
+    const [id, setId] = useState("");
     const [selectedChain, setSelectedChain] = useState<any>();
     const [newChain, setNewChain] = useState<Chain>();
 
@@ -28,19 +27,8 @@ export default function Page() {
     const [error, setError] = useState<any>();
 
     const handleClose = () => {
-        // if (isPopup) {
-        if (telegram) telegram?.close();
-        window?.close();
-        // } else router.push("/");
-        if (level < 2)
-            window?.opener?.postMessage(
-                {
-                    method,
-                    ...(level === 0 ? { error: "User rejected the request" } : {}),
-                    id: messageId,
-                },
-                "*",
-            );
+        if (level < 2) failure(id, "User rejected the request");
+        next(id);
     };
 
     const handleSwitchChain = async () => {
@@ -48,27 +36,13 @@ export default function Page() {
         await provider
             ?.switchEthereumChain(newChain?.chainId)
             .then((result) => {
-                window?.opener?.postMessage(
-                    {
-                        method,
-                        result,
-                        id: messageId,
-                    },
-                    "*",
-                );
+                success(id, result);
                 setLevel(1);
                 setTimeout(handleClose, timeout);
             })
             .catch((error) => {
                 console.log(error);
-                window?.opener?.postMessage(
-                    {
-                        method,
-                        error,
-                        id: messageId,
-                    },
-                    "*",
-                );
+                failure(id, error?.message || error);
                 setError(error);
                 setLevel(3);
             });
@@ -76,7 +50,11 @@ export default function Page() {
 
     useLayoutEffect(() => {
         setSelectedChain(chain);
-        if (params?.chainId) setNewChain(chains?.find((c) => c?.chainId === params.chainId));
+        const request = getRequest(method);
+        if (request?.request) {
+            if (request?.request?.params?.chainId) setNewChain(chains?.find((c) => c?.chainId === request?.request?.params?.chainId));
+            setId(request?.id);
+        }
     }, []);
 
     return newChain ? (

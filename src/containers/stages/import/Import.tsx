@@ -8,11 +8,11 @@ import { useMessageHandler } from "hooks";
 export default function Import({ setStage }: Stage) {
     const router = useRouter();
     const { provider } = useCoinmecaWalletProvider();
-    const { method } = useMessageHandler();
+    const { count, messages } = useMessageHandler();
 
     const handleImportWallet = (seed: string) => {
         if (seed.length === 64 && provider?.import(seed)) {
-            if (provider?.accounts?.length) router.push(`/${method ? `request/${method}` : ""}`);
+            if (provider?.accounts?.length) router.push(`/${count ? `request/${messages?.[0]?.request?.method}` : ""}`);
         } else new Error("Something wrong while in importing address");
     };
 
@@ -40,7 +40,8 @@ export default function Import({ setStage }: Stage) {
                                 <Controls.Input
                                     type={"password"}
                                     placeholder={"Please enter the private key of the wallet to be imported here."}
-                                    left={{ children: <Elements.Icon icon={"wallet"} /> }}
+                                    gap={2}
+                                    left={{ children: <Elements.Icon icon={"wallet"} scale={1.25} /> }}
                                     style={{ padding: "2em" }}
                                     onChange={(e: any, v: string) => handleImportWallet(v)}
                                     clearable

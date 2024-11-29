@@ -5,10 +5,24 @@ import { useCoinmecaWallet } from "@coinmeca/wallet-provider/adapter";
 import { getChainsByType } from "@coinmeca/wallet-provider/chains";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { useTelegram } from "hooks";
-import { useState } from "react";
+import { useLayoutEffect, useState } from "react";
 
 export default function Page() {
     const { telegram, send, show, expand, exit, bio } = useTelegram();
+
+    const [metamask, setMetamask] = useState<any>();
+    const [coinbase, setCoinbase] = useState<any>();
+    const [coinmeca, setCoinmeca] = useState<any>();
+
+    useLayoutEffect(() => {
+        window.addEventListener("eip6963:announceProvider", (event: any) => {
+            if (event?.detail?.info?.name === "MetaMask") setMetamask(event?.detail?.provider);
+            if (event?.detail?.info?.name === "Coinbase Wallet") setCoinbase(event?.detail?.provider);
+            if (event?.detail?.info?.name === "Coinmeca Wallet") setCoinmeca(event?.detail?.provider);
+        });
+        window.dispatchEvent(new Event("eip6963:requestProvider"));
+    }, []);
+
     const [authenticate, setAuthenticate] = useState<string | null>(null);
     const [requestAccess, setRequestAccess] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -79,7 +93,7 @@ export default function Page() {
                         chainId: 421614,
                         base: "evm",
                         chainName: "Arbitrum Sepolia",
-                        logo: "https://coinmeca-web3.vercel.app/421614/logo.svg",
+                        logo: "https://web3.coinmeca.net/421614/logo.svg",
                         rpcUrls: [
                             "https://sepolia-rollup.arbitrum.io/rpc",
                             "https://arbitrum-sepolia.blockpi.network/v1/rpc/public",
@@ -152,20 +166,29 @@ export default function Page() {
 
     const handlePersonalSign = async () => {
         const method = "personal_sign";
-        console.log(
-            method,
-            await adapter?.request({
-                method,
-                params: [
-                    // Message to sign
-                    "Hello, Personal Sign!",
-                    // Signer's address
-                    account?.address,
-                ],
-            }),
-        );
+        const params = [
+            // Message to sign
+            "Hello, Personal Sign!",
+            // Signer's address
+            account?.address,
+        ];
+
         // result
         // signature
+        console.log(
+            await metamask?.request({
+                method,
+                params,
+            }),
+            await coinbase?.request({
+                method,
+                params,
+            }),
+            await coinmeca?.request({
+                method,
+                params,
+            }),
+        );
     };
 
     const handleSignTypedDataV4 = async () => {
@@ -211,17 +234,8 @@ export default function Page() {
             },
         ];
 
-        let metamask: any;
-        let coinbase: any;
-        let coinmeca: any;
-
-        window.addEventListener("eip6963:announceProvider", (event: any) => {
-            if (event?.detail?.info?.name === "MetaMask") metamask = event?.detail?.provider;
-            if (event?.detail?.info?.name === "Coinbase Wallet") coinbase = event?.detail?.provider;
-            if (event?.detail?.info?.name === "Coinmeca Wallet") coinmeca = event?.detail?.provider;
-        });
-        window.dispatchEvent(new Event("eip6963:requestProvider"));
-
+        // result
+        // 0x r s v
         console.log(
             await metamask?.request({
                 method,
@@ -240,34 +254,45 @@ export default function Page() {
 
     const handleSignTransaction = async () => {
         const method = "eth_signTransaction";
+        const params = [
+            // test
+            // {
+            //     from: account?.address,
+            //     to: "0x0000000000000000000000000000000000000000",
+            //     value: 0n,
+            //     gasLimit: 21000n,
+            //     maxPriorityFeePerGas: 2_000_000n,
+            //     maxFeePerGas: 3_000_000n,
+            //     type: 2,
+            // },
+            // faucet
+            // {
+            //     from: account?.address,
+            //     to: "0x709C5856d329748344789C787a429B3cC7631894",
+            //     data: "0x7b56c2b200000000000000000000000094b1f182d48dd9d84e1ab0ee3a593364595bb4ec00000000000000000000000000000000000000000000000000000002540be400",
+            // },
+            // order
+            {
+                from: account?.address,
+                to: "0x284079c19f888f12f9d56955e466f2736a7f1994",
+                data: "0x05b102e3000000000000000000000000d42b5e48d0e2c265a87adf7e08d2fcd9c62ff17b0000000000000000000000000000000000000000000000000de0b6b3a7640000",
+            },
+        ];
+
+        // result
+        // 0x r s v
         console.log(
-            method,
-            await adapter?.request({
+            // await metamask?.request({
+            //     method,
+            //     params,
+            // }),
+            // await coinbase?.request({
+            //     method,
+            //     params,
+            // }),
+            await coinmeca?.request({
                 method,
-                params: [
-                    // test
-                    // {
-                    //     from: account?.address,
-                    //     to: "0x0000000000000000000000000000000000000000",
-                    //     value: 0n,
-                    //     gasLimit: 21000n,
-                    //     maxPriorityFeePerGas: 2_000_000n,
-                    //     maxFeePerGas: 3_000_000n,
-                    //     type: 2,
-                    // },
-                    // faucet
-                    // {
-                    //     from: account?.address,
-                    //     to: "0x709C5856d329748344789C787a429B3cC7631894",
-                    //     data: "0x7b56c2b200000000000000000000000094b1f182d48dd9d84e1ab0ee3a593364595bb4ec00000000000000000000000000000000000000000000000000000002540be400",
-                    // },
-                    // order
-                    {
-                        from: account?.address,
-                        to: "0x284079c19f888f12f9d56955e466f2736a7f1994",
-                        data: "0x05b102e3000000000000000000000000d42b5e48d0e2c265a87adf7e08d2fcd9c62ff17b0000000000000000000000000000000000000000000000000de0b6b3a7640000",
-                    },
-                ],
+                params,
             }),
         );
     };

@@ -1,13 +1,14 @@
 "use client";
 
-import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useMessageHandler, useTelegram } from "hooks";
 import Image from "next/image";
-import { useLayoutEffect, useState } from "react";
-import { Account } from "@coinmeca/wallet-sdk/types";
+import { useLayoutEffect, useMemo, useState } from "react";
+import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
+import { Account, App } from "@coinmeca/wallet-sdk/types";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
-import { short } from "utils";
 import { valid } from "@coinmeca/wallet-sdk/utils";
+
+import { useMessageHandler } from "hooks";
+import { short } from "utils";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({
@@ -40,20 +41,44 @@ const method = "personal_sign";
 const timeout = 5000;
 
 export default function PersonalSign() {
-    const { telegram } = useTelegram();
     const { provider } = useCoinmecaWalletProvider();
-    const { app, params, messageId } = useMessageHandler();
+    const { getRequest, getRequestById, success, failure, next } = useMessageHandler();
 
+    const [id, setId] = useState("");
     const [message, setMessage] = useState<string>();
-    const [signer, setSigner] = useState<Account>();
+    const [app, setApp] = useState<App>();
     const [auth, setAuth] = useState<boolean>();
+    const [signer, setSigner] = useState<Account>();
 
     const [level, setLevel] = useState(0);
     const [error, setError] = useState<any>();
 
+    const handleClose = () => {
+        if (level < 2) failure(id, "User rejected the request");
+        next(id);
+    };
+
+    const handleSign = async () => {
+        setLevel(1);
+        await provider
+            ?.signMessage([message!, signer!.address])
+            .then((result) => {
+                success(id, result);
+                setLevel(1);
+                setTimeout(handleClose, timeout);
+            })
+            .catch((error) => {
+                console.log(error);
+                failure(id, "Failed to signning");
+                setError(error);
+                setLevel(2);
+            });
+    };
+
     useLayoutEffect(() => {
-        console.log({ params, auth, app });
-        if (params) {
+        const request = getRequest(method);
+        if (request?.request) {
+            const { params, app } = request.request;
             const _0 = valid.address(params[0]);
             const _1 = valid.address(params[1]);
 
@@ -63,59 +88,16 @@ export default function PersonalSign() {
             if (_0 || _1) {
                 _1 ? ((message = params[0]), (address = params[1])) : ((message = params[1]), (address = params[0]));
 
+                setApp(app);
                 setAuth(app?.url ? provider?.allowance(app?.url, address) : false);
                 setSigner(provider?.account(address));
                 setMessage(message);
             }
+            setId(request?.id);
         }
     }, []);
 
-    const handleSign = async () => {
-        setLevel(1);
-        await provider
-            ?.signMessage([message!, signer!.address])
-            .then((result) => {
-                window?.opener?.postMessage(
-                    {
-                        method,
-                        result,
-                        id: messageId,
-                    },
-                    "*",
-                );
-                setLevel(1);
-                setTimeout(handleClose, timeout);
-            })
-            .catch((error) => {
-                console.log(error);
-                window?.opener?.postMessage(
-                    {
-                        method,
-                        error: "Failed to signning",
-                        id: messageId,
-                    },
-                    "*",
-                );
-                setError(error);
-                setLevel(2);
-            });
-    };
-
-    const handleClose = () => {
-        // if (isPopup) {
-        if (telegram) telegram?.close();
-        window?.close();
-        // } else router.push("/");
-        if (level < 2)
-            window?.opener?.postMessage(
-                {
-                    method,
-                    ...(level === 0 ? { error: "User rejected the request" } : {}),
-                    id: messageId,
-                },
-                "*",
-            );
-    };
+    console.log(auth, app, signer, message);
 
     return auth && app && signer && message ? (
         <Layouts.Contents.SlideContainer
@@ -296,7 +278,7 @@ export default function PersonalSign() {
                             <Layouts.Col gap={4} align={"center"} fit>
                                 <Elements.Text type={"h3"}>Invalid Request</Elements.Text>
                                 <Elements.Text weight={"bold"} opacity={0.6}>
-                                    {"The given app information is something wrong. Couldn't found the information of requested app?."}
+                                    {"The given app information is something wrong. Couldn't found the information of requested app."}
                                 </Elements.Text>
                             </Layouts.Col>
                         </Layouts.Col>

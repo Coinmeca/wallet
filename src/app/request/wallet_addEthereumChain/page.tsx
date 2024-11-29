@@ -1,12 +1,13 @@
 ﻿"use client";
 
+import Image from "next/image";
+import { useLayoutEffect, useState } from "react";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { parseChainId } from "@coinmeca/wallet-provider/chains";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { Chain } from "@coinmeca/wallet-sdk/types";
-import { useMessageHandler, useTelegram } from "hooks";
-import Image from "next/image";
-import { useLayoutEffect, useState } from "react";
+
+import { useMessageHandler } from "hooks";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({method:"wallet_addEthereumChain", params:[{
@@ -34,10 +35,10 @@ const method = "wallet_addEthereumChain";
 const timeout = 5000;
 
 export default function Page() {
-    const { telegram } = useTelegram();
     const { provider, chain } = useCoinmecaWalletProvider();
-    const { params, messageId } = useMessageHandler();
+    const { getRequest, success, failure, next } = useMessageHandler();
 
+    const [id, setId] = useState("");
     const [selectedChain, setSelectedChain] = useState<any>();
     const [newChain, setNewChain] = useState<Chain>();
 
@@ -46,22 +47,13 @@ export default function Page() {
 
     const result = () => {
         console.log("level:", level);
-        window?.opener?.postMessage(
-            {
-                method,
-                ...(level === 0 ? { error: "User rejected the request" } : { result: level === 1 ? true : newChain?.chainId }),
-                id: messageId,
-            },
-            "*",
-        );
+        if (level === 0) failure(id, "User rejected the request");
+        else success(id, level === 1 ? true : newChain?.chainId);
     };
 
     const handleClose = () => {
         result();
-        // if (isPopup) {
-        if (telegram) telegram?.close();
-        window?.close();
-        // } else router.push("/");
+        next(id);
     };
 
     const handleAddChain = async () => {
@@ -71,14 +63,7 @@ export default function Page() {
             .then(() => setLevel(1))
             .catch((error) => {
                 console.log(error);
-                window?.opener?.postMessage(
-                    {
-                        method,
-                        error,
-                        id: messageId,
-                    },
-                    "*",
-                );
+                failure(id, error?.message || error);
                 setError(error);
                 setLevel(3);
             });
@@ -89,37 +74,24 @@ export default function Page() {
         await provider
             ?.switchEthereumChain(newChain?.chainId)
             .then((result) => {
-                window?.opener?.postMessage(
-                    {
-                        method,
-                        result,
-                        id: messageId,
-                    },
-                    "*",
-                );
+                success(id, result);
                 setLevel(2);
                 setTimeout(handleClose, timeout);
             })
             .catch((error) => {
                 console.log(error);
-                window?.opener?.postMessage(
-                    {
-                        method,
-                        error,
-                        id: messageId,
-                    },
-                    "*",
-                );
+                failure(id, error?.message || error);
                 setError(error);
                 setLevel(3);
             });
     };
 
     useLayoutEffect(() => {
-        console.log({ params });
         setSelectedChain(chain);
-        if (params) {
-            const { chainId, chainName, rpcUrls, nativeCurrency } = params;
+        const request = getRequest(method);
+        if (request?.request) {
+            const { params } = request.request;
+            const { chainId, chainName, rpcUrls, nativeCurrency } = params || {};
             if (
                 chainId &&
                 chainName &&
@@ -131,6 +103,7 @@ export default function Page() {
                 rpcUrls.length > 0
             )
                 setNewChain({ ...params, chainId: parseChainId(chainId) } as Chain);
+            setId(request?.id);
         }
     }, []);
 
@@ -199,36 +172,36 @@ export default function Page() {
                                                                 <Elements.Text size={1} opacity={0.6}>
                                                                     Chain RPC URL
                                                                 </Elements.Text>
-                                                                {newChain.rpcUrls.length > 0 && (
+                                                                {newChain?.rpcUrls?.length > 0 && (
                                                                     <>
                                                                         <Elements.Text size={1} opacity={0.6}>
                                                                             s
                                                                         </Elements.Text>{" "}
                                                                         <Elements.Text size={1} opacity={1}>
-                                                                            +{newChain.rpcUrls.length}
+                                                                            +{newChain?.rpcUrls?.length}
                                                                         </Elements.Text>
                                                                     </>
                                                                 )}
                                                             </Elements.Text>
-                                                            <Elements.Text>{newChain.rpcUrls[0]}</Elements.Text>
+                                                            <Elements.Text>{newChain?.rpcUrls?.[0]}</Elements.Text>
                                                         </Layouts.Col>
                                                         <Layouts.Col gap={0.5}>
                                                             <Elements.Text type={"desc"} weight={"bold"} opacity={0.6}>
                                                                 Native Currency Name
                                                             </Elements.Text>
-                                                            <Elements.Text>{newChain.nativeCurrency?.name}</Elements.Text>
+                                                            <Elements.Text>{newChain?.nativeCurrency?.name}</Elements.Text>
                                                         </Layouts.Col>
                                                         <Layouts.Col gap={0.5}>
                                                             <Elements.Text type={"desc"} weight={"bold"} opacity={0.6}>
                                                                 Native Currency Symbol
                                                             </Elements.Text>
-                                                            <Elements.Text>{newChain.nativeCurrency.symbol}</Elements.Text>
+                                                            <Elements.Text>{newChain?.nativeCurrency?.symbol}</Elements.Text>
                                                         </Layouts.Col>
                                                         <Layouts.Col gap={0.5}>
                                                             <Elements.Text type={"desc"} weight={"bold"} opacity={0.6}>
                                                                 Native Currency Decimals
                                                             </Elements.Text>
-                                                            <Elements.Text>{newChain.nativeCurrency.decimals}</Elements.Text>
+                                                            <Elements.Text>{newChain?.nativeCurrency?.decimals}</Elements.Text>
                                                         </Layouts.Col>
                                                     </Layouts.Col>
                                                 </Layouts.Box>

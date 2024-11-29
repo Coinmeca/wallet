@@ -10,6 +10,7 @@ import { dehydrate, HydrationBoundary, QueryClientProvider } from "@tanstack/rea
 import { getQueryClient } from "api";
 import { States } from "@coinmeca/ui/components/contents";
 import { GetErc721 } from "api/erc721";
+import { Validate } from "types";
 
 export interface Add {
     standard?: any;
@@ -18,11 +19,6 @@ export interface Add {
     onBack?: Function;
     onClose: Function;
     close?: boolean;
-}
-
-interface Validate {
-    state?: boolean;
-    message?: string;
 }
 
 export default function Add(props: Add) {
@@ -46,7 +42,7 @@ function NonFungibleAddModal(props: Add) {
 
     const [token, setToken] = useState<{ address?: string; id?: string }>();
     const [fetch, setFetch] = useState<{ address?: string; id?: string }>();
-    
+
     const [loading, setLoading] = useState<boolean>(false);
     const [process, setProcess] = useState<boolean | null>(null);
     const [error, setError] = useState<string>();
@@ -128,12 +124,12 @@ function NonFungibleAddModal(props: Add) {
                     setError("The data fetching is failed.");
                     setProcess(false);
                     setLoading(false);
-                };
+                }
             }
         }
     }, [asset, tokens]);
 
-    console.log("fetching",asset?.isFetching,"isLoading",asset?.isLoading,{process, loading})
+    console.log("fetching", asset?.isFetching, "isLoading", asset?.isLoading, { process, loading });
 
     return (
         <Modal
@@ -150,12 +146,11 @@ function NonFungibleAddModal(props: Add) {
                                             onClick={(e: any) => {
                                                 setToken({});
                                                 setProcess(null);
-                                            }}
-                                        >
+                                            }}>
                                             Go Back
                                         </Controls.Button>
                                     </States.Failure>
-                                )
+                                ),
                             },
                             {
                                 active: process === null && !loading,
@@ -242,19 +237,20 @@ function NonFungibleAddModal(props: Add) {
                                         </Layouts.Contents.InnerContent>
                                         <Layouts.Row gap={2} fix>
                                             <Controls.Button onClick={handleClose}>Close</Controls.Button>
-                                            <Controls.Button onClick={() => {
-                                                setLoading(true);
-                                                setFetch(token);
-                                            }}>Comfirm</Controls.Button>
+                                            <Controls.Button
+                                                onClick={() => {
+                                                    setLoading(true);
+                                                    setFetch(token);
+                                                }}>
+                                                Comfirm
+                                            </Controls.Button>
                                         </Layouts.Row>
                                     </Layouts.Col>
                                 ),
                             },
                             {
                                 active: loading,
-                                children: (
-                                    <States.Loading message={"Please wait until the processing is complete."} />
-                                )
+                                children: <States.Loading message={"Please wait until the processing is complete."} />,
                             },
                             {
                                 active: !!process,

@@ -11,11 +11,11 @@ import { useMessageHandler } from "hooks";
 export default function Create({ setStage }: Stage) {
     const router = useRouter();
     const { provider } = useCoinmecaWalletProvider();
-    const { method } = useMessageHandler();
+    const { messages } = useMessageHandler();
 
     const handleCreateWallet = () => {
         provider?.create();
-        if (provider?.accounts?.length) router.push(`/${method ? `request/${method}` : ""}`);
+        if (provider?.accounts?.length) router.push(`/${messages?.[0]?.request?.method ? `request/${messages[0].request.method}` : ""}`);
     };
 
     return (

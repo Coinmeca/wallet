@@ -1,11 +1,11 @@
 ﻿"use client";
 
 import Image from "next/image";
-import { useState } from "react";
-
+import { useLayoutEffect, useMemo, useState } from "react";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
-import { useMessageHandler, useTelegram } from "hooks";
+
+import { useMessageHandler } from "hooks";
 import { GetErc20 } from "api/erc20";
 import { short } from "utils";
 
@@ -28,58 +28,38 @@ const method = "wallet_watchAsset";
 const timeout = 5000;
 
 export default function Page() {
-    const { telegram } = useTelegram();
     const { provider, account, chain } = useCoinmecaWalletProvider();
-    const { params, messageId } = useMessageHandler();
+    const { getRequest, getRequestById, success, failure, next } = useMessageHandler();
 
+    const [id, setId] = useState("");
     const [level, setLevel] = useState(0);
     const [error, setError] = useState<any>();
 
+    const { params } = useMemo(() => getRequestById(id), [id]);
     const [result] = GetErc20(chain?.rpcUrls?.[0], params?.options?.address, account?.address);
     const asset = result?.[params?.options?.address];
 
     const handleClose = () => {
-        // if (isPopup) {
-        if (telegram) telegram?.close();
-        window?.close();
-        // } else router.push("/");
-        if (level < 2)
-            window?.opener?.postMessage(
-                {
-                    method,
-                    ...(level === 0 ? { error: "User rejected the request" } : {}),
-                    id: messageId,
-                },
-                "*",
-            );
+        if (level < 2) failure(id, "User rejected the request");
+        next(id);
     };
 
     const handleAddAsset = async () => {
         if (asset?.data?.address && provider?.addFungibleAsset(asset?.data?.address)) {
-            window?.opener?.postMessage(
-                {
-                    method,
-                    result: true,
-                    id: messageId,
-                },
-                "*",
-            );
+            success(id, true);
             setLevel(1);
-            // setTimeout(handleClose, timeout);
+            setTimeout(handleClose, timeout);
         } else {
             const error = "Asset data is something wrong.";
             console.log(error);
-            window?.opener?.postMessage(
-                {
-                    method,
-                    error,
-                    id: messageId,
-                },
-                "*",
-            );
+            failure(id, error);
             setError(error);
         }
     };
+
+    useLayoutEffect(() => {
+        setId(getRequest(method)?.id);
+    }, []);
 
     return params ? (
         <Layouts.Contents.SlideContainer

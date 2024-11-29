@@ -345,7 +345,10 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                                               align={"left"}
                                                               scale={1.125}
                                                               style={{ padding: "0.5em 1em" }}
-                                                              onClick={() => router.push("/test")}>
+                                                              onClick={() => {
+                                                                  setSideMenu("");
+                                                                  router.push("/test");
+                                                              }}>
                                                               Test
                                                           </Controls.Button>
                                                           <Controls.Button
@@ -361,7 +364,10 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                                               iconLeft={"sheild-star"}
                                                               scale={1.125}
                                                               style={{ padding: "0.5em 1em" }}
-                                                              onClick={() => router.push("/change")}>
+                                                              onClick={() => {
+                                                                  setSideMenu("");
+                                                                  router.push("/change");
+                                                              }}>
                                                               Change Passcode
                                                           </Controls.Button>
                                                       </Layouts.Col>
@@ -371,6 +377,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                                           scale={1.125}
                                                           style={{ padding: "0.5em 1em" }}
                                                           onClick={() => {
+                                                              setSideMenu("");
                                                               provider?.lock();
                                                               router.push("/lock");
                                                           }}>
