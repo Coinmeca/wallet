@@ -7,25 +7,39 @@ import { useCallback, useEffect, useMemo } from "react";
 import { filter, format } from "@coinmeca/ui/lib/utils";
 import { Modals } from "containers";
 import { TransactionReceipt } from "@coinmeca/wallet-sdk/types";
-import { useQueries } from "@tanstack/react-query";
+import { queryOptions, useQueries } from "@tanstack/react-query";
 import { query } from "api/onchain/query";
+import { getQueryClient } from "api";
 
 interface Activity {
     filter?: string;
 }
 
 export default function Activity(props: Activity) {
+    const client = getQueryClient();
     const { account, chain, tx, provider } = useCoinmecaWalletProvider();
     const { sorting, sortArrow, setSort } = useSort();
+
+    const categories = useQueries({
+        queries:
+            tx?.map((tx) => {
+                const q = query.typeOf(chain?.rpcUrls?.[0], !tx?.category ? tx?.to : undefined);
+                return queryOptions({
+                    ...q,
+                    queryKey: [...q?.queryKey, tx?.hash],
+                });
+            }) || [],
+    });
 
     const txs = useQueries({ queries: tx?.filter(({ status }) => status === "pending")?.map(({ hash }) => query.receipt(chain?.rpcUrls?.[0], hash)) || [] });
     const txlist = useMemo(
         (): TransactionReceipt[] =>
             tx
-                ?.map((tx) => {
+                ?.map((tx, i) => {
                     const data = txs?.find(({ data }) => data?.transactionHash?.toLowerCase() === tx?.hash?.toLowerCase())?.data;
                     if (!data) return tx;
                     const blockNumber = data?.blockNumber ? Number(data?.blockNumber) : "-";
+                    const category = client?.getQueryData(["accountType", tx?.to, tx?.hash]);
                     const status = !!data?.status ? (data?.status === "0x1" ? "success" : "failure") : tx?.status;
                     const gasUsed = data?.gasUsed ? Number(data?.gasUsed) : "-";
                     const cumulativeGasUsed = data?.cumulativeGasUsed ? Number(data?.cumulativeGasUsed) : "-";
@@ -35,7 +49,7 @@ export default function Activity(props: Activity) {
                         hash: tx?.hash,
                         time: tx?.time,
                         to: data?.to,
-                        category: data?.contractAddress ? "deploy" : tx?.category,
+                        category: data?.contractAddress ? "deploy" : tx?.category ? tx?.category : category === "ca" ? "Contract Interaction" : tx?.category,
                         contractAddress: data?.contractAddress,
                         blockNumber,
                         gasUsed,
@@ -45,17 +59,8 @@ export default function Activity(props: Activity) {
                     };
                 })
                 ?.filter((tx) => tx) || [],
-        [tx, txs],
+        [tx, txs, categories],
     );
-
-    const test = useQueries({
-        queries:
-            tx
-                ?.filter(({ status }) => status === "pending")
-                ?.flatMap(({ hash, to }) => [query.receipt(chain?.rpcUrls?.[0], hash), query.typeOf(chain?.rpcUrls?.[0], to)]) || [],
-    });
-
-    console.log({ test });
 
     const sorts = {
         blockNumber: { key: "blockNumber", type: "number" },

@@ -7,9 +7,11 @@ import { Modals } from "containers";
 import { GetErc721 } from "api/erc721";
 import Image from "next/image";
 import { filter } from "@coinmeca/ui/lib/utils";
+import { Asset, AssetType } from "types";
 
 interface Nft {
     filter?: string;
+    onSelect?: Function;
 }
 
 export default function Nft(props: Nft) {
@@ -20,12 +22,18 @@ export default function Nft(props: Nft) {
     const nftlist = Object.values(nonFungibles)?.flatMap((v) => Object.values(v));
 
     const [openNonFungibleAdd, closeNonFungibleAdd] = usePortal(() => <Modals.NonFungible.Add onClose={closeNonFungibleAdd} />);
-    const [openNonFungibleInfo, closeNonFungibleInfo] = usePortal((info: any) => <Modals.NonFungible.Info {...info} onClose={closeNonFungibleInfo} />);
+    const [openNonFungibleInfo, closeNonFungibleInfo] = usePortal((info: any) => (
+        <Modals.NonFungible.Info {...info} onTransfer={handleTransfer} onClose={closeNonFungibleInfo} />
+    ));
 
     const sorts = {
         name: { key: "name", type: "string" },
         address: { key: "address", type: "string" },
         id: { key: "balance", type: "number" },
+    };
+
+    const handleTransfer = (asset: Asset<"ERC721">) => {
+        props?.onSelect?.(asset);
     };
 
     return (
@@ -47,13 +55,12 @@ export default function Nft(props: Nft) {
             <Layouts.Contents.GridContainer direction={"row"} width={{ min: "clamp(20em, 50%, 40em)" }}>
                 {filter(sorting(nftlist), props?.filter)?.map((nft: any, i: number) => (
                     <Controls.Card key={i} onClick={() => openNonFungibleInfo(nft)}>
-                        {console.log({ nft })}
                         <div>
                             <Image
                                 width={0}
                                 height={0}
                                 src={nft?.isLoading ? require("../../assets/animation/loading.gif") : nft?.data?.image}
-                                alt={nft?.data?.uri}
+                                alt={nft?.data?.uri || "Unknown"}
                                 style={{
                                     width: "100%",
                                     height: "100%",

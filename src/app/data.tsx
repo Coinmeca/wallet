@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useCallback, useLayoutEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useNotification, usePortal, useWindowSize } from "@coinmeca/ui/hooks";
+import { useMobile, useNotification, usePortal, useWindowSize } from "@coinmeca/ui/hooks";
 import { Account, App } from "@coinmeca/wallet-sdk/types";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 
@@ -13,12 +13,15 @@ import { filter } from "@coinmeca/ui/lib/utils";
 import { Root } from "@coinmeca/ui/lib/style";
 import { Modals, Sidebars } from "containers";
 import { PageLoader } from "hooks/usePageLoader";
+import { useTelegram } from "hooks";
 
 export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader) {
     const router = useRouter();
     const path = usePathname();
 
     const { windowSize } = useWindowSize();
+    const { isMobile } = useMobile();
+    const { telegram, isInApp } = useTelegram();
     const { provider, account, chain, apps } = useCoinmecaWalletProvider();
     const { toasts, addToast } = useNotification();
 
@@ -236,7 +239,32 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
     const side = 56;
     const header = {
         color: colorMap,
-        logo: windowSize?.width > Root.Device.Tablet || isRequest || !isLoad || !account,
+        logo:
+            (windowSize?.width > Root.Device.Tablet
+                ? {
+                      src: require("../assets/coinmeca.svg").default,
+                      width: 128,
+                      height: 48,
+                      style: { marginLeft: provider?.isLocked ? 0 : undefined },
+                  }
+                : false) ||
+            isRequest ||
+            !isLoad ||
+            !account,
+        style: {
+            children: {
+                children: {
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    children: {
+                        maxWidth: provider?.isLocked ? 0 : "100%",
+                        minWidth: "max-content",
+                        transition: ".3s ease",
+                    },
+                },
+            },
+        },
         menu:
             !isRequest && isLoad && account
                 ? {
@@ -338,8 +366,8 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                       {
                                           active: setting === "",
                                           children: (
-                                              <Layouts.Col style={{ padding: "4em" }} reverse fill>
-                                                  <Layouts.Col gap={6}>
+                                              <Layouts.Col style={{ padding: "4em" }} reverse={isInApp || isMobile} fill>
+                                                  <Layouts.Col gap={6} reverse={!isInApp && !isMobile}>
                                                       <Layouts.Col gap={6}>
                                                           <Controls.Button
                                                               align={"left"}

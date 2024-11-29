@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
 import { Contents, Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { format } from "@coinmeca/ui/lib/utils";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
@@ -67,6 +67,14 @@ export default function EthSendTransaction() {
     const {
         data: { maxPriorityFeePerGas, maxFeePerGas },
     } = GetMaxFeePerGas(chain?.rpcUrls[0]);
+
+    const gasFee = useMemo(
+        () => ({
+            raw: gasPrice?.raw ? gasPrice?.raw * (estimateGas?.raw || 1) : 0,
+            format: gasPrice?.format ? gasPrice?.format * (estimateGas?.format || 1) : 0,
+        }),
+        [gasPrice?.format, estimateGas?.format],
+    );
 
     const handleClose = () => {
         if (level < 2) failure(id, "User rejected the request");
@@ -295,7 +303,7 @@ export default function EthSendTransaction() {
                                                             <Elements.Text style={{ flex: "initial" }} fix>
                                                                 {isGasPriceLoading || isEstimateGasLoading
                                                                     ? "~"
-                                                                    : format((gasPrice?.format || 0) * (estimateGas?.format || 0), "currency", {
+                                                                    : format(gasFee.format, "currency", {
                                                                           unit: 9,
                                                                           limit: 12,
                                                                           fix: 9,

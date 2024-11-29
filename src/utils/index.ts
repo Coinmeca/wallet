@@ -67,6 +67,20 @@ export const valid = {
             }),
         );
     },
+    tx: (...tx: ({ [x: string]: string | bigint | undefined } | undefined)[]) => {
+        if (!tx || tx === undefined || tx === null) return false;
+        const validate = (value: string | bigint | undefined) => {
+            return !value || (typeof value === "string" && value?.startsWith("0x") && value?.toString()?.length > 2 && /^0x[0-9a-fA-F]+$/.test(value)) || typeof value === "bigint"
+        }
+        return enable(
+            ...tx?.map((tx: { [x: string]: string | bigint | undefined } | undefined) => {
+                if (!tx || !enable(...Object.values(tx)?.map((t) => validate(t)))) return false;
+                if (!tx?.value && !tx?.data) return false;
+                if ((tx?.to && !valid.address(tx?.to?.toString())) || (tx?.from?.toString() && !valid.address(tx?.from?.toString()))) return false;
+                return true;
+            })
+        )
+    }
 };
 
 export const hex = {

@@ -126,7 +126,7 @@ export default function Page() {
                                                             <Layouts.Col gap={4} align={"center"} fit>
                                                                 <Elements.Text type={"h3"}>Approved</Elements.Text>
                                                                 <Elements.Text size={1} weight={"bold"}>
-                                                                    <Elements.Text opacity={0.6}>Comepete to connect</Elements.Text>{" "}
+                                                                    <Elements.Text opacity={0.6}>Complete to connect</Elements.Text>{" "}
                                                                     <Elements.Text>{account?.name}</Elements.Text>{" "}
                                                                     <Elements.Text opacity={0.6}>({short(account?.address)}) to</Elements.Text>{" "}
                                                                     <Elements.Text>{app?.name}</Elements.Text>{" "}
