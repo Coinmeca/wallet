@@ -16,7 +16,7 @@ interface Contact extends Stage {
 }
 
 export default function Contact(props: Contact) {
-    const { accounts, contact } = useCoinmecaWalletProvider();
+    const { account, accounts, contact } = useCoinmecaWalletProvider();
     const { addToast } = useNotification();
     const [tab, setTab] = useState("wallet");
 
@@ -56,7 +56,7 @@ export default function Contact(props: Contact) {
                     children: (
                         <Layouts.Contents.InnerContent scroll={false}>
                             <Layouts.Col gap={0} style={{ background: "rgba(var(--black),0.45)" }} fill>
-                                <Layouts.Row gap={0} align={"left"} style={{ padding: "0.5em clamp(2em, 5%, 8em)" }}>
+                                <Layouts.Row gap={0} align={"left"} style={{ padding: "0.5em clamp(1em, 2.5%, 4em)" }}>
                                     <Controls.Tab active={tab === "wallet"} onClick={() => setTab("wallet")} fit>
                                         My Wallets
                                     </Controls.Tab>
@@ -71,7 +71,7 @@ export default function Contact(props: Contact) {
                                             active: tab === "wallet",
                                             children: (
                                                 <Layouts.List
-                                                    list={accounts}
+                                                    list={accounts?.filter((a) => a?.address?.toLowerCase() !== account?.address?.toLowerCase())}
                                                     formatter={(accounts: Account[]) => {
                                                         return accounts?.map((a) => ({
                                                             style: { padding: "3em clamp(3em, 5%, 8em)" },
