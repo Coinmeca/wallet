@@ -418,9 +418,9 @@ export default function Main() {
                                                         recipient={recipient}
                                                         onComplete={handleTransfer}
                                                         onBack={() => {
-                                                            // setRecipient(undefined);
-                                                            // setStage({ name: "", level: 1 });
-                                                            handleCancel();
+                                                            setRecipient(undefined);
+                                                            setStage({ name: "", level: 1 });
+                                                            // handleCancel();
                                                         }}
                                                     />
                                                 ),
