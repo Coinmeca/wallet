@@ -44,8 +44,9 @@ const ChainRemoveModal = (props: any) => {
                 <Contents.States.Warn
                     message={
                         <Elements.Text opacity={0.6}>
-                            Are you sure you want to remove this chain's information? The chain's information will be deleted, but its usage history will
-                            remain.
+                            {
+                                "Are you sure you want to remove this chain's information? The chain's information will be deleted, but its usage history will remain."
+                            }
                         </Elements.Text>
                     }
                 />
