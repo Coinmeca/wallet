@@ -1,6 +1,5 @@
 ﻿"use client";
 
-import { useState } from "react";
 import { Contents, Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { Modal } from "@coinmeca/ui/containers";
 import { CoinmecaWalletContextProvider, useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
@@ -39,7 +38,7 @@ const ChainRemoveModal = (props: any) => {
     };
 
     return (
-        <Modal {...props} title={"Manage approvals"} onClose={handleClose} close>
+        <Modal {...props} title={"Remove Chain Info"} onClose={handleClose} close>
             <Layouts.Col gap={2}>
                 <Contents.States.Warn
                     message={

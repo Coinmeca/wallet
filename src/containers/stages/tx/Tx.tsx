@@ -161,7 +161,6 @@ export default function Tx(props: Tx) {
                     children: (
                         <Layouts.Contents.InnerContent scroll={false}>
                             <Layouts.Col gap={2} align={"center"} fill>
-                                {/* Content omitted for brevity */}
                                 <Layouts.Contents.InnerContent padding={[4, 4, 0]}>
                                     <Layouts.Col fill>
                                         <Layouts.Col align={"center"} style={{ flex: 1 }}>
@@ -211,7 +210,7 @@ export default function Tx(props: Tx) {
                                                             : []),
                                                         {
                                                             active: asset?.type === AssetType.ERC20 || !!txHash || !!error,
-                                                            style: { display: "flex", alignItems: "center", justifyContents: "center", overflow: "initial" },
+                                                            style: { display: "flex", alignItems: "center", justifyContent: "center", overflow: "initial" },
                                                             children: (
                                                                 <div
                                                                     style={{
@@ -246,9 +245,11 @@ export default function Tx(props: Tx) {
                                                 />
                                                 <Layouts.Col gap={1} align={"center"}>
                                                     <Layouts.Row gap={1} align={"center"} fit fix>
-                                                        <Elements.Text type={"h6"} opacity={0.6} fix>
-                                                            #
-                                                        </Elements.Text>
+                                                        {asset?.type === AssetType.ERC721 && (
+                                                            <Elements.Text type={"h6"} opacity={0.6} fix>
+                                                                #
+                                                            </Elements.Text>
+                                                        )}
                                                         <Elements.Text type={"h6"} fix>
                                                             {asset?.type === AssetType.ERC20 ? asset?.symbol : asset?.tokenId || ""}
                                                         </Elements.Text>

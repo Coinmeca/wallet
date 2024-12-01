@@ -45,7 +45,7 @@ const timeout = 5000;
 
 export default function EthSendTransaction() {
     const { provider, chain, account } = useCoinmecaWalletProvider();
-    const { getRequest, getRequestById, success, failure, next } = useMessageHandler();
+    const { getRequest, getRequestById, success, failure, next, setCurrent } = useMessageHandler();
 
     const [id, setId] = useState("");
     const [tx, setTx] = useState<Transaction>();
@@ -120,6 +120,7 @@ export default function EthSendTransaction() {
             setTx(params);
             setSigner(provider?.account(params?.from || account?.address));
             setId(request?.id);
+            setCurrent(request?.id);
         }
     }, []);
 

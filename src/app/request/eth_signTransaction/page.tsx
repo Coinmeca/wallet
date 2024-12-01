@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useLayoutEffect, useMemo, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { Contents, Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { Account } from "@coinmeca/wallet-sdk/types";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
@@ -45,7 +45,7 @@ const timeout = 5000;
 
 export default function EthSignTransaction() {
     const { provider, chain, account } = useCoinmecaWalletProvider();
-    const { getRequest, getRequestById, success, failure, next, remove } = useMessageHandler();
+    const { getRequest, getRequestById, success, failure, next, remove, setCurrent } = useMessageHandler();
 
     const [id, setId] = useState("");
     const [tx, setTx] = useState<Transaction>();
@@ -111,6 +111,7 @@ export default function EthSignTransaction() {
             setTx(params);
             setSigner(provider?.account(tx?.from || account?.address));
             setId(request?.id);
+            setCurrent(request?.id);
         }
 
         return () => remove(id);

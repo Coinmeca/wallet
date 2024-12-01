@@ -17,7 +17,7 @@ const timeout = 5000;
 
 export default function Page() {
     const { provider, chain, chains } = useCoinmecaWalletProvider();
-    const { getRequest, success, failure, next } = useMessageHandler();
+    const { getRequest, success, failure, next, setCurrent } = useMessageHandler();
 
     const [id, setId] = useState("");
     const [selectedChain, setSelectedChain] = useState<any>();
@@ -54,6 +54,7 @@ export default function Page() {
         if (request?.request) {
             if (request?.request?.params?.chainId) setNewChain(chains?.find((c) => c?.chainId === request?.request?.params?.chainId));
             setId(request?.id);
+            setCurrent(request?.id);
         }
     }, []);
 

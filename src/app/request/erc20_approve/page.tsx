@@ -13,7 +13,6 @@ import { useMessageHandler } from "hooks";
 import { query } from "api/query";
 import { GetMaxFeePerGas } from "api/onchain";
 import { short } from "utils";
-import { RequestForm } from "contexts/message";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({
@@ -33,7 +32,7 @@ const timeout = 5000;
 
 export default function Page() {
     const { provider, chain, account } = useCoinmecaWalletProvider();
-    const { getRequest, getRequestById, success, failure, next } = useMessageHandler();
+    const { getRequest, getRequestById, success, failure, next, setCurrent } = useMessageHandler();
 
     const [id, setId] = useState("");
     const [tx, setTx] = useState<TransactionParams>();
@@ -114,6 +113,7 @@ export default function Page() {
             setTx(params);
             setSigner(provider?.account(params?.from || account?.address));
             setId(request?.id);
+            setCurrent(request?.id);
         }
     }, []);
 

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useLayoutEffect, useMemo, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { Account, App } from "@coinmeca/wallet-sdk/types";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
@@ -42,7 +42,7 @@ const timeout = 5000;
 
 export default function PersonalSign() {
     const { provider } = useCoinmecaWalletProvider();
-    const { getRequest, getRequestById, success, failure, next } = useMessageHandler();
+    const { getRequest, success, failure, next, setCurrent } = useMessageHandler();
 
     const [id, setId] = useState("");
     const [message, setMessage] = useState<string>();
@@ -94,6 +94,7 @@ export default function PersonalSign() {
                 setMessage(message);
             }
             setId(request?.id);
+            setCurrent(request?.id);
         }
     }, []);
 
