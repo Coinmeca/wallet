@@ -1,5 +1,16 @@
 ﻿import CryptoJS from "crypto-js";
 
+export const requestNameMap: { [key: string]: string } = {
+    erc20_approve: "ERC20 Approve",
+    eth_requestAccounts: "Connect Request",
+    eth_sendTransaction: "Transaction Confirmation",
+    eth_signTransaction: "Transaction Sign Request",
+    personal_sign: "Sign Request",
+    wallet_addEthereumChain: "Add New Ethereum Chain",
+    wallet_switchEthereumChain: "Switch Ethereum Chain",
+    wallet_watchAsset: "Add New Token",
+}
+
 export const camelToTitleCase = (value?: string) => {
     if (!value || !value?.length) return value;
     return value

@@ -17,13 +17,14 @@ export const TelegramProvider: React.FC<{ src?: string; children?: React.ReactNo
     const [user, setUser] = useState<Telegram["WebApp"]["initDataUnsafe"]["user"]>();
 
     const onLoad = () => {
-        const telegram = typeof window !== "undefined" ? (window as any).Telegram?.WebApp || (window as any).Telegram?.WebView : undefined;
+        const telegram: Telegram["WebApp"] = typeof window !== "undefined" ? (window as any).Telegram?.WebApp || (window as any).Telegram?.WebView : undefined;
         if (telegram) {
             telegram.ready();
             // Assuming BiometricManager exists and has an init method
             if (telegram.BiometricManager) telegram.BiometricManager.init();
+            telegram?.enableVerticalSwipes();
             setTelegram(telegram);
-            setUser(telegram.initDataUnsafe?.user || null);
+            setUser(telegram.initDataUnsafe?.user);
         }
     };
 

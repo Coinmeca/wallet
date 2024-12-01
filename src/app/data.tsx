@@ -7,13 +7,15 @@ import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useMobile, useNotification, usePortal, useWindowSize } from "@coinmeca/ui/hooks";
 import { Account, App } from "@coinmeca/wallet-sdk/types";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
+import { filter, format } from "@coinmeca/ui/lib/utils";
+import { Root } from "@coinmeca/ui/lib/style";
 
 import Coinmeca from "assets/coinmeca.svg";
-import { filter } from "@coinmeca/ui/lib/utils";
-import { Root } from "@coinmeca/ui/lib/style";
 import { Modals, Sidebars } from "containers";
 import { PageLoader } from "hooks/usePageLoader";
-import { useTelegram } from "hooks";
+import { useMessageHandler, useTelegram } from "hooks";
+import { MessageProps } from "contexts/message";
+import { requestNameMap } from "utils";
 
 export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader) {
     const router = useRouter();
@@ -21,17 +23,17 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
 
     const { windowSize } = useWindowSize();
     const { isMobile } = useMobile();
-    const { telegram, isInApp } = useTelegram();
+    const { isInApp } = useTelegram();
     const { provider, account, chain, apps } = useCoinmecaWalletProvider();
+    const { messages, count, current, failure, remove } = useMessageHandler();
     const { toasts, addToast } = useNotification();
 
+    const [isClient, setIsClient] = useState(false);
     const [value, setValue] = useState<number>(0);
     const [tab, setTab] = useState<string>("icon");
     const [active, setActive] = useState(false);
     const [sideMenu, setSideMenu] = useState("");
     const [setting, setSetting] = useState("");
-
-    const [isClient, setIsClient] = useState(false);
 
     const [appFilter, setAppFilter] = useState<string>();
 
@@ -130,24 +132,10 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                 children: [
                                     {
                                         gap: 2,
-                                        // style: selected ? { opacity: 0.3 } : {},
-                                        // onClick: () => handleAccountChange(a),
                                         children: [
                                             {
                                                 fit: true,
-                                                children: (
-                                                    <Image
-                                                        width={32}
-                                                        height={32}
-                                                        // color={colorMap}
-                                                        // scale={1.25}
-                                                        // size={2.5}
-                                                        // display={6}
-                                                        // ellipsis={" ... "}
-                                                        src={app?.logo || ""}
-                                                        alt={app?.name || ""}
-                                                    />
-                                                ),
+                                                children: <Image width={32} height={32} src={app?.logo || ""} alt={app?.name || ""} />,
                                             },
                                             {
                                                 gap: 0,
@@ -176,7 +164,6 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                         fit: true,
                                         style: { pointerEvents: "initial", maxWitdth: "max-content" },
                                         children: [
-                                            <>{/* <Controls.Button icon={"copy"} onClick={() => handleCopyAddress(a)} /> */}</>,
                                             <>
                                                 <Controls.Dropdown
                                                     type={"more"}
@@ -197,7 +184,6 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                                     fix
                                                     fit
                                                 />
-                                                {/* <Controls.Button icon={"more"} /> */}
                                             </>,
                                         ],
                                     },
@@ -256,6 +242,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
     const header = {
         color: colorMap,
         logo:
+            isRequest ||
             (windowSize?.width > Root.Device.Tablet
                 ? {
                       src: require("../assets/coinmeca.svg").default,
@@ -264,7 +251,6 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                       style: { marginLeft: provider?.isLocked ? 0 : undefined },
                   }
                 : false) ||
-            isRequest ||
             !isLoad ||
             !account,
         style: {
@@ -274,7 +260,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                     alignItems: "center",
                     justifyContent: "center",
                     children: {
-                        maxWidth: provider?.isLocked ? 0 : "100%",
+                        maxWidth: provider?.isLocked || isRequest ? 0 : "100%",
                         minWidth: "max-content",
                         transition: ".3s ease",
                     },
@@ -309,12 +295,28 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                   }
                 : undefined,
         side:
-            !isRequest && isLoad && account
+            isLoad && account
                 ? {
                       width: side - (responsive ? 8 : 5),
                       active: true,
                       style: !responsive ? { paddingRight: "1em" } : undefined,
-                      children: (
+                      children: isRequest ? (
+                          <>
+                              <Layouts.Row fit />
+                              <Layouts.Row gap={0} align={"right"}>
+                                  {count > 1 && (
+                                      <Controls.Tab
+                                          active={sideMenu === "requests"}
+                                          onClick={() => setSideMenu(sideMenu === "requests" ? "" : "requests")}
+                                          show={"tablet"}
+                                          toggle
+                                          fit>
+                                          <Elements.Icon scale={0.666} icon={"bell"} count={count - 1} />
+                                      </Controls.Tab>
+                                  )}
+                              </Layouts.Row>
+                          </>
+                      ) : (
                           <>
                               <Layouts.Row fit>
                                   {account?.address && (
@@ -370,8 +372,165 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                       ),
                   }
                 : undefined,
-        panels:
-            responsive && !isRequest && isLoad
+        panels: isLoad
+            ? isRequest
+                ? [
+                      {
+                          active: sideMenu === "requests",
+                          children: (
+                              <Layouts.Contents.InnerContent>
+                                  {count > 1 ? (
+                                      <Layouts.List
+                                          list={messages}
+                                          formatter={(messages: MessageProps[]) =>
+                                              messages?.length &&
+                                              messages?.map((m) => {
+                                                  const date = (format(m?.time, "date") as string).split(" ");
+                                                  return {
+                                                      onClick: current !== m?.id && (() => {}),
+                                                      style: {
+                                                          padding: responsive ? "2.5em clamp(2em, 5%, 8em)" : "2em 3em",
+                                                          ...(current === m?.id && { background: "transparent", pointerEvents: "none" }),
+                                                      },
+                                                      motion: {
+                                                          initial: { scale: 1, opacity: 0 },
+                                                          aniamte: { scale: 1, opacity: 1, transition: { staggerChildren: 0.1 } },
+                                                          exit: { scale: 0.9, opacity: 0, transition: { staggerChildren: 0.1 } },
+                                                      },
+                                                      children: [
+                                                          [
+                                                              [
+                                                                  {
+                                                                      style: { overflow: "hidden", ...(current === m?.id ? { opacity: 0.3 } : {}) },
+                                                                      onClick: () => {
+                                                                          router.push(`/request/${m?.request?.method}`);
+                                                                          setSideMenu("");
+                                                                      },
+                                                                      children: [
+                                                                          [
+                                                                              {
+                                                                                  gap: 0.5,
+                                                                                  children: [
+                                                                                      [
+                                                                                          <>
+                                                                                              <Elements.Text fix>
+                                                                                                  {requestNameMap?.[
+                                                                                                      m?.request?.method as keyof typeof requestNameMap
+                                                                                                  ] || m?.request?.method}
+                                                                                              </Elements.Text>
+                                                                                          </>,
+                                                                                      ],
+                                                                                      [
+                                                                                          [
+                                                                                              ...(m?.request?.app?.name && m?.request?.app?.name !== ""
+                                                                                                  ? [
+                                                                                                        {
+                                                                                                            gap: 0.5,
+                                                                                                            children: [
+                                                                                                                {
+                                                                                                                    fit: true,
+                                                                                                                    children: (
+                                                                                                                        <>
+                                                                                                                            {m?.request?.app?.logo && (
+                                                                                                                                <Elements.Avatar
+                                                                                                                                    size={2}
+                                                                                                                                    img={m?.request?.app?.logo}
+                                                                                                                                    style={{
+                                                                                                                                        width: "max-content",
+                                                                                                                                    }}
+                                                                                                                                />
+                                                                                                                            )}
+                                                                                                                        </>
+                                                                                                                    ),
+                                                                                                                },
+                                                                                                                <>
+                                                                                                                    <Elements.Text
+                                                                                                                        type={"desc"}
+                                                                                                                        weight={"bold"}
+                                                                                                                        fix>
+                                                                                                                        {m?.request?.app?.name}
+                                                                                                                    </Elements.Text>
+                                                                                                                </>,
+                                                                                                            ],
+                                                                                                        },
+                                                                                                    ]
+                                                                                                  : []),
+                                                                                          ],
+                                                                                      ],
+                                                                                  ],
+                                                                              },
+                                                                              {
+                                                                                  fit: true,
+                                                                                  children: [
+                                                                                      [
+                                                                                          {
+                                                                                              gap: 0,
+                                                                                              fit: true,
+                                                                                              align: "right",
+                                                                                              children: [
+                                                                                                  <>
+                                                                                                      <Elements.Text
+                                                                                                          type={"desc"}
+                                                                                                          align={"right"}
+                                                                                                          height={0}
+                                                                                                          fit>
+                                                                                                          {date[0]}
+                                                                                                      </Elements.Text>
+                                                                                                  </>,
+                                                                                                  <>
+                                                                                                      <Elements.Text
+                                                                                                          type={"desc"}
+                                                                                                          align={"right"}
+                                                                                                          height={0}
+                                                                                                          fit>
+                                                                                                          {date[1]}
+                                                                                                      </Elements.Text>
+                                                                                                  </>,
+                                                                                              ],
+                                                                                          },
+                                                                                      ],
+                                                                                  ],
+                                                                              },
+                                                                          ],
+                                                                      ],
+                                                                  },
+                                                                  ...(current !== m?.id
+                                                                      ? [
+                                                                            {
+                                                                                fit: true,
+                                                                                style: { pointerEvents: "initial", maxWitdth: "max-content" },
+                                                                                children: [
+                                                                                    <>
+                                                                                        <Controls.Button
+                                                                                            icon={"x"}
+                                                                                            onClick={() => {
+                                                                                                failure(m?.id, "User rejected this request.");
+                                                                                                remove(m?.id);
+                                                                                                if (count === 2) setSideMenu("");
+                                                                                            }}
+                                                                                        />
+                                                                                    </>,
+                                                                                ],
+                                                                            },
+                                                                        ]
+                                                                      : []),
+                                                              ],
+                                                          ],
+                                                      ],
+                                                  };
+                                              })
+                                          }
+                                      />
+                                  ) : (
+                                      <Layouts.Col align={"center"} fill>
+                                          <Elements.Text type={"desc"}>There is no more requests.</Elements.Text>
+                                      </Layouts.Col>
+                                  )}
+                              </Layouts.Contents.InnerContent>
+                          ),
+                      },
+                  ]
+                : responsive
                 ? [
                       ...sideContents,
                       {
@@ -464,7 +623,8 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                           ),
                       },
                   ]
-                : undefined,
+                : undefined
+            : undefined,
     };
 
     const sidebars =

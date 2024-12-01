@@ -7,7 +7,6 @@ import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 
 import { useMessageHandler } from "hooks";
 import { short } from "utils";
-import { RequestForm } from "contexts/message";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({method: 'eth_requestAccounts'})
@@ -18,7 +17,7 @@ const timeout = 5000;
 
 export default function Page() {
     const { provider, account } = useCoinmecaWalletProvider();
-    const { getRequest, getRequestById, success, failure, next } = useMessageHandler();
+    const { getRequest, getRequestById, success, failure, next, setCurrent } = useMessageHandler();
 
     const [id, setId] = useState("");
     const [level, setLevel] = useState(0);
@@ -48,7 +47,9 @@ export default function Page() {
     };
 
     useLayoutEffect(() => {
-        setId(getRequest(method)?.id);
+        const id = getRequest(method)?.id;
+        setId(id);
+        setCurrent(id);
     }, []);
 
     return app ? (

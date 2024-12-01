@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useLayoutEffect, useMemo, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { format } from "@coinmeca/ui/lib/utils";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
@@ -16,7 +16,7 @@ const timeout = 5000;
 
 export default function Page() {
     const { provider } = useCoinmecaWalletProvider();
-    const { getRequest, success, failure, next } = useMessageHandler();
+    const { getRequest, success, failure, next, setCurrent } = useMessageHandler();
 
     const [id, setId] = useState("");
     const [data, setData] = useState<any>();
@@ -229,6 +229,7 @@ export default function Page() {
                 }
             }
             setId(request?.id);
+            setCurrent(request?.id);
         }
     }, []);
 

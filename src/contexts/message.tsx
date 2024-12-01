@@ -20,6 +20,7 @@ export interface MessageProps {
     id: string;
     strategy: MessageStrategy | undefined;
     request: MessageRequest;
+    time: number;
 }
 
 export interface MessageHandlerProps {
@@ -35,6 +36,8 @@ export interface MessageHandlerProps {
     next: (id: string) => void;
     prev: (id: string) => void;
     remove: (id: string) => void;
+    current: string;
+    setCurrent: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const target = "coinmeca-wallet";
@@ -63,6 +66,7 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
     const [portal, setPortal] = useState<Window | undefined>();
     const [messages, setMessages] = useState<MessageProps[]>([]);
     const [strategy, setStrategy] = useState<MessageStrategy>();
+    const [current, setCurrent] = useState<string>("");
 
     const isPopup = useMemo(() => strategy === "popup", [strategy]);
     const isProxy = useMemo(() => strategy === "proxy", [strategy]);
@@ -79,8 +83,6 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
                 console.log(event);
                 if (event?.data && (!event.data.result || !event.data.close || !event.data.error) && event?.data?.target === "coinmeca-wallet") {
                     const { id, request } = event.data;
-
-                    console.log("received", event.data);
 
                     if (!messages?.find((m) => m?.id?.toLowerCase().trim() === id?.toLowerCase().trim())) {
                         if (!strategy) setStrategy(event?.data?.strategy);
@@ -108,7 +110,7 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
             };
 
             window.addEventListener("message", messageHandler);
-            // return () => window.removeEventListener("message", messageHandler);
+            return () => window.removeEventListener("message", messageHandler);
         }
     }, [portal, provider]);
 
@@ -138,6 +140,7 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
         (id: string, result: any) => {
             const message = messages?.find((m) => m?.id === id);
             if (message) {
+                remove(id);
                 portal?.postMessage({ target, id, result, method: message?.request.method, close: count === 1 }, "*");
                 if (isProxy) portal?.document?.getElementById(`coinmeca-wallet-proxy-${id}`)?.remove();
             }
@@ -149,6 +152,7 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
         (id: string, error: any) => {
             const message = messages?.find((m) => m?.id === id);
             if (message) {
+                remove(id);
                 portal?.postMessage({ target, id, error, method: message?.request.method, close: true }, "*");
                 if (isProxy) portal?.document?.getElementById(`coinmeca-wallet-proxy-${id}`)?.remove();
             }
@@ -157,24 +161,22 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
     );
 
     const close = () => {
-        if (telegram) telegram?.close();
-        window?.close();
+        if (portal) {
+            if (telegram) telegram?.close();
+            window?.close();
+        } else router.push("/");
     };
 
     const next = useCallback(
         (id: string) => {
             if (isPopup) {
                 if (count > 1) {
-                    const next = messages[(messages?.findIndex((m) => m?.id === id) + 1) % messages.length];
-                    console.log("stacked", { messages, next });
-                    if (next?.id !== id) {
-                        router.push(`/request/${next?.request?.method}`);
-                    }
-                    //  else close();
-                }
-                //  else close();
+                    const next = messages[(messages?.findIndex((m) => m?.id === id) + 1) % messages.length] || messages?.[0];
+                    if (next.id !== id) router.push(`/request/${next?.request?.method}`);
+                    else close();
+                } else close();
             }
-            // if (!strategy) close();
+            if (!strategy) close();
         },
         [messages],
     );
@@ -183,8 +185,8 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
         (id: string) => {
             if (isPopup) {
                 if (count > 1) {
-                    const prev = messages[(messages?.findIndex((m) => m?.id === id) - 1 + messages.length) % messages.length];
-                    if (prev?.id !== id) router.push(`/request/${prev?.request?.method}`);
+                    const prev = messages[(messages?.findIndex((m) => m?.id === id) - 1 + messages.length) % messages.length] || messages?.[0];
+                    if (prev && prev?.id !== id) router.push(`/request/${prev?.request?.method}`);
                     else close();
                 } else close();
             }
@@ -210,6 +212,8 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
                 next,
                 prev,
                 remove,
+                current,
+                setCurrent,
             }}>
             {children}
         </MessageHandlerContext.Provider>

@@ -6,7 +6,6 @@ import { Parts } from "@coinmeca/ui/index";
 import { format, parseNumber } from "@coinmeca/ui/lib/utils";
 import { Asset } from "types";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
-import { AnimatePresence, motion } from "framer-motion";
 
 interface Amount {
     asset?: Asset;
@@ -31,11 +30,15 @@ export default function Amount(props: Amount) {
 
     const amount = useMemo(() => {
         if (props?.amount) {
-            if (props.amount !== "" && typeof max === "number" && parseNumber(props?.amount) >= max) return max;
-            const decimals = props?.asset?.decimals || 0;
-            const number = props?.amount?.toString()?.split(".");
-            if (number?.[1]?.length > decimals) return [...(number[0] || "0"), ".", ...number[1]?.slice(0, decimals)].join("");
-            return props?.amount;
+            let amt = props?.amount;
+            if (typeof max === "number" && props?.amount !== "" && parseNumber(props?.amount) >= max) amt = max;
+            else {
+                const decimals = props?.asset?.decimals || 0;
+                const number = amt?.toString()?.split(".")?.slice(0, 2);
+                console.log(amt, { number });
+                if (number?.[1]?.length > decimals) amt = [...(number[0] || "0"), ".", ...number[1]?.slice(0, decimals)].join("");
+            }
+            return format(amt, "currency");
         } else return undefined;
     }, [props?.amount, max]);
 
@@ -45,7 +48,6 @@ export default function Amount(props: Amount) {
     }, [amount, max]);
 
     const condition = useMemo(() => amount && amount !== "" && parseNumber(amount) > min, [amount]);
-
     const fontSize = useMemo(() => {
         const size = (100 / (amount?.toString().length || 1)) * 1.5;
         return `clamp(1.25em, ${size > 8 ? 8 : size < 4 ? 4 : size}vw, 750%)`;
@@ -64,7 +66,7 @@ export default function Amount(props: Amount) {
     };
 
     const handleChange = (v?: string) => {
-        props?.onChange?.(!v || v === "" ? undefined : v);
+        props?.onChange?.(!v || v === "" ? undefined : format(v, "number"));
     };
 
     return (
@@ -108,36 +110,27 @@ export default function Amount(props: Amount) {
                                         </Layouts.Row>
                                         <Layouts.Col gap={0} align={"center"}>
                                             <Layouts.Row gap={0} style={{ opacity: amount?.toString()?.length ? 1 : 0.6 }} fit fix>
-                                                <AnimatePresence mode="popLayout">
-                                                    {format(amount || 0, "currency")
-                                                        ?.split("")
-                                                        ?.map((letter, i) => (
-                                                            <motion.span
-                                                                key={i}
-                                                                layoutId={`number-${i}`}
-                                                                initial={{ scale: 1, x: 0, z: 0, y: "50%", opacity: 0 }}
-                                                                animate={{ scale: 1, x: 0, z: 0, y: 0, opacity: 1 }}
-                                                                exit={{ scale: 1, x: 0, z: 0, y: "-50%", opacity: 0 }}
-                                                                transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-                                                                style={{
-                                                                    fontSize,
-                                                                    fontWeight: "bolder",
-                                                                }}
-                                                                layout>
-                                                                {letter === " " ? "\u00A0" : letter}
-                                                            </motion.span>
-                                                        ))}
-                                                </AnimatePresence>
+                                                <Elements.TextMotion
+                                                    type={"strong"}
+                                                    style={{ fontSize }}
+                                                    motion={{
+                                                        initial: {
+                                                            translateY: "30%",
+                                                            opacity: 0,
+                                                        },
+                                                        animate: {
+                                                            translateY: 0,
+                                                            opacity: 1,
+                                                        },
+                                                        exit: {
+                                                            translateY: "-30%",
+                                                            opacity: 0,
+                                                        },
+                                                        transition: { duration: 0.3, ease: [0.25, 1, 0.25, 1] },
+                                                    }}>
+                                                    {amount || "0"}
+                                                </Elements.TextMotion>
                                             </Layouts.Row>
-
-                                            {/* <Elements.Text
-                                                height={0}
-                                                style={{
-                                                    fontSize,
-                                                }}
-                                                opacity={amount?.toString()?.length || 0.6}>
-                                                {format(amount || 0, "currency")}
-                                            </Elements.Text> */}
                                             <Controls.Tab active={isMax} scale={1.25} style={{ marginTop: "-0.5em" }} onClick={handleMax} fit>
                                                 {isMax ? (
                                                     "MAX"
