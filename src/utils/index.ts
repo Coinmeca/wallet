@@ -9,7 +9,7 @@ export const requestNameMap: { [key: string]: string } = {
     wallet_addEthereumChain: "Add New Ethereum Chain",
     wallet_switchEthereumChain: "Switch Ethereum Chain",
     wallet_watchAsset: "Add New Token",
-}
+};
 
 export const camelToTitleCase = (value?: string) => {
     if (!value || !value?.length) return value;
@@ -81,17 +81,21 @@ export const valid = {
     tx: (...tx: ({ [x: string]: string | bigint | undefined } | undefined)[]) => {
         if (!tx || tx === undefined || tx === null) return false;
         const validate = (value: string | bigint | undefined) => {
-            return !value || (typeof value === "string" && value?.startsWith("0x") && value?.toString()?.length > 2 && /^0x[0-9a-fA-F]+$/.test(value)) || typeof value === "bigint"
-        }
+            return (
+                !value ||
+                (typeof value === "string" && value?.startsWith("0x") && value?.toString()?.length > 2 && /^0x[0-9a-fA-F]+$/.test(value)) ||
+                typeof value === "bigint"
+            );
+        };
         return enable(
             ...tx?.map((tx: { [x: string]: string | bigint | undefined } | undefined) => {
                 if (!tx || !enable(...Object.values(tx)?.map((t) => validate(t)))) return false;
                 if (!tx?.value && !tx?.data) return false;
                 if ((tx?.to && !valid.address(tx?.to?.toString())) || (tx?.from?.toString() && !valid.address(tx?.from?.toString()))) return false;
                 return true;
-            })
-        )
-    }
+            }),
+        );
+    },
 };
 
 export const hex = {
@@ -351,7 +355,11 @@ export const loadStorage = (prefix: string, storage?: CloudStorage | Storage, is
         }
     },
     clear: () => {
-        return isTelegram ? storage?.removeItems(storage?.getKeys()?.map((k: string) => encrypt(k, salt)) as any) : (storage as Storage)?.clear();
+        try {
+            return isTelegram ? storage?.removeItems(storage?.getKeys()?.map((k: string) => encrypt(k, salt)) as any) : (storage as Storage)?.clear();
+        } catch (e) {
+            console.error(e);
+        }
     },
 });
 

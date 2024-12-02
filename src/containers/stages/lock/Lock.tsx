@@ -7,12 +7,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { usePortal } from "@coinmeca/ui/hooks";
 import { Modal } from "@coinmeca/ui/containers";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 
 export default function Lock(props?: { onUnlock?: Function }) {
     const width = 64;
     const length = 6;
     const router = useRouter();
 
+    const { provider } = useCoinmecaWalletProvider();
     const [code, setCode] = useState<string>("");
     const [error, setError] = useState({ state: false, message: "" });
 
@@ -33,7 +35,18 @@ export default function Lock(props?: { onUnlock?: Function }) {
                 buttonArea={
                     <>
                         <Controls.Button onClick={closeResetConfirm}>NO</Controls.Button>
-                        <Controls.Button onClick={() => router.push("/reset")}>YES</Controls.Button>
+                        <Controls.Button
+                            onClick={() => {
+                                try {
+                                    provider?.reset();
+                                    router.push("/welcome");
+                                    closeResetConfirm();
+                                } catch (e) {
+                                    console.log(e);
+                                }
+                            }}>
+                            YES
+                        </Controls.Button>
                     </>
                 }
                 onClose={closeResetConfirm}
