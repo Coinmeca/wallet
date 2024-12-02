@@ -132,10 +132,10 @@ export default function Tx(props: Tx) {
             .then((result) => {
                 switch (asset?.type) {
                     case AssetType.ERC20:
-                        if (asset?.address && provider?.isInternalAccount(recipient)) provider?.addFungibleAsset(asset.address, recipient);
+                        if (asset?.address && provider?.exist(recipient)) provider?.addFungibleAsset(asset.address, recipient);
                         break;
                     case AssetType.ERC721:
-                        if (asset?.address && asset?.tokenId && provider?.isInternalAccount(recipient)) {
+                        if (asset?.address && asset?.tokenId && provider?.exist(recipient)) {
                             provider?.removeNonFungibleAsset(asset.address, asset.tokenId, account?.address);
                             provider?.addNonFungibleAsset(asset.address, asset.tokenId, recipient);
                         }

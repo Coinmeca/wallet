@@ -5,15 +5,22 @@ import { Stage } from "..";
 import { useRouter } from "next/navigation";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { useMessageHandler } from "hooks";
+import { useNotification } from "@coinmeca/ui/hooks";
 
 export default function Import({ setStage }: Stage) {
     const router = useRouter();
     const { provider } = useCoinmecaWalletProvider();
     const { count, messages } = useMessageHandler();
+    const { addToast } = useNotification();
 
     const handleImportWallet = (seed: string) => {
-        if (seed.length === 64 && provider?.import(seed)) {
-            if (provider?.accounts?.length) router.push(`/${count ? `request/${messages?.[0]?.request?.method}` : ""}`);
+        if (seed.length === 64) {
+            try {
+                if (provider?.import(seed)) router.push(`/${count ? `request/${messages?.[0]?.request?.method}` : ""}`);
+                else addToast({ title: "Import Account", message: "The account is already imported." });
+            } catch (error) {
+                addToast({ title: "Import Account", message: "The provided information for importing a new account is invalid." });
+            }
         } else new Error("Something wrong while in importing address");
     };
 
