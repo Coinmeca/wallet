@@ -1,15 +1,15 @@
 ﻿"use client";
 
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useNotification, usePortal, useWindowSize } from "@coinmeca/ui/hooks";
+import { useNotification, usePortal } from "@coinmeca/ui/hooks";
 import { filter, format } from "@coinmeca/ui/lib/utils";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { Account } from "@coinmeca/wallet-sdk/types";
 import { useQueries } from "@tanstack/react-query";
 import { query } from "api/onchain/query";
 import { Modals } from "containers";
-import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useCallback, useMemo, useState } from "react";
 import { short } from "utils";
 
 export default function Accounts({
@@ -25,6 +25,9 @@ export default function Accounts({
     isMobile?: boolean;
     onClose?: Function;
 }) {
+    const path = usePathname();
+    const isDisplay = useMemo(() => !path?.startsWith("/welcome") && !path?.startsWith("/create"), [path]);
+
     const { provider, chain, account, accounts } = useCoinmecaWalletProvider();
     const { addToast } = useNotification();
 
@@ -220,23 +223,25 @@ export default function Accounts({
         <Layouts.Col gap={0} fill>
             {search}
             <Layouts.List list={filter(accounts, searchFilter)} formatter={accountlist} />
-            <Layouts.Col style={{ padding: "4em", paddingTop: "0" }} fit>
-                {accounts?.filter((a) => a?.disable)?.length ? (
-                    <Controls.Button iconLeft={showDisabledAccount ? "hide" : "show"} onClick={() => setShowDisabledAccount(!showDisabledAccount)}>
-                        {showDisabledAccount ? "Hide" : "Show"} disabled accounts
+            {isDisplay && (
+                <Layouts.Col style={{ padding: "4em", paddingTop: "0" }} fit>
+                    {accounts?.filter((a) => a?.disable)?.length ? (
+                        <Controls.Button iconLeft={showDisabledAccount ? "hide" : "show"} onClick={() => setShowDisabledAccount(!showDisabledAccount)}>
+                            {showDisabledAccount ? "Hide" : "Show"} disabled accounts
+                        </Controls.Button>
+                    ) : (
+                        <></>
+                    )}
+                    <Controls.Button
+                        type={"line"}
+                        iconLeft={"plus-small-bold"}
+                        onClick={() => {
+                            router.push("/create");
+                        }}>
+                        Create or Import wallet
                     </Controls.Button>
-                ) : (
-                    <></>
-                )}
-                <Controls.Button
-                    type={"line"}
-                    iconLeft={"plus-small-bold"}
-                    onClick={() => {
-                        router.push("/create");
-                    }}>
-                    Create or Import wallet
-                </Controls.Button>
-            </Layouts.Col>
+                </Layouts.Col>
+            )}
         </Layouts.Col>
     );
 }

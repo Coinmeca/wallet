@@ -36,7 +36,7 @@ export default function Add(props: Add) {
 }
 
 function NonFungibleAddModal(props: Add) {
-    const { provider, chain, account } = useCoinmecaWalletProvider();
+    const { provider, account } = useCoinmecaWalletProvider();
 
     const [validate, setValidate] = useState<{ address?: Validate; id?: Validate } | undefined>({ address: { state: false }, id: { state: false } });
 
