@@ -265,16 +265,16 @@ export const decrypt = (data?: string | null, salt?: string): string | undefined
 };
 
 export const format = (value?: any): string | undefined => {
-    if (typeof value === "undefined") return value;
+    if (!value || typeof value === "undefined") return value;
     if (typeof value === "boolean" || typeof value === "number") return value.toString();
     return JSON.stringify(value);
 };
 
 export const parse = (value?: string): any => {
-    if (typeof value === "undefined") return value;
+    if (!value || typeof value === "undefined") return value;
     if (value === "true" || value === "false") return value === "true";
-    else if (/^[0-9]*\.[0-9]+$/.test(value)) return parseFloat(value);
-    else return JSON.parse(value);
+    if (/^[0-9]*\.[0-9]+$/.test(value)) return parseFloat(value);
+    return JSON.parse(value);
 };
 
 export interface StorageController {

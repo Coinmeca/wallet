@@ -80,7 +80,6 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
             portal.postMessage({ state: "ready" }, "*");
 
             const messageHandler = (event: MessageEvent) => {
-                console.log(event);
                 if (event?.data && (!event.data.result || !event.data.close || !event.data.error) && event?.data?.target === "coinmeca-wallet") {
                     const { id, request } = event.data;
 
