@@ -35,6 +35,7 @@ export interface MessageHandlerProps {
     count: number;
     next: (id: string) => void;
     prev: (id: string) => void;
+    close: () => void;
     remove: (id: string) => void;
     current: string;
     setCurrent: React.Dispatch<React.SetStateAction<string>>;
@@ -210,6 +211,7 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
                 count,
                 next,
                 prev,
+                close,
                 remove,
                 current,
                 setCurrent,

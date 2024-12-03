@@ -2,7 +2,7 @@
 
 export const requestNameMap: { [key: string]: string } = {
     erc20_approve: "ERC20 Approve",
-    eth_requestAccounts: "Connect Request",
+    eth_requestAccounts: "Connection Request",
     eth_sendTransaction: "Transaction Confirmation",
     eth_signTransaction: "Transaction Sign Request",
     personal_sign: "Sign Request",

@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import Image from "next/image";
-import { useLayoutEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 
@@ -16,8 +16,10 @@ const method = "eth_requestAccounts";
 const timeout = 5000;
 
 export default function Page() {
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
     const { provider, account } = useCoinmecaWalletProvider();
-    const { getRequest, getRequestById, success, failure, next, setCurrent } = useMessageHandler();
+    const { getRequest, getRequestById, success, failure, next, count, close, setCurrent } = useMessageHandler();
 
     const [id, setId] = useState("");
     const [level, setLevel] = useState(0);
@@ -27,7 +29,8 @@ export default function Page() {
 
     const handleClose = () => {
         if (level === 0) failure(id, "User rejected the request");
-        next(id);
+        close();
+        // next(id);
     };
 
     const handleConnect = async () => {
@@ -36,7 +39,7 @@ export default function Page() {
             .then((result) => {
                 success(id, result);
                 setLevel(1);
-                setTimeout(handleClose, timeout);
+                if (!count) timeoutRef.current = setTimeout(handleClose, timeout);
             })
             .catch((error) => {
                 console.log(error);
@@ -45,6 +48,13 @@ export default function Page() {
                 setLevel(2);
             });
     };
+
+    useEffect(() => {
+        if (count && timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+            timeoutRef.current = null;
+        }
+    }, [count]);
 
     useLayoutEffect(() => {
         const id = getRequest(method)?.id;
@@ -175,9 +185,26 @@ export default function Page() {
                                                 active: level > 0,
                                                 children: (
                                                     <Layouts.Row gap={2}>
-                                                        <Controls.Button type={"glass"} onClick={handleClose}>
+                                                        <Controls.Button type={count ? undefined : "glass"} onClick={handleClose}>
                                                             Close
                                                         </Controls.Button>
+                                                        {count && (
+                                                            <div
+                                                                style={{
+                                                                    flex: 2,
+                                                                    maxWidth: 0,
+                                                                    opacity: 0,
+                                                                    marginLeft: "-2em",
+                                                                    pointerEvents: "none",
+                                                                    overflow: "hidden",
+                                                                    transition: ".3s ease",
+                                                                    ...(count && { maxWidth: "100vh", marginLeft: 0, opacity: 1, pointerEvents: "initial" }),
+                                                                }}>
+                                                                <Controls.Button type={"glass"} onClick={() => next(id)} style={{ width: "100%" }}>
+                                                                    See Next Request
+                                                                </Controls.Button>
+                                                            </div>
+                                                        )}
                                                     </Layouts.Row>
                                                 ),
                                             },
@@ -231,7 +258,7 @@ export default function Page() {
                 <Layouts.Col gap={4} align={"center"} style={{ padding: "4em", paddingTop: 0 }}>
                     <Layouts.Row gap={2}>
                         <Controls.Button type={"glass"} onClick={handleClose}>
-                            Close
+                            Cancel
                         </Controls.Button>
                     </Layouts.Row>
                 </Layouts.Col>

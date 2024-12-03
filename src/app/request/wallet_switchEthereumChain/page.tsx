@@ -17,7 +17,7 @@ const timeout = 5000;
 
 export default function Page() {
     const { provider, chain, chains } = useCoinmecaWalletProvider();
-    const { getRequest, success, failure, next, setCurrent } = useMessageHandler();
+    const { getRequest, success, failure, next, count, close, setCurrent } = useMessageHandler();
 
     const [id, setId] = useState("");
     const [selectedChain, setSelectedChain] = useState<any>();
@@ -28,7 +28,8 @@ export default function Page() {
 
     const handleClose = () => {
         if (level < 2) failure(id, "User rejected the request");
-        next(id);
+        // next(id);
+        close();
     };
 
     const handleSwitchChain = async () => {
@@ -38,7 +39,7 @@ export default function Page() {
             .then((result) => {
                 success(id, result);
                 setLevel(1);
-                setTimeout(handleClose, timeout);
+                if (!count) setTimeout(handleClose, timeout);
             })
             .catch((error) => {
                 console.log(error);
@@ -214,9 +215,21 @@ export default function Page() {
                                 </Layouts.Contents.InnerContent>
                                 <Layouts.Col gap={4} align={"center"} style={{ padding: "4em", paddingTop: 0 }}>
                                     <Layouts.Row gap={2}>
-                                        <Controls.Button type={"glass"} onClick={handleClose}>
+                                        <Controls.Button type={count ? undefined : "glass"} onClick={handleClose}>
                                             Close
                                         </Controls.Button>
+                                        {count && (
+                                            <div
+                                                style={{
+                                                    ...(count ? { maxWidth: "100vh" } : { maxWidth: 0, marginLeft: "-2em", pointerEvents: "none" }),
+                                                    flex: 2,
+                                                    transition: ".3s ease",
+                                                }}>
+                                                <Controls.Button type={"glass"} onClick={() => next(id)} style={{ width: "100%" }}>
+                                                    See Next Request
+                                                </Controls.Button>
+                                            </div>
+                                        )}
                                     </Layouts.Row>
                                 </Layouts.Col>
                             </Layouts.Col>

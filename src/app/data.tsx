@@ -459,38 +459,38 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                                                                       ],
                                                                                   ],
                                                                               },
-                                                                              {
-                                                                                  fit: true,
-                                                                                  children: [
-                                                                                      [
-                                                                                          {
-                                                                                              gap: 0,
-                                                                                              fit: true,
-                                                                                              align: "right",
-                                                                                              children: [
-                                                                                                  <>
-                                                                                                      <Elements.Text
-                                                                                                          type={"desc"}
-                                                                                                          align={"right"}
-                                                                                                          height={0}
-                                                                                                          fit>
-                                                                                                          {date[0]}
-                                                                                                      </Elements.Text>
-                                                                                                  </>,
-                                                                                                  <>
-                                                                                                      <Elements.Text
-                                                                                                          type={"desc"}
-                                                                                                          align={"right"}
-                                                                                                          height={0}
-                                                                                                          fit>
-                                                                                                          {date[1]}
-                                                                                                      </Elements.Text>
-                                                                                                  </>,
-                                                                                              ],
-                                                                                          },
-                                                                                      ],
-                                                                                  ],
-                                                                              },
+                                                                              //   {
+                                                                              //       fit: true,
+                                                                              //       children: [
+                                                                              //           [
+                                                                              //               {
+                                                                              //                   gap: 0,
+                                                                              //                   fit: true,
+                                                                              //                   align: "right",
+                                                                              //                   children: [
+                                                                              //                       <>
+                                                                              //                           <Elements.Text
+                                                                              //                               type={"desc"}
+                                                                              //                               align={"right"}
+                                                                              //                               height={0}
+                                                                              //                               fit>
+                                                                              //                               {date[0]}
+                                                                              //                           </Elements.Text>
+                                                                              //                       </>,
+                                                                              //                       <>
+                                                                              //                           <Elements.Text
+                                                                              //                               type={"desc"}
+                                                                              //                               align={"right"}
+                                                                              //                               height={0}
+                                                                              //                               fit>
+                                                                              //                               {date[1]}
+                                                                              //                           </Elements.Text>
+                                                                              //                       </>,
+                                                                              //                   ],
+                                                                              //               },
+                                                                              //           ],
+                                                                              //       ],
+                                                                              //   },
                                                                           ],
                                                                       ],
                                                                   },
