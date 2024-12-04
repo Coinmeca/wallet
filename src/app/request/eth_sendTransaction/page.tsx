@@ -421,22 +421,27 @@ export default function EthSendTransaction() {
                                                     </Layouts.Col>
                                                 </Layouts.Col>
                                                 <Layouts.Col gap={4} align={"center"} style={{ margin: 0 }} fit>
-                                                    <Controls.Button type={count ? undefined : "glass"} onClick={handleClose}>
-                                                        Close
-                                                    </Controls.Button>
-                                                    <AnimatePresence>
-                                                        {!!count && (
-                                                            <motion.div
-                                                                initial={{ flex: 0, marginLeft: "-2em", maxWidth: 0 }}
-                                                                animate={{ flex: 2, marginLeft: 0, maxWidth: "100vw" }}
-                                                                exit={{ flex: 2, marginLeft: 0, maxWidth: "100vw" }}
-                                                                transition={{ ease: "easeInOut", duration: 0.3 }}>
-                                                                <Controls.Button type={"glass"} onClick={() => setId(next(id) || "")} style={{ width: "100%" }}>
-                                                                    See Next Request
-                                                                </Controls.Button>
-                                                            </motion.div>
-                                                        )}
-                                                    </AnimatePresence>
+                                                    <Layouts.Row gap={2}>
+                                                        <Controls.Button type={count ? undefined : "glass"} onClick={handleClose}>
+                                                            Close
+                                                        </Controls.Button>
+                                                        <AnimatePresence>
+                                                            {!!count && (
+                                                                <motion.div
+                                                                    initial={{ flex: 0, marginLeft: "-2em", maxWidth: 0 }}
+                                                                    animate={{ flex: 2, marginLeft: 0, maxWidth: "100vw" }}
+                                                                    exit={{ flex: 2, marginLeft: 0, maxWidth: "100vw" }}
+                                                                    transition={{ ease: "easeInOut", duration: 0.3 }}>
+                                                                    <Controls.Button
+                                                                        type={"glass"}
+                                                                        onClick={() => setId(next(id) || "")}
+                                                                        style={{ width: "100%" }}>
+                                                                        See Next Request
+                                                                    </Controls.Button>
+                                                                </motion.div>
+                                                            )}
+                                                        </AnimatePresence>
+                                                    </Layouts.Row>
                                                 </Layouts.Col>
                                             </Layouts.Col>
                                         </Layouts.Col>

@@ -53,11 +53,10 @@ export default function Page() {
 
         const request = getRequestById(id);
         const { params, auth, app } = request;
-        const { data } = params;
 
-        if (data) {
-            setSpender("0x" + data.slice(34, 74));
-            setAmount(Number(BigInt("0x" + data.slice(74, 138)).toString()));
+        if (params?.data) {
+            setSpender("0x" + params?.data.slice(34, 74));
+            setAmount(Number(BigInt("0x" + params?.data.slice(74, 138)).toString()));
         }
         if (params?.chainId) provider?.changeChain(params.chainId);
 
@@ -422,22 +421,27 @@ export default function Page() {
                                                     </Layouts.Col>
                                                 </Layouts.Col>
                                                 <Layouts.Col gap={4} align={"center"} style={{ margin: 0 }} fit>
-                                                    <Controls.Button type={count ? undefined : "glass"} onClick={handleClose}>
-                                                        Close
-                                                    </Controls.Button>
-                                                    <AnimatePresence>
-                                                        {!!count && (
-                                                            <motion.div
-                                                                initial={{ flex: 0, marginLeft: "-2em", maxWidth: 0 }}
-                                                                animate={{ flex: 2, marginLeft: 0, maxWidth: "100vw" }}
-                                                                exit={{ flex: 2, marginLeft: 0, maxWidth: "100vw" }}
-                                                                transition={{ ease: "easeInOut", duration: 0.3 }}>
-                                                                <Controls.Button type={"glass"} onClick={() => setId(next(id) || "")} style={{ width: "100%" }}>
-                                                                    See Next Request
-                                                                </Controls.Button>
-                                                            </motion.div>
-                                                        )}
-                                                    </AnimatePresence>
+                                                    <Layouts.Row gap={2}>
+                                                        <Controls.Button type={count ? undefined : "glass"} onClick={handleClose}>
+                                                            Close
+                                                        </Controls.Button>
+                                                        <AnimatePresence>
+                                                            {!!count && (
+                                                                <motion.div
+                                                                    initial={{ flex: 0, marginLeft: "-2em", maxWidth: 0 }}
+                                                                    animate={{ flex: 2, marginLeft: 0, maxWidth: "100vw" }}
+                                                                    exit={{ flex: 2, marginLeft: 0, maxWidth: "100vw" }}
+                                                                    transition={{ ease: "easeInOut", duration: 0.3 }}>
+                                                                    <Controls.Button
+                                                                        type={"glass"}
+                                                                        onClick={() => setId(next(id) || "")}
+                                                                        style={{ width: "100%" }}>
+                                                                        See Next Request
+                                                                    </Controls.Button>
+                                                                </motion.div>
+                                                            )}
+                                                        </AnimatePresence>
+                                                    </Layouts.Row>
                                                 </Layouts.Col>
                                             </Layouts.Col>
                                         </Layouts.Col>

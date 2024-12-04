@@ -44,7 +44,7 @@ const timeout = 5000;
 export default function PersonalSign() {
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    const { provider } = useCoinmecaWalletProvider();
+    const { provider, account } = useCoinmecaWalletProvider();
     const { getRequest, getRequestById, success, failure, next, count, setCurrent } = useMessageHandler();
 
     const [load, setLoad] = useState(true);
@@ -55,7 +55,7 @@ export default function PersonalSign() {
 
     const { app, auth, message, signer } = useMemo(() => {
         let message: any;
-        let address: string;
+        let address: string | undefined;
 
         let auth: boolean | undefined;
         let app: App | undefined;
@@ -69,11 +69,10 @@ export default function PersonalSign() {
             const _0 = valid.address(params?.[0]);
             const _1 = valid.address(params?.[1]);
 
-            if (_0 || _1) {
-                _1 ? ((message = params[0]), (address = params[1])) : ((message = params[1]), (address = params[0]));
-                auth = _app?.url ? provider?.allowance(_app?.url, address) : false;
-                signer = provider?.account(address);
-            }
+            _0 ? ((message = params[1]), (address = params[0])) : _1 ? ((message = params[0]), (address = params[1])) : (message = params?.[0]);
+            address = address || account?.address;
+            auth = app?.url ? provider?.allowance(app?.url, address) : false;
+            signer = provider?.account(address);
         }
 
         return {

@@ -194,7 +194,7 @@ export default function Page() {
     const handleSignTypedDataV4 = async () => {
         const method = "eth_signTypedData_v4";
         const params = [
-            "0x6a9E5CAc3E72EEE92A2F7e97d70041BB94902Ad8",
+            // "0x6a9E5CAc3E72EEE92A2F7e97d70041BB94902Ad8",
             {
                 types: {
                     EIP712Domain: [
