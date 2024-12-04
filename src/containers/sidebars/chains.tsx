@@ -23,6 +23,7 @@ export default function Chains({
 }) {
     const { provider, chain, chains } = useCoinmecaWalletProvider();
 
+    const [openRpcChangeModal, closeRpcChangeModal] = usePortal((props: any) => <Modals.Chain.Change.Rpc {...props} onClose={closeRpcChangeModal} close />);
     const [openChainEditModal, closeChainEditModal] = usePortal((props: any) => <Modals.Chain.Edit {...props} onClose={closeChainEditModal} close />);
     const [openChainRemoveModal, closeChainRemoveModal] = usePortal((props: any) => <Modals.Chain.Remove {...props} onClose={closeChainRemoveModal} close />);
 
@@ -58,14 +59,17 @@ export default function Chains({
                                     <Controls.Dropdown
                                         type={"more"}
                                         options={[
+                                            { icon: "plug", value: "Change RPC" },
                                             { icon: "write", value: "Edit Chain Info" },
                                             { icon: "bin", value: `Remove ${chain?.chainName}` },
                                         ]}
                                         onClickItem={(e: any, v: any, k: number) => {
                                             switch (k) {
                                                 case 0:
-                                                    return openChainEditModal({ chain });
+                                                    return openRpcChangeModal({ chain });
                                                 case 1:
+                                                    return openChainEditModal({ chain });
+                                                case 2:
                                                     return openChainRemoveModal({ chain });
                                             }
                                         }}

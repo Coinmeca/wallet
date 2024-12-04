@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { Parts } from "@coinmeca/ui/index";
 import { format, parseNumber } from "@coinmeca/ui/lib/utils";
@@ -174,6 +174,7 @@ export default function Amount(props: Amount) {
                                             max={max}
                                             padding={1}
                                             onChange={(e: any, v: any) => handleChange(v)}
+                                            input
                                         />
                                         <Layouts.Row gap={2}>
                                             <Controls.Button onClick={handleBack}>Back</Controls.Button>
