@@ -311,7 +311,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                           show={"tablet"}
                                           toggle
                                           fit>
-                                          <Elements.Icon scale={0.666} icon={"bell"} count={count - 1} />
+                                          <Elements.Icon scale={0.666} icon={"bell"} count={count} />
                                       </Controls.Tab>
                                   )}
                               </Layouts.Row>
@@ -506,7 +506,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                                                                             onClick={() => {
                                                                                                 failure(m?.id, "User rejected this request.");
                                                                                                 remove(m?.id);
-                                                                                                if (count === 2) setSideMenu("");
+                                                                                                if (count === 1) setSideMenu("");
                                                                                             }}
                                                                                         />
                                                                                     </>,

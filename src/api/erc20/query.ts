@@ -1,4 +1,5 @@
-﻿import { queryOptions } from "@tanstack/react-query";
+﻿import { Address } from "@coinmeca/wallet-sdk/types";
+import { queryOptions } from "@tanstack/react-query";
 import { fetcher } from "api";
 import { hex, valid } from "utils";
 
@@ -31,24 +32,48 @@ export const query = {
                     ]),
                     owner
                         ? fetcher.rpc(rpc!, "eth_call", [
-                            {
-                                to: erc20,
-                                data: `0x70a08231000000000000000000000000${owner.slice(2)}`, // `balanceOf(address)`
-                            },
-                            "latest",
-                        ])
+                              {
+                                  to: erc20,
+                                  data: `0x70a08231000000000000000000000000${owner.slice(2)}`, // `balanceOf(address)`
+                              },
+                              "latest",
+                          ])
                         : Promise.resolve(undefined),
                 ]);
 
-                const d = decimals.status === "fulfilled" ? Number(decimals.value.toString()) : null;
-                const b = balance && balance.status === "fulfilled" ? Number(balance.value.toString()) : null;
+                if (name.status === "rejected" || symbol.status === "rejected" || decimals.status === "rejected")
+                    return {
+                        address: erc20,
+                        isInvalid: true,
+                        message: "Not a valid ERC20 token contract.",
+                    };
+
+                let token = {
+                    name: name.status === "fulfilled" ? name.value.toString().slice(66) : undefined,
+                    symbol: symbol.status === "fulfilled" ? symbol.value.toString().slice(66) : undefined,
+                    decimals: decimals.status === "fulfilled" ? decimals.value.toString() : undefined,
+                    balance: balance && balance.status === "fulfilled" ? balance.value.toString() : undefined,
+                };
+
+                if (!token?.name || token?.name === "0x" || !token?.symbol || token?.symbol === "0x" || !token?.decimals || token?.decimals === "0x")
+                    return {
+                        address: erc20,
+                        isInvalid: true,
+                        message: "Not a valid ERC20 token contract.",
+                    };
+
+                token = {
+                    name: hex.toString(token.name),
+                    symbol: hex.toString(token.symbol),
+                    decimals: Number(token.decimals),
+                    balance: Number(token.balance.toString()),
+                };
 
                 return {
+                    ...token,
                     address: erc20,
-                    name: name.status === "fulfilled" ? hex.toString(name.value.toString().slice(66)) : null,
-                    symbol: symbol.status === "fulfilled" ? hex.toString(symbol.value.toString().slice(66)) : null,
-                    decimals: d && !isNaN(d) ? d : null,
-                    balance: d && !isNaN(d) && b ? b / 10 ** d : null,
+                    decimals: !isNaN(token.decimals) ? token.decimals : 0,
+                    balance: !isNaN(token.decimals) && !isNaN(token.balance) ? token.balance / 10 ** token.decimals : 0,
                 };
             },
             enabled: !!rpc && valid.address(erc20),

@@ -52,6 +52,31 @@ const AddNewButton = styled.div`
             }
         }
     }
+
+    @media all and (max-width: ${Root.Device.Small}px) {
+        &:nth-child(odd):last-child {
+            width: 100%;
+            height: 100%;
+            aspect-ratio: 1/1;
+
+            & > * {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+
+                & > * {
+                    & > * {
+                        flex-direction: column;
+                        max-width: initial;
+
+                        & > * {
+                            max-width: max-content;
+                        }
+                    }
+                }
+            }
+        }
+    }
 `;
 
 export default function Nft(props: Nft) {

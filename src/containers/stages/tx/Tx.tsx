@@ -54,8 +54,6 @@ export default function Tx(props: Tx) {
         );
     }, [asset?.address, recipient]);
 
-    console.log({ tx });
-
     const [{ data: nonce }, { data: gasPrice, isLoading: isGasPriceLoading }, { data: estimateGas, isLoading: isEstimateGasLoading }] = useQueries({
         queries: [
             query.nonce(chain?.rpcUrls[0], account?.address),

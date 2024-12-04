@@ -47,7 +47,7 @@ function FungibleAddModal(props: Add) {
     const [process, setProcess] = useState<boolean | null>(null);
     const [error, setError] = useState<string>();
 
-    const [tokens, getToken] = GetErc20("https://sepolia-rollup.arbitrum.io/rpc", [token], account?.address);
+    const [tokens, getToken] = GetErc20(chain?.rpcUrls?.[0], [token], account?.address);
     const asset = getToken(address);
     const pattern = /^[a-zA-Z0-9]+$/;
 
@@ -88,31 +88,24 @@ function FungibleAddModal(props: Add) {
     }, [address]);
 
     useEffect(() => {
-        console.log(1);
         if (process === null) {
-            console.log(2);
             if (loading || (!asset?.isFetching && !asset?.isLoading)) {
-                console.log(3);
-                if (asset?.isSuccess) {
-                    console.log(4);
-                    setProcess(true);
-                    setLoading(false);
-                } else if (asset?.isError) {
-                    console.log(5);
+                if (asset?.data?.isInvalid || asset?.isError) {
+                    setError(asset?.data?.message || asset?.error?.message);
                     setProcess(false);
+                    setLoading(false);
+                } else if (asset?.isSuccess) {
+                    setProcess(true);
                     setLoading(false);
                 }
             } else {
-                console.log(6);
                 if (asset?.isFetching || asset?.isLoading) {
-                    console.log(7);
                     setProcess(null);
                     setLoading(true);
                 }
             }
         }
     }, [asset, tokens]);
-    console.log("isLoading", asset?.isLoading, "fetching", asset?.isFetching, { loading, process });
 
     return (
         <Modal
@@ -230,7 +223,7 @@ function FungibleAddModal(props: Add) {
                                                     </Layouts.Col>
                                                 </Layouts.Col>
                                                 <Layouts.Col gap={6}>
-                                                    {asset?.data?.decimals && asset?.data?.balance && (
+                                                    {asset?.data?.decimals && asset?.data?.balance ? (
                                                         <div style={{ padding: "2em", background: "rgba(var(--white),0.05)" }}>
                                                             <Layouts.Row gap={1}>
                                                                 <Elements.Text opacity={0.3} fit>
@@ -250,6 +243,8 @@ function FungibleAddModal(props: Add) {
                                                                 </Layouts.Row>
                                                             </Layouts.Row>
                                                         </div>
+                                                    ) : (
+                                                        <></>
                                                     )}
                                                 </Layouts.Col>
                                             </Layouts.Col>

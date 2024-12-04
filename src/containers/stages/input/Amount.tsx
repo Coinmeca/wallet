@@ -35,7 +35,6 @@ export default function Amount(props: Amount) {
             else {
                 const decimals = props?.asset?.decimals || 0;
                 const number = amt?.toString()?.split(".")?.slice(0, 2);
-                console.log(amt, { number });
                 if (number?.[1]?.length > decimals) amt = [...(number[0] || "0"), ".", ...number[1]?.slice(0, decimals)].join("");
             }
             return format(amt, "currency");
