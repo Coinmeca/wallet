@@ -7,6 +7,7 @@ import { CoinmecaWalletContextProvider, useCoinmecaWalletProvider } from "@coinm
 import { dehydrate, HydrationBoundary, QueryClientProvider } from "@tanstack/react-query";
 import { getQueryClient } from "api";
 import { parseNumber } from "@coinmeca/ui/lib/utils";
+import { Chain } from "@coinmeca/wallet-sdk/types";
 
 export interface Add {
     onClose: Function;
@@ -30,7 +31,7 @@ export default function Add(props: Add) {
 const ChainAddModal = (props: any) => {
     const { provider } = useCoinmecaWalletProvider();
     const [error, setError] = useState<any>();
-    const [chain, setChain] = useState<any>();
+    const [chain, setChain] = useState<Chain>();
 
     const handleClose = (e: any) => {
         props?.onClose(e);
@@ -75,12 +76,14 @@ const ChainAddModal = (props: any) => {
 
     const handleAddChain = (e: any) => {
         let error = {};
-        if (!chain?.chainId || isNaN(chain?.chainId)) error = { ...error, chainId: { state: true, message: "The given chain ID is invalid number." } };
+        if (!chain?.chainId || isNaN(parseNumber(chain?.chainId)))
+            error = { ...error, chainId: { state: true, message: "The given chain ID is invalid number." } };
         if (!chain?.chainName || !chain?.chainName?.length)
             error = { ...error, chainName: { state: true, message: "The given chain name is something wrong." } };
         if (!chain?.rpcUrls || !chain?.rpcUrls?.length) error = { ...error, rpcUrls: { state: true, message: "RPC URL is require." } };
-        if (!/^https?:\/\/|^wss:\/\//.test(chain.rpcUrls[0])) error = { ...error, rpcUrls: { state: true, message: "The given rpc url is something wrong." } };
-        if (chain.blockExplorerUrls.length && chain.blockExplorerUrls?.[0]?.length && !/^https?:\/\/|^wss:\/\//.test(chain.blockExplorerUrls[0]))
+        if (!/^https?:\/\/|^wss:\/\//.test(chain?.rpcUrls?.[0]!))
+            error = { ...error, rpcUrls: { state: true, message: "The given rpc url is something wrong." } };
+        if (chain?.blockExplorerUrls?.length && chain.blockExplorerUrls?.[0]?.length && !/^https?:\/\/|^wss:\/\//.test(chain.blockExplorerUrls[0]))
             error = { ...error, blockExplorerUrls: { state: true, message: "The given explorer url is something wrong." } };
         if (!chain?.nativeCurrency?.name || !chain?.nativeCurrency?.name?.length)
             error = { ...error, name: { state: true, message: "The given native currency's name is something wrong." } };
@@ -91,7 +94,7 @@ const ChainAddModal = (props: any) => {
 
         setError(error);
         if (!Object.values(error)?.some((s: any) => s?.state)) {
-            provider?.addEthereumChain(chain);
+            provider?.addEthereumChain(chain!);
             props?.onClose(e);
         }
     };
