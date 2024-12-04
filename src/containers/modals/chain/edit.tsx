@@ -51,8 +51,8 @@ const ChainEditModal = (props: any) => {
         if (error?.chainName?.state) setError((state: any) => ({ ...state, chainName: { state: false } }));
     };
 
-    const handleRpcUrl = (url?: string) => {
-        setChain((state: any) => ({ ...state, rpcUrls: [url] }));
+    const handleRpcUrl = (url?: string, i?: number) => {
+        setChain((state: any) => ({ ...state, rpcUrls: [...state?.rpcUrls, url] }));
         if (error?.rpcUrls?.state) setError((state: any) => ({ ...state, rpcUrls: { state: false } }));
     };
 
@@ -159,7 +159,7 @@ const ChainEditModal = (props: any) => {
                                         value={url}
                                         error={error?.rpcUrls?.state}
                                         message={{ color: "red", children: error?.rpcUrls?.message }}
-                                        onChange={(e: any, v: any) => handleRpcUrl(v)}
+                                        onChange={(e: any, v: any) => handleRpcUrl(v, i)}
                                     />
                                 ))}
                             </Layouts.Col>
