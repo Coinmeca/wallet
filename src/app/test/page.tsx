@@ -176,14 +176,14 @@ export default function Page() {
         // result
         // signature
         console.log(
-            await metamask?.request({
-                method,
-                params,
-            }),
-            await coinbase?.request({
-                method,
-                params,
-            }),
+            // await metamask?.request({
+            //     method,
+            //     params,
+            // }),
+            // await coinbase?.request({
+            //     method,
+            //     params,
+            // }),
             await coinmeca?.request({
                 method,
                 params,
@@ -237,14 +237,14 @@ export default function Page() {
         // result
         // 0x r s v
         console.log(
-            await metamask?.request({
-                method,
-                params,
-            }),
-            await coinbase?.request({
-                method,
-                params,
-            }),
+            // await metamask?.request({
+            //     method,
+            //     params,
+            // }),
+            // await coinbase?.request({
+            //     method,
+            //     params,
+            // }),
             await coinmeca?.request({
                 method,
                 params,

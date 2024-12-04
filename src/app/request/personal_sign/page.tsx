@@ -64,10 +64,10 @@ export default function PersonalSign() {
         const request = getRequestById(id);
         if (request) {
             const { params, app: _app } = request;
-            app = app;
+            app = _app;
 
-            const _0 = valid.address(params[0]);
-            const _1 = valid.address(params[1]);
+            const _0 = valid.address(params?.[0]);
+            const _1 = valid.address(params?.[1]);
 
             if (_0 || _1) {
                 _1 ? ((message = params[0]), (address = params[1])) : ((message = params[1]), (address = params[0]));
