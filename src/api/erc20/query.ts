@@ -1,5 +1,4 @@
-﻿import { Address } from "@coinmeca/wallet-sdk/types";
-import { queryOptions } from "@tanstack/react-query";
+﻿import { queryOptions } from "@tanstack/react-query";
 import { fetcher } from "api";
 import { hex, valid } from "utils";
 
