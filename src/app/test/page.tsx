@@ -27,7 +27,7 @@ export default function Page() {
     const [requestAccess, setRequestAccess] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    const { account, chain } = useCoinmecaWalletProvider();
+    const { provider, account, chain } = useCoinmecaWalletProvider();
     const { adapter } = useCoinmecaWallet();
 
     const handleExpand = () => {
@@ -194,7 +194,7 @@ export default function Page() {
     const handleSignTypedDataV4 = async () => {
         const method = "eth_signTypedData_v4";
         const params = [
-            // "0x6a9E5CAc3E72EEE92A2F7e97d70041BB94902Ad8",
+            "0x6a9E5CAc3E72EEE92A2F7e97d70041BB94902Ad8",
             {
                 types: {
                     EIP712Domain: [
@@ -234,21 +234,24 @@ export default function Page() {
             },
         ];
 
+        // console.log();
+
         // result
         // 0x r s v
         console.log(
-            // await metamask?.request({
-            //     method,
-            //     params,
-            // }),
+            await metamask?.request({
+                method,
+                params,
+            }),
             // await coinbase?.request({
             //     method,
             //     params,
             // }),
-            await coinmeca?.request({
-                method,
-                params,
-            }),
+            await provider?.signTypedData(params?.[1], "0x6a9E5CAc3E72EEE92A2F7e97d70041BB94902Ad8"),
+            // await coinmeca?.request({
+            // method,
+            // params,
+            // }),
         );
     };
 
