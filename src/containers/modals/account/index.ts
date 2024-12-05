@@ -1,3 +1,4 @@
-﻿import Edit from './edit';
+﻿import Edit from "./edit";
+import Show from "./show";
 
-export { Edit };
+export { Edit, Show };

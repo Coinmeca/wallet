@@ -1,16 +1,13 @@
 ﻿"use client";
 
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { Modal } from "@coinmeca/ui/containers";
 import { useNotification, usePortal } from "@coinmeca/ui/hooks";
-import { Parts } from "@coinmeca/ui/index";
 import { filter, format } from "@coinmeca/ui/lib/utils";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { Account } from "@coinmeca/wallet-sdk/types";
 import { useQueries } from "@tanstack/react-query";
 import { query } from "api/onchain/query";
 import { Modals } from "containers";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { short } from "utils";
@@ -36,27 +33,7 @@ export default function Accounts({
 
     const [showDisabledAccount, setShowDisabledAccount] = useState<boolean>(false);
     const [openAccountEditModal, closeAccountEditModal] = usePortal((props: any) => <Modals.Account.Edit {...props} onClose={closeAccountEditModal} />);
-    const [openShowPrivateKey, closeShowPrivateKey] = usePortal((props: any) => (
-        <Modal {...props} onClose={closeShowPrivateKey} fullsize close>
-            <Layouts.Contents.InnerContent scroll={false}>
-                <Layouts.Col gap={0} fill>
-                    <Layouts.Col align={"center"} fill>
-                        <Layouts.Col gap={0} align={"center"} fit>
-                            <Image src={require("../../assets/animation/reset_pw.gif")} width={64} height={64} alt={""} />
-                            <Elements.Passcode index={0} length={6} />
-                        </Layouts.Col>
-                    </Layouts.Col>
-                    <Layouts.Divider />
-                    <Layouts.Col fill>
-                        <Parts.Numberpad />
-                        <Layouts.Col fit>
-                            <Controls.Button onClick={closeShowPrivateKey}>Close</Controls.Button>
-                        </Layouts.Col>
-                    </Layouts.Col>
-                </Layouts.Col>
-            </Layouts.Contents.InnerContent>
-        </Modal>
-    ));
+    const [openShowPrivateKey, closeShowPrivateKey] = usePortal((props: any) => <Modals.Account.Show {...props} onClose={closeShowPrivateKey} />);
 
     const router = useRouter();
     const balance = useQueries({
