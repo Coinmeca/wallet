@@ -8,6 +8,7 @@ import { Asset } from "types";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 
 interface Amount {
+    active?: boolean;
     asset?: Asset;
     amount?: string | number;
     min?: string | number;
@@ -174,7 +175,7 @@ export default function Amount(props: Amount) {
                                             max={max}
                                             padding={1}
                                             onChange={(e: any, v: any) => handleChange(v)}
-                                            input
+                                            input={props?.active}
                                         />
                                         <Layouts.Row gap={2}>
                                             <Controls.Button onClick={handleBack}>Back</Controls.Button>

@@ -334,6 +334,7 @@ export default function Main({ params }: any) {
                                                 active: stage.level === 0 && !asset?.tokenId,
                                                 children: (
                                                     <Stages.Input.Amount
+                                                        active={!!asset && stage.level === 0 && !asset?.tokenId}
                                                         asset={asset}
                                                         amount={amount}
                                                         min={10 ** -(asset?.decimals || 0)}
