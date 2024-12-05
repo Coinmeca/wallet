@@ -3,10 +3,11 @@
 import { useLayoutEffect, useState } from "react";
 import { Layouts } from "@coinmeca/ui/components";
 
-import { format, parse } from "@coinmeca/wallet-sdk/utils";
 import { getChainsByType } from "@coinmeca/wallet-provider/chains";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { Stages } from "containers";
+import { Chain } from "@coinmeca/wallet-sdk/types";
+import { sort } from "@coinmeca/ui/lib/utils";
 
 export default function Welcome() {
     const { provider } = useCoinmecaWalletProvider();
@@ -18,8 +19,9 @@ export default function Welcome() {
 
     const handleConfirm = (passcode: string) => {
         try {
-            const chains = format(getChainsByType("mainnet"));
-            if (chains) localStorage.setItem("coinmeca:wallet:chains", chains);
+            getChainsByType("mainnet")
+                ?.reverse()
+                ?.map((chain: Chain) => provider?.updateChain(chain));
             provider?.init(passcode);
             setStage({ name: "create", level: 2 });
             return true;
@@ -29,6 +31,7 @@ export default function Welcome() {
         }
     };
 
+    console.log("welcome", { stage });
     return (
         <Layouts.Contents.SlideContainer
             key="welcome"

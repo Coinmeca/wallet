@@ -29,7 +29,7 @@ export default function Detail(props: Detail) {
     );
 }
 const TxDetailModal = (props?: Detail) => {
-    const { provider, chain } = useCoinmecaWalletProvider();
+    const { chain } = useCoinmecaWalletProvider();
     const tx = props?.tx;
     const date = (format(tx?.time, "date") as string).split(" ");
 

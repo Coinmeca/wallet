@@ -27,7 +27,7 @@ export default function Tx(props: Tx) {
     const client = getQueryClient();
     const level = props?.stage?.level || 0;
     const asset = props?.asset;
-    const amount = Number((Number(props?.amount || 0) * 10 ** (asset?.decimals || 1))?.toString()?.split(".")[0]);
+    const amount = Number((Number(props?.amount || 0) * 10 ** (asset?.decimals || 0))?.toString()?.split(".")[0]);
     const recipient = props.recipient || "";
 
     const constrain = 200;
@@ -54,8 +54,6 @@ export default function Tx(props: Tx) {
         );
     }, [asset?.address, recipient]);
 
-    console.log({ tx });
-
     const [{ data: nonce }, { data: gasPrice, isLoading: isGasPriceLoading }, { data: estimateGas, isLoading: isEstimateGasLoading }] = useQueries({
         queries: [
             query.nonce(chain?.rpcUrls[0], account?.address),
@@ -79,7 +77,7 @@ export default function Tx(props: Tx) {
     const totalAmount = useMemo(
         () =>
             amount > gasFee.raw
-                ? { raw: BigInt(amount) - BigInt(gasFee.raw), format: (amount - gasFee.raw) * 10 ** (chain?.nativeCurrency?.decimals || 1) }
+                ? { raw: BigInt(amount) - BigInt(gasFee.raw), format: (amount - gasFee.raw) * 10 ** (chain?.nativeCurrency?.decimals || 0) }
                 : { raw: BigInt(0), format: 0 },
         [amount, gasFee],
     );

@@ -4,17 +4,22 @@ import CryptoJS from "crypto-js";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { Parts } from "@coinmeca/ui/index";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { usePortal } from "@coinmeca/ui/hooks";
-import { Modal } from "@coinmeca/ui/containers";
+import { Modals } from "containers";
+import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
+import { useRouter } from "next/navigation";
 
 export default function Lock(props?: { onUnlock?: Function }) {
     const width = 64;
     const length = 6;
+
     const router = useRouter();
+    const { provider } = useCoinmecaWalletProvider();
 
     const [code, setCode] = useState<string>("");
     const [error, setError] = useState({ state: false, message: "" });
+
+    const [openResetConfirm, closeResetConfirm] = usePortal(() => <Modals.Reset onReset={handleReset} onClose={closeResetConfirm} close />);
 
     const handleNumberClick = async (code: string) => {
         if (code?.length > length) return;
@@ -25,23 +30,12 @@ export default function Lock(props?: { onUnlock?: Function }) {
         } else setError({ state: false, message: "" });
     };
 
-    const ResetModal = () => {
-        return (
-            <Modal
-                title={"Reset Confirmation"}
-                message={"Setup the all configuration from the first. Are you sure?"}
-                buttonArea={
-                    <>
-                        <Controls.Button onClick={closeResetConfirm}>NO</Controls.Button>
-                        <Controls.Button onClick={() => router.push("/reset")}>YES</Controls.Button>
-                    </>
-                }
-                onClose={closeResetConfirm}
-                close
-            />
-        );
+    const handleReset = (e?: any) => {
+        provider?.reset();
+        router.push("/welcome");
+        window.location.reload();
+        closeResetConfirm();
     };
-    const [openResetConfirm, closeResetConfirm] = usePortal(<ResetModal />);
 
     return (
         <Layouts.Contents.SlideContainer

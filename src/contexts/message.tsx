@@ -33,8 +33,9 @@ export interface MessageHandlerProps {
     success: (id: string, result: any) => void;
     failure: (id: string, result: any) => void;
     count: number;
-    next: (id: string) => void;
-    prev: (id: string) => void;
+    next: (id: string) => string | undefined;
+    prev: (id: string) => string | undefined;
+    close: () => void;
     remove: (id: string) => void;
     current: string;
     setCurrent: React.Dispatch<React.SetStateAction<string>>;
@@ -80,7 +81,6 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
             portal.postMessage({ state: "ready" }, "*");
 
             const messageHandler = (event: MessageEvent) => {
-                console.log(event);
                 if (event?.data && (!event.data.result || !event.data.close || !event.data.error) && event?.data?.target === "coinmeca-wallet") {
                     const { id, request } = event.data;
 
@@ -124,7 +124,7 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
         }
     }, [path]);
 
-    const count = useMemo(() => messages?.length || 0, [messages]);
+    const count = useMemo(() => messages?.filter((m) => m?.id !== current)?.length || 0, [messages]);
 
     const getRequest = useCallback(
         (method: string) => messages?.find((m) => m?.request?.method?.toLowerCase() === method?.toLowerCase()) || ({} as MessageProps),
@@ -170,10 +170,12 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
     const next = useCallback(
         (id: string) => {
             if (isPopup) {
-                if (count > 1) {
+                if (count) {
                     const next = messages[(messages?.findIndex((m) => m?.id === id) + 1) % messages.length] || messages?.[0];
-                    if (next.id !== id) router.push(`/request/${next?.request?.method}`);
-                    else close();
+                    if (next.id !== id) {
+                        router.push(`/request/${next?.request?.method}`);
+                        return next.id;
+                    } else close();
                 } else close();
             }
             if (!strategy) close();
@@ -184,10 +186,12 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
     const prev = useCallback(
         (id: string) => {
             if (isPopup) {
-                if (count > 1) {
+                if (count) {
                     const prev = messages[(messages?.findIndex((m) => m?.id === id) - 1 + messages.length) % messages.length] || messages?.[0];
-                    if (prev && prev?.id !== id) router.push(`/request/${prev?.request?.method}`);
-                    else close();
+                    if (prev.id !== id) {
+                        router.push(`/request/${prev?.request?.method}`);
+                        return prev.id;
+                    } else close();
                 } else close();
             }
             if (!strategy) close();
@@ -211,6 +215,7 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
                 count,
                 next,
                 prev,
+                close,
                 remove,
                 current,
                 setCurrent,

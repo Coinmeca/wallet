@@ -2,14 +2,14 @@
 
 export const requestNameMap: { [key: string]: string } = {
     erc20_approve: "ERC20 Approve",
-    eth_requestAccounts: "Connect Request",
+    eth_requestAccounts: "Connection Request",
     eth_sendTransaction: "Transaction Confirmation",
     eth_signTransaction: "Transaction Sign Request",
     personal_sign: "Sign Request",
     wallet_addEthereumChain: "Add New Ethereum Chain",
     wallet_switchEthereumChain: "Switch Ethereum Chain",
     wallet_watchAsset: "Add New Token",
-}
+};
 
 export const camelToTitleCase = (value?: string) => {
     if (!value || !value?.length) return value;
@@ -81,17 +81,21 @@ export const valid = {
     tx: (...tx: ({ [x: string]: string | bigint | undefined } | undefined)[]) => {
         if (!tx || tx === undefined || tx === null) return false;
         const validate = (value: string | bigint | undefined) => {
-            return !value || (typeof value === "string" && value?.startsWith("0x") && value?.toString()?.length > 2 && /^0x[0-9a-fA-F]+$/.test(value)) || typeof value === "bigint"
-        }
+            return (
+                !value ||
+                (typeof value === "string" && value?.startsWith("0x") && value?.toString()?.length > 2 && /^0x[0-9a-fA-F]+$/.test(value)) ||
+                typeof value === "bigint"
+            );
+        };
         return enable(
             ...tx?.map((tx: { [x: string]: string | bigint | undefined } | undefined) => {
                 if (!tx || !enable(...Object.values(tx)?.map((t) => validate(t)))) return false;
                 if (!tx?.value && !tx?.data) return false;
                 if ((tx?.to && !valid.address(tx?.to?.toString())) || (tx?.from?.toString() && !valid.address(tx?.from?.toString()))) return false;
                 return true;
-            })
-        )
-    }
+            }),
+        );
+    },
 };
 
 export const hex = {
@@ -261,16 +265,16 @@ export const decrypt = (data?: string | null, salt?: string): string | undefined
 };
 
 export const format = (value?: any): string | undefined => {
-    if (typeof value === "undefined") return value;
+    if (!value || typeof value === "undefined") return value;
     if (typeof value === "boolean" || typeof value === "number") return value.toString();
     return JSON.stringify(value);
 };
 
 export const parse = (value?: string): any => {
-    if (typeof value === "undefined") return value;
+    if (!value || typeof value === "undefined") return value;
     if (value === "true" || value === "false") return value === "true";
-    else if (/^[0-9]*\.[0-9]+$/.test(value)) return parseFloat(value);
-    else return JSON.parse(value);
+    if (/^[0-9]*\.[0-9]+$/.test(value)) return parseFloat(value);
+    return JSON.parse(value);
 };
 
 export interface StorageController {
@@ -351,7 +355,11 @@ export const loadStorage = (prefix: string, storage?: CloudStorage | Storage, is
         }
     },
     clear: () => {
-        return isTelegram ? storage?.removeItems(storage?.getKeys()?.map((k: string) => encrypt(k, salt)) as any) : (storage as Storage)?.clear();
+        try {
+            return isTelegram ? storage?.removeItems(storage?.getKeys()?.map((k: string) => encrypt(k, salt)) as any) : (storage as Storage)?.clear();
+        } catch (e) {
+            console.error(e);
+        }
     },
 });
 
