@@ -82,6 +82,28 @@ export default function Main({ params }: any) {
         handleCancel();
     }, [path, provider, chain, account]);
 
+    useEffect(() => {
+        const input = (e: any) => {
+            if (stage.level === 0) {
+                if (e.key === "Escape") {
+                    setAsset(undefined);
+                    setAmount(undefined);
+                    setRecipient(undefined);
+                    setStage({ name: "", level: 0 });
+                    return;
+                }
+                if (e.key === "Enter" || e.code === "NumpadEnter") {
+                    console.log(parseNumber(amount), asset, 10 ** -(asset?.decimals || 0), parseNumber(amount) >= 10 ** -(asset?.decimals || 0));
+                    if (parseNumber(amount) >= 10 ** -(asset?.decimals || 0)) setStage({ name: "", level: 1 });
+                    return;
+                }
+            }
+        };
+
+        window.addEventListener("keydown", input);
+        return () => window.removeEventListener("keydown", input);
+    }, [amount, asset, stage.level]);
+
     return (
         <Layouts.Page snap>
             <AnimatePresence>
@@ -314,7 +336,7 @@ export default function Main({ params }: any) {
                                                     <Stages.Input.Amount
                                                         asset={asset}
                                                         amount={amount}
-                                                        min={10 ** -(asset?.decimals || 1)}
+                                                        min={10 ** -(asset?.decimals || 0)}
                                                         max={asset?.balance}
                                                         onChange={handleChangeAmount}
                                                         onMax={handleChangeAmount}

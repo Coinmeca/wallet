@@ -31,6 +31,7 @@ export default function Welcome() {
         }
     };
 
+    console.log("welcome", { stage });
     return (
         <Layouts.Contents.SlideContainer
             key="welcome"

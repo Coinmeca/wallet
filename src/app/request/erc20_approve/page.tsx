@@ -294,7 +294,7 @@ export default function Page() {
                                                                     </Elements.Text>
                                                                     <Elements.Text>
                                                                         {amount && decimals
-                                                                            ? format(amount / 10 ** (decimals || 1), "currency", {
+                                                                            ? format(amount / 10 ** (decimals || 0), "currency", {
                                                                                   unit: 9,
                                                                                   limit: 12,
                                                                                   fix: 9,

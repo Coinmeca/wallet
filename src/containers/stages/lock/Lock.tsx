@@ -33,6 +33,7 @@ export default function Lock(props?: { onUnlock?: Function }) {
     const handleReset = (e?: any) => {
         provider?.reset();
         router.push("/welcome");
+        window.location.reload();
         closeResetConfirm();
     };
 
