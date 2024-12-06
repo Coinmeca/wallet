@@ -72,7 +72,7 @@ export default function Page() {
     const handleSign = async () => {
         setLevel(1);
         await provider
-            ?.signTypedData(app?.url!, data, 4, signer?.address) // fixme: app.url?
+            ?.signTypedData(data, signer?.address) // fixme: app.url?
             .then((result) => {
                 success(id, result);
                 setLevel(1);
