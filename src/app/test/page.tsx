@@ -353,11 +353,20 @@ export default function Page() {
         );
     };
 
+    const handleOpenTelegramLink = () => {
+        telegram?.openLink("https://wallet.coinmeca.net");
+    };
+
+    const handleOpenLink = () => {
+        telegram?.openTelegramLink("https://wallet.coinmeca.net");
+    };
     return (
         <Layouts.Col>
             <Layouts.Box>
                 <Elements.Text>{telegram ? `Success, Platform: ${telegram.platform}` : "Fail"}</Elements.Text>
             </Layouts.Box>
+            <Controls.Button onClick={handleOpenTelegramLink}>Open Telegram Link</Controls.Button>
+            <Controls.Button onClick={handleOpenLink}>Open Link</Controls.Button>
             <Controls.Button onClick={handleAddEthereumChain}>Add Ethereum Chain</Controls.Button>
             <Controls.Button onClick={switchEthereumChain}>Switch Ethereum Chain</Controls.Button>
             <Controls.Button onClick={handleEthAccounts}>Eth Accounts</Controls.Button>
