@@ -47,9 +47,9 @@ const AccountShowModal = (props: any) => {
 
         setCode(code);
         if (code?.length === length) {
-            if (provider?.unlock(CryptoJS.SHA256(code).toString())) {
-                setUnlock(true);
-            } else {
+            try {
+                setUnlock(provider?.unlock(CryptoJS.SHA256(code).toString()) || false);
+            } catch (e) {
                 setError({ state: true, message: "The entered passcode was wrong." });
             }
         } else setError({ state: false, message: "" });

@@ -61,18 +61,17 @@ const AccountEditModal = (props: any) => {
     return (
         <Modal {...props} title={"Account Info Edit"} onClose={handleClose} close>
             <Layouts.Col gap={2}>
-                {console.log({name},name?.length)}
-                <Layouts.Row gap={2}>
+                <Layouts.Row gap={1.5} fix>
                     <Elements.Avatar
                         scale={1.25}
                         size={3}
                         stroke={0.2}
                         character={`${account?.index + 1}`}
                         name={name?.length ? name : account?.name}
-                        style={{maxWidth:'max-content'}}
+                        style={{ maxWidth: "max-content" }}
                         hideName
                     />
-                    <Layouts.Col gap={0} align={'left'}>
+                    <Layouts.Col gap={0} align={"left"} style={{ overflow: "hidden" }}>
                         <Elements.Text height={0} size={1.5}>
                             {name?.length ? name : account?.name}
                         </Elements.Text>
@@ -88,8 +87,8 @@ const AccountEditModal = (props: any) => {
                     onChange={(e: any, v: string) => handleChange(v)}
                     error={error?.state}
                     message={{
-                        color:"red",
-                        children: error?.message
+                        color: "red",
+                        children: error?.message,
                     }}
                 />
                 <Layouts.Row>

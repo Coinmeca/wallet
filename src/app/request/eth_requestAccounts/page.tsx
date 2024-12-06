@@ -20,7 +20,7 @@ export default function Page() {
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const { provider, account } = useCoinmecaWalletProvider();
-    const { getRequest, getRequestById, success, failure, next, count, close, setCurrent } = useMessageHandler();
+    const { getRequest, getRequestById, success, failure, next, count, close, setCurrent, messages } = useMessageHandler();
 
     const [load, setLoad] = useState(true);
     const [id, setId] = useState("");
@@ -69,9 +69,11 @@ export default function Page() {
     }, [id]);
 
     useLayoutEffect(() => {
-        const id = getRequest(method)?.id;
+        const test = getRequest(method);
+        const id = test?.id;
         setId(id);
     }, []);
+    console.log({ messages });
 
     return (
         <AnimatePresence>

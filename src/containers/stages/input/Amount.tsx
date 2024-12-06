@@ -166,7 +166,7 @@ export default function Amount(props: Amount) {
                         {
                             active: !!asset,
                             children: (
-                                <Layouts.Col gap={0} style={{ background: "rgba(var(--black),.45)", padding: "2em" }} fill>
+                                <Layouts.Col gap={0} style={{ background: "rgba(var(--black),.45)", padding: "2em", overflow: "hidden" }} fill>
                                     <Layouts.Col gap={4} fill>
                                         <Parts.Numberpads.Currency
                                             type="currency"
