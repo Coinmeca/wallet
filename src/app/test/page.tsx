@@ -354,11 +354,11 @@ export default function Page() {
     };
 
     const handleOpenTelegramLink = () => {
-        telegram?.openLink("https://wallet.coinmeca.net");
+        telegram?.openTelegramLink("https://wallet.coinmeca.net");
     };
 
     const handleOpenLink = () => {
-        telegram?.openTelegramLink("https://wallet.coinmeca.net");
+        telegram?.openLink("https://wallet.coinmeca.net", { try_instant_view: true });
     };
     return (
         <Layouts.Col>
