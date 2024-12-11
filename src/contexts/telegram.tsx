@@ -22,7 +22,7 @@ export const TelegramProvider: React.FC<{ src?: string; children?: React.ReactNo
             telegram.ready();
             // Assuming BiometricManager exists and has an init method
             if (telegram.BiometricManager) telegram.BiometricManager.init();
-            telegram?.enableVerticalSwipes();
+            telegram.enableVerticalSwipes();
             setTelegram(telegram);
             setUser(telegram.initDataUnsafe?.user);
         }

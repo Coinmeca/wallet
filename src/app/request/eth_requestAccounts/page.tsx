@@ -73,7 +73,6 @@ export default function Page() {
         const id = test?.id;
         setId(id);
     }, []);
-    console.log({ messages });
 
     return (
         <AnimatePresence>

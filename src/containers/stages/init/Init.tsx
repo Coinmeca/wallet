@@ -18,7 +18,6 @@ export default function Init({ stage, setStage, exit, onConfirm }: Stage & { exi
 
         setPass((state) => (stage.name === "init" && stage.level === 1 ? { ...state, confirm: v } : { code: v }));
         if (v?.length === length) {
-            console.log("confirm", stage.name, "init");
             if (stage.name === "init") {
                 if (stage.level === 0) setStage((state: any) => ({ ...state, level: 1 }));
                 else if (stage.level === 1) {
@@ -27,10 +26,7 @@ export default function Init({ stage, setStage, exit, onConfirm }: Stage & { exi
                             state: true,
                             message: "The passcode you entered does not match the passcode initially entered.",
                         });
-                    else {
-                        if (typeof onConfirm === "function") onConfirm(CryptoJS.SHA256(pass.code).toString());
-                        // setStage(telegram ? { name: "create", level: 2 } : { name: "create", level: 0 });
-                    }
+                    else onConfirm?.(CryptoJS.SHA256(pass.code).toString());
                 }
             }
         } else {
@@ -41,8 +37,6 @@ export default function Init({ stage, setStage, exit, onConfirm }: Stage & { exi
     useEffect(() => {
         return () => setPass({ code: "" });
     }, []);
-
-    console.log("init", { stage });
 
     return (
         <Layouts.Contents.SlideContainer

@@ -22,6 +22,7 @@ export default function Welcome() {
             getChainsByType("mainnet")
                 ?.reverse()
                 ?.map((chain: Chain) => provider?.updateChain(chain));
+            console.log({ passcode });
             provider?.init(passcode);
             setStage({ name: "create", level: 2 });
             return true;
@@ -31,7 +32,6 @@ export default function Welcome() {
         }
     };
 
-    console.log("welcome", { stage });
     return (
         <Layouts.Contents.SlideContainer
             key="welcome"
