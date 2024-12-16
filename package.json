@@ -42,7 +42,7 @@
         "discord": "tsx ./src/app/api/discord/register"
     },
     "dependencies": {
-        "@next/env": "^15.1.0",
+        "@next/env": "14.2.20",
         "@vercel/analytics": "^1.4.1",
         "crypto-js": "^4.2.0",
         "discord-api-types": "^0.37.111",
