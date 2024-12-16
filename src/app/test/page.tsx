@@ -12,8 +12,8 @@ export default function Page() {
 
     const [metamask, setMetamask] = useState<any>();
     const [coinbase, setCoinbase] = useState<any>();
-    const [okx, setOkx] = useState<any>();
     const [coinmeca, setCoinmeca] = useState<any>();
+    const [okx, setOkx] = useState<any>();
 
     useLayoutEffect(() => {
         window.addEventListener("eip6963:announceProvider", (event: any) => {
@@ -21,6 +21,7 @@ export default function Page() {
             if (event?.detail?.info?.name === "Coinbase Wallet") setCoinbase(event?.detail?.provider);
             if (event?.detail?.info?.name === "OKX Wallet") setOkx(event?.detail?.provider);
             if (event?.detail?.info?.name === "Coinmeca Wallet") setCoinmeca(event?.detail?.provider);
+            if (event?.detail?.info?.name === "OKX Wallet") setOkx(event?.detail?.provider);
         });
         window.dispatchEvent(new Event("eip6963:requestProvider"));
     }, []);
@@ -29,7 +30,7 @@ export default function Page() {
     const [requestAccess, setRequestAccess] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    const { provider, account, chain } = useCoinmecaWalletProvider();
+    const { account, chain } = useCoinmecaWalletProvider();
     const { adapter } = useCoinmecaWallet();
 
     const handleExpand = () => {
@@ -194,10 +195,12 @@ export default function Page() {
     };
 
     const handleSignTypedDataV4 = async () => {
+        await coinbase.request({ method: "eth_requestAccounts" });
+        await okx.request({ method: "eth_requestAccounts" });
         const method = "eth_signTypedData_v4";
         const params = [
             "0x6a9E5CAc3E72EEE92A2F7e97d70041BB94902Ad8",
-            {
+            JSON.stringify({
                 types: {
                     EIP712Domain: [
                         { name: "name", type: "string" },
@@ -233,7 +236,7 @@ export default function Page() {
                     },
                     contents: "Hello, Bob!",
                 },
-            },
+            }),
         ];
 
         // console.log();
@@ -253,11 +256,10 @@ export default function Page() {
                 method,
                 params,
             }),
-            await provider?.signTypedData(params?.[1], "0x6a9E5CAc3E72EEE92A2F7e97d70041BB94902Ad8"),
-            // await coinmeca?.request({
-            // method,
-            // params,
-            // }),
+            await coinmeca?.request({
+                method,
+                params,
+            }),
         );
     };
 

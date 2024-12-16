@@ -20,6 +20,7 @@ export interface MessageProps {
     id: string;
     strategy: MessageStrategy | undefined;
     request: MessageRequest;
+    origin: string;
     time: number;
 }
 
@@ -78,7 +79,7 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
 
     useLayoutEffect(() => {
         if (portal) {
-            portal.postMessage({ target: "coinmeca-wallet", state: "ready" });
+            portal.postMessage({ target: "coinmeca-wallet", state: "ready" }, "*");
 
             const messageHandler = (event: MessageEvent) => {
                 if (
@@ -105,12 +106,12 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
                         } else if (request?.params?.to) error = "Not found sender information.";
 
                         if (error) {
-                            portal.postMessage({ target, method: request?.method, error });
+                            portal.postMessage({ target, method: request?.method, error }, event.origin);
                             if (strategy === "popup") {
                                 if (telegram) telegram?.close();
                                 window?.close();
                             } else router.push("/");
-                        } else setMessages((state) => [...(state || []), { ...event?.data, request: { ...request, auth } }]);
+                        } else setMessages((state) => [...(state || []), { ...event?.data, origin: event.origin, request: { ...request, auth } }]);
                     }
                 }
             };
@@ -122,7 +123,7 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
 
     useLayoutEffect(() => {
         if (strategy === "popup" && !path?.startsWith("/request") && !path?.startsWith("/lock") && !path?.startsWith("/welcome")) {
-            const handleUnload = () => portal?.postMessage({ target, close: true, error: "User rejected the request" });
+            const handleUnload = () => portal?.postMessage({ target, close: true, error: "User rejected the request" }, "*");
 
             window.close();
             window.addEventListener("beforeunload", handleUnload);
@@ -147,7 +148,7 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
             const message = messages?.find((m) => m?.id === id);
             if (message) {
                 remove(id);
-                portal?.postMessage({ target, id, result, method: message?.request.method, close: count === 1 });
+                portal?.postMessage({ target, id, result, method: message?.request.method, close: count === 1 }, message.origin);
                 if (isProxy) portal?.document?.getElementById(`coinmeca-wallet-proxy-${id}`)?.remove();
             }
         },
@@ -159,7 +160,7 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
             const message = messages?.find((m) => m?.id === id);
             if (message) {
                 remove(id);
-                portal?.postMessage({ target, id, error, method: message?.request.method, close: true });
+                portal?.postMessage({ target, id, error, method: message?.request.method, close: true }, message.origin);
                 if (isProxy) portal?.document?.getElementById(`coinmeca-wallet-proxy-${id}`)?.remove();
             }
         },

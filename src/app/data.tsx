@@ -243,7 +243,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
         color: colorMap,
         logo:
             isRequest ||
-            (windowSize?.width > Root.Device.Tablet
+            (!responsive
                 ? {
                       src: require("../assets/coinmeca.svg").default,
                       width: 128,
