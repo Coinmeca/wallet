@@ -28,7 +28,7 @@
         "@coinmeca/wallet-sdk": "0.1.51",
         "@ethereumjs/tx": "^5.4.0",
         "@ethereumjs/wallet": "^2.0.4",
-        "@next/env": "^15.1.0",
+        "@next/env": "14.2.20",
         "@vercel/analytics": "^1.4.1",
         "crypto-js": "^4.2.0",
         "discord-api-types": "^0.37.111",
