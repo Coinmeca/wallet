@@ -19,9 +19,12 @@ export default function Page() {
     const [request, setRequest] = useState<MessageProps>();
 
     useLayoutEffect(() => {
-        if (!request?.id || request?.id === "") setRequest(getRequest(method));
-        else if (provider) success(request?.id, provider?.accounts(request?.request?.app?.url) || []);
-    }, [messages, provider]);
+        if (!request?.id) setRequest(getRequest(method));
+    }, [messages]);
+
+    useLayoutEffect(() => {
+        if (provider && request?.id) success(request.id, provider?.accounts(request?.request?.app?.url) || []);
+    }, [provider, request]);
 
     return <Contents.States.Loading style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", zIndex: 10000, background: "black" }} />;
 }
