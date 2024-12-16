@@ -33,11 +33,8 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const [target, setTarget] = useState<string>();
 
     useLayoutEffect(() => {
-        console.log(1);
         if (provider) {
-            console.log(2);
             const handleCheck = (info?: Account) => {
-                console.log(3);
                 console.log("event on");
                 const check = {
                     init: provider?.isInitialized,
@@ -77,13 +74,11 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }, [path, provider?.isInitialized, provider?.isLocked]);
 
     useLayoutEffect(() => {
-        console.log(4);
         if (target && target !== path) router.push(target);
     }, [target]);
 
     useLayoutEffect(() => {
-        console.log(5);
-        if ((target === path || (!target && path === "/")) && !isLoad && check && Object.values(check).every((_) => typeof _ === "boolean")) setIsLoad(true);
+        if ((target === path || !target) && !isLoad && check && Object.values(check).every((_) => typeof _ === "boolean")) setIsLoad(true);
     }, [path, target, check]);
 
     return <GuardContext.Provider value={{ isInit, isAccess, isLoad, setIsAccess }}>{children}</GuardContext.Provider>;
