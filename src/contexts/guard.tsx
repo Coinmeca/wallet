@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import React, { createContext, useContext, useLayoutEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useLayoutEffect, useState } from "react";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { usePathname, useRouter } from "next/navigation";
 import { Account } from "@coinmeca/wallet-sdk/types";
@@ -33,8 +33,12 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const [target, setTarget] = useState<string>();
 
     useLayoutEffect(() => {
+        console.log(1);
         if (provider) {
+            console.log(2);
             const handleCheck = (info?: Account) => {
+                console.log(3);
+                console.log("event on");
                 const check = {
                     init: provider?.isInitialized,
                     access: !!info || !provider?.isLocked,
@@ -73,17 +77,14 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }, [path, provider?.isInitialized, provider?.isLocked]);
 
     useLayoutEffect(() => {
-        if (target) router.push(target);
+        console.log(4);
+        if (target && target !== path) router.push(target);
     }, [target]);
 
     useLayoutEffect(() => {
-        if (!isLoad && check && typeof check?.init !== "undefined" && typeof check?.access !== "undefined") {
-            if (path?.startsWith("/proxy")) setIsLoad(true);
-            else if (check.init === false && path?.startsWith("/welcome")) setIsLoad(true);
-            else if (!check.access && path?.startsWith("/lock")) setIsLoad(true);
-            else setIsLoad(true);
-        }
-    }, [check]);
+        console.log(5);
+        if ((target === path || (!target && path === "/")) && !isLoad && check && Object.values(check).every((_) => typeof _ === "boolean")) setIsLoad(true);
+    }, [path, target, check]);
 
     return <GuardContext.Provider value={{ isInit, isAccess, isLoad, setIsAccess }}>{children}</GuardContext.Provider>;
 };
