@@ -35,7 +35,6 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     useLayoutEffect(() => {
         if (provider) {
             const handleCheck = (info?: Account) => {
-                console.log("event on");
                 const check = {
                     init: provider?.isInitialized,
                     access: !!info || !provider?.isLocked,
