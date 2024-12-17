@@ -37,7 +37,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
 
     const [appFilter, setAppFilter] = useState<string>();
 
-    const desktop = isClient && windowSize.width > Root.Device.Desktop - 1;
+    const isDesktop = isClient && windowSize.width > Root.Device.Desktop - 1;
     const responsive = isClient && windowSize.width <= Root.Device.Tablet;
 
     const colorMap = responsive
@@ -211,7 +211,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
     const sideContents = useMemo(
         () => [
             {
-                active: (desktop && (sideMenu === "" || sideMenu === "accounts")) || sideMenu === "accounts",
+                active: (isDesktop && (sideMenu === "" || sideMenu === "accounts")) || sideMenu === "accounts",
                 children: (
                     <Sidebars.Accounts
                         search={search()}
@@ -235,7 +235,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                 ),
             },
         ],
-        [search, searchFilter, responsive],
+        [search, searchFilter, responsive, isDesktop, isMobile, sideMenu],
     );
 
     const side = 56;
@@ -322,9 +322,9 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                   {account?.address && (
                                       <Layouts.Row gap={0} fit>
                                           <Controls.Tab
-                                              active={desktop || sideMenu === "accounts"}
-                                              toggle={!desktop}
-                                              onClick={() => !desktop && handlesideMenu(sideMenu === "accounts" ? "" : "accounts")}>
+                                              active={isDesktop || sideMenu === "accounts"}
+                                              toggle={!isDesktop}
+                                              onClick={() => !isDesktop && handlesideMenu(sideMenu === "accounts" ? "" : "accounts")}>
                                               {sideMenu === "accounts" ? (
                                                   <Layouts.Row gap={0.5} align={"middle"}>
                                                       <Elements.Icon icon={"x"} scale={0.666} />
@@ -532,7 +532,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                   ]
                 : responsive
                 ? [
-                      ...sideContents,
+                      //   ...sideContents,
                       {
                           active: sideMenu === "setting",
                           children: (
@@ -554,7 +554,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                                               }}>
                                                               Test
                                                           </Controls.Button>
-                                                          <Controls.Button
+                                                          {/* <Controls.Button
                                                               align={"left"}
                                                               iconLeft={"blockchain"}
                                                               scale={1.125}
@@ -572,9 +572,9 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                                                   router.push("/change");
                                                               }}>
                                                               Change Passcode
-                                                          </Controls.Button>
+                                                          </Controls.Button> */}
                                                       </Layouts.Col>
-                                                      <Controls.Button
+                                                      {/* <Controls.Button
                                                           type={"line"}
                                                           iconLeft={"lock"}
                                                           scale={1.125}
@@ -585,7 +585,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                                               router.push("/lock");
                                                           }}>
                                                           Lock
-                                                      </Controls.Button>
+                                                      </Controls.Button> */}
                                                   </Layouts.Col>
                                               </Layouts.Col>
                                           ),
@@ -595,7 +595,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                           children: (
                                               <Layouts.Contents.InnerContent scroll={false}>
                                                   <Layouts.Col gap={0} fill>
-                                                      <Controls.Input
+                                                      {/* <Controls.Input
                                                           placeholder={"Search chain by id or name..."}
                                                           onChange={(e: any, v: string) => setAppFilter(v)}
                                                           left={{
@@ -605,7 +605,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                                           }}
                                                           style={{ padding: "1.5em clamp(0em, 3.75%, 6em)" }}
                                                           clearable
-                                                      />
+                                                      /> */}
                                                       <Layouts.List list={filter(apps, appFilter)} formatter={applist} />
                                                   </Layouts.Col>
                                                   <Layouts.Col gap={0} style={{ padding: "4em", paddingTop: "2em" }}>
