@@ -188,7 +188,7 @@ export default function Header(props: Header) {
                     </Side>
                 )}
             </Layouts.Row>
-            {/* {props?.panels && props?.panels?.length && (
+            {props?.panels && props?.panels?.length && (
                 <Layouts.Panel active={props?.panels?.some((p) => p?.active)}>
                     {props?.panels?.map((panel, key) => (
                         <Layouts.Panel {...panel} key={key} fix>
@@ -196,7 +196,7 @@ export default function Header(props: Header) {
                         </Layouts.Panel>
                     ))}
                 </Layouts.Panel>
-            )} */}
+            )}
         </Style>
     );
 }
