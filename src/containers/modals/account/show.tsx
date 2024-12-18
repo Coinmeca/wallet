@@ -107,7 +107,7 @@ const AccountShowModal = (props: any) => {
             width={{ max: 66 }}
             title={"Show Private Key"}
             style={{
-                "--black": "255,255,255",
+                "--black": "0,0,0",
                 "--white": "255,255,255",
                 "--dim": "32,32,32",
             }}

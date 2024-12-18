@@ -218,7 +218,7 @@ export default function Lock(props?: { onUnlock?: Function; isModal?: boolean })
                                                 gap={0}
                                                 style={{
                                                     transition: ".3s ease",
-                                                    background: `rgba(var(--${props?.isModal ? "white" : "black"}),.45)`,
+                                                    background: `rgba(var(--black),.45)`,
                                                     ...(!props?.isModal && { padding: "2em" }),
                                                     ...(!!provider?.locked?.remain && { opacity: 0.6, cursor: "default", pointerEvents: "none" }),
                                                 }}
