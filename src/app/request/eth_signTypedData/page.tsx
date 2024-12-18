@@ -76,7 +76,7 @@ export default function Page() {
             .then((result) => {
                 success(id, result);
                 setLevel(1);
-                if (count <= 1) timeoutRef.current = setTimeout(handleClose, timeout);
+                // if (count <= 1) timeoutRef.current = setTimeout(handleClose, timeout);
             })
             .catch((error) => {
                 console.log(error);

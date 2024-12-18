@@ -43,6 +43,7 @@
     },
     "dependencies": {
         "@next/env": "14.2.20",
+        "@number-flow/react": "^0.4.4",
         "@vercel/analytics": "^1.4.1",
         "crypto-js": "^4.2.0",
         "discord-api-types": "^0.37.111",

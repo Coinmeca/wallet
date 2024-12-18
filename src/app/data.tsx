@@ -532,7 +532,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                   ]
                 : responsive
                 ? [
-                      //   ...sideContents,
+                      ...sideContents,
                       {
                           active: sideMenu === "setting",
                           children: (
@@ -554,38 +554,42 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                                               }}>
                                                               Test
                                                           </Controls.Button>
-                                                          {/* <Controls.Button
-                                                              align={"left"}
-                                                              iconLeft={"blockchain"}
-                                                              scale={1.125}
-                                                              style={{ padding: "0.5em 1em" }}
-                                                              onClick={() => setSetting("apps")}>
-                                                              Connected Apps
-                                                          </Controls.Button>
+                                                          <>
+                                                              <Controls.Button
+                                                                  align={"left"}
+                                                                  iconLeft={"blockchain"}
+                                                                  scale={1.125}
+                                                                  style={{ padding: "0.5em 1em" }}
+                                                                  onClick={() => setSetting("apps")}>
+                                                                  Connected Apps
+                                                              </Controls.Button>
+                                                              <Controls.Button
+                                                                  align={"left"}
+                                                                  iconLeft={"sheild-star"}
+                                                                  scale={1.125}
+                                                                  style={{ padding: "0.5em 1em" }}
+                                                                  onClick={() => {
+                                                                      setSideMenu("");
+                                                                      router.push("/change");
+                                                                  }}>
+                                                                  Change Passcode
+                                                              </Controls.Button>
+                                                          </>
+                                                      </Layouts.Col>
+                                                      <>
                                                           <Controls.Button
-                                                              align={"left"}
-                                                              iconLeft={"sheild-star"}
+                                                              type={"line"}
+                                                              iconLeft={"lock"}
                                                               scale={1.125}
                                                               style={{ padding: "0.5em 1em" }}
                                                               onClick={() => {
                                                                   setSideMenu("");
-                                                                  router.push("/change");
+                                                                  provider?.lock();
+                                                                  router.push("/lock");
                                                               }}>
-                                                              Change Passcode
-                                                          </Controls.Button> */}
-                                                      </Layouts.Col>
-                                                      {/* <Controls.Button
-                                                          type={"line"}
-                                                          iconLeft={"lock"}
-                                                          scale={1.125}
-                                                          style={{ padding: "0.5em 1em" }}
-                                                          onClick={() => {
-                                                              setSideMenu("");
-                                                              provider?.lock();
-                                                              router.push("/lock");
-                                                          }}>
-                                                          Lock
-                                                      </Controls.Button> */}
+                                                              Lock
+                                                          </Controls.Button>
+                                                      </>
                                                   </Layouts.Col>
                                               </Layouts.Col>
                                           ),
