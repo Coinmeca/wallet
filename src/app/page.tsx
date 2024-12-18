@@ -93,7 +93,6 @@ export default function Main({ params }: any) {
                     return;
                 }
                 if (e.key === "Enter" || e.code === "NumpadEnter") {
-                    console.log(parseNumber(amount), asset, 10 ** -(asset?.decimals || 0), parseNumber(amount) >= 10 ** -(asset?.decimals || 0));
                     if (parseNumber(amount) >= 10 ** -(asset?.decimals || 0)) setStage({ name: "", level: 1 });
                     return;
                 }

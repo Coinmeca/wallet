@@ -32,7 +32,11 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const [target, setTarget] = useState<string>();
 
     useEffect(() => {
-        provider?.on("lock", () => setIsAccess(false));
+        const handleLock = () => setIsAccess(false);
+        provider?.on("lockTimeUpdated", handleLock);
+        return () => {
+            provider?.off("lockTimeUpdated", handleLock);
+        };
     }, [provider]);
 
     useLayoutEffect(() => {

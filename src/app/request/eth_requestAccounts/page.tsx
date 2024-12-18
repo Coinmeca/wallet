@@ -38,7 +38,6 @@ export default function Page() {
         await provider
             ?.requestAccounts(app!)
             .then((result) => {
-                console.log({ result });
                 success(id, result);
                 setLevel(1);
                 if (count <= 1) timeoutRef.current = setTimeout(handleClose, timeout);

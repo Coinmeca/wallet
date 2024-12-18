@@ -1,39 +1,45 @@
 ﻿"use client";
 
+import CryptoJS from "crypto-js";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Stages } from "containers";
 import { useRouter } from "next/navigation";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import Image from "next/image";
 
 export default function Change() {
+    const hash = useRef("");
+
     const router = useRouter();
     const { provider } = useCoinmecaWalletProvider();
     const [stage, setStage] = useState({ name: "lock", level: 0 });
-    const [code, setCode] = useState("");
     const [error, setError] = useState<any>();
 
     const handleUnlock = (code: string) => {
         try {
-            if (provider?.check(code)) {
-                setCode(code);
+            hash.current = CryptoJS.SHA256(code).toString();
+            if (provider?.check(hash.current)) {
                 setStage({ name: "init", level: 0 });
                 return true;
             } else false;
         } catch (e) {
+            hash.current = "";
+            code = "";
             console.error(e);
             return false;
         }
     };
 
-    const handleConfirm = (passcode: string) => {
+    const handleConfirm = (code: string) => {
         try {
-            provider?.change(code, passcode);
+            provider?.change(hash.current, CryptoJS.SHA256(code).toString());
+            hash.current = "";
+            code = "";
             setStage({ name: "complete", level: 0 });
-            setCode("");
             return true;
         } catch (e) {
+            code = "";
             console.error(e);
             setError({ state: true, message: (e as any)?.message || e });
             return false;
@@ -41,16 +47,14 @@ export default function Change() {
     };
 
     const handleBack = () => {
-        setCode("");
+        hash.current = "";
         setStage({ name: "init", level: 0 });
     };
 
     useEffect(() => {
-        return () => setCode("");
-    }, []);
-
-    useEffect(() => {
-        console.log(stage);
+        return () => {
+            hash.current = "";
+        };
     }, []);
 
     return (
@@ -154,7 +158,7 @@ export default function Change() {
                                                 <Layouts.Col gap={4} align={"center"} fit>
                                                     <Elements.Text type={"h3"}>Complete</Elements.Text>
                                                     <Elements.Text weight={"bold"} opacity={0.6}>
-                                                        The passcode successfully changed.
+                                                        The code successfully changed.
                                                     </Elements.Text>
                                                 </Layouts.Col>
                                             </Layouts.Col>

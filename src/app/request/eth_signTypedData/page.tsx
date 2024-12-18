@@ -263,8 +263,6 @@ export default function Page() {
         setId(id);
     }, []);
 
-    console.log({ data, auth, signer });
-
     return (
         <AnimatePresence>
             {load &&

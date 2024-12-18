@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import CryptoJS from "crypto-js";
 import { useLayoutEffect, useState } from "react";
 import { Layouts } from "@coinmeca/ui/components";
 
@@ -7,7 +8,8 @@ import { getChainsByType } from "@coinmeca/wallet-provider/chains";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { Stages } from "containers";
 import { Chain } from "@coinmeca/wallet-sdk/types";
-import { sort } from "@coinmeca/ui/lib/utils";
+
+let hash: string;
 
 export default function Welcome() {
     const { provider } = useCoinmecaWalletProvider();
@@ -17,16 +19,20 @@ export default function Welcome() {
         if (provider?.isInitialized) setStage({ name: "create", level: 0 });
     }, [provider]);
 
-    const handleConfirm = (passcode: string) => {
+    const handleConfirm = (code: string) => {
         try {
+            hash = CryptoJS.SHA256(code).toString();
+            code = "";
             getChainsByType("mainnet")
                 ?.reverse()
                 ?.map((chain: Chain) => provider?.updateChain(chain));
-            console.log({ passcode });
-            provider?.init(passcode);
+            provider?.init(hash);
+            hash = "";
             setStage({ name: "create", level: 2 });
             return true;
         } catch (e) {
+            code = "";
+            hash = "";
             console.error(e);
             return false;
         }

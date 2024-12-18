@@ -1,6 +1,5 @@
 ﻿"use client";
 
-import CryptoJS from "crypto-js";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { Parts } from "@coinmeca/ui/index";
 import { useState, useEffect } from "react";
@@ -40,7 +39,7 @@ const Countdown = ({ seconds, style }: { seconds: number; style?: object }) => {
     );
 };
 
-export default function Lock(props?: { onUnlock?: Function }) {
+export default function Lock(props?: { onUnlock?: Function; isModal?: boolean }) {
     const width = 64;
     const length = 6;
 
@@ -57,7 +56,7 @@ export default function Lock(props?: { onUnlock?: Function }) {
 
         setCode(code);
         if (code?.length === length) {
-            if (!props?.onUnlock?.(CryptoJS.SHA256(code).toString())) setError({ state: true, message: "The entered passcode was wrong." });
+            if (!props?.onUnlock?.(code)) setError({ state: true, message: "The entered passcode was wrong." });
         } else setError({ state: false, message: "" });
     };
 
@@ -88,10 +87,15 @@ export default function Lock(props?: { onUnlock?: Function }) {
     return (
         <Layouts.Contents.SlideContainer
             vertical
+            style={props?.isModal ? { overflow: "hidden auto" } : {}}
             contents={[
                 {
                     active: true,
-                    style: { transition: ".3s ease", ...(!!provider?.locked?.remain && { minHeight: "100%" }) },
+                    style: {
+                        transition: ".3s ease",
+                        ...(props?.isModal && { minHeight: "max-content" }),
+                        ...(!!provider?.locked?.remain && { minHeight: "100%" }),
+                    },
                     children: (
                         <Layouts.Contents.InnerContent scroll={false}>
                             <Layouts.Col gap={4} align={"center"} fill>
@@ -105,7 +109,7 @@ export default function Lock(props?: { onUnlock?: Function }) {
                                             <Layouts.Col gap={4}>
                                                 <AnimatePresence>
                                                     {!!provider?.locked?.remain ? (
-                                                        <Layouts.Col gap={32} align={"center"} fit>
+                                                        <Layouts.Col key={"locked-image"} gap={32} align={"center"} fit>
                                                             <Image
                                                                 width={0}
                                                                 height={0}
@@ -131,7 +135,7 @@ export default function Lock(props?: { onUnlock?: Function }) {
                                                             </Layouts.Col>
                                                         </Layouts.Col>
                                                     ) : (
-                                                        <Layouts.Col>
+                                                        <Layouts.Col key={"unlock-passcode"}>
                                                             <Elements.Text weight={"bold"} size={2}>
                                                                 PASSCODE
                                                             </Elements.Text>
@@ -150,6 +154,7 @@ export default function Lock(props?: { onUnlock?: Function }) {
                                                         <Layouts.Col
                                                             gap={2}
                                                             align={"center"}
+                                                            key={"error-message"}
                                                             style={{
                                                                 margin: 0,
                                                                 opacity: 0,
@@ -195,6 +200,7 @@ export default function Lock(props?: { onUnlock?: Function }) {
                 },
                 {
                     active: true,
+                    style: props?.isModal ? { minHeight: "max-content" } : {},
                     children: (
                         <Layouts.Contents.SlideContainer
                             offset={100}
@@ -211,9 +217,9 @@ export default function Lock(props?: { onUnlock?: Function }) {
                                             <Layouts.Col
                                                 gap={0}
                                                 style={{
-                                                    background: "rgba(var(--black),.45)",
-                                                    padding: "2em",
                                                     transition: ".3s ease",
+                                                    background: `rgba(var(--${props?.isModal ? "white" : "black"}),.45)`,
+                                                    ...(!props?.isModal && { padding: "2em" }),
                                                     ...(!!provider?.locked?.remain && { opacity: 0.6, cursor: "default", pointerEvents: "none" }),
                                                 }}
                                                 fill>
@@ -227,6 +233,7 @@ export default function Lock(props?: { onUnlock?: Function }) {
                                                         type="code"
                                                         width={width}
                                                         value={code}
+                                                        padding={props?.isModal ? 0 : undefined}
                                                         onChange={(e: any, v: any) => handleNumberClick(v)}
                                                         shuffle
                                                     />
