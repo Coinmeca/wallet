@@ -31,6 +31,10 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const [check, setCheck] = useState<any>();
     const [target, setTarget] = useState<string>();
 
+    useEffect(() => {
+        provider?.on("lock", () => setIsAccess(false));
+    }, [provider]);
+
     useLayoutEffect(() => {
         if (provider) {
             const handleCheck = (info?: Account) => {
@@ -72,10 +76,7 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }, [path, provider?.isInitialized, provider?.isLocked]);
 
     useLayoutEffect(() => {
-        if (target && target !== path) {
-            window.location.href = target;
-            window.location.reload();
-        }
+        if (target && target !== path) window.location.href = target;
     }, [target]);
 
     useLayoutEffect(() => {

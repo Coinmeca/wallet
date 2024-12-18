@@ -35,21 +35,19 @@ export default function Show(props: Show) {
 
 const AccountShowModal = (props: any) => {
     const { provider } = useCoinmecaWalletProvider();
-    const { setIsAccess } = useGuard();
-
     const [unlock, setUnlock] = useState(false);
 
     const handleClose = (e: any) => {
+        if (!!provider?.locked?.remain) {
+            provider?.lock();
+            window.location.reload();
+        }
         props?.onClose(e);
     };
 
     const handleUnlock = (code: string) => {
         try {
             if (provider?.unlock(code)) setUnlock(true);
-            else {
-                provider?.lock();
-                window.location.reload();
-            }
         } catch (e) {
             console.error(e);
         }
