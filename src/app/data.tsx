@@ -105,13 +105,13 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
             .writeText(account.address)
             .then(function () {
                 addToast({
-                    title: `Copy address`,
+                    title: `Copy Address`,
                     message: `The address of ${account.name} was copied.`,
                 });
             })
             .catch(function (err) {
                 addToast({
-                    title: `Copy address`,
+                    title: `Copy Address`,
                     message: `Failed to copy the address of ${account.name}.`,
                 });
             });

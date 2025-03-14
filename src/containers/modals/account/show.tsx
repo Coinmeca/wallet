@@ -81,7 +81,7 @@ const AccountShowModal = (props: any) => {
             })
             .catch(function (err) {
                 addToast({
-                    title: `Copy address`,
+                    title: `Copy Address`,
                     message: `Failed to copy the address of ${props.name}.`,
                 });
             });
