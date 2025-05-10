@@ -10,26 +10,27 @@ import { filter } from "@coinmeca/ui/lib/utils";
 import { Asset } from "types";
 import styled from "styled-components";
 import { Root } from "@coinmeca/ui/lib/style";
+import { useMemo } from "react";
 
 interface Nft {
     filter?: string;
     onSelect?: Function;
 }
 
-const AddNewButton = styled.div`
+const AddNewButton = styled.div<{ $only?: boolean }>`
     width: 100%;
     height: 100%;
     display: flex;
     scroll-snap-type: y mandatory;
     -webkit-overflow-scrolling: "touch";
-    aspect-ratio: 1/1.25;
+    ${({ $only }) => $only && "aspect-ratio: 1/1.25;"}
 
     & > * {
         flex: 1;
     }
 
     @media all and (max-width: ${Root.Device.Tablet}px) {
-        &:nth-child(odd):last-child {
+        &:nth-child(odd):last-child:not(:only-child) {
             width: 200%;
             height: 200%;
             aspect-ratio: initial;
@@ -54,7 +55,7 @@ const AddNewButton = styled.div`
     }
 
     @media all and (max-width: ${Root.Device.Small}px) {
-        &:nth-child(odd):last-child {
+        &:nth-child(odd):last-child:not(:only-child) {
             width: 100%;
             height: 100%;
             aspect-ratio: 1/1;
@@ -101,6 +102,8 @@ export default function Nft(props: Nft) {
         props?.onSelect?.(asset);
     };
 
+    const items = useMemo(() => filter(sorting(nftlist), props?.filter), [nftlist, props?.filter]);
+
     return (
         <Layouts.Contents.InnerContent>
             <Layouts.Row gap={1} fix style={{ overflow: "auto hidden" }}>
@@ -118,8 +121,13 @@ export default function Nft(props: Nft) {
             </Layouts.Row>
             <Layouts.Divider />
             <Layouts.Contents.InnerContent>
-                <Layouts.Contents.GridContainer direction={"row"} width={{ min: "clamp(20em, 50%, 40em)" }} style={{ overflow: "initial" }} scroll={false}>
-                    {filter(sorting(nftlist), props?.filter)?.map((nft: any, i: number) => (
+                <Layouts.Contents.GridContainer
+                    direction={"row"}
+                    width={items.length ? { min: "clamp(20em, 50%, 40em)" } : undefined}
+                    style={{ overflow: "initial", height: "100%" }}
+                    scroll={false}
+                    fullsize={!items.length}>
+                    {items.map((nft: any, i: number) => (
                         <Controls.Card
                             key={i}
                             onClick={() => openNonFungibleInfo(nft)}
@@ -127,9 +135,9 @@ export default function Nft(props: Nft) {
                                 scrollSnapType: "y mandatory",
                                 "-webkit-overflow-scrolling": "touch",
                                 height: "initial",
-                                aspectRatio: "1/1.25",
+                                aspectRatio: "0.8/1",
                             }}>
-                            <div style={{}}>
+                            <div>
                                 <Image
                                     width={0}
                                     height={0}
@@ -153,17 +161,19 @@ export default function Nft(props: Nft) {
                             </Layouts.Col>
                         </Controls.Card>
                     ))}
-                    <AddNewButton>
-                        <Controls.Card onClick={openNonFungibleAdd}>
-                            <Layouts.Col gap={1} align={"center"}>
-                                <Elements.Icon
-                                    scale={0.666}
-                                    icon={"plus-bold"}
-                                    style={{ padding: "0.5em", borderRadius: "100%", border: "0.1em solid rgb(var(--white))" }}
-                                />
-                                <Layouts.Row gap={1} align={"center"}>
-                                    <Elements.Text>Add a new token</Elements.Text>
-                                </Layouts.Row>
+                    <AddNewButton $only={!!items.length}>
+                        <Controls.Card onClick={openNonFungibleAdd} style={{ height: "100%" }}>
+                            <Layouts.Col align={"center"} fill>
+                                <Layouts.Col gap={2} align={"center"}>
+                                    <Elements.Icon
+                                        scale={0.666}
+                                        icon={"plus-bold"}
+                                        style={{ padding: "0.5em", borderRadius: "100%", border: "0.1em solid rgb(var(--white))" }}
+                                    />
+                                    <Layouts.Row gap={1} align={"center"}>
+                                        <Elements.Text>Add a new token</Elements.Text>
+                                    </Layouts.Row>
+                                </Layouts.Col>
                             </Layouts.Col>
                         </Controls.Card>
                     </AddNewButton>

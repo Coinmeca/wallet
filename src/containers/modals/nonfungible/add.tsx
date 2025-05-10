@@ -11,6 +11,7 @@ import { getQueryClient } from "api";
 import { States } from "@coinmeca/ui/components/contents";
 import { GetErc721 } from "api/erc721";
 import { Validate } from "types";
+import { isNumber } from "@coinmeca/ui/lib/utils";
 
 export interface Add {
     standard?: any;
@@ -36,7 +37,7 @@ export default function Add(props: Add) {
 }
 
 function NonFungibleAddModal(props: Add) {
-    const { provider, account } = useCoinmecaWalletProvider();
+    const { chain, provider, account } = useCoinmecaWalletProvider();
 
     const [validate, setValidate] = useState<{ address?: Validate; id?: Validate } | undefined>({ address: { state: false }, id: { state: false } });
 
@@ -47,7 +48,7 @@ function NonFungibleAddModal(props: Add) {
     const [process, setProcess] = useState<boolean | null>(null);
     const [error, setError] = useState<string>();
 
-    const [tokens, getToken] = GetErc721("https://sepolia-rollup.arbitrum.io/rpc", fetch?.address && fetch?.id ? { [fetch.address]: [fetch.id] } : undefined);
+    const [tokens, getToken] = GetErc721(chain?.rpcUrls?.[0], fetch?.address && fetch?.id ? { [fetch.address]: [fetch.id] } : undefined);
     const asset = getToken(token?.address, token?.id);
     const pattern = {
         address: /^[a-zA-Z0-9]+$/,
@@ -91,6 +92,42 @@ function NonFungibleAddModal(props: Add) {
         props?.onClose?.(e);
     };
 
+    const check = () => {
+        let v: any = undefined;
+
+        const address = token?.address;
+        const id = token?.id;
+
+        if (
+            !address ||
+            address === "" ||
+            address === "0" ||
+            address === "0x" ||
+            address?.length === 42 ||
+            pattern.address.test(address) ||
+            address?.startsWith("0x") ||
+            address === token
+        )
+            v = {
+                address: {
+                    state: true,
+                    message: "Token address is invalid.",
+                },
+            };
+
+        if (!id || id === "" || !isNumber(id))
+            v = {
+                ...v,
+                id: {
+                    state: true,
+                    message: "Token ID is invalid.",
+                },
+            };
+
+        if (v) setValidate(v);
+        return !v;
+    };
+
     useEffect(() => {
         const address = token?.address;
         if (
@@ -128,8 +165,6 @@ function NonFungibleAddModal(props: Add) {
             }
         }
     }, [asset, tokens]);
-
-    console.log("fetching", asset?.isFetching, "isLoading", asset?.isLoading, { process, loading });
 
     return (
         <Modal
@@ -239,8 +274,10 @@ function NonFungibleAddModal(props: Add) {
                                             <Controls.Button onClick={handleClose}>Close</Controls.Button>
                                             <Controls.Button
                                                 onClick={() => {
-                                                    setLoading(true);
-                                                    setFetch(token);
+                                                    if (check()) {
+                                                        setLoading(true);
+                                                        setFetch(token);
+                                                    } else setError("Token information is invalid.");
                                                 }}>
                                                 Comfirm
                                             </Controls.Button>

@@ -25,7 +25,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
     const { isAccess } = useGuard();
     const { isMobile } = useMobile();
     const { isInApp } = useTelegram();
-    const { provider, account, chain, apps } = useCoinmecaWalletProvider();
+    const { provider, account, accounts, chain, apps } = useCoinmecaWalletProvider();
     const { messages, count, current, failure, remove } = useMessageHandler();
     const { toasts, addToast } = useNotification();
 
@@ -304,7 +304,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                   }
                 : undefined,
         side:
-            isLoad && account
+            isLoad && account && accounts?.length
                 ? {
                       width: side - (responsive ? 8 : 5),
                       active: true,

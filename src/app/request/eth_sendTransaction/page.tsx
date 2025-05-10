@@ -9,7 +9,7 @@ import { Account } from "@coinmeca/wallet-sdk/types";
 import { useQueries } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 
-import { useMessageHandler } from "hooks";
+import { useMessageHandler, useOSNotification } from "hooks";
 import { GetMaxFeePerGas } from "api/onchain";
 import { query } from "api/onchain/query";
 import { sanitizeBigIntToHex, short } from "utils";
@@ -48,6 +48,7 @@ export default function EthSendTransaction() {
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const { provider, chain, account } = useCoinmecaWalletProvider();
+    const { push } = useOSNotification();
     const { getRequest, getRequestById, success, failure, next, count, setCurrent } = useMessageHandler();
 
     const [load, setLoad] = useState(true);
@@ -79,22 +80,22 @@ export default function EthSendTransaction() {
 
     const [{ data: nonce }, { data: gasPrice, isLoading: isGasPriceLoading }, { data: estimateGas, isLoading: isEstimateGasLoading }] = useQueries({
         queries: [
-            query.nonce(chain?.rpcUrls[0], signer?.address),
-            query.gasPrice(chain?.rpcUrls[0]),
-            query.estimateGas(chain?.rpcUrls[0], sanitizeBigIntToHex(tx)),
+            query.nonce(chain?.rpcUrls?.[0], signer?.address),
+            query.gasPrice(chain?.rpcUrls?.[0]),
+            query.estimateGas(chain?.rpcUrls?.[0], sanitizeBigIntToHex(tx)),
         ],
     });
 
     const {
         data: { maxPriorityFeePerGas, maxFeePerGas },
-    } = GetMaxFeePerGas(chain?.rpcUrls[0]);
+    } = GetMaxFeePerGas(chain?.rpcUrls?.[0]);
 
     const gasFee = useMemo(
         () => ({
-            raw: gasPrice?.raw ? gasPrice?.raw * (estimateGas?.raw || 1) : 0,
-            format: gasPrice?.format ? gasPrice?.format * (estimateGas?.format || 1) : 0,
+            raw: gasPrice?.raw && estimateGas?.raw ? gasPrice?.raw * estimateGas?.raw : 0,
+            format: gasPrice?.format && estimateGas?.format ? gasPrice?.format * estimateGas?.format : 0,
         }),
-        [gasPrice?.format, estimateGas?.format],
+        [gasPrice, estimateGas],
     );
 
     const handleClose = () => {
@@ -104,24 +105,40 @@ export default function EthSendTransaction() {
 
     const handleSign = async () => {
         setLevel(1);
+
+        const EIP1559 = {
+            maxFeePerGas: BigInt(maxFeePerGas?.raw || 0),
+            maxPriorityFeePerGas: BigInt(maxPriorityFeePerGas?.raw || 0),
+        };
+
         await provider
             ?.send(
                 {
-                    to: params?.to,
-                    data: params?.data,
+                    to: tx?.to,
+                    data: tx?.data,
+                    value: BigInt(tx?.value || 0),
                     nonce: BigInt(nonce || 0),
-                    chainId: Number(params?.chainId || chain?.chainId),
                     gasLimit: BigInt(estimateGas?.raw || 0),
-                    gasPrice: BigInt(gasPrice?.raw || 0),
-                    maxFeePerGas: BigInt(maxFeePerGas?.raw || 0),
-                    maxPriorityFeePerGas: BigInt(maxPriorityFeePerGas?.raw || 0),
+                    chainId: Number(params?.chainId || chain?.chainId),
+                    ...(Object.values(EIP1559).every((v) => !!v)
+                        ? EIP1559
+                        : {
+                              gasPrice: BigInt(gasPrice?.raw || 0),
+                          }),
                 } as any,
                 signer!,
             )
-            .then((result) => {
+            .then(async (result) => {
+                if (!result) throw new Error("Transaction Submit Failed.");
+
                 success(id, result);
                 setTxHash(result);
                 setLevel(2);
+
+                console.log("txhash", result);
+                push("TRACK_TRANSACTION", [result, chain?.rpcUrls?.[0]]);
+
+                await provider?.wait(result);
                 if (count <= 1) timeoutRef.current = setTimeout(handleClose, timeout);
             })
             .catch((error) => {
@@ -335,7 +352,7 @@ export default function EthSendTransaction() {
                                                                         <Elements.Text style={{ flex: "initial" }} fix>
                                                                             {isGasPriceLoading || isEstimateGasLoading
                                                                                 ? "~"
-                                                                                : format(gasFee.format, "currency", {
+                                                                                : format(gasFee?.format, "currency", {
                                                                                       unit: 9,
                                                                                       limit: 12,
                                                                                       fix: 9,

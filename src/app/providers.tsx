@@ -2,7 +2,7 @@
 import { StrictMode } from "react";
 import { Notification, Theme, WindowSize } from "@coinmeca/ui/contexts";
 import { Style } from "@coinmeca/ui/lib";
-import { MessageHandler, StorageProvider, TelegramProvider } from "contexts";
+import { MessageHandler, OSNotificationProvider, StorageProvider, TelegramProvider } from "contexts";
 import { dehydrate, HydrationBoundary, QueryClientProvider } from "@tanstack/react-query";
 import { getQueryClient } from "api";
 import { GuardProvider } from "contexts/guard";
@@ -22,9 +22,11 @@ export default function Providers({ children }: { children: any }) {
                                     <QueryClientProvider {...{ client }}>
                                         <HydrationBoundary state={dehydrate(client)}>
                                             <GuardProvider>
-                                                <Notification>
-                                                    <Style.Initialize>{children}</Style.Initialize>
-                                                </Notification>
+                                                <OSNotificationProvider>
+                                                    <Notification>
+                                                        <Style.Initialize>{children}</Style.Initialize>
+                                                    </Notification>
+                                                </OSNotificationProvider>
                                             </GuardProvider>
                                         </HydrationBoundary>
                                     </QueryClientProvider>

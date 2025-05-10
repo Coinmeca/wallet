@@ -75,15 +75,15 @@ export default function Page() {
     const [{ data: nonce }, { data: gasPrice, isLoading: isGasPriceLoading }, { data: estimateGas, isLoading: isEstimateGasLoading }, { data: decimals }] =
         useQueries({
             queries: [
-                query.onchain.nonce(chain?.rpcUrls[0], signer?.address),
-                query.onchain.gasPrice(chain?.rpcUrls[0]),
-                query.onchain.estimateGas(chain?.rpcUrls[0], tx),
-                query.erc20.decimals(chain?.rpcUrls[0], tx?.to),
+                query.onchain.nonce(chain?.rpcUrls?.[0], signer?.address),
+                query.onchain.gasPrice(chain?.rpcUrls?.[0]),
+                query.onchain.estimateGas(chain?.rpcUrls?.[0], tx),
+                query.erc20.decimals(chain?.rpcUrls?.[0], tx?.to),
             ],
         });
     const {
         data: { maxPriorityFeePerGas, maxFeePerGas },
-    } = GetMaxFeePerGas(chain?.rpcUrls[0]);
+    } = GetMaxFeePerGas(chain?.rpcUrls?.[0]);
 
     const handleClose = () => {
         if (level < 2) failure(id, "User rejected the request");

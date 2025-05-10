@@ -78,14 +78,14 @@ export default function EthSignTransaction() {
 
     const [{ data: nonce }, { data: gasPrice, isLoading: isGasPriceLoading }, { data: estimateGas, isLoading: isEstimateGasLoading }] = useQueries({
         queries: [
-            query.nonce(chain?.rpcUrls[0], signer?.address),
-            query.gasPrice(chain?.rpcUrls[0]),
-            query.estimateGas(chain?.rpcUrls[0], sanitizeBigIntToHex(tx)),
+            query.nonce(chain?.rpcUrls?.[0], signer?.address),
+            query.gasPrice(chain?.rpcUrls?.[0]),
+            query.estimateGas(chain?.rpcUrls?.[0], sanitizeBigIntToHex(tx)),
         ],
     });
     const {
         data: { maxPriorityFeePerGas, maxFeePerGas },
-    } = GetMaxFeePerGas(chain?.rpcUrls[0]);
+    } = GetMaxFeePerGas(chain?.rpcUrls?.[0]);
 
     const handleClose = () => {
         if (level < 2) failure(id, "User rejected the request");
