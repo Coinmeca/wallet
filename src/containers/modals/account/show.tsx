@@ -58,10 +58,9 @@ const AccountShowModal = (props: any) => {
             hash.current = CryptoJS.SHA256(code).toString();
             code = "";
             if (provider?.unlock(hash.current)) {
-                // key.current = provider?.getPrivateKey(
-                // encrypt(JSON.stringify({ hash: hash.current, index: props?.index, address: props?.address }), new Date(Math.floor(Date.now())).toString()),
-                // );
-                console.log(provider);
+                key.current = provider?.getPrivateKey(
+                    encrypt(JSON.stringify({ hash: hash.current, index: props?.index, address: props?.address }), new Date(Math.floor(Date.now())).toString()),
+                );
                 hash.current = "";
                 setUnlock(true);
             }
