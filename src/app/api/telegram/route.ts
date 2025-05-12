@@ -240,5 +240,6 @@ export async function GET(req: NextRequest) {
         },
     };
 
+    await send(response);
     return NextResponse.json({ message: "Simulated response", response });
 }
