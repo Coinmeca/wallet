@@ -85,22 +85,30 @@ const TxDetailModal = (props?: Detail) => {
                                 <Elements.Text opacity={0.3} fit>
                                     Block Number
                                 </Elements.Text>
-                                <Elements.Text
-                                    align={"right"}
-                                    href={chain?.blockExplorerUrls?.length ? `${chain?.blockExplorerUrls}/block/${tx?.blockNumber}` : undefined}>
-                                    #{tx?.blockNumber}
-                                </Elements.Text>
+                                <Layouts.Row align={"right"} fix>
+                                    <Elements.Text
+                                        align={"right"}
+                                        href={chain?.blockExplorerUrls?.length ? `${chain?.blockExplorerUrls}/block/${tx?.blockNumber}` : undefined}
+                                        fit
+                                        fix>
+                                        #{tx?.blockNumber}
+                                    </Elements.Text>
+                                </Layouts.Row>
                             </Layouts.Row>
                             <Layouts.Row gap={1} fix>
                                 <Elements.Text opacity={0.3} fit>
                                     Tx Hash
                                 </Elements.Text>
-                                <Elements.Text
-                                    align={"right"}
-                                    title={tx?.hash}
-                                    href={chain?.blockExplorerUrls?.length ? `${chain?.blockExplorerUrls}/tx/${tx?.hash}` : undefined}>
-                                    {short(tx?.hash)}
-                                </Elements.Text>
+                                <Layouts.Row align={"right"} fix>
+                                    <Elements.Text
+                                        align={"right"}
+                                        title={tx?.hash}
+                                        href={chain?.blockExplorerUrls?.length ? `${chain?.blockExplorerUrls}/tx/${tx?.hash}` : undefined}
+                                        fit
+                                        fix>
+                                        {short(tx?.hash)}
+                                    </Elements.Text>
+                                </Layouts.Row>
                             </Layouts.Row>
                             <Layouts.Row gap={1} fix>
                                 <Elements.Text opacity={0.3} fit>
