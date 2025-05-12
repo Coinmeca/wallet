@@ -31,6 +31,7 @@ export default function Page() {
 
     const handleClose = () => {
         if (level === 0) failure(id, "User rejected the request");
+        console.log(id);
         close(id);
     };
 
