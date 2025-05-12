@@ -32,7 +32,7 @@ export default function Page() {
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const { provider, account, chain } = useCoinmecaWalletProvider();
-    const { getRequest, getRequestById, success, failure, next, count, setCurrent } = useMessageHandler();
+    const { getRequest, getRequestById, success, failure, next, count, setCurrent, close } = useMessageHandler();
 
     const [load, setLoad] = useState(true);
     const [id, setId] = useState("");
@@ -45,7 +45,7 @@ export default function Page() {
 
     const handleClose = () => {
         if (level < 2) failure(id, "User rejected the request");
-        close();
+        close(id);
     };
 
     const handleAddAsset = async () => {

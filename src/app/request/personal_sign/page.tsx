@@ -45,7 +45,7 @@ export default function PersonalSign() {
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const { provider, account } = useCoinmecaWalletProvider();
-    const { getRequest, getRequestById, success, failure, next, count, setCurrent } = useMessageHandler();
+    const { getRequest, getRequestById, success, failure, next, count, setCurrent, close } = useMessageHandler();
 
     const [load, setLoad] = useState(true);
     const [id, setId] = useState("");
@@ -85,7 +85,7 @@ export default function PersonalSign() {
 
     const handleClose = () => {
         if (level < 2) failure(id, "User rejected the request");
-        close();
+        close(id);
     };
 
     const handleSign = async () => {

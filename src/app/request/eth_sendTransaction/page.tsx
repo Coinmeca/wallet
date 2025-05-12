@@ -49,7 +49,7 @@ export default function EthSendTransaction() {
 
     const { provider, chain, account } = useCoinmecaWalletProvider();
     const { push } = useOSNotification();
-    const { getRequest, getRequestById, success, failure, next, count, setCurrent } = useMessageHandler();
+    const { getRequest, getRequestById, success, failure, next, count, setCurrent, close } = useMessageHandler();
 
     const [load, setLoad] = useState(true);
     const [id, setId] = useState("");
@@ -100,7 +100,7 @@ export default function EthSendTransaction() {
 
     const handleClose = () => {
         if (level < 2) failure(id, "User rejected the request");
-        close();
+        close(id);
     };
 
     const handleSign = async () => {
