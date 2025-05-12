@@ -131,12 +131,8 @@ export default function Page() {
         console.log(method, await adapter?.request({ method }));
     };
 
-<<<<<<< HEAD
-    const handleSendTransaction = async () => {
-=======
     const handleApprove = async () => {
         // approve
->>>>>>> dev
         const method = "eth_sendTransaction";
         console.log(
             method,
@@ -145,46 +141,16 @@ export default function Page() {
                 params: [
                     {
                         from: account?.address,
-<<<<<<< HEAD
-                        to: "0x0000000000000000000000000000000000000000",
-                        value: 0n,
-                        gasLimit: 21000n,
-                        maxPriorityFeePerGas: 2_000_000n,
-                        maxFeePerGas: 3_000_000n,
-                        type: 2,
-=======
                         to: "0x709C5856d329748344789C787a429B3cC7631894",
                         data: "0x095ea7b3000000000000000000000000428d55b528a2d39c143ec51055e7e0531d02aa81ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
->>>>>>> dev
                     },
                 ],
             }),
         );
     };
 
-<<<<<<< HEAD
-    // const handleApprove = async () => {
-    //     const method = "eth_sendTransaction";
-    //     console.log(
-    //         await adapter?.request({
-    //             method,
-    //             params: [
-    //                 {
-    //                     "from": account?.address,
-    //                     "to": "0xYourTokenContractAddress",
-    //                     "data": "0x095ea7b30000000000000000000000000x1234567890123456789012345678901234567890000000000000000000000000000000001b69b4e3eb3e4c0b1b7f89d8f"
-    //                 },
-    //             ],
-    //         }),
-    //     );
-    // };
-
-    const handleApprove = async () => {
-        const method = "eth_sendTransaction";
-=======
     const handleSign = async () => {
         const method = "eth_sign";
->>>>>>> dev
         console.log(
             method,
             await adapter?.request({
