@@ -109,7 +109,8 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
 
                         if (error) {
                             portal.postMessage({ target, method: request?.method, error }, event.origin);
-                            if (strategy === "popup") {
+                            if (strategy === "modal") window?.parent?.document?.getElementById(`coinmeca-wallet-panel-${id}`)?.remove();
+                            else if (strategy === "popup") {
                                 if (telegram) telegram?.close();
                                 window?.close();
                             } else router.push("/");
@@ -152,7 +153,7 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
                 remove(id);
                 portal?.postMessage({ target, id, result, method: message?.request.method, close: count === 1 }, message.origin);
                 if (isProxy) portal?.document?.getElementById(`coinmeca-wallet-proxy-${id}`)?.remove();
-                if (isModal) document?.getElementById(`coinmeca-wallet-panel-${id}`)?.remove();
+                if (isModal) window?.parent?.document?.getElementById(`coinmeca-wallet-panel-${id}`)?.remove();
             }
         },
         [messages, portal],
@@ -165,7 +166,7 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
                 remove(id);
                 portal?.postMessage({ target, id, error, method: message?.request.method, close: true }, message.origin);
                 if (isProxy) portal?.document?.getElementById(`coinmeca-wallet-proxy-${id}`)?.remove();
-                if (isModal) document?.getElementById(`coinmeca-wallet-panel-${id}`)?.remove();
+                if (isModal) window?.parent?.document?.getElementById(`coinmeca-wallet-panel-${id}`)?.remove();
             }
         },
         [messages, portal],
@@ -173,8 +174,12 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
 
     const close = (id?: string) => {
         if (portal) {
-            if (isModal) document?.getElementById(`coinmeca-wallet-panel-${id}`)?.remove();
-            else {
+            if (isModal) {
+                console.log(`coinmeca-wallet-panel-${id}`, window?.parent?.document?.getElementById(`coinmeca-wallet-panel-${id}`));
+                console.log(id && id?.length);
+                if (id && id?.length) window?.parent?.document?.getElementById(`coinmeca-wallet-panel-${id}`)?.remove();
+                else window?.parent?.document.querySelectorAll('[id^="coinmeca-wallet-panel-"]').forEach((el) => el.remove());
+            } else {
                 if (telegram) telegram?.close();
                 window?.close();
             }
@@ -183,14 +188,14 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
 
     const next = useCallback(
         (id: string) => {
-            if (isPopup) {
+            if (!isProxy) {
                 if (count) {
                     const next = messages[(messages?.findIndex((m) => m?.id === id) + 1) % messages.length] || messages?.[0];
                     if (next.id !== id) {
                         router.push(`/request/${next?.request?.method}`);
                         return next.id;
-                    } else close();
-                } else close();
+                    } else close(id);
+                } else close(id);
             }
             if (!strategy) close();
         },
@@ -199,14 +204,14 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
 
     const prev = useCallback(
         (id: string) => {
-            if (isPopup) {
+            if (!isProxy) {
                 if (count) {
                     const prev = messages[(messages?.findIndex((m) => m?.id === id) - 1 + messages.length) % messages.length] || messages?.[0];
                     if (prev.id !== id) {
                         router.push(`/request/${prev?.request?.method}`);
                         return prev.id;
-                    } else close();
-                } else close();
+                    } else close(id);
+                } else close(id);
             }
             if (!strategy) close();
         },
