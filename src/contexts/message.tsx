@@ -6,7 +6,7 @@ import { useTelegram } from "hooks";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useCallback, useContext, useLayoutEffect, useMemo, useState } from "react";
 
-export type MessageStrategy = "popup" | "proxy";
+export type MessageStrategy = "modal" | "popup" | "proxy";
 
 export interface MessageRequest {
     method: string | undefined;
@@ -26,6 +26,7 @@ export interface MessageProps {
 
 export interface MessageHandlerProps {
     strategy: MessageStrategy | undefined;
+    isModal: boolean;
     isPopup: boolean;
     isProxy: boolean;
     messages: MessageProps[];
@@ -36,7 +37,7 @@ export interface MessageHandlerProps {
     count: number;
     next: (id: string) => string | undefined;
     prev: (id: string) => string | undefined;
-    close: () => void;
+    close: (id?: string) => void;
     remove: (id: string) => void;
     current: string;
     setCurrent: React.Dispatch<React.SetStateAction<string>>;
@@ -70,6 +71,7 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
     const [strategy, setStrategy] = useState<MessageStrategy>();
     const [current, setCurrent] = useState<string>("");
 
+    const isModal = useMemo(() => strategy === "modal", [strategy]);
     const isPopup = useMemo(() => strategy === "popup", [strategy]);
     const isProxy = useMemo(() => strategy === "proxy", [strategy]);
 
@@ -150,6 +152,7 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
                 remove(id);
                 portal?.postMessage({ target, id, result, method: message?.request.method, close: count === 1 }, message.origin);
                 if (isProxy) portal?.document?.getElementById(`coinmeca-wallet-proxy-${id}`)?.remove();
+                if (isModal) document?.getElementById(`coinmeca-wallet-panel-${id}`)?.remove();
             }
         },
         [messages, portal],
@@ -162,15 +165,19 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
                 remove(id);
                 portal?.postMessage({ target, id, error, method: message?.request.method, close: true }, message.origin);
                 if (isProxy) portal?.document?.getElementById(`coinmeca-wallet-proxy-${id}`)?.remove();
+                if (isModal) document?.getElementById(`coinmeca-wallet-panel-${id}`)?.remove();
             }
         },
         [messages, portal],
     );
 
-    const close = () => {
+    const close = (id?: string) => {
         if (portal) {
-            if (telegram) telegram?.close();
-            window?.close();
+            if (isModal) document?.getElementById(`coinmeca-wallet-panel-${id}`)?.remove();
+            else {
+                if (telegram) telegram?.close();
+                window?.close();
+            }
         } else router.push("/");
     };
 
@@ -212,6 +219,7 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
         <MessageHandlerContext.Provider
             value={{
                 strategy,
+                isModal,
                 isPopup,
                 isProxy,
                 messages,
