@@ -371,6 +371,7 @@ export default function Page() {
     return (
         <Layouts.Col>
             <Layouts.Box>
+                <Elements.Text>agent: {window?.navigator?.userAgent}</Elements.Text>
                 <Elements.Text>{telegram ? `Success, Platform: ${telegram.platform}` : "Fail"}</Elements.Text>
             </Layouts.Box>
             <Controls.Button onClick={handleOpenTelegramLink}>Open Telegram Link</Controls.Button>
