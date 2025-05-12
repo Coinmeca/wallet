@@ -3,6 +3,9 @@ import Import from "./import/Import";
 import Init from "./init/Init";
 import Welcome from "./welcome/Welcome";
 import Lock from "./lock/Lock";
+import Contact from "./contact/Contact";
+import Tx from "./tx/Tx";
+import * as Input from "./input";
 
 import type { Dispatch, SetStateAction } from "react";
 interface Stage {
@@ -15,4 +18,4 @@ interface Stage {
     >;
 }
 
-export { Create, Import, Init, Welcome, Lock, type Stage };
+export { type Stage, Create, Import, Init, Welcome, Lock, Input, Contact, Tx };

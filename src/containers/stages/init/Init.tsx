@@ -1,32 +1,34 @@
 ﻿"use client";
-import CryptoJS from "crypto-js";
+
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Parts } from "@coinmeca/ui/index";
 import { Stage } from "..";
 
 export default function Init({ stage, setStage, exit, onConfirm }: Stage & { exit: string; onConfirm?: (passcode: string) => boolean; reset?: boolean }) {
+    const pass = useRef({ code: "", confirm: "" });
+
+    const width = 64;
     const length = 6;
 
-    const [pass, setPass] = useState<{ code: string; confirm?: string }>({ code: "" });
     const [error, setError] = useState({ state: false, message: "" });
 
     const handleNumberClick = (v: string) => {
         if (v?.length > length) return;
 
-        setPass((state) => (stage.name === "init" && stage.level === 1 ? { ...state, confirm: v } : { code: v }));
+        pass.current = stage.name === "init" && stage.level === 1 ? { ...pass.current, confirm: v } : { code: v, confirm: "" };
         if (v?.length === length) {
             if (stage.name === "init") {
                 if (stage.level === 0) setStage((state: any) => ({ ...state, level: 1 }));
                 else if (stage.level === 1) {
-                    if (pass.code !== v)
+                    if (pass.current.code !== v)
                         setError({
                             state: true,
                             message: "The passcode you entered does not match the passcode initially entered.",
                         });
                     else {
-                        if (typeof onConfirm === "function") onConfirm(CryptoJS.SHA256(pass.code).toString());
-                        // setStage(telegram ? { name: "create", level: 2 } : { name: "create", level: 0 });
+                        onConfirm?.(pass.current.code);
+                        pass.current = { code: "", confirm: "" };
                     }
                 }
             }
@@ -36,7 +38,9 @@ export default function Init({ stage, setStage, exit, onConfirm }: Stage & { exi
     };
 
     useEffect(() => {
-        return () => setPass({ code: "" });
+        return () => {
+            pass.current = { code: "", confirm: "" };
+        };
     }, []);
 
     return (
@@ -54,12 +58,19 @@ export default function Init({ stage, setStage, exit, onConfirm }: Stage & { exi
                                         children: (
                                             <Layouts.Contents.InnerContent scroll={false}>
                                                 <Layouts.Col gap={4} align={"center"} fill>
-                                                    <Layouts.Col gap={4} align={"center"} fit>
+                                                    <Layouts.Col gap={4} align={"center"} style={{ margin: "2em" }} fit>
                                                         <Elements.Text weight={"bold"} size={2}>
                                                             NEW PASSCODE
                                                         </Elements.Text>
-                                                        <Elements.Passcode index={pass.code.length} length={length} error={error.state} gap={"5%"} effect />
-                                                        <Elements.Text weight={"bold"} opacity={0.6} style={{ marginTop: "2em" }}>
+                                                        <Elements.Passcode
+                                                            width={width}
+                                                            index={pass.current.code.length}
+                                                            length={length}
+                                                            error={error.state}
+                                                            gap={"5%"}
+                                                            effect
+                                                        />
+                                                        <Elements.Text weight={"bold"} opacity={0.6}>
                                                             Please enter your passcode.
                                                         </Elements.Text>
                                                     </Layouts.Col>
@@ -72,19 +83,20 @@ export default function Init({ stage, setStage, exit, onConfirm }: Stage & { exi
                                         children: (
                                             <Layouts.Contents.InnerContent scroll={false}>
                                                 <Layouts.Col gap={4} align={"center"} fill>
-                                                    <Layouts.Col gap={4} align={"center"} fit>
+                                                    <Layouts.Col gap={4} align={"center"} style={{ margin: "0 2em" }} fit>
                                                         <Elements.Text weight={"bold"} size={2}>
                                                             CONFIRM PASSCODE
                                                         </Elements.Text>
                                                         <Elements.Passcode
-                                                            index={pass.confirm?.length || 0}
+                                                            width={width}
+                                                            index={pass.current?.confirm?.length || 0}
                                                             length={length}
                                                             error={error.state}
                                                             gap={"5%"}
                                                             effect
                                                         />
                                                         {error.message !== "" && (
-                                                            <Elements.Text weight={"bold"} color={"red"} style={{ marginTop: "2em" }}>
+                                                            <Elements.Text weight={"bold"} color={"red"}>
                                                                 {error.message}
                                                             </Elements.Text>
                                                         )}
@@ -117,7 +129,8 @@ export default function Init({ stage, setStage, exit, onConfirm }: Stage & { exi
                                                 <Layouts.Col fill>
                                                     <Parts.Numberpad
                                                         type="code"
-                                                        value={stage.level === 0 ? pass.code : pass.confirm}
+                                                        width={width}
+                                                        value={stage.level === 0 ? pass.current.code : pass.current?.confirm}
                                                         onChange={(e: any, v: any) => handleNumberClick(v)}
                                                     />
                                                 </Layouts.Col>
@@ -125,7 +138,7 @@ export default function Init({ stage, setStage, exit, onConfirm }: Stage & { exi
                                                     <Controls.Button
                                                         onClick={() => {
                                                             setStage({ name: exit, level: 0 });
-                                                            setPass({ code: "" });
+                                                            pass.current = { code: "", confirm: "" };
                                                         }}
                                                         style={{ margin: "2em", marginTop: 0 }}>
                                                         Cancel
@@ -134,7 +147,7 @@ export default function Init({ stage, setStage, exit, onConfirm }: Stage & { exi
                                                     <Controls.Button
                                                         onClick={() => {
                                                             setStage((state: any) => ({ ...state, level: 0 }));
-                                                            setPass({ code: "" });
+                                                            pass.current = { code: "", confirm: "" };
                                                             setError({ state: false, message: "" });
                                                         }}
                                                         style={{ margin: "2em", marginTop: 0 }}>

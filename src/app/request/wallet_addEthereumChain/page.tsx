@@ -1,14 +1,14 @@
 ﻿"use client";
 
+import Image from "next/image";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { parseChainId } from "@coinmeca/wallet-provider/chains";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { Chain } from "@coinmeca/wallet-sdk/types";
-import { useMessageHandler, useTelegram } from "hooks";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useLayoutEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 
+import { useMessageHandler } from "hooks";
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({method:"wallet_addEthereumChain", params:[{
             chainId: '0x13e31',
@@ -32,15 +32,16 @@ await window.ethereum.providerMap.get("CoinmecaWallet").request({method:"wallet_
 */
 
 const method = "wallet_addEthereumChain";
-const timeout = 3000;
+const timeout = 5000;
 
 export default function Page() {
-    const router = useRouter();
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    const { telegram } = useTelegram();
     const { provider, chain } = useCoinmecaWalletProvider();
-    const { isPopup, params, messageId } = useMessageHandler();
+    const { getRequest, getRequestById, success, failure, next, count, setCurrent } = useMessageHandler();
 
+    const [load, setLoad] = useState(true);
+    const [id, setId] = useState("");
     const [selectedChain, setSelectedChain] = useState<any>();
     const [newChain, setNewChain] = useState<Chain>();
 
@@ -48,23 +49,18 @@ export default function Page() {
     const [error, setError] = useState<any>();
 
     const result = () => {
-        console.log("level:", level);
-        window?.opener?.postMessage(
-            {
-                method,
-                ...(level === 0 ? { error: "User rejected the request" } : { result: level === 1 ? true : newChain?.chainId }),
-                id:messageId,
-            },
-            "*",
-        );
+        if (level === 0) failure(id, "User rejected the request");
+        else if (level === 1) success(id, true);
     };
 
     const handleClose = () => {
         result();
-        if (isPopup) {
-            if (telegram) telegram?.close();
-            window?.close();
-        } else router.push("/");
+        close();
+    };
+
+    const handleNext = () => {
+        result();
+        setId(next(id) || "");
     };
 
     const handleAddChain = async () => {
@@ -74,14 +70,7 @@ export default function Page() {
             .then(() => setLevel(1))
             .catch((error) => {
                 console.log(error);
-                window?.opener?.postMessage(
-                    {
-                        method,
-                        error,
-                        id:messageId,
-                    },
-                    "*",
-                );
+                failure(id, error?.message || error);
                 setError(error);
                 setLevel(3);
             });
@@ -92,433 +81,461 @@ export default function Page() {
         await provider
             ?.switchEthereumChain(newChain?.chainId)
             .then((result) => {
-                window?.opener?.postMessage(
-                    {
-                        method,
-                        result,
-                        id:messageId,
-                    },
-                    "*",
-                );
+                success(id, result);
                 setLevel(2);
-                setTimeout(handleClose, timeout);
+                if (count <= 1) timeoutRef.current = setTimeout(handleClose, timeout);
             })
             .catch((error) => {
                 console.log(error);
-                window?.opener?.postMessage(
-                    {
-                        method,
-                        error,
-                        id:messageId,
-                    },
-                    "*",
-                );
+                failure(id, error?.message || error);
                 setError(error);
                 setLevel(3);
             });
     };
 
-    useLayoutEffect(() => {
-        console.log({ params });
-        setSelectedChain(chain);
-        if (params) {
-            const { chainId, chainName, rpcUrls, nativeCurrency } = params;
-            if (
-                chainId &&
-                chainName &&
-                nativeCurrency &&
-                nativeCurrency?.name &&
-                nativeCurrency.symbol &&
-                nativeCurrency.decimals &&
-                rpcUrls &&
-                rpcUrls.length > 0
-            ) setNewChain({...params, chainId: parseChainId(chainId)} as Chain);
+    useEffect(() => {
+        if (count && timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+            timeoutRef.current = null;
         }
+    }, [count]);
+
+    useEffect(() => {
+        if (id && id !== "") {
+            setLoad(false);
+            setCurrent(id);
+            setError(undefined);
+            setLevel(0);
+
+            setSelectedChain(chain);
+            const request = getRequestById(id);
+            if (request) {
+                const { params } = request;
+                const { chainId, chainName, rpcUrls, nativeCurrency } = params || {};
+                if (
+                    chainId &&
+                    chainName &&
+                    nativeCurrency &&
+                    nativeCurrency?.name &&
+                    nativeCurrency.symbol &&
+                    nativeCurrency.decimals &&
+                    rpcUrls &&
+                    rpcUrls.length > 0
+                )
+                    setNewChain({ ...params, chainId: parseChainId(chainId) } as Chain);
+            }
+            setTimeout(() => setLoad(true), 300);
+        }
+    }, [id]);
+
+    useLayoutEffect(() => {
+        const id = getRequest(method)?.id;
+        setId(id);
     }, []);
 
-    useLayoutEffect(() => {
-        window.addEventListener("beforeunload", result);
-        return () => {
-            window.removeEventListener("beforeunload", result);
-        };
-    }, [level]);
-
-    return newChain ? (
-        <Layouts.Contents.SlideContainer
-            contents={[
-                {
-                    active: level === 0,
-                    children: (
-                        <Layouts.Contents.InnerContent scroll={false}>
-                            <Layouts.Col gap={2} align={"center"} fill>
-                                <Layouts.Contents.InnerContent padding={[4, 4, 0]}>
-                                    <Layouts.Col fill>
-                                        <Layouts.Col align={"center"} style={{ flex: 1 }}>
-                                            <Layouts.Col gap={8} align={"center"} fit>
-                                                <div
-                                                    style={{
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        justifyContent: "center",
-                                                        maxWidth: "max-content",
-                                                        maxHeight: "max-content",
-                                                        padding: "2em",
-                                                        borderRadius: "100%",
-                                                        background: "rgba(var(--white),.15)",
-                                                    }}>
-                                                    <Image
-                                                        width={0}
-                                                        height={0}
-                                                        src={newChain?.logo || `https://web3.coinmeca.net/${newChain.chainId}/logo.svg`}
-                                                        alt={newChain?.chainName || ""}
-                                                        style={{ width: "8em", height: "8em", borderRadius: "100%" }}
-                                                    />
-                                                </div>
-                                                <Layouts.Col gap={1}>
-                                                    <Elements.Text type={"h6"}>{newChain?.chainName}</Elements.Text>
-                                                    <Elements.Text type={"strong"} opacity={0.6}>
-                                                        {newChain?.chainId}
-                                                    </Elements.Text>
-                                                </Layouts.Col>
-                                            </Layouts.Col>
-                                        </Layouts.Col>
-                                        <Layouts.Col gap={8} style={{ flex: 1 }} fill>
-                                            <Layouts.Col reverse fill>
-                                                <Layouts.Box
-                                                    style={{
-                                                        "--white": "255,255,255",
-                                                        "--black": "0, 0, 0",
-                                                        background: "rgba(var(--white),.15)",
-                                                        maxHeight: "max-content",
-                                                        padding: "clamp(2em, 7.5%, 4em)",
-                                                        width: "auto",
-                                                        height: "auto",
-                                                    }}
-                                                    fit>
-                                                    <Layouts.Col gap={2} align={"left"}>
-                                                        <Layouts.Col gap={0.5}>
-                                                            <Elements.Text type={"desc"} weight={"bold"}>
-                                                                <Elements.Text size={1} opacity={0.6}>
-                                                                    Chain RPC URL
+    return (
+        <AnimatePresence>
+            {load &&
+                (newChain ? (
+                    <Layouts.Contents.SlideContainer
+                        contents={[
+                            {
+                                active: level === 0,
+                                children: (
+                                    <Layouts.Contents.InnerContent scroll={false}>
+                                        <Layouts.Col gap={2} align={"center"} fill>
+                                            <Layouts.Contents.InnerContent padding={[4, 4, 0]}>
+                                                <Layouts.Col fill>
+                                                    <Layouts.Col align={"center"} style={{ flex: 1 }}>
+                                                        <Layouts.Col gap={8} align={"center"} fit>
+                                                            <div
+                                                                style={{
+                                                                    display: "flex",
+                                                                    alignItems: "center",
+                                                                    justifyContent: "center",
+                                                                    maxWidth: "max-content",
+                                                                    maxHeight: "max-content",
+                                                                    padding: "2em",
+                                                                    borderRadius: "100%",
+                                                                    background: "rgba(var(--white),.15)",
+                                                                }}>
+                                                                <Image
+                                                                    width={0}
+                                                                    height={0}
+                                                                    src={newChain?.logo || `https://web3.coinmeca.net/${newChain.chainId}/logo.svg`}
+                                                                    alt={newChain?.chainName || ""}
+                                                                    style={{ width: "8em", height: "8em", borderRadius: "100%" }}
+                                                                />
+                                                            </div>
+                                                            <Layouts.Col gap={1}>
+                                                                <Elements.Text type={"h6"}>{newChain?.chainName}</Elements.Text>
+                                                                <Elements.Text type={"strong"} opacity={0.6}>
+                                                                    {newChain?.chainId}
                                                                 </Elements.Text>
-                                                                {newChain.rpcUrls.length > 0 && (
-                                                                    <>
-                                                                        <Elements.Text size={1} opacity={0.6}>
-                                                                            s
-                                                                        </Elements.Text>{" "}
-                                                                        <Elements.Text size={1} opacity={1}>
-                                                                            +{newChain.rpcUrls.length}
-                                                                        </Elements.Text>
-                                                                    </>
-                                                                )}
-                                                            </Elements.Text>
-                                                            <Elements.Text>{newChain.rpcUrls[0]}</Elements.Text>
-                                                        </Layouts.Col>
-                                                        <Layouts.Col gap={0.5}>
-                                                            <Elements.Text type={"desc"} weight={"bold"} opacity={0.6}>
-                                                                Native Currency Name
-                                                            </Elements.Text>
-                                                            <Elements.Text>{newChain.nativeCurrency?.name}</Elements.Text>
-                                                        </Layouts.Col>
-                                                        <Layouts.Col gap={0.5}>
-                                                            <Elements.Text type={"desc"} weight={"bold"} opacity={0.6}>
-                                                                Native Currency Symbol
-                                                            </Elements.Text>
-                                                            <Elements.Text>{newChain.nativeCurrency.symbol}</Elements.Text>
-                                                        </Layouts.Col>
-                                                        <Layouts.Col gap={0.5}>
-                                                            <Elements.Text type={"desc"} weight={"bold"} opacity={0.6}>
-                                                                Native Currency Decimals
-                                                            </Elements.Text>
-                                                            <Elements.Text>{newChain.nativeCurrency.decimals}</Elements.Text>
+                                                            </Layouts.Col>
                                                         </Layouts.Col>
                                                     </Layouts.Col>
-                                                </Layouts.Box>
+                                                    <Layouts.Col gap={8} style={{ flex: 1 }} fill>
+                                                        <Layouts.Col reverse fill>
+                                                            <Layouts.Box
+                                                                style={{
+                                                                    "--white": "255,255,255",
+                                                                    "--black": "0, 0, 0",
+                                                                    background: "rgba(var(--white),.15)",
+                                                                    maxHeight: "max-content",
+                                                                    padding: "clamp(2em, 7.5%, 4em)",
+                                                                    width: "auto",
+                                                                    height: "auto",
+                                                                }}
+                                                                fit>
+                                                                <Layouts.Col gap={2} align={"left"}>
+                                                                    <Layouts.Col gap={0.5}>
+                                                                        <Elements.Text type={"desc"} weight={"bold"}>
+                                                                            <Elements.Text size={1}>Chain RPC URL</Elements.Text>
+                                                                            {newChain?.rpcUrls?.length > 0 && (
+                                                                                <>
+                                                                                    <Elements.Text size={1}>s</Elements.Text>{" "}
+                                                                                    <Elements.Text size={1} opacity={1}>
+                                                                                        +{newChain?.rpcUrls?.length}
+                                                                                    </Elements.Text>
+                                                                                </>
+                                                                            )}
+                                                                        </Elements.Text>
+                                                                        <Elements.Text>{newChain?.rpcUrls?.[0]}</Elements.Text>
+                                                                    </Layouts.Col>
+                                                                    <Layouts.Col gap={0.5}>
+                                                                        <Elements.Text type={"desc"} weight={"bold"} opacity={0.6}>
+                                                                            Native Currency Name
+                                                                        </Elements.Text>
+                                                                        <Elements.Text>{newChain?.nativeCurrency?.name}</Elements.Text>
+                                                                    </Layouts.Col>
+                                                                    <Layouts.Col gap={0.5}>
+                                                                        <Elements.Text type={"desc"} weight={"bold"} opacity={0.6}>
+                                                                            Native Currency Symbol
+                                                                        </Elements.Text>
+                                                                        <Elements.Text>{newChain?.nativeCurrency?.symbol}</Elements.Text>
+                                                                    </Layouts.Col>
+                                                                    <Layouts.Col gap={0.5}>
+                                                                        <Elements.Text type={"desc"} weight={"bold"} opacity={0.6}>
+                                                                            Native Currency Decimals
+                                                                        </Elements.Text>
+                                                                        <Elements.Text>{newChain?.nativeCurrency?.decimals}</Elements.Text>
+                                                                    </Layouts.Col>
+                                                                </Layouts.Col>
+                                                            </Layouts.Box>
+                                                        </Layouts.Col>
+                                                    </Layouts.Col>
+                                                </Layouts.Col>
+                                            </Layouts.Contents.InnerContent>
+                                            <Layouts.Col gap={4} align={"center"} style={{ padding: "4em", paddingTop: 0 }}>
+                                                <Layouts.Row gap={2}>
+                                                    <Controls.Button onClick={handleClose}>Cancel</Controls.Button>
+                                                    <Controls.Button type={"line"} onClick={handleAddChain}>
+                                                        Approve
+                                                    </Controls.Button>
+                                                </Layouts.Row>
                                             </Layouts.Col>
                                         </Layouts.Col>
+                                    </Layouts.Contents.InnerContent>
+                                ),
+                            },
+                            {
+                                active: level === 1,
+                                children: (
+                                    <Layouts.Col gap={2} align={"center"} fill>
+                                        <Layouts.Contents.InnerContent padding={[4, 4, 0]}>
+                                            <Layouts.Col fill>
+                                                <Layouts.Col align={"center"} style={{ flex: 1 }}>
+                                                    <Layouts.Col gap={6} fit>
+                                                        <Layouts.Row gap={3} align={"center"} fix>
+                                                            <div
+                                                                style={{
+                                                                    display: "flex",
+                                                                    alignItems: "center",
+                                                                    justifyContent: "center",
+                                                                    maxWidth: "max-content",
+                                                                    maxHeight: "max-content",
+                                                                    padding: "2em",
+                                                                    borderRadius: "100%",
+                                                                    background: "rgba(var(--white),.15)",
+                                                                }}>
+                                                                <Image
+                                                                    src={selectedChain?.logo || `https://web3.coinmeca.net/${selectedChain?.chainId}/logo.svg`}
+                                                                    width={0}
+                                                                    height={0}
+                                                                    alt={selectedChain?.chainName || ""}
+                                                                    style={{ width: "4em", height: "4em", borderRadius: "100%" }}
+                                                                />
+                                                            </div>
+                                                            <Layouts.Col gap={0} align={"center"} fill>
+                                                                <Elements.Text type={"h6"} height={0} align={"left"}>
+                                                                    {selectedChain?.chainName}
+                                                                </Elements.Text>
+                                                                <Elements.Text type={"strong"} height={0} align={"left"} opacity={0.6}>
+                                                                    {selectedChain?.chainId}
+                                                                </Elements.Text>
+                                                            </Layouts.Col>
+                                                        </Layouts.Row>
+                                                        <Layouts.Divider>
+                                                            <Elements.Icon icon={"chevron-down"} />
+                                                        </Layouts.Divider>
+                                                        <Layouts.Row gap={3} align={"center"} fix>
+                                                            <div
+                                                                style={{
+                                                                    display: "flex",
+                                                                    alignItems: "center",
+                                                                    justifyContent: "center",
+                                                                    maxWidth: "max-content",
+                                                                    maxHeight: "max-content",
+                                                                    padding: "2em",
+                                                                    borderRadius: "100%",
+                                                                    background: "rgba(var(--white),.15)",
+                                                                }}>
+                                                                <Image
+                                                                    src={newChain?.logo || `https://web3.coinmeca.net/${newChain?.chainId}/logo.svg`}
+                                                                    width={0}
+                                                                    height={0}
+                                                                    alt={newChain?.chainName || ""}
+                                                                    style={{ width: "4em", height: "4em", borderRadius: "100%" }}
+                                                                />
+                                                            </div>
+                                                            <Layouts.Col gap={0} align={"center"}>
+                                                                <Elements.Text type={"h6"} height={0} align={"left"}>
+                                                                    {newChain?.chainName}
+                                                                </Elements.Text>
+                                                                <Elements.Text type={"strong"} height={0} align={"left"} opacity={0.6}>
+                                                                    {newChain?.chainId}
+                                                                </Elements.Text>
+                                                            </Layouts.Col>
+                                                        </Layouts.Row>
+                                                    </Layouts.Col>
+                                                </Layouts.Col>
+                                                <Layouts.Col gap={8} align={"center"} style={{ flex: 1 }} fill>
+                                                    <Layouts.Col gap={4} align={"center"} fit>
+                                                        <Elements.Text type={"h3"}>Switch</Elements.Text>
+                                                        <Elements.Text size={1} weight={"bold"}>
+                                                            <Elements.Text opacity={0.6}>This is will switch the chain from </Elements.Text>{" "}
+                                                            {/* <Elements.Text>{chain?.chainName}</Elements.Text> <Elements.Text opacity={0.6}>to</Elements.Text>{" "} */}
+                                                            <Elements.Text>{` ${newChain?.chainName}`}</Elements.Text>
+                                                            <Elements.Text opacity={0.6}>.</Elements.Text>
+                                                        </Elements.Text>
+                                                    </Layouts.Col>
+                                                </Layouts.Col>
+                                            </Layouts.Col>
+                                        </Layouts.Contents.InnerContent>
+                                        <Layouts.Col gap={4} align={"center"} style={{ padding: "4em", paddingTop: 0 }}>
+                                            <Layouts.Row gap={2}>
+                                                <Controls.Button type={count - 1 > 0 ? undefined : "glass"} onClick={handleClose}>
+                                                    Close
+                                                </Controls.Button>
+                                                <Controls.Button type={"line"} onClick={handleSwitchChain}>
+                                                    Switch Chain
+                                                </Controls.Button>
+                                                <AnimatePresence>
+                                                    {count - 1 > 0 && (
+                                                        <motion.div
+                                                            initial={{ flex: 2, marginTop: "-2em", maxHeight: 0 }}
+                                                            animate={{ flex: 2, marginTop: 0, maxHeight: "100vh" }}
+                                                            exit={{ flex: 2, marginTop: 0, maxWidth: "max-content" }}
+                                                            transition={{ ease: "easeInOut", duration: 0.3 }}>
+                                                            <Controls.Button type={"glass"} onClick={handleNext} style={{ width: "100%" }}>
+                                                                See Next Request
+                                                            </Controls.Button>
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
+                                            </Layouts.Row>
+                                        </Layouts.Col>
                                     </Layouts.Col>
-                                </Layouts.Contents.InnerContent>
-                                <Layouts.Col gap={4} align={"center"} style={{ padding: "4em", paddingTop: 0 }}>
-                                    <Layouts.Row gap={2}>
-                                        <Controls.Button onClick={handleClose}>Cancel</Controls.Button>
-                                        <Controls.Button type={"line"} onClick={handleAddChain}>
-                                            Approve
-                                        </Controls.Button>
-                                    </Layouts.Row>
+                                ),
+                            },
+                            {
+                                active: level === 2,
+                                children: (
+                                    <Layouts.Contents.InnerContent scroll={false}>
+                                        <Layouts.Col gap={2} align={"center"} fill>
+                                            <Layouts.Contents.InnerContent padding={[4, 4, 0]}>
+                                                <Layouts.Col fill>
+                                                    <Layouts.Col align={"center"} style={{ flex: 1 }}>
+                                                        <Layouts.Col gap={8} align={"center"} fit>
+                                                            <div
+                                                                style={{
+                                                                    display: "flex",
+                                                                    alignItems: "center",
+                                                                    justifyContent: "center",
+                                                                    maxWidth: "max-content",
+                                                                    maxHeight: "max-content",
+                                                                    padding: "1em",
+                                                                    borderRadius: "100%",
+                                                                    background: "rgba(var(--white),.15)",
+                                                                }}>
+                                                                <Image
+                                                                    src={require("../../../assets/animation/success.gif")}
+                                                                    width={0}
+                                                                    height={0}
+                                                                    alt={newChain.chainName || ""}
+                                                                    style={{ width: "12em", height: "12em", borderRadius: "100%" }}
+                                                                />
+                                                            </div>
+                                                            <Layouts.Col gap={0} align={"center"}>
+                                                                <Elements.Text type={"h6"} height={0}>
+                                                                    {newChain?.chainName}
+                                                                </Elements.Text>
+                                                                <Elements.Text type={"strong"} height={0} opacity={0.6}>
+                                                                    {newChain?.chainId}
+                                                                </Elements.Text>
+                                                            </Layouts.Col>
+                                                        </Layouts.Col>
+                                                    </Layouts.Col>
+                                                    <Layouts.Col gap={8} align={"center"} style={{ flex: 1 }} fill>
+                                                        <Layouts.Col align={"center"} style={{ padding: "4em" }}>
+                                                            <Layouts.Col gap={4} align={"center"} fit>
+                                                                <Elements.Text type={"h3"}>Complete</Elements.Text>
+                                                                <Elements.Text size={1} weight={"bold"}>
+                                                                    <Elements.Text opacity={0.6}>Selected chain was switched from</Elements.Text>{" "}
+                                                                    <Elements.Text>{selectedChain?.chainName}</Elements.Text>{" "}
+                                                                    <Elements.Text opacity={0.6}>to</Elements.Text>{" "}
+                                                                    <Elements.Text>{` ${newChain?.chainName}`}</Elements.Text>
+                                                                    <Elements.Text opacity={0.6}>.</Elements.Text>
+                                                                </Elements.Text>
+                                                            </Layouts.Col>
+                                                        </Layouts.Col>
+                                                    </Layouts.Col>
+                                                </Layouts.Col>
+                                            </Layouts.Contents.InnerContent>
+                                            <Layouts.Col gap={4} align={"center"} style={{ padding: "4em", paddingTop: 0 }}>
+                                                <Layouts.Row gap={2}>
+                                                    <Controls.Button type={count ? undefined : "glass"} onClick={handleClose}>
+                                                        Close
+                                                    </Controls.Button>
+                                                    <AnimatePresence>
+                                                        {!!count && (
+                                                            <motion.div
+                                                                initial={{ flex: 0, marginLeft: "-2em", maxWidth: 0 }}
+                                                                animate={{ flex: 2, marginLeft: 0, maxWidth: "100vw" }}
+                                                                exit={{ flex: 2, marginLeft: 0, maxWidth: "100vw" }}
+                                                                transition={{ ease: "easeInOut", duration: 0.3 }}>
+                                                                <Controls.Button type={"glass"} onClick={() => setId(next(id) || "")} style={{ width: "100%" }}>
+                                                                    See Next Request
+                                                                </Controls.Button>
+                                                            </motion.div>
+                                                        )}
+                                                    </AnimatePresence>
+                                                </Layouts.Row>
+                                            </Layouts.Col>
+                                        </Layouts.Col>
+                                    </Layouts.Contents.InnerContent>
+                                ),
+                            },
+                            {
+                                active: level === 3,
+                                children: (
+                                    <Layouts.Contents.InnerContent scroll={false}>
+                                        <Layouts.Col gap={2} align={"center"} fill>
+                                            <Layouts.Contents.InnerContent padding={[4, 4, 0]}>
+                                                <Layouts.Col fill>
+                                                    <Layouts.Col align={"center"} style={{ flex: 1 }}>
+                                                        <Layouts.Col gap={8} align={"center"} fit>
+                                                            <div
+                                                                style={{
+                                                                    display: "flex",
+                                                                    alignItems: "center",
+                                                                    justifyContent: "center",
+                                                                    maxWidth: "max-content",
+                                                                    maxHeight: "max-content",
+                                                                    padding: "1em",
+                                                                    borderRadius: "100%",
+                                                                    background: "rgba(var(--white),.15)",
+                                                                }}>
+                                                                <Image
+                                                                    src={require("../../../assets/animation/failure.gif")}
+                                                                    width={0}
+                                                                    height={0}
+                                                                    alt={newChain.chainName || ""}
+                                                                    style={{ width: "12em", height: "12em", borderRadius: "100%" }}
+                                                                />
+                                                            </div>
+                                                            <Layouts.Col gap={0} align={"center"}>
+                                                                <Elements.Text type={"h6"} height={0}>
+                                                                    {newChain?.chainName}
+                                                                </Elements.Text>
+                                                                <Elements.Text type={"strong"} height={0} opacity={0.6}>
+                                                                    {newChain?.chainId}
+                                                                </Elements.Text>
+                                                            </Layouts.Col>
+                                                        </Layouts.Col>
+                                                    </Layouts.Col>
+                                                    <Layouts.Col gap={8} align={"center"} style={{ flex: 1 }} fill>
+                                                        <Layouts.Col align={"center"} style={{ padding: "4em" }}>
+                                                            <Layouts.Col gap={4} align={"center"} fit>
+                                                                <Elements.Text type={"h3"}>Failure</Elements.Text>
+                                                                <Elements.Text weight={"bold"} opacity={0.6}>
+                                                                    {error?.message || error}
+                                                                </Elements.Text>
+                                                            </Layouts.Col>
+                                                        </Layouts.Col>
+                                                    </Layouts.Col>
+                                                </Layouts.Col>
+                                            </Layouts.Contents.InnerContent>
+                                            <Layouts.Col gap={4} align={"center"} style={{ padding: "4em", paddingTop: 0 }}>
+                                                <Layouts.Row gap={2}>
+                                                    <Controls.Button type={"glass"} onClick={handleClose}>
+                                                        Close
+                                                    </Controls.Button>
+                                                </Layouts.Row>
+                                            </Layouts.Col>
+                                        </Layouts.Col>
+                                    </Layouts.Contents.InnerContent>
+                                ),
+                            },
+                        ]}
+                    />
+                ) : (
+                    <Layouts.Contents.InnerContent scroll={false}>
+                        <Layouts.Col align={"center"} style={{ padding: "4em" }} fill>
+                            <Layouts.Col gap={4} align={"center"} style={{ flex: 1 }} fill>
+                                <Layouts.Col gap={4} align={"center"} fill>
+                                    <Layouts.Col gap={8} align={"center"} fit>
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                maxWidth: "max-content",
+                                                maxHeight: "max-content",
+                                                padding: "2em",
+                                                borderRadius: "100%",
+                                                background: "rgba(var(--white),.15)",
+                                            }}>
+                                            <Image
+                                                width={0}
+                                                height={0}
+                                                src={require("../../../assets/animation/failure.gif")}
+                                                alt={"Unknown"}
+                                                style={{ width: "8em", height: "8em" }}
+                                            />
+                                        </div>
+                                    </Layouts.Col>
                                 </Layouts.Col>
                             </Layouts.Col>
-                        </Layouts.Contents.InnerContent>
-                    ),
-                },
-                {
-                    active: level === 1,
-                    children: (
-                        <Layouts.Col gap={2} align={"center"} fill>
-                            <Layouts.Contents.InnerContent padding={[4, 4, 0]}>
-                                <Layouts.Col fill>
-                                    <Layouts.Col align={"center"} style={{ flex: 1 }}>
-                                        <Layouts.Col gap={6} fit>
-                                            <Layouts.Row gap={3} align={"center"} fix>
-                                                <div
-                                                    style={{
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        justifyContent: "center",
-                                                        maxWidth: "max-content",
-                                                        maxHeight: "max-content",
-                                                        padding: "2em",
-                                                        borderRadius: "100%",
-                                                        background: "rgba(var(--white),.15)",
-                                                    }}>
-                                                    <Image
-                                                        src={selectedChain?.logo || `https://web3.coinmeca.net/${selectedChain?.chainId}/logo.svg`}
-                                                        width={0}
-                                                        height={0}
-                                                        alt={selectedChain?.chainName || ""}
-                                                        style={{ width: "4em", height: "4em", borderRadius: "100%" }}
-                                                    />
-                                                </div>
-                                                <Layouts.Col gap={0} align={"center"} fill>
-                                                    <Elements.Text type={"h6"} height={0} align={"left"}>
-                                                        {selectedChain?.chainName}
-                                                    </Elements.Text>
-                                                    <Elements.Text type={"strong"} height={0} align={"left"} opacity={0.6}>
-                                                        {selectedChain?.chainId}
-                                                    </Elements.Text>
-                                                </Layouts.Col>
-                                            </Layouts.Row>
-                                            <Layouts.Divider>
-                                                <Elements.Icon icon={"chevron-down"} />
-                                            </Layouts.Divider>
-                                            <Layouts.Row gap={3} align={"center"} fix>
-                                                <div
-                                                    style={{
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        justifyContent: "center",
-                                                        maxWidth: "max-content",
-                                                        maxHeight: "max-content",
-                                                        padding: "2em",
-                                                        borderRadius: "100%",
-                                                        background: "rgba(var(--white),.15)",
-                                                    }}>
-                                                    <Image
-                                                        src={newChain?.logo || `https://web3.coinmeca.net/${newChain?.chainId}/logo.svg`}
-                                                        width={0}
-                                                        height={0}
-                                                        alt={newChain?.chainName || ""}
-                                                        style={{ width: "4em", height: "4em", borderRadius: "100%" }}
-                                                    />
-                                                </div>
-                                                <Layouts.Col gap={0} align={"center"}>
-                                                    <Elements.Text type={"h6"} height={0} align={"left"}>
-                                                        {newChain?.chainName}
-                                                    </Elements.Text>
-                                                    <Elements.Text type={"strong"} height={0} align={"left"} opacity={0.6}>
-                                                        {newChain?.chainId}
-                                                    </Elements.Text>
-                                                </Layouts.Col>
-                                            </Layouts.Row>
-                                        </Layouts.Col>
-                                    </Layouts.Col>
-                                    <Layouts.Col gap={8} align={"center"} style={{ flex: 1 }} fill>
-                                        <Layouts.Col gap={4} align={"center"} fit>
-                                            <Elements.Text type={"h3"}>Switch</Elements.Text>
-                                            <Elements.Text size={1} weight={"bold"}>
-                                                <Elements.Text opacity={0.6}>This is will switch the chain from </Elements.Text>{" "}
-                                                {/* <Elements.Text>{chain?.chainName}</Elements.Text> <Elements.Text opacity={0.6}>to</Elements.Text>{" "} */}
-                                                <Elements.Text>{` ${newChain?.chainName}`}</Elements.Text>
-                                                <Elements.Text opacity={0.6}>.</Elements.Text>
-                                            </Elements.Text>
-                                        </Layouts.Col>
+                            <Layouts.Col gap={0} align={"center"} style={{ flex: 1 }} fill>
+                                <Layouts.Col align={"center"} style={{ flex: 1 }} fill>
+                                    <Layouts.Col gap={4} align={"center"} fit>
+                                        <Elements.Text type={"h3"}>Invalid Request</Elements.Text>
+                                        <Elements.Text weight={"bold"} opacity={0.6}>
+                                            {"The given chain information is something wrong. Couldn't found the information of requested chain."}
+                                        </Elements.Text>
                                     </Layouts.Col>
                                 </Layouts.Col>
-                            </Layouts.Contents.InnerContent>
-                            <Layouts.Col gap={4} align={"center"} style={{ padding: "4em", paddingTop: 0 }}>
                                 <Layouts.Row gap={2}>
                                     <Controls.Button type={"glass"} onClick={handleClose}>
                                         Close
                                     </Controls.Button>
-                                    <Controls.Button type={"line"} onClick={handleSwitchChain}>
-                                        Switch Chain
-                                    </Controls.Button>
                                 </Layouts.Row>
                             </Layouts.Col>
                         </Layouts.Col>
-                    ),
-                },
-                {
-                    active: level === 2,
-                    children: (
-                        <Layouts.Contents.InnerContent scroll={false}>
-                            <Layouts.Col gap={2} align={"center"} fill>
-                                <Layouts.Contents.InnerContent padding={[4, 4, 0]}>
-                                    <Layouts.Col fill>
-                                        <Layouts.Col align={"center"} style={{ flex: 1 }}>
-                                            <Layouts.Col gap={8} align={"center"} fit>
-                                                <div
-                                                    style={{
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        justifyContent: "center",
-                                                        maxWidth: "max-content",
-                                                        maxHeight: "max-content",
-                                                        padding: "1em",
-                                                        borderRadius: "100%",
-                                                        background: "rgba(var(--white),.15)",
-                                                    }}>
-                                                    <Image
-                                                        src={require("../../../assets/animation/success.gif")}
-                                                        width={0}
-                                                        height={0}
-                                                        alt={newChain.chainName || ""}
-                                                        style={{ width: "12em", height: "12em", borderRadius: "100%" }}
-                                                    />
-                                                </div>
-                                                <Layouts.Col gap={0} align={"center"}>
-                                                    <Elements.Text type={"h6"} height={0}>
-                                                        {newChain?.chainName}
-                                                    </Elements.Text>
-                                                    <Elements.Text type={"strong"} height={0} opacity={0.6}>
-                                                        {newChain?.chainId}
-                                                    </Elements.Text>
-                                                </Layouts.Col>
-                                            </Layouts.Col>
-                                        </Layouts.Col>
-                                        <Layouts.Col gap={8} align={"center"} style={{ flex: 1 }} fill>
-                                            <Layouts.Col align={"center"} style={{ padding: "4em" }}>
-                                                <Layouts.Col gap={4} align={"center"} fit>
-                                                    <Elements.Text type={"h3"}>Complete</Elements.Text>
-                                                    <Elements.Text size={1} weight={"bold"}>
-                                                        <Elements.Text opacity={0.6}>Selected chain was switched from</Elements.Text>{" "}
-                                                        <Elements.Text>{selectedChain?.chainName}</Elements.Text>{" "}
-                                                        <Elements.Text opacity={0.6}>to</Elements.Text>{" "}
-                                                        <Elements.Text>{` ${newChain?.chainName}`}</Elements.Text>
-                                                        <Elements.Text opacity={0.6}>.</Elements.Text>
-                                                    </Elements.Text>
-                                                </Layouts.Col>
-                                            </Layouts.Col>
-                                        </Layouts.Col>
-                                    </Layouts.Col>
-                                </Layouts.Contents.InnerContent>
-                                <Layouts.Col gap={4} align={"center"} style={{ padding: "4em", paddingTop: 0 }}>
-                                    <Layouts.Row gap={2}>
-                                        <Controls.Button type={"glass"} onClick={handleClose}>
-                                            Close
-                                        </Controls.Button>
-                                    </Layouts.Row>
-                                </Layouts.Col>
-                            </Layouts.Col>
-                        </Layouts.Contents.InnerContent>
-                    ),
-                },
-                {
-                    active: level === 3,
-                    children: (
-                        <Layouts.Contents.InnerContent scroll={false}>
-                            <Layouts.Col gap={2} align={"center"} fill>
-                                <Layouts.Contents.InnerContent padding={[4, 4, 0]}>
-                                    <Layouts.Col fill>
-                                        <Layouts.Col align={"center"} style={{ flex: 1 }}>
-                                            <Layouts.Col gap={8} align={"center"} fit>
-                                                <div
-                                                    style={{
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        justifyContent: "center",
-                                                        maxWidth: "max-content",
-                                                        maxHeight: "max-content",
-                                                        padding: "1em",
-                                                        borderRadius: "100%",
-                                                        background: "rgba(var(--white),.15)",
-                                                    }}>
-                                                    <Image
-                                                        src={require("../../../assets/animation/failure.gif")}
-                                                        width={0}
-                                                        height={0}
-                                                        alt={newChain.chainName || ""}
-                                                        style={{ width: "12em", height: "12em", borderRadius: "100%" }}
-                                                    />
-                                                </div>
-                                                <Layouts.Col gap={0} align={"center"}>
-                                                    <Elements.Text type={"h6"} height={0}>
-                                                        {newChain?.chainName}
-                                                    </Elements.Text>
-                                                    <Elements.Text type={"strong"} height={0} opacity={0.6}>
-                                                        {newChain?.chainId}
-                                                    </Elements.Text>
-                                                </Layouts.Col>
-                                            </Layouts.Col>
-                                        </Layouts.Col>
-                                        <Layouts.Col gap={8} align={"center"} style={{ flex: 1 }} fill>
-                                            <Layouts.Col align={"center"} style={{ padding: "4em" }}>
-                                                <Layouts.Col gap={4} align={"center"} fit>
-                                                    <Elements.Text type={"h3"}>Failure</Elements.Text>
-                                                    <Elements.Text weight={"bold"} opacity={0.6}>
-                                                        {error?.message || error}
-                                                    </Elements.Text>
-                                                </Layouts.Col>
-                                            </Layouts.Col>
-                                        </Layouts.Col>
-                                    </Layouts.Col>
-                                </Layouts.Contents.InnerContent>
-                                <Layouts.Col gap={4} align={"center"} style={{ padding: "4em", paddingTop: 0 }}>
-                                    <Layouts.Row gap={2}>
-                                        <Controls.Button type={"glass"} onClick={handleClose}>
-                                            Close
-                                        </Controls.Button>
-                                    </Layouts.Row>
-                                </Layouts.Col>
-                            </Layouts.Col>
-                        </Layouts.Contents.InnerContent>
-                    ),
-                },
-            ]}
-        />
-    ) : (
-        <Layouts.Contents.InnerContent scroll={false}>
-            <Layouts.Col align={"center"} style={{ padding: "4em" }} fill>
-                <Layouts.Col gap={4} align={"center"} style={{ flex: 1 }} fill>
-                    <Layouts.Col gap={4} align={"center"} fill>
-                        <Layouts.Col gap={8} align={"center"} fit>
-                            <div
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    maxWidth: "max-content",
-                                    maxHeight: "max-content",
-                                    padding: "2em",
-                                    borderRadius: "100%",
-                                    background: "rgba(var(--white),.15)",
-                                }}>
-                                <Image
-                                    width={0}
-                                    height={0}
-                                    src={require("../../../assets/animation/failure.gif")}
-                                    alt={"Unknown"}
-                                    style={{ width: "8em", height: "8em" }}
-                                />
-                            </div>
-                        </Layouts.Col>
-                    </Layouts.Col>
-                </Layouts.Col>
-                <Layouts.Col gap={0} align={"center"} style={{ flex: 1 }} fill>
-                    <Layouts.Col align={"center"} style={{ flex: 1 }} fill>
-                        <Layouts.Col gap={4} align={"center"} fit>
-                            <Elements.Text type={"h3"}>Invalid Request</Elements.Text>
-                            <Elements.Text weight={"bold"} opacity={0.6}>
-                                {"The given chain information is something wrong. Couldn't found the information of requested chain."}
-                            </Elements.Text>
-                        </Layouts.Col>
-                    </Layouts.Col>
-                    <Layouts.Row gap={2}>
-                        <Controls.Button type={"glass"} onClick={handleClose}>
-                            Close
-                        </Controls.Button>
-                    </Layouts.Row>
-                </Layouts.Col>
-            </Layouts.Col>
-        </Layouts.Contents.InnerContent>
+                    </Layouts.Contents.InnerContent>
+                ))}
+        </AnimatePresence>
     );
 }

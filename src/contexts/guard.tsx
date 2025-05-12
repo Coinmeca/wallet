@@ -1,10 +1,9 @@
 ﻿"use client";
 
+import React, { createContext, useContext, useEffect, useLayoutEffect, useState } from "react";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
-import { useMessageHandler } from "hooks";
 import { usePathname, useRouter } from "next/navigation";
-import React, { createContext, useContext, useLayoutEffect, useState } from "react";
-import { Account } from "viem";
+import { Account } from "@coinmeca/wallet-sdk/types";
 
 interface GuardContextProps {
     isInit: boolean;
@@ -23,9 +22,7 @@ export const useGuard = () => {
 
 export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const path = usePathname();
-    const router = useRouter();
     const { provider } = useCoinmecaWalletProvider();
-    const { auth, message } = useMessageHandler();
 
     const [isInit, setIsInit] = useState<boolean>(false);
     const [isAccess, setIsAccess] = useState<boolean>(false);
@@ -33,6 +30,14 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const [check, setCheck] = useState<any>();
     const [target, setTarget] = useState<string>();
+
+    useEffect(() => {
+        const handleLock = () => setIsAccess(false);
+        provider?.on("lockTimeUpdated", handleLock);
+        return () => {
+            provider?.off("lockTimeUpdated", handleLock);
+        };
+    }, [provider]);
 
     useLayoutEffect(() => {
         if (provider) {
@@ -44,7 +49,6 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
                 if (typeof check.init !== "undefined" && typeof check.access !== "undefined") {
                     let target;
-
 
                     if (!check.init) {
                         if (path?.startsWith("/welcome")) setIsAccess(true);
@@ -73,20 +77,15 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 provider?.off("unlock", handleCheck);
             };
         }
-    }, [path, provider]);
+    }, [path, provider?.isInitialized, provider?.isLocked]);
 
     useLayoutEffect(() => {
-        if (target) router.push(target);
+        if (target && target !== path) window.location.href = target;
     }, [target]);
 
     useLayoutEffect(() => {
-        if (!isLoad && check && typeof check?.init !== "undefined" && typeof check?.access !== "undefined" && typeof auth !== "undefined") {
-            if (path?.startsWith('/proxy')) setIsLoad(true);
-            else if (check.init === false && path?.startsWith("/welcome")) setIsLoad(true);
-            else if (!check.access && path?.startsWith("/lock")) setIsLoad(true);
-            else setIsLoad(true);
-        }
-    }, [auth, check]);
+        if ((target === path || !target) && !isLoad && check && Object.values(check).every((_) => typeof _ === "boolean")) setIsLoad(true);
+    }, [path, target, check]);
 
     return <GuardContext.Provider value={{ isInit, isAccess, isLoad, setIsAccess }}>{children}</GuardContext.Provider>;
 };

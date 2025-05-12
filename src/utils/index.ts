@@ -1,6 +1,44 @@
 ﻿import CryptoJS from "crypto-js";
-import { Chain } from "@coinmeca/wallet-sdk/types";
-import { Address } from "viem";
+
+export const requestNameMap: { [key: string]: string } = {
+    erc20_approve: "ERC20 Approve",
+    eth_requestAccounts: "Connection Request",
+    eth_sendTransaction: "Transaction Confirmation",
+    eth_signTransaction: "Transaction Sign Request",
+    personal_sign: "Sign Request",
+    wallet_addEthereumChain: "Add New Ethereum Chain",
+    wallet_switchEthereumChain: "Switch Ethereum Chain",
+    wallet_watchAsset: "Add New Token",
+};
+
+export const camelToTitleCase = (value?: string) => {
+    if (!value || !value?.length) return value;
+    return value
+        .replace(/([a-z])([A-Z])/g, "$1 $2")
+        .replace(/([A-Z])([A-Z][a-z])/g, "$1 $2")
+        .replace(/_/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
+export const isVideo = (url: string) => {
+    const videoExtensions = [".mp4", ".webm", ".avi", ".mov", ".mkv"];
+    return videoExtensions.some((ext) => url.toLowerCase().endsWith(ext));
+};
+
+export const short = (value?: string, options?: { length?: number; ellipsis?: string; front?: boolean; back?: boolean }) => {
+    if (!value) return;
+    const length = options?.length || 6;
+    const ellipsis = options?.ellipsis || " ... ";
+    const front = options?.front;
+    const back = options?.back;
+    return (
+        (front || !back ? value?.substring(0, value?.startsWith("0x") ? length + 2 : length) : "") +
+        (front || back ? "" : ellipsis) +
+        (!front || back ? value?.substring(value?.length - length, value?.length) : "")
+    );
+};
 
 export const pattern = {
     chainId: /^[0-9]+$/,
@@ -24,7 +62,7 @@ export const valid = {
             }),
         );
     },
-    address: (...address: (Address | string | undefined)[]) => {
+    address: (...address: (string | undefined)[]) => {
         if (!address || address === undefined || address === null) return false;
         if (typeof address === "string") address = [address];
         return enable(
@@ -40,112 +78,81 @@ export const valid = {
             }),
         );
     },
+    tx: (...tx: ({ [x: string]: string | bigint | undefined } | undefined)[]) => {
+        if (!tx || tx === undefined || tx === null) return false;
+        const validate = (value: string | bigint | undefined) => {
+            return (
+                !value ||
+                (typeof value === "string" && value?.startsWith("0x") && value?.toString()?.length > 2 && /^0x[0-9a-fA-F]+$/.test(value)) ||
+                typeof value === "bigint"
+            );
+        };
+        return enable(
+            ...tx?.map((tx: { [x: string]: string | bigint | undefined } | undefined) => {
+                if (!tx || !enable(...Object.values(tx)?.map((t) => validate(t)))) return false;
+                if (!tx?.value && !tx?.data) return false;
+                if ((tx?.to && !valid.address(tx?.to?.toString())) || (tx?.from?.toString() && !valid.address(tx?.from?.toString()))) return false;
+                return true;
+            }),
+        );
+    },
 };
 
-export const decodeHexToString = (hex: string) => {
-    let str = "";
-    for (let i = 0; i < hex.length; i += 2) {
-        const charCode = parseInt(hex.substr(i, 2), 16);
-        if (charCode >= 32 && charCode <= 126) {
-            str += String.fromCharCode(charCode);
+export const hex = {
+    toBytes: (value: string) => {
+        const bytes: number[] = [];
+        value = value.replace(/[^0-9A-Fa-f]/g, "");
+        for (let i = 0; i < value.length; i += 2) {
+            const byte = parseInt(value.substring(i, 2), 16);
+            if (!isNaN(byte)) bytes.push(byte);
         }
-    }
-    return str;
+        return bytes;
+    },
+    toString: (value: string) => {
+        if (!value || !value.length) return value;
+        let data = value?.slice(64);
+        if (data.length % 2 !== 0) data = "0" + data;
+        return Buffer.from(data, "hex")
+            .toString("utf8")
+            .replace(/[\x00\u0000]+/g, "")
+            .trim();
+    },
+    toNumber: (value: string) => {
+        const result = Number(value);
+        return isNaN(result) ? null : result;
+    },
 };
 
-export const decodeHexToNumber = (hex: string) => parseInt(hex, 16);
+export const bigInt = {
+    toHex: (value: BigInt): string => {
+        return "0x" + value.toString(16);
+    },
+};
 
-export const toHexString = (value: BigInt): string => {
-    return "0x" + value.toString(16); // Converts BigInt to hexadecimal string with 0x prefix
+export const base64 = {
+    toJson: (value: string): any => {
+        try {
+            value = value?.split(",")?.[1]?.replace(/[^A-Za-z0-9+/=]/g, "");
+            return JSON.parse(
+                new TextDecoder().decode(
+                    Uint8Array.from(atob(value?.padEnd(value?.length + ((4 - (value?.length % 4)) % 4), "=")), (char) => char.charCodeAt(0)),
+                ),
+            );
+        } catch (e) {
+            console.log(e);
+        }
+    },
 };
 
 export const sanitizeBigIntToHex = (obj: any): any => {
     if (typeof obj === "bigint") {
-        return toHexString(obj);
+        return bigInt.toHex(obj);
     } else if (Array.isArray(obj)) {
         return obj.map(sanitizeBigIntToHex);
     } else if (typeof obj === "object" && obj !== null) {
         return Object.fromEntries(Object.entries(obj).map(([key, value]) => [key, sanitizeBigIntToHex(value)]));
     }
     return obj;
-};
-
-export type ObjectFilter = { key?: string | string[]; value?: string | string[] } | undefined;
-export type Filter = ObjectFilter | string[] | string | ObjectFilter[] | undefined;
-
-export type ItemType = {
-    [key: string]: any; // Define specific keys and their types as needed
-};
-
-// Common logic for filtering or finding
-export const f = <T extends ItemType>(array: T[], filter: Filter | undefined, findOne: boolean): T[] | T | undefined => {
-    if (!array.length) return findOne ? undefined : [];
-
-    // Utility function to get the value from a nested key
-    const getNestedValue = (obj: any, keyPath: string): any => {
-        return keyPath.split(".").reduce((acc, key) => acc?.[key], obj);
-    };
-
-    const includesValue = (value: any, filter: string) => value?.toString().toLowerCase().includes(filter.toLowerCase());
-
-    const objectFilter = (item: T, filter: ObjectFilter): boolean => {
-        if (!filter) return true;
-
-        const { key, value } = filter;
-        const keys = Array.isArray(key) ? key : key ? [key] : [];
-        const values = Array.isArray(value) ? value : value ? [value] : [];
-
-        if (keys.length && values.length) {
-            return keys.some((k) => values.some((v) => includesValue(getNestedValue(item, k), v)));
-        }
-        if (keys.length) {
-            return keys.some((k) => getNestedValue(item, k) !== undefined);
-        }
-        if (values.length) {
-            return values.some((v) => Object.values(item).some((value) => includesValue(value, v)));
-        }
-        return true; // No key and no value provided, return the item
-    };
-
-    const checkItem = (item: T): boolean => {
-        if (typeof filter === "string") {
-            return Object.values(item).some((value) => includesValue(value, filter));
-        }
-
-        if (Array.isArray(filter)) {
-            if (filter.every((f) => typeof f === "string")) {
-                // If filter is an array of strings
-                return Object.values(item).some((value) => filter.some((f) => includesValue(value, f as string)));
-            }
-
-            if (filter.every((f) => typeof f === "object" && f !== null)) {
-                // If filter is an array of object filters, apply them sequentially
-                return filter.every((f) => objectFilter(item, f as ObjectFilter));
-            }
-        }
-
-        if (typeof filter === "object" && filter !== null) {
-            return objectFilter(item, filter as ObjectFilter);
-        }
-
-        return false;
-    };
-
-    if (findOne) {
-        return array.find(checkItem);
-    } else {
-        return array.filter(checkItem);
-    }
-};
-
-// Filter function
-export const filter = <T extends ItemType = ItemType>(array: T[] = [], filter?: Filter): T[] => {
-    return f(array, filter, false) as T[];
-};
-
-// Find function
-export const find = <T extends ItemType = ItemType>(array: T[] = [], filter?: Filter): T | undefined => {
-    return f(array, filter, true) as T | undefined;
 };
 
 export const objectToUrlParams = (obj: { [x: string | number | symbol]: any }) => {
@@ -228,28 +235,6 @@ export const openWindow = (target: string, args?: { width?: number; height?: num
     return newWindow;
 };
 
-export function parseChainId(chain: number | string | Chain): number {
-    if (!chain) return 0;
-    return typeof chain === "string"
-        ? chain.startsWith("0x")
-            ? Number(chain)
-            : parseInt(chain)
-        : typeof chain === "number"
-        ? chain
-        : parseChainId(chain?.chainId);
-}
-
-export function formatChainId(chain: number | string | Chain): string {
-    if (!chain) return chain as any;
-    return typeof chain === "string"
-        ? chain.startsWith("0x")
-            ? chain
-            : formatChainId(parseInt(chain))
-        : typeof chain === "number"
-        ? `0x${chain?.toString(16)}`
-        : formatChainId(chain?.chainId);
-}
-
 export const isMobile = () => {
     const browser = () => ((global || window) as any)?.navigator?.userAgent || ((global || window) as any)?.navigator?.vendor; /*|| window?.opera*/
     return (
@@ -280,16 +265,16 @@ export const decrypt = (data?: string | null, salt?: string): string | undefined
 };
 
 export const format = (value?: any): string | undefined => {
-    if (typeof value === "undefined") return value;
+    if (!value || typeof value === "undefined") return value;
     if (typeof value === "boolean" || typeof value === "number") return value.toString();
     return JSON.stringify(value);
 };
 
 export const parse = (value?: string): any => {
-    if (typeof value === "undefined") return value;
+    if (!value || typeof value === "undefined") return value;
     if (value === "true" || value === "false") return value === "true";
-    else if (/^[0-9]*\.[0-9]+$/.test(value)) return parseFloat(value);
-    else return JSON.parse(value);
+    if (/^[0-9]*\.[0-9]+$/.test(value)) return parseFloat(value);
+    return JSON.parse(value);
 };
 
 export interface StorageController {
@@ -370,7 +355,11 @@ export const loadStorage = (prefix: string, storage?: CloudStorage | Storage, is
         }
     },
     clear: () => {
-        return isTelegram ? storage?.removeItems(storage?.getKeys()?.map((k: string) => encrypt(k, salt)) as any) : (storage as Storage)?.clear();
+        try {
+            return isTelegram ? storage?.removeItems(storage?.getKeys()?.map((k: string) => encrypt(k, salt)) as any) : (storage as Storage)?.clear();
+        } catch (e) {
+            console.error(e);
+        }
     },
 });
 

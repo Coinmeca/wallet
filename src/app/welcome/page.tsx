@@ -1,12 +1,15 @@
 ﻿"use client";
 
+import CryptoJS from "crypto-js";
 import { useLayoutEffect, useState } from "react";
 import { Layouts } from "@coinmeca/ui/components";
 
-import { format, parse } from "@coinmeca/wallet-sdk/utils";
 import { getChainsByType } from "@coinmeca/wallet-provider/chains";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { Stages } from "containers";
+import { Chain } from "@coinmeca/wallet-sdk/types";
+
+let hash: string;
 
 export default function Welcome() {
     const { provider } = useCoinmecaWalletProvider();
@@ -16,14 +19,20 @@ export default function Welcome() {
         if (provider?.isInitialized) setStage({ name: "create", level: 0 });
     }, [provider]);
 
-    const handleConfirm = (passcode: string) => {
+    const handleConfirm = (code: string) => {
         try {
-            const chains = format(getChainsByType("mainnet"));
-            if (chains) localStorage.setItem("coinmeca:wallet:chains", chains);
-            provider?.init(passcode);
+            hash = CryptoJS.SHA256(code).toString();
+            code = "";
+            getChainsByType("mainnet")
+                ?.reverse()
+                ?.map((chain: Chain) => provider?.updateChain(chain));
+            provider?.init(hash);
+            hash = "";
             setStage({ name: "create", level: 2 });
             return true;
         } catch (e) {
+            code = "";
+            hash = "";
             console.error(e);
             return false;
         }
@@ -109,11 +118,7 @@ export default function Welcome() {
                 //                                         style={{ padding: "0.5em", borderRadius: "4em", background: "rgba(var(--white),.15)" }}
                 //                                     />
                 //                                     <Elements.Text type={"h6"}>
-                //                                         {account?.address &&
-                //                                             `${account.address.substring(
-                //                                                 0,
-                //                                                 account.address.startsWith("0x") ? 6 : 4,
-                //                                             )} ... ${account.address.substring(account.address.length - 4, account.address.length)}`}
+                //                                         {short(account?.address)}
                 //                                     </Elements.Text>
                 //                                 </Layouts.Col>
                 //                             </Layouts.Col>

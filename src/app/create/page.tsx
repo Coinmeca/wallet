@@ -6,6 +6,7 @@ import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { AnimatePresence } from "framer-motion";
 import { Stages } from "containers";
+import { short } from "utils";
 
 export default function Welcome() {
     const router = useRouter();
@@ -52,13 +53,7 @@ export default function Welcome() {
                                                                 scale={3}
                                                                 style={{ padding: "0.5em", borderRadius: "4em", background: "rgba(var(--white),.15)" }}
                                                             />
-                                                            <Elements.Text type={"h6"}>
-                                                                {account?.address &&
-                                                                    `${account.address.substring(
-                                                                        0,
-                                                                        account.address.startsWith("0x") ? 6 : 4,
-                                                                    )} ... ${account.address.substring(account.address.length - 4, account.address.length)}`}
-                                                            </Elements.Text>
+                                                            <Elements.Text type={"h6"}>{short(account?.address)}</Elements.Text>
                                                         </Layouts.Col>
                                                     </Layouts.Col>
                                                     <Layouts.Col gap={0} align={"center"} fill>
