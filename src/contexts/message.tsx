@@ -152,8 +152,7 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
             if (message) {
                 remove(id);
                 portal?.postMessage({ target, id, result, method: message?.request.method, close: count === 1 }, message.origin);
-                if (isProxy) portal?.document?.getElementById(`coinmeca-wallet-proxy-${id}`)?.remove();
-                if (isModal) window?.parent?.document?.getElementById(`coinmeca-wallet-panel-${id}`)?.remove();
+                if (isProxy || isModal) portal?.document?.getElementById(`coinmeca-wallet-${isProxy ? "proxy" : "panel"}-${id}`)?.remove();
             }
         },
         [messages, portal],
@@ -165,8 +164,7 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
             if (message) {
                 remove(id);
                 portal?.postMessage({ target, id, error, method: message?.request.method, close: true }, message.origin);
-                if (isProxy) portal?.document?.getElementById(`coinmeca-wallet-proxy-${id}`)?.remove();
-                if (isModal) window?.parent?.document?.getElementById(`coinmeca-wallet-panel-${id}`)?.remove();
+                if (isProxy || isModal) portal?.document?.getElementById(`coinmeca-wallet-${isProxy ? "proxy" : "panel"}-${id}`)?.remove();
             }
         },
         [messages, portal],
@@ -175,10 +173,11 @@ export const MessageHandler: React.FC<{ children?: React.ReactNode }> = ({ child
     const close = (id?: string) => {
         if (portal) {
             if (isModal) {
-                console.log(`coinmeca-wallet-panel-${id}`, window?.parent?.document?.getElementById(`coinmeca-wallet-panel-${id}`));
-                console.log(id && id?.length);
-                if (id && id?.length) window?.parent?.document?.getElementById(`coinmeca-wallet-panel-${id}`)?.remove();
-                else window?.parent?.document.querySelectorAll('[id^="coinmeca-wallet-panel-"]').forEach((el) => el.remove());
+                if (id && id?.length) {
+                    const message = messages?.find((m) => m?.id === id);
+                    portal?.postMessage({ target, id, strategy, method: message?.request.method, close: true }, message?.origin || "*");
+                    portal?.document?.getElementById(`coinmeca-wallet-panel-${id}`)?.remove();
+                } else portal?.document.querySelectorAll('[id^="coinmeca-wallet-panel-"]').forEach((el) => el.remove());
             } else {
                 if (telegram) telegram?.close();
                 window?.close();
