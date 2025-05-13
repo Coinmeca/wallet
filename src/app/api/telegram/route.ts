@@ -207,6 +207,39 @@ export async function POST(req: NextRequest) {
     }
 }
 
-export async function GET() {
-    return NextResponse.json({ message: "GET request not supported" }, { status: 405 });
+// export async function GET() {
+//     return NextResponse.json({ message: "GET request not supported" }, { status: 405 });
+// }
+
+export async function GET(req: NextRequest) {
+    const { searchParams } = new URL(req.url);
+    const chat_id = searchParams.get("chat_id");
+    const app = searchParams.get("request_app");
+    const id = searchParams.get("request_id");
+    const url = searchParams.get("request_url");
+
+    if (!app || !id) {
+        return NextResponse.json({ error: "Missing required request params" }, { status: 400 });
+    }
+
+    const response: TelegramResponse = {
+        chat_id: Number(chat_id),
+        text: "Open Coinmeca Wallet",
+        reply_markup: {
+            keyboard: [
+                [
+                    {
+                        text: "Wallet",
+                        web_app: {
+                            url: url || "https://wallet.coinmeca.net",
+                        },
+                    },
+                ],
+            ],
+            resize_keyboard: true,
+        },
+    };
+
+    await send(response);
+    return NextResponse.json({ message: "Simulated response", response });
 }
