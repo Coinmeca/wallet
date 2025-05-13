@@ -22,7 +22,6 @@ export const useGuard = () => {
 
 export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const path = usePathname();
-    const router = useRouter();
     const { provider } = useCoinmecaWalletProvider();
 
     const [isInit, setIsInit] = useState<boolean>(false);
@@ -31,6 +30,14 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const [check, setCheck] = useState<any>();
     const [target, setTarget] = useState<string>();
+
+    useEffect(() => {
+        const handleLock = () => setIsAccess(false);
+        provider?.on("lockTimeUpdated", handleLock);
+        return () => {
+            provider?.off("lockTimeUpdated", handleLock);
+        };
+    }, [provider]);
 
     useLayoutEffect(() => {
         if (provider) {
@@ -73,7 +80,7 @@ export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }, [path, provider?.isInitialized, provider?.isLocked]);
 
     useLayoutEffect(() => {
-        if (target && target !== path) router.push(target);
+        if (target && target !== path) window.location.href = target;
     }, [target]);
 
     useLayoutEffect(() => {

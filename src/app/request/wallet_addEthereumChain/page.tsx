@@ -38,7 +38,7 @@ export default function Page() {
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const { provider, chain } = useCoinmecaWalletProvider();
-    const { getRequest, getRequestById, success, failure, next, count, setCurrent } = useMessageHandler();
+    const { getRequest, getRequestById, success, failure, next, count, setCurrent, close } = useMessageHandler();
 
     const [load, setLoad] = useState(true);
     const [id, setId] = useState("");
@@ -55,7 +55,7 @@ export default function Page() {
 
     const handleClose = () => {
         result();
-        close();
+        close(id);
     };
 
     const handleNext = () => {

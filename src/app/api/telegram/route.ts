@@ -96,13 +96,34 @@ const send = async (response: TelegramResponse) => {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { message, callback_query } = body;
+        const { chatId, message, callback_query, request } = body;
+
+        const { searchParams } = new URL(req.url);
+        const chat_id = searchParams.get("chat_id");
 
         // Define a response template
         let response: TelegramResponse = {
-            chat_id: message?.chat?.id || callback_query?.message?.chat.id,
+            chat_id: message?.chat?.id || callback_query?.message?.chat.id || chatId || chat_id,
             text: "",
         };
+
+        if (request) {
+            if (typeof request !== "object" || !request?.app || request?.app === "" || !request?.id || request?.id === "") return;
+            response.text = "Open Coinmeca Wallet";
+            response.reply_markup = {
+                keyboard: [
+                    [
+                        {
+                            text: "Wallet",
+                            web_app: {
+                                url: request?.url,
+                            },
+                        },
+                    ],
+                ],
+                resize_keyboard: true,
+            };
+        }
 
         if (callback_query && callback_query.data) {
             // Handle data sent from Telegram WebApp using sendData

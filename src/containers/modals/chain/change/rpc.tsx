@@ -66,7 +66,7 @@ const RpcChangeModal = (props: any) => {
                         urls &&
                         urls?.length &&
                         urls?.map((url: string) => ({
-                            onClick: () => setSelected(url),
+                            onClick: selected !== url && (() => setSelected(url)),
                             children: [
                                 [
                                     {

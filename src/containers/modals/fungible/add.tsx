@@ -109,7 +109,7 @@ function FungibleAddModal(props: Add) {
 
     return (
         <Modal
-            title={!tokens ? "Add Token" : "Token Information"}
+            title={!asset ? "Add Token" : "Token Information"}
             content={
                 <Layouts.Col gap={2} fill>
                     <Layouts.Contents.SlideContainer

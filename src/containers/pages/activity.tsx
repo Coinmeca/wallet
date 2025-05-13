@@ -44,6 +44,8 @@ export default function Activity(props: Activity) {
                     const gasUsed = data?.gasUsed ? Number(data?.gasUsed) : "-";
                     const cumulativeGasUsed = data?.cumulativeGasUsed ? Number(data?.cumulativeGasUsed) : "-";
                     const effectiveGasPrice = data?.effectiveGasPrice ? Number(data?.effectiveGasPrice) : "-";
+
+                    console.log(data);
                     return {
                         no: tx?.no,
                         hash: tx?.hash,

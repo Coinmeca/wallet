@@ -64,8 +64,8 @@ export default function Accounts({
             });
     };
 
-    const handleShowPrivateKey = (index: number) => {
-        openShowPrivateKey();
+    const handleShowPrivateKey = (account: Account) => {
+        openShowPrivateKey(account);
     };
 
     const handleAccountEdit = (account: Account) => {
@@ -194,7 +194,7 @@ export default function Accounts({
                                                         onClickItem={(e: any, v: any, k: number) => {
                                                             switch (k) {
                                                                 case 0:
-                                                                    return handleShowPrivateKey(a?.index);
+                                                                    return handleShowPrivateKey(a);
                                                                 case 1:
                                                                     return handleAccountEdit(a);
                                                                 case 2:

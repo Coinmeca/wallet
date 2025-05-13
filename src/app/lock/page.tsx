@@ -1,8 +1,9 @@
 ﻿"use client";
 
+import CryptoJS from "crypto-js";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
-import { Stages } from "containers";
 import { usePathname, useRouter } from "next/navigation";
+import { Stages } from "containers";
 
 export default function Lock({ params }: { params: any }) {
     const path = usePathname();
@@ -12,7 +13,8 @@ export default function Lock({ params }: { params: any }) {
 
     const handleUnlock = (code: string) => {
         try {
-            if (provider?.unlock(code)) {
+            if (provider?.unlock(CryptoJS.SHA256(code).toString())) {
+                code = "";
                 if (path?.startsWith("/lock")) router.push("/");
                 else if (!provider?.account()) {
                     if (provider?.accounts()?.length) provider?.changeAccount(0);

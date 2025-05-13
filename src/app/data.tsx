@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import Image from "next/image";
-import { useCallback, useLayoutEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useMobile, useNotification, usePortal, useWindowSize } from "@coinmeca/ui/hooks";
@@ -13,7 +13,7 @@ import { Root } from "@coinmeca/ui/lib/style";
 import Coinmeca from "assets/coinmeca.svg";
 import { Modals, Sidebars } from "containers";
 import { PageLoader } from "hooks/usePageLoader";
-import { useMessageHandler, useTelegram } from "hooks";
+import { useGuard, useMessageHandler, useTelegram } from "hooks";
 import { MessageProps } from "contexts/message";
 import { requestNameMap } from "utils";
 
@@ -22,9 +22,10 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
     const path = usePathname();
 
     const { windowSize } = useWindowSize();
+    const { isAccess } = useGuard();
     const { isMobile } = useMobile();
     const { isInApp } = useTelegram();
-    const { provider, account, chain, apps } = useCoinmecaWalletProvider();
+    const { provider, account, accounts, chain, apps } = useCoinmecaWalletProvider();
     const { messages, count, current, failure, remove } = useMessageHandler();
     const { toasts, addToast } = useNotification();
 
@@ -37,7 +38,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
 
     const [appFilter, setAppFilter] = useState<string>();
 
-    const desktop = isClient && windowSize.width > Root.Device.Desktop - 1;
+    const isDesktop = isClient && windowSize.width > Root.Device.Desktop - 1;
     const responsive = isClient && windowSize.width <= Root.Device.Tablet;
 
     const colorMap = responsive
@@ -83,6 +84,14 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
         setIsClient(true);
     }, []);
 
+    useEffect(() => {
+        const handleLock = () => setSideMenu("");
+        provider?.on("lock", handleLock);
+        return () => {
+            provider?.off("lock", handleLock);
+        };
+    }, [provider]);
+
     const handlesideMenu = (menu: string) => {
         setSideMenu(menu);
         if (responsive) {
@@ -96,13 +105,13 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
             .writeText(account.address)
             .then(function () {
                 addToast({
-                    title: `Copy address`,
-                    message: `The address of ${account.name} copied.`,
+                    title: `Copy Address`,
+                    message: `The address of ${account.name} was copied.`,
                 });
             })
             .catch(function (err) {
                 addToast({
-                    title: `Copy address`,
+                    title: `Copy Address`,
                     message: `Failed to copy the address of ${account.name}.`,
                 });
             });
@@ -211,7 +220,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
     const sideContents = useMemo(
         () => [
             {
-                active: (desktop && (sideMenu === "" || sideMenu === "accounts")) || sideMenu === "accounts",
+                active: (isDesktop && (sideMenu === "" || sideMenu === "accounts")) || sideMenu === "accounts",
                 children: (
                     <Sidebars.Accounts
                         search={search()}
@@ -235,7 +244,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                 ),
             },
         ],
-        [search, searchFilter, responsive],
+        [search, searchFilter, responsive, isDesktop, isMobile, sideMenu],
     );
 
     const side = 56;
@@ -295,7 +304,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                   }
                 : undefined,
         side:
-            isLoad && account
+            isLoad && account && accounts?.length
                 ? {
                       width: side - (responsive ? 8 : 5),
                       active: true,
@@ -322,9 +331,9 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                   {account?.address && (
                                       <Layouts.Row gap={0} fit>
                                           <Controls.Tab
-                                              active={desktop || sideMenu === "accounts"}
-                                              toggle={!desktop}
-                                              onClick={() => !desktop && handlesideMenu(sideMenu === "accounts" ? "" : "accounts")}>
+                                              active={isDesktop || sideMenu === "accounts"}
+                                              toggle={!isDesktop}
+                                              onClick={() => !isDesktop && handlesideMenu(sideMenu === "accounts" ? "" : "accounts")}>
                                               {sideMenu === "accounts" ? (
                                                   <Layouts.Row gap={0.5} align={"middle"}>
                                                       <Elements.Icon icon={"x"} scale={0.666} />
@@ -372,259 +381,263 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                       ),
                   }
                 : undefined,
-        panels: isLoad
-            ? isRequest
-                ? [
-                      {
-                          active: sideMenu === "requests",
-                          children: (
-                              <Layouts.Contents.InnerContent>
-                                  {count > 1 ? (
-                                      <Layouts.List
-                                          list={messages}
-                                          formatter={(messages: MessageProps[]) =>
-                                              messages?.length &&
-                                              messages?.map((m) => {
-                                                  const date = (format(m?.time, "date") as string).split(" ");
-                                                  return {
-                                                      onClick: current !== m?.id && (() => {}),
-                                                      style: {
-                                                          padding: responsive ? "2.5em clamp(2em, 5%, 8em)" : "2em 3em",
-                                                          ...(current === m?.id && { background: "transparent", pointerEvents: "none" }),
-                                                      },
-                                                      motion: {
-                                                          initial: { scale: 1, opacity: 0 },
-                                                          aniamte: { scale: 1, opacity: 1, transition: { staggerChildren: 0.1 } },
-                                                          exit: { scale: 0.9, opacity: 0, transition: { staggerChildren: 0.1 } },
-                                                      },
-                                                      children: [
-                                                          [
+        panels:
+            isAccess && isLoad
+                ? isRequest
+                    ? [
+                          {
+                              active: sideMenu === "requests",
+                              children: (
+                                  <Layouts.Contents.InnerContent>
+                                      {count > 1 ? (
+                                          <Layouts.List
+                                              list={messages}
+                                              formatter={(messages: MessageProps[]) =>
+                                                  messages?.length &&
+                                                  messages?.map((m) => {
+                                                      const date = (format(m?.time, "date") as string).split(" ");
+                                                      return {
+                                                          onClick: current !== m?.id && (() => {}),
+                                                          style: {
+                                                              padding: responsive ? "2.5em clamp(2em, 5%, 8em)" : "2em 3em",
+                                                              ...(current === m?.id && { background: "transparent", pointerEvents: "none" }),
+                                                          },
+                                                          motion: {
+                                                              initial: { scale: 1, opacity: 0 },
+                                                              aniamte: { scale: 1, opacity: 1, transition: { staggerChildren: 0.1 } },
+                                                              exit: { scale: 0.9, opacity: 0, transition: { staggerChildren: 0.1 } },
+                                                          },
+                                                          children: [
                                                               [
-                                                                  {
-                                                                      style: { overflow: "hidden", ...(current === m?.id ? { opacity: 0.3 } : {}) },
-                                                                      onClick: () => {
-                                                                          router.push(`/request/${m?.request?.method}`);
-                                                                          setSideMenu("");
-                                                                      },
-                                                                      children: [
-                                                                          [
-                                                                              {
-                                                                                  gap: 0.5,
-                                                                                  children: [
-                                                                                      [
-                                                                                          <>
-                                                                                              <Elements.Text fix>
-                                                                                                  {requestNameMap?.[
-                                                                                                      m?.request?.method as keyof typeof requestNameMap
-                                                                                                  ] || m?.request?.method}
-                                                                                              </Elements.Text>
-                                                                                          </>,
-                                                                                      ],
-                                                                                      [
+                                                                  [
+                                                                      {
+                                                                          style: { overflow: "hidden", ...(current === m?.id ? { opacity: 0.3 } : {}) },
+                                                                          onClick: () => {
+                                                                              router.push(`/request/${m?.request?.method}`);
+                                                                              setSideMenu("");
+                                                                          },
+                                                                          children: [
+                                                                              [
+                                                                                  {
+                                                                                      gap: 0.5,
+                                                                                      children: [
                                                                                           [
-                                                                                              ...(m?.request?.app?.name && m?.request?.app?.name !== ""
-                                                                                                  ? [
-                                                                                                        {
-                                                                                                            gap: 0.5,
-                                                                                                            children: [
-                                                                                                                {
-                                                                                                                    fit: true,
-                                                                                                                    children: (
-                                                                                                                        <>
-                                                                                                                            {m?.request?.app?.logo && (
-                                                                                                                                <Elements.Avatar
-                                                                                                                                    size={2}
-                                                                                                                                    img={m?.request?.app?.logo}
-                                                                                                                                    style={{
-                                                                                                                                        width: "max-content",
-                                                                                                                                    }}
-                                                                                                                                />
-                                                                                                                            )}
-                                                                                                                        </>
-                                                                                                                    ),
-                                                                                                                },
-                                                                                                                <>
-                                                                                                                    <Elements.Text
-                                                                                                                        type={"desc"}
-                                                                                                                        weight={"bold"}
-                                                                                                                        fix>
-                                                                                                                        {m?.request?.app?.name}
-                                                                                                                    </Elements.Text>
-                                                                                                                </>,
-                                                                                                            ],
-                                                                                                        },
-                                                                                                    ]
-                                                                                                  : []),
+                                                                                              <>
+                                                                                                  <Elements.Text fix>
+                                                                                                      {requestNameMap?.[
+                                                                                                          m?.request?.method as keyof typeof requestNameMap
+                                                                                                      ] || m?.request?.method}
+                                                                                                  </Elements.Text>
+                                                                                              </>,
+                                                                                          ],
+                                                                                          [
+                                                                                              [
+                                                                                                  ...(m?.request?.app?.name && m?.request?.app?.name !== ""
+                                                                                                      ? [
+                                                                                                            {
+                                                                                                                gap: 0.5,
+                                                                                                                children: [
+                                                                                                                    {
+                                                                                                                        fit: true,
+                                                                                                                        children: (
+                                                                                                                            <>
+                                                                                                                                {m?.request?.app?.logo && (
+                                                                                                                                    <Elements.Avatar
+                                                                                                                                        size={2}
+                                                                                                                                        img={
+                                                                                                                                            m?.request?.app
+                                                                                                                                                ?.logo
+                                                                                                                                        }
+                                                                                                                                        style={{
+                                                                                                                                            width: "max-content",
+                                                                                                                                        }}
+                                                                                                                                    />
+                                                                                                                                )}
+                                                                                                                            </>
+                                                                                                                        ),
+                                                                                                                    },
+                                                                                                                    <>
+                                                                                                                        <Elements.Text
+                                                                                                                            type={"desc"}
+                                                                                                                            weight={"bold"}
+                                                                                                                            fix>
+                                                                                                                            {m?.request?.app?.name}
+                                                                                                                        </Elements.Text>
+                                                                                                                    </>,
+                                                                                                                ],
+                                                                                                            },
+                                                                                                        ]
+                                                                                                      : []),
+                                                                                              ],
                                                                                           ],
                                                                                       ],
-                                                                                  ],
-                                                                              },
-                                                                              //   {
-                                                                              //       fit: true,
-                                                                              //       children: [
-                                                                              //           [
-                                                                              //               {
-                                                                              //                   gap: 0,
-                                                                              //                   fit: true,
-                                                                              //                   align: "right",
-                                                                              //                   children: [
-                                                                              //                       <>
-                                                                              //                           <Elements.Text
-                                                                              //                               type={"desc"}
-                                                                              //                               align={"right"}
-                                                                              //                               height={0}
-                                                                              //                               fit>
-                                                                              //                               {date[0]}
-                                                                              //                           </Elements.Text>
-                                                                              //                       </>,
-                                                                              //                       <>
-                                                                              //                           <Elements.Text
-                                                                              //                               type={"desc"}
-                                                                              //                               align={"right"}
-                                                                              //                               height={0}
-                                                                              //                               fit>
-                                                                              //                               {date[1]}
-                                                                              //                           </Elements.Text>
-                                                                              //                       </>,
-                                                                              //                   ],
-                                                                              //               },
-                                                                              //           ],
-                                                                              //       ],
-                                                                              //   },
+                                                                                  },
+                                                                                  //   {
+                                                                                  //       fit: true,
+                                                                                  //       children: [
+                                                                                  //           [
+                                                                                  //               {
+                                                                                  //                   gap: 0,
+                                                                                  //                   fit: true,
+                                                                                  //                   align: "right",
+                                                                                  //                   children: [
+                                                                                  //                       <>
+                                                                                  //                           <Elements.Text
+                                                                                  //                               type={"desc"}
+                                                                                  //                               align={"right"}
+                                                                                  //                               height={0}
+                                                                                  //                               fit>
+                                                                                  //                               {date[0]}
+                                                                                  //                           </Elements.Text>
+                                                                                  //                       </>,
+                                                                                  //                       <>
+                                                                                  //                           <Elements.Text
+                                                                                  //                               type={"desc"}
+                                                                                  //                               align={"right"}
+                                                                                  //                               height={0}
+                                                                                  //                               fit>
+                                                                                  //                               {date[1]}
+                                                                                  //                           </Elements.Text>
+                                                                                  //                       </>,
+                                                                                  //                   ],
+                                                                                  //               },
+                                                                                  //           ],
+                                                                                  //       ],
+                                                                                  //   },
+                                                                              ],
                                                                           ],
-                                                                      ],
-                                                                  },
-                                                                  ...(current !== m?.id
-                                                                      ? [
-                                                                            {
-                                                                                fit: true,
-                                                                                style: { pointerEvents: "initial", maxWitdth: "max-content" },
-                                                                                children: [
-                                                                                    <>
-                                                                                        <Controls.Button
-                                                                                            icon={"x"}
-                                                                                            onClick={() => {
-                                                                                                failure(m?.id, "User rejected this request.");
-                                                                                                remove(m?.id);
-                                                                                                if (count === 1) setSideMenu("");
-                                                                                            }}
-                                                                                        />
-                                                                                    </>,
-                                                                                ],
-                                                                            },
-                                                                        ]
-                                                                      : []),
+                                                                      },
+                                                                      ...(current !== m?.id
+                                                                          ? [
+                                                                                {
+                                                                                    fit: true,
+                                                                                    style: { pointerEvents: "initial", maxWitdth: "max-content" },
+                                                                                    children: [
+                                                                                        <>
+                                                                                            <Controls.Button
+                                                                                                icon={"x"}
+                                                                                                onClick={() => {
+                                                                                                    failure(m?.id, "User rejected this request.");
+                                                                                                    remove(m?.id);
+                                                                                                    if (count === 1) setSideMenu("");
+                                                                                                }}
+                                                                                            />
+                                                                                        </>,
+                                                                                    ],
+                                                                                },
+                                                                            ]
+                                                                          : []),
+                                                                  ],
                                                               ],
                                                           ],
-                                                      ],
-                                                  };
-                                              })
-                                          }
-                                      />
-                                  ) : (
-                                      <Layouts.Col align={"center"} fill>
-                                          <Elements.Text type={"desc"}>There is no more requests.</Elements.Text>
-                                      </Layouts.Col>
-                                  )}
-                              </Layouts.Contents.InnerContent>
-                          ),
-                      },
-                  ]
-                : responsive
-                ? [
-                      ...sideContents,
-                      {
-                          active: sideMenu === "setting",
-                          children: (
-                              <Layouts.Contents.SlideContainer
-                                  contents={[
-                                      {
-                                          active: setting === "",
-                                          children: (
-                                              <Layouts.Col style={{ padding: "4em" }} reverse={isInApp || isMobile} fill>
-                                                  <Layouts.Col gap={6} reverse={!isInApp && !isMobile}>
-                                                      <Layouts.Col gap={6}>
-                                                          <Controls.Button
-                                                              align={"left"}
-                                                              scale={1.125}
-                                                              style={{ padding: "0.5em 1em" }}
-                                                              onClick={() => {
-                                                                  setSideMenu("");
-                                                                  router.push("/test");
-                                                              }}>
-                                                              Test
-                                                          </Controls.Button>
-                                                          <Controls.Button
-                                                              align={"left"}
-                                                              iconLeft={"blockchain"}
-                                                              scale={1.125}
-                                                              style={{ padding: "0.5em 1em" }}
-                                                              onClick={() => setSetting("apps")}>
-                                                              Connected Apps
-                                                          </Controls.Button>
-                                                          <Controls.Button
-                                                              align={"left"}
-                                                              iconLeft={"sheild-star"}
-                                                              scale={1.125}
-                                                              style={{ padding: "0.5em 1em" }}
-                                                              onClick={() => {
-                                                                  setSideMenu("");
-                                                                  router.push("/change");
-                                                              }}>
-                                                              Change Passcode
-                                                          </Controls.Button>
+                                                      };
+                                                  })
+                                              }
+                                          />
+                                      ) : (
+                                          <Layouts.Col align={"center"} fill>
+                                              <Elements.Text type={"desc"}>There is no more requests.</Elements.Text>
+                                          </Layouts.Col>
+                                      )}
+                                  </Layouts.Contents.InnerContent>
+                              ),
+                          },
+                      ]
+                    : responsive
+                    ? [
+                          ...sideContents,
+                          {
+                              active: sideMenu === "setting",
+                              children: (
+                                  <Layouts.Contents.SlideContainer
+                                      contents={[
+                                          {
+                                              active: setting === "",
+                                              children: (
+                                                  <Layouts.Col style={{ padding: "4em" }} reverse={isInApp || isMobile} fill>
+                                                      <Layouts.Col gap={6} reverse={!isInApp && !isMobile}>
+                                                          <Layouts.Col gap={6}>
+                                                              <Controls.Button
+                                                                  align={"left"}
+                                                                  scale={1.125}
+                                                                  style={{ padding: "0.5em 1em" }}
+                                                                  onClick={() => {
+                                                                      setSideMenu("");
+                                                                      router.push("/test");
+                                                                  }}>
+                                                                  Test
+                                                              </Controls.Button>
+                                                              <>
+                                                                  <Controls.Button
+                                                                      align={"left"}
+                                                                      iconLeft={"blockchain"}
+                                                                      scale={1.125}
+                                                                      style={{ padding: "0.5em 1em" }}
+                                                                      onClick={() => setSetting("apps")}>
+                                                                      Connected Apps
+                                                                  </Controls.Button>
+                                                                  <Controls.Button
+                                                                      align={"left"}
+                                                                      iconLeft={"sheild-star"}
+                                                                      scale={1.125}
+                                                                      style={{ padding: "0.5em 1em" }}
+                                                                      onClick={() => {
+                                                                          setSideMenu("");
+                                                                          router.push("/change");
+                                                                      }}>
+                                                                      Change Passcode
+                                                                  </Controls.Button>
+                                                              </>
+                                                          </Layouts.Col>
+                                                          <>
+                                                              <Controls.Button
+                                                                  type={"line"}
+                                                                  iconLeft={"lock"}
+                                                                  scale={1.125}
+                                                                  style={{ padding: "0.5em 1em" }}
+                                                                  onClick={() => provider?.lock()}>
+                                                                  Lock
+                                                              </Controls.Button>
+                                                          </>
                                                       </Layouts.Col>
-                                                      <Controls.Button
-                                                          type={"line"}
-                                                          iconLeft={"lock"}
-                                                          scale={1.125}
-                                                          style={{ padding: "0.5em 1em" }}
-                                                          onClick={() => {
-                                                              setSideMenu("");
-                                                              provider?.lock();
-                                                              router.push("/lock");
-                                                          }}>
-                                                          Lock
-                                                      </Controls.Button>
                                                   </Layouts.Col>
-                                              </Layouts.Col>
-                                          ),
-                                      },
-                                      {
-                                          active: setting === "apps",
-                                          children: (
-                                              <Layouts.Contents.InnerContent scroll={false}>
-                                                  <Layouts.Col gap={0} fill>
-                                                      <Controls.Input
-                                                          placeholder={"Search chain by id or name..."}
-                                                          onChange={(e: any, v: string) => setAppFilter(v)}
-                                                          left={{
-                                                              children: (
-                                                                  <Elements.Icon icon={"search"} style={{ marginRight: "0.5em", padding: "0.333em 0" }} />
-                                                              ),
-                                                          }}
-                                                          style={{ padding: "1.5em clamp(0em, 3.75%, 6em)" }}
-                                                          clearable
-                                                      />
-                                                      <Layouts.List list={filter(apps, appFilter)} formatter={applist} />
-                                                  </Layouts.Col>
-                                                  <Layouts.Col gap={0} style={{ padding: "4em", paddingTop: "2em" }}>
-                                                      <Layouts.Row>
-                                                          <Controls.Button type={"glass"} onClick={() => setSetting("")}>
-                                                              Back
-                                                          </Controls.Button>
-                                                      </Layouts.Row>
-                                                  </Layouts.Col>
-                                              </Layouts.Contents.InnerContent>
-                                          ),
-                                      },
-                                  ]}
-                              />
-                          ),
-                      },
-                  ]
-                : undefined
-            : undefined,
+                                              ),
+                                          },
+                                          {
+                                              active: setting === "apps",
+                                              children: (
+                                                  <Layouts.Contents.InnerContent scroll={false}>
+                                                      <Layouts.Col gap={0} fill>
+                                                          <Controls.Input
+                                                              placeholder={"Search chain by id or name..."}
+                                                              onChange={(e: any, v: string) => setAppFilter(v)}
+                                                              left={{
+                                                                  children: (
+                                                                      <Elements.Icon icon={"search"} style={{ marginRight: "0.5em", padding: "0.333em 0" }} />
+                                                                  ),
+                                                              }}
+                                                              style={{ padding: "1.5em clamp(0em, 3.75%, 6em)" }}
+                                                              clearable
+                                                          />
+                                                          <Layouts.List list={filter(apps, appFilter)} formatter={applist} />
+                                                      </Layouts.Col>
+                                                      <Layouts.Col gap={0} style={{ padding: "4em", paddingTop: "2em" }}>
+                                                          <Layouts.Row>
+                                                              <Controls.Button type={"glass"} onClick={() => setSetting("")}>
+                                                                  Back
+                                                              </Controls.Button>
+                                                          </Layouts.Row>
+                                                      </Layouts.Col>
+                                                  </Layouts.Contents.InnerContent>
+                                              ),
+                                          },
+                                      ]}
+                                  />
+                              ),
+                          },
+                      ]
+                    : undefined
+                : undefined,
     };
 
     const sidebars =
@@ -635,7 +648,6 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                       width: 48,
                       active: !!sideMenu && sideMenu !== "",
                       onBlur: (e: any) => {
-                          console.log("e", e);
                           if (!e.currentTarget.contains(e.relatedTarget)) {
                               // setSidebar(false);
                           }
@@ -684,10 +696,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                                               type={"line"}
                                                               scale={1.125}
                                                               style={{ padding: "0.5em 1em" }}
-                                                              onClick={() => {
-                                                                  provider?.lock();
-                                                                  router.push("/lock");
-                                                              }}>
+                                                              onClick={() => provider?.lock()}>
                                                               Lock
                                                           </Controls.Button>
                                                       </Layouts.Col>
