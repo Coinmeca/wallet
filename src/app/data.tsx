@@ -7,13 +7,14 @@ import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useMobile, useNotification, usePortal, useWindowSize } from "@coinmeca/ui/hooks";
 import { Account, App } from "@coinmeca/wallet-sdk/types";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
+import { useTelegram } from "@coinmeca/wallet-provider/telegram";
 import { filter, format } from "@coinmeca/ui/lib/utils";
 import { Root } from "@coinmeca/ui/lib/style";
 
 import Coinmeca from "assets/coinmeca.svg";
 import { Modals, Sidebars } from "containers";
 import { PageLoader } from "hooks/usePageLoader";
-import { useGuard, useMessageHandler, useTelegram } from "hooks";
+import { useGuard, useMessageHandler } from "hooks";
 import { MessageProps } from "contexts/message";
 import { requestNameMap } from "utils";
 

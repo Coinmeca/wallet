@@ -4,7 +4,7 @@ import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useCoinmecaWallet } from "@coinmeca/wallet-provider/adapter";
 import { getChainsByType } from "@coinmeca/wallet-provider/chains";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
-import { useTelegram } from "hooks";
+import { useTelegram } from "@coinmeca/wallet-provider/telegram";
 import { useLayoutEffect, useState } from "react";
 
 export default function Page() {
