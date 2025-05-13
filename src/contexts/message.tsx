@@ -2,7 +2,7 @@
 
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { App } from "@coinmeca/wallet-sdk/types";
-import { useTelegram } from "hooks";
+import { useTelegram } from "@coinmeca/wallet-provider/telegram";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useCallback, useContext, useLayoutEffect, useMemo, useState } from "react";
 
