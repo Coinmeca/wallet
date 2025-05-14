@@ -2,7 +2,7 @@
 import { StrictMode } from "react";
 import { Notification, Theme, WindowSize } from "@coinmeca/ui/contexts";
 import { Style } from "@coinmeca/ui/lib";
-import { MessageHandler, OSNotificationProvider, StorageProvider } from "contexts";
+import { DiscordProvider, MessageHandler, OSNotificationProvider, StorageProvider } from "contexts";
 import { dehydrate, HydrationBoundary, QueryClientProvider } from "@tanstack/react-query";
 import { getQueryClient } from "api";
 import { GuardProvider } from "contexts/guard";
@@ -14,25 +14,27 @@ export default function Providers({ children }: { children: any }) {
     return (
         <StrictMode>
             <WindowSize>
-                <CoinmecaWalletContextProvider>
-                    <StorageProvider>
-                        <MessageHandler>
-                            <Theme>
-                                <QueryClientProvider {...{ client }}>
-                                    <HydrationBoundary state={dehydrate(client)}>
-                                        <GuardProvider>
-                                            <OSNotificationProvider>
-                                                <Notification>
-                                                    <Style.Initialize>{children}</Style.Initialize>
-                                                </Notification>
-                                            </OSNotificationProvider>
-                                        </GuardProvider>
-                                    </HydrationBoundary>
-                                </QueryClientProvider>
-                            </Theme>
-                        </MessageHandler>
-                    </StorageProvider>
-                </CoinmecaWalletContextProvider>
+                <DiscordProvider>
+                    <CoinmecaWalletContextProvider>
+                        <StorageProvider>
+                            <MessageHandler>
+                                <Theme>
+                                    <QueryClientProvider {...{ client }}>
+                                        <HydrationBoundary state={dehydrate(client)}>
+                                            <GuardProvider>
+                                                <OSNotificationProvider>
+                                                    <Notification>
+                                                        <Style.Initialize>{children}</Style.Initialize>
+                                                    </Notification>
+                                                </OSNotificationProvider>
+                                            </GuardProvider>
+                                        </HydrationBoundary>
+                                    </QueryClientProvider>
+                                </Theme>
+                            </MessageHandler>
+                        </StorageProvider>
+                    </CoinmecaWalletContextProvider>
+                </DiscordProvider>
             </WindowSize>
         </StrictMode>
     );

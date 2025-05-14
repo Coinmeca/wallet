@@ -342,6 +342,48 @@ export default function Page() {
         );
     };
 
+    const handleSendCall = async () => {
+        const method = "wallet_sendCalls";
+        const params = [
+            [
+                {
+                    to: "0x284079c19f888f12f9d56955e466f2736a7f1994",
+                    data: "0x05b102e3000000000000000000000000d42b5e48d0e2c265a87adf7e08d2fcd9c62ff17b0000000000000000000000000000000000000000000000000de0b6b3a7640000",
+                    value: "0x0",
+                    metadata: {
+                        name: "Deposit into Vault",
+                        description: "Depositing 1 ETH into yield vault",
+                    },
+                },
+                {
+                    to: "0x284079c19f888f12f9d56955e466f2736a7f1994",
+                    data: "0x05b102e3000000000000000000000000d42b5e48d0e2c265a87adf7e08d2fcd9c62ff17b0000000000000000000000000000000000000000000000000de0b6b3a7640000",
+                    value: "0x0",
+                },
+            ],
+            {
+                chainId: "0x1",
+            },
+        ];
+
+        // result
+        // 0x r s v
+        console.log(
+            await metamask?.request({
+                method,
+                params,
+            }),
+            await coinbase?.request({
+                method,
+                params,
+            }),
+            // await coinmeca?.request({
+            //     method,
+            //     params,
+            // }),
+        );
+    };
+
     const handleWatchAsset = async () => {
         const method = "wallet_watchAsset";
         console.log(
@@ -368,6 +410,7 @@ export default function Page() {
     const handleOpenLink = () => {
         telegram?.openLink("https://wallet.coinmeca.net", { try_instant_view: true });
     };
+
     return (
         <Layouts.Col>
             <Layouts.Box>
@@ -385,6 +428,7 @@ export default function Page() {
             <Controls.Button onClick={handleSignTypedDataV4}>Sign TypedDataV4</Controls.Button>
             <Controls.Button onClick={handleSignTransaction}>Sign Transaction</Controls.Button>
             <Controls.Button onClick={handleSendTransaction}>Send Transaction</Controls.Button>
+            <Controls.Button onClick={handleSendCall}>Send Call</Controls.Button>
             <Controls.Button onClick={handleApprove}>ERC20 Approve</Controls.Button>
             <Controls.Button onClick={handleWatchAsset}>ERC20 Watch Asset</Controls.Button>
             <Controls.Button onClick={handleSendData}>Send Data</Controls.Button>
