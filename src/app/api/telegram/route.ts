@@ -207,11 +207,9 @@ export async function POST(req: NextRequest) {
     }
 }
 
-// export async function GET() {
-//     return NextResponse.json({ message: "GET request not supported" }, { status: 405 });
-// }
-
 export async function GET(req: NextRequest) {
+    return NextResponse.json({ message: "GET request not supported" }, { status: 405 });
+
     const { searchParams } = new URL(req.url);
     const chat_id = searchParams.get("chat_id");
     const app = searchParams.get("request_app");
