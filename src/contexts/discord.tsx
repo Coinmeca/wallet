@@ -13,10 +13,7 @@ const DiscordContext = createContext<DiscordContextProps | undefined>(undefined)
 
 export const useDiscord = () => {
     const context = useContext(DiscordContext);
-    if (!context)
-        throw new Error(
-            "DiscordContext is not initialized yet. Ensure the provider is correctly set up before using useDiscord.",
-        );
+    if (!context) throw new Error("DiscordContext is not initialized yet. Ensure the provider is correctly set up before using useDiscord.");
     return context;
 };
 
@@ -26,7 +23,7 @@ export const DiscordProvider: React.FC<{ children?: React.ReactNode }> = ({ chil
     const [isDiscord, setIsDiscord] = useState(false);
 
     useEffect(() => {
-        const discord = typeof window !== "undefined" && window.location.search.includes("frame_id");
+        const discord = typeof window !== "undefined" && (window.location.search.includes("frame_id") || window.location.hostname.endsWith("discordsays.com"));
         setIsDiscord(discord);
         if (!discord) return;
 
