@@ -15,6 +15,7 @@ const nextConfig = {
                             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
                             "font-src 'self' https://fonts.gstatic.com",
                             "img-src 'self' data: https://web3.coinmeca.net",
+                            "media-src 'self' https://coinmeca.net",
                             "connect-src 'self' https: data: blob:",
                             "frame-ancestors *",
                             "base-uri 'self'",
