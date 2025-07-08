@@ -11,7 +11,7 @@ const nextConfig = {
                         key: "Content-Security-Policy",
                         value: [
                             "default-src 'self'",
-                            "script-src 'self' https://static.cloudflareinsights.com https://telegram.org",
+                            "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com https://telegram.org",
                             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
                             "font-src 'self' https://fonts.gstatic.com",
                             "img-src 'self' data: https://web3.coinmeca.net",
