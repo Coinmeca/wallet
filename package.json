@@ -24,8 +24,8 @@
     },
     "dependencies": {
         "@coinmeca/ui": "0.1.694",
-        "@coinmeca/wallet-provider": "0.1.64",
-        "@coinmeca/wallet-sdk": "0.1.64",
+        "@coinmeca/wallet-provider": "0.1.65",
+        "@coinmeca/wallet-sdk": "0.1.65",
         "@discord/embedded-app-sdk": "^2.0.0",
         "@ethereumjs/tx": "^5.4.0",
         "@ethereumjs/wallet": "^2.0.4",
