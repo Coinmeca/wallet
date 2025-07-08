@@ -1,0 +1,25 @@
+﻿import type { MetadataRoute } from "next";
+
+export default function manifest(): MetadataRoute.Manifest {
+    return {
+        name: "Coinmeca Wallet",
+        short_name: "Coinmeca Wallet",
+        description: "The next generation decentralized exchange for new finance.",
+        start_url: "/",
+        display: "standalone",
+        background_color: "#000000",
+        theme_color: "#ff0040",
+        icons: [
+            {
+                src: "/icon-192x192.png",
+                sizes: "192x192",
+                type: "image/png",
+            },
+            {
+                src: "/icon-512x512.png",
+                sizes: "512x512",
+                type: "image/png",
+            },
+        ],
+    };
+}
