@@ -26,7 +26,7 @@ export const OSNotificationProvider: React.FC<{ children: React.ReactNode }> = (
 
         const registerAndSubscribe = async () => {
             try {
-                const registration = await navigator.serviceWorker.register("/service-worker.js");
+                const registration = await navigator.serviceWorker.register("/sw.js");
                 console.log("Service Worker registered:", registration.scope);
 
                 if (Notification.permission === "granted") {
@@ -46,7 +46,7 @@ export const OSNotificationProvider: React.FC<{ children: React.ReactNode }> = (
     }, []);
 
     const subscribeToPush = async (registration: ServiceWorkerRegistration) => {
-        const key = "<Your_VAPID_Public_Key>";
+        const key = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!;
         const applicationServerKey = urlBase64ToUint8Array(key);
 
         try {
