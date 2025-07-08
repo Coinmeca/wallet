@@ -2,26 +2,26 @@
 const nextConfig = {
     async headers() {
         return [
-            // {
-            //     source: "/(.*)",
-            //     headers: [
-            //         { key: "X-Content-Type-Options", value: "nosniff" },
-            //         { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-            //         {
-            //             key: "Content-Security-Policy",
-            //             value: [
-            //                 "default-src 'self'",
-            //                 "script-src 'self' https://static.cloudflareinsights.com",
-            //                 "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com",
-            //                 "font-src 'self' https://fonts.gstatic.com",
-            //                 "img-src 'self' data: https://web3.coinmeca.net",
-            //                 "connect-src 'self' https: data: blob: https://telegram.org",
-            //                 "frame-ancestors 'self' https://*.coinmeca.net https://web.telegram.org https://*.telegram.org https://telegram.org https://t.me https://*.discordsays.com",
-            //                 "base-uri 'self'",
-            //             ].join("; "),
-            //         },
-            //     ],
-            // },
+            {
+                source: "/(.*)",
+                headers: [
+                    { key: "X-Content-Type-Options", value: "nosniff" },
+                    { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+                    {
+                        key: "Content-Security-Policy",
+                        value: [
+                            "default-src 'self'",
+                            "script-src 'self' https://static.cloudflareinsights.com https://telegram.org",
+                            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+                            "font-src 'self' https://fonts.gstatic.com",
+                            "img-src 'self' data: https://web3.coinmeca.net",
+                            "connect-src 'self' https: data: blob:",
+                            "frame-ancestors *",
+                            "base-uri 'self'",
+                        ].join("; "),
+                    },
+                ],
+            },
             {
                 source: "/api/:path*",
                 headers: [
