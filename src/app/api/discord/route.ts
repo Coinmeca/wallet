@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
         client_secret: process.env.DISCORD_CLIENT_SECRET!,
         grant_type: "authorization_code",
         code,
-        redirect_uri: "https://beta.coinmeca.net/api/.proxy/discord", // Leave blank for activities
+        redirect_uri: "https://wallet.coinmeca.net/api/discord", // Leave blank for activities
     });
 
     const res = await fetch("https://discord.com/api/oauth2/token", {
