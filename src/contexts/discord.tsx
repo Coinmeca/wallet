@@ -47,63 +47,63 @@ export const DiscordProvider: React.FC<{ children?: React.ReactNode }> = ({ chil
         if (window.location.search && !sessionStorage.getItem("discordSearchParams")) sessionStorage.setItem("discordSearchParams", window.location.search);
         setEnvironment(Object.fromEntries(new URLSearchParams(window.location.search).entries()));
 
-        const originalFetch = window.fetch;
-        window.fetch = async (input, init = {}) => {
-            try {
-                let url = "";
-                let method = init.method || "GET";
+        // const originalFetch = window.fetch;
+        // window.fetch = async (input, init = {}) => {
+        //     try {
+        //         let url = "";
+        //         let method = init.method || "GET";
 
-                if (typeof input === "string") url = input;
-                else if (input instanceof Request) {
-                    url = input.url;
-                    method = input.method;
-                    init = {
-                        method: input.method,
-                        headers: Object.fromEntries(input.headers.entries()),
-                        body: input.method !== "GET" && input.method !== "HEAD" ? await input.clone().text() : undefined,
-                        credentials: input.credentials,
-                    };
-                } else return originalFetch(input, init);
+        //         if (typeof input === "string") url = input;
+        //         else if (input instanceof Request) {
+        //             url = input.url;
+        //             method = input.method;
+        //             init = {
+        //                 method: input.method,
+        //                 headers: Object.fromEntries(input.headers.entries()),
+        //                 body: input.method !== "GET" && input.method !== "HEAD" ? await input.clone().text() : undefined,
+        //                 credentials: input.credentials,
+        //             };
+        //         } else return originalFetch(input, init);
 
-                if (!url.startsWith("/")) {
-                    console.log("Proxying:", url);
+        //         if (!url.startsWith("/")) {
+        //             console.log("Proxying:", url);
 
-                    if (method === "GET" || method === "HEAD") {
-                        const encoded = encodeURIComponent(url);
-                        console.log("Call:", `/.proxy/api/proxy?url=${encoded}`);
-                        return originalFetch(`/.proxy/api/proxy?url=${encoded}`, init);
-                    } else {
-                        const headers = init.headers || {};
-                        const bodyText = init.body;
-                        let payload;
-                        if (typeof bodyText === "string")
-                            try {
-                                payload = JSON.parse(bodyText);
-                            } catch {
-                                payload = bodyText;
-                            }
-                        else if (bodyText instanceof URLSearchParams) payload = Object.fromEntries(bodyText.entries());
-                        else payload = bodyText;
-                        return originalFetch("/.proxy/api/proxy", {
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "application/json",
-                            },
-                            body: JSON.stringify({
-                                url,
-                                headers,
-                                payload,
-                            }),
-                        });
-                    }
-                }
+        //             if (method === "GET" || method === "HEAD") {
+        //                 const encoded = encodeURIComponent(url);
+        //                 console.log("Call:", `/.proxy/api/proxy?url=${encoded}`);
+        //                 return originalFetch(`/.proxy/api/proxy?url=${encoded}`, init);
+        //             } else {
+        //                 const headers = init.headers || {};
+        //                 const bodyText = init.body;
+        //                 let payload;
+        //                 if (typeof bodyText === "string")
+        //                     try {
+        //                         payload = JSON.parse(bodyText);
+        //                     } catch {
+        //                         payload = bodyText;
+        //                     }
+        //                 else if (bodyText instanceof URLSearchParams) payload = Object.fromEntries(bodyText.entries());
+        //                 else payload = bodyText;
+        //                 return originalFetch("/.proxy/api/proxy", {
+        //                     method: "POST",
+        //                     headers: {
+        //                         "Content-Type": "application/json",
+        //                     },
+        //                     body: JSON.stringify({
+        //                         url,
+        //                         headers,
+        //                         payload,
+        //                     }),
+        //                 });
+        //             }
+        //         }
 
-                return originalFetch(input, init);
-            } catch (error) {
-                console.error("Custom fetch proxy error:", error);
-                throw error;
-            }
-        };
+        //         return originalFetch(input, init);
+        //     } catch (error) {
+        //         console.error("Custom fetch proxy error:", error);
+        //         throw error;
+        //     }
+        // };
 
         const sdk = new DiscordSDK(process.env.DISCORD_CLIENT_ID!);
         setDiscord(sdk);
