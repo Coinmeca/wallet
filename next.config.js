@@ -1,5 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+    async rewrites() {
+        return [
+            {
+                source: "/api/language/:code",
+                destination: `${process.env.LANG_URL ? `${process.env.LANG_URL}?service=wallet&lang=` : "https://wallet.coinmeca.net/api/language/"}:code`,
+            },
+        ];
+    },
     async headers() {
         return [
             {
@@ -7,27 +15,30 @@ const nextConfig = {
                 headers: [
                     { key: "X-Content-Type-Options", value: "nosniff" },
                     { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-                    {
-                        key: "Content-Security-Policy",
-                        value: [
-                            "default-src 'self'",
-                            "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com https://telegram.org",
-                            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-                            "font-src 'self' https://fonts.gstatic.com",
-                            "img-src 'self' data: https://web3.coinmeca.net",
-                            "media-src 'self' https://coinmeca.net",
-                            "connect-src 'self' https: data: blob:",
-                            "frame-ancestors *",
-                            "base-uri 'self'",
-                        ].join("; "),
-                    },
                 ],
             },
             {
                 source: "/api/:path*",
                 headers: [
+                    { key: "Vary", value: "Origin" },
+                ],
+            },
+            {
+                source: "/api/telegram",
+                headers: [
                     { key: "Access-Control-Allow-Origin", value: "*" },
-                    { key: "Access-Control-Allow-Methods", value: "GET,POST,PUT,OPTIONS" },
+                    { key: "Access-Control-Allow-Methods", value: "GET,POST,OPTIONS" },
+                    {
+                        key: "Access-Control-Allow-Headers",
+                        value: "Origin, Content-Type, Access-Control-Allow-Headers, DeviceInfo, Authorization, X-Requested-With",
+                    },
+                ],
+            },
+            {
+                source: "/api/discord",
+                headers: [
+                    { key: "Access-Control-Allow-Origin", value: "*" },
+                    { key: "Access-Control-Allow-Methods", value: "GET,POST,OPTIONS" },
                     {
                         key: "Access-Control-Allow-Headers",
                         value: "Origin, Content-Type, Access-Control-Allow-Headers, DeviceInfo, Authorization, X-Requested-With",

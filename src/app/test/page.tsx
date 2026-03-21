@@ -2,20 +2,30 @@
 
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useCoinmecaWallet } from "@coinmeca/wallet-provider/adapter";
+import { parseChainId } from "@coinmeca/wallet-provider/chains";
 import { getChainsByType } from "@coinmeca/wallet-provider/chains";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { useTelegram } from "@coinmeca/wallet-provider/telegram";
-import { useLayoutEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useLayoutEffect, useMemo, useState } from "react";
+import { chainLogo, debug, valid, wallet } from "utils";
 
 export default function Page() {
+    const router = useRouter();
     const { telegram, send, show, expand, exit, bio } = useTelegram();
 
     const [metamask, setMetamask] = useState<any>();
     const [coinbase, setCoinbase] = useState<any>();
     const [coinmeca, setCoinmeca] = useState<any>();
     const [okx, setOkx] = useState<any>();
+    const [agent, setAgent] = useState<string>("");
 
     useLayoutEffect(() => {
+        if (!debug()) {
+            router.replace("/");
+            return;
+        }
+
         window.addEventListener("eip6963:announceProvider", (event: any) => {
             if (event?.detail?.info?.name === "MetaMask") setMetamask(event?.detail?.provider);
             if (event?.detail?.info?.name === "Coinbase Wallet") setCoinbase(event?.detail?.provider);
@@ -23,15 +33,21 @@ export default function Page() {
             if (event?.detail?.info?.name === "Coinmeca Wallet") setCoinmeca(event?.detail?.provider);
             if (event?.detail?.info?.name === "OKX Wallet") setOkx(event?.detail?.provider);
         });
+        setAgent(window.navigator?.userAgent || "");
         window.dispatchEvent(new Event("eip6963:requestProvider"));
-    }, []);
+    }, [router]);
 
     const [authenticate, setAuthenticate] = useState<string | null>(null);
     const [requestAccess, setRequestAccess] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    const { account, chain } = useCoinmecaWalletProvider();
+    const { provider } = useCoinmecaWalletProvider();
     const { adapter } = useCoinmecaWallet();
+    const activeAddress = provider?.address;
+    const activeChainId = useMemo(() => {
+        const providerChainId = provider?.chainId;
+        return typeof providerChainId !== "undefined" && valid.chainId(providerChainId) ? parseChainId(providerChainId) : undefined;
+    }, [provider?.chainId]);
 
     const handleExpand = () => {
         expand();
@@ -86,7 +102,7 @@ export default function Page() {
     };
 
     const handleAddEthereumChain = async () => {
-        const chains = getChainsByType("mainnet").filter((c) => c?.chainId !== chain?.chainId);
+        const chains = getChainsByType("mainnet").filter((c) => (typeof activeChainId === "number" ? parseChainId(c?.chainId) !== activeChainId : true));
         // console.log(await adapter?.request({ method: "wallet_addEthereumChain", params: [chains[Math.floor(Math.random() * chains.length)]] }));
         console.log(
             await adapter?.request({
@@ -96,7 +112,7 @@ export default function Page() {
                         chainId: 421614,
                         base: "evm",
                         chainName: "Arbitrum Sepolia",
-                        logo: "https://web3.coinmeca.net/421614/logo.svg",
+                        logo: chainLogo(421614),
                         rpcUrls: [
                             "https://sepolia-rollup.arbitrum.io/rpc",
                             "https://arbitrum-sepolia.blockpi.network/v1/rpc/public",
@@ -115,7 +131,7 @@ export default function Page() {
     };
 
     const switchEthereumChain = async () => {
-        const chains = getChainsByType("mainnet").filter((c) => c?.chainId !== chain?.chainId);
+        const chains = getChainsByType("mainnet").filter((c) => (typeof activeChainId === "number" ? parseChainId(c?.chainId) !== activeChainId : true));
         console.log(
             await adapter?.request({ method: "wallet_switchEthereumChain", params: [{ chainId: chains[Math.floor(Math.random() * chains.length)]?.chainId }] }),
         );
@@ -140,7 +156,7 @@ export default function Page() {
                 method,
                 params: [
                     {
-                        from: account?.address,
+                        from: activeAddress,
                         to: "0x709C5856d329748344789C787a429B3cC7631894",
                         data: "0x095ea7b3000000000000000000000000428d55b528a2d39c143ec51055e7e0531d02aa81ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                     },
@@ -173,7 +189,7 @@ export default function Page() {
             // Message to sign
             "Hello, Personal Sign!",
             // Signer's address
-            account?.address,
+            activeAddress,
         ];
 
         // result
@@ -284,7 +300,7 @@ export default function Page() {
             // },
             // order
             {
-                from: account?.address,
+                from: activeAddress,
                 to: "0x284079c19f888f12f9d56955e466f2736a7f1994",
                 data: "0x05b102e3000000000000000000000000d42b5e48d0e2c265a87adf7e08d2fcd9c62ff17b0000000000000000000000000000000000000000000000000de0b6b3a7640000",
             },
@@ -333,7 +349,7 @@ export default function Page() {
                     // },
                     // order
                     {
-                        from: account?.address,
+                        from: activeAddress,
                         to: "0x284079c19f888f12f9d56955e466f2736a7f1994",
                         data: "0x05b102e3000000000000000000000000d42b5e48d0e2c265a87adf7e08d2fcd9c62ff17b0000000000000000000000000000000000000000000000000de0b6b3a7640000",
                     },
@@ -404,17 +420,19 @@ export default function Page() {
     };
 
     const handleOpenTelegramLink = () => {
-        telegram?.openTelegramLink("https://wallet.coinmeca.net");
+        telegram?.openTelegramLink(wallet());
     };
 
     const handleOpenLink = () => {
-        telegram?.openLink("https://wallet.coinmeca.net", { try_instant_view: true });
+        telegram?.openLink(wallet(), { try_instant_view: true });
     };
+
+    if (!debug()) return null;
 
     return (
         <Layouts.Col>
             <Layouts.Box>
-                <Elements.Text>agent: {window?.navigator?.userAgent}</Elements.Text>
+                <Elements.Text>agent: {agent}</Elements.Text>
                 <Elements.Text>{telegram ? `Success, Platform: ${telegram.platform}` : "Fail"}</Elements.Text>
             </Layouts.Box>
             <Controls.Button onClick={handleOpenTelegramLink}>Open Telegram Link</Controls.Button>

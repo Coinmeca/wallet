@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { Modal } from "@coinmeca/ui/containers";
+import { parseChainId } from "@coinmeca/wallet-provider/chains";
 import { CoinmecaWalletContextProvider, useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { dehydrate, HydrationBoundary, QueryClientProvider } from "@tanstack/react-query";
 
@@ -11,7 +12,9 @@ import { getQueryClient } from "api";
 import { GetErc20 } from "api/erc20";
 import { States } from "@coinmeca/ui/components/contents";
 import { format } from "@coinmeca/ui/lib/utils";
+import { useTranslate } from "hooks";
 import { Validate } from "types";
+import { tokenLogo, valid } from "utils";
 
 export interface Add {
     standard?: any;
@@ -37,7 +40,20 @@ export default function Add(props: Add) {
 }
 
 function FungibleAddModal(props: Add) {
-    const { provider, chain, account } = useCoinmecaWalletProvider();
+    const { provider } = useCoinmecaWalletProvider();
+    const { t } = useTranslate();
+    const activeAddress = provider?.address;
+    const activeChainId = useMemo(() => {
+        const providerChainId = provider?.chainId;
+        return typeof providerChainId !== "undefined" && valid.chainId(providerChainId) ? parseChainId(providerChainId) : undefined;
+    }, [provider?.chainId]);
+    const activeChain = useMemo(
+        () =>
+            typeof activeChainId === "number"
+                ? provider?.chains?.find((item: any) => typeof item?.chainId !== "undefined" && parseChainId(item.chainId) === activeChainId)
+                : undefined,
+        [activeChainId, provider?.chains],
+    );
 
     const [address, setAddress] = useState<string>();
     const [validate, setValidate] = useState<Validate | undefined>({ state: false });
@@ -47,7 +63,7 @@ function FungibleAddModal(props: Add) {
     const [process, setProcess] = useState<boolean | null>(null);
     const [error, setError] = useState<string>();
 
-    const [tokens, getToken] = GetErc20(chain?.rpcUrls?.[0], [token], account?.address);
+    const [tokens, getToken] = GetErc20(activeChain?.rpcUrls?.[0], [token], activeAddress);
     const asset = getToken(address);
     const pattern = /^[a-zA-Z0-9]+$/;
 
@@ -55,10 +71,10 @@ function FungibleAddModal(props: Add) {
         if (address === a || asset?.isFetching) return;
         let check: Validate = { state: false };
         if (!!a && a !== "" && a !== "0" && a !== "0x") {
-            if (!a?.startsWith("0x")) check = { state: true, message: "The typed a form of a Token Contract is Invalid." };
-            else if (!pattern.test(a)) check = { state: true, message: "The unacceptable charater is used in a form." };
-            else if (a?.length < 42) check = { state: true, message: "The a is too short." };
-            else if (a?.length > 42) check = { state: true, message: "The a is too long." };
+            if (!a?.startsWith("0x")) check = { state: true, message: t("modal.fungible.error.address.invalid") };
+            else if (!pattern.test(a)) check = { state: true, message: t("modal.fungible.error.character.invalid") };
+            else if (a?.length < 42) check = { state: true, message: t("modal.fungible.error.address.short") };
+            else if (a?.length > 42) check = { state: true, message: t("modal.fungible.error.address.long") };
         }
         setValidate(check);
         if (address !== a) setAddress(() => (a === "" ? undefined : a));
@@ -109,7 +125,7 @@ function FungibleAddModal(props: Add) {
 
     return (
         <Modal
-            title={!asset ? "Add Token" : "Token Information"}
+            title={!asset ? t("modal.fungible.add.title") : t("modal.fungible.info.title")}
             content={
                 <Layouts.Col gap={2} fill>
                     <Layouts.Contents.SlideContainer
@@ -117,13 +133,13 @@ function FungibleAddModal(props: Add) {
                             {
                                 active: process === false,
                                 children: (
-                                    <States.Failure message={error || "Processing has failed."}>
+                                    <States.Failure message={error || t("modal.fungible.error.processing")}>
                                         <Controls.Button
                                             onClick={(e: any) => {
                                                 setToken(undefined);
                                                 setProcess(null);
                                             }}>
-                                            Go Back
+                                            {t("app.btn.go.back")}
                                         </Controls.Button>
                                     </States.Failure>
                                 ),
@@ -133,16 +149,16 @@ function FungibleAddModal(props: Add) {
                                 children: (
                                     <Layouts.Col gap={2}>
                                         <Elements.Text height={2} opacity={0.6} align={"center"}>
-                                            Please enter the token address to be added.
+                                            {t("modal.fungible.desc")}
                                         </Elements.Text>
                                         <Layouts.Contents.InnerContent scroll>
                                             <Layouts.Col gap={2}>
                                                 <Layouts.Col gap={1}>
                                                     <Elements.Text type={"desc"} align={"left"}>
-                                                        Token Address
+                                                        {t("modal.fungible.field.address")}
                                                     </Elements.Text>
                                                     <Controls.Input
-                                                        placeholder={"0xA1z2b3Y4C5x6d7E8..."}
+                                                        placeholder={t("modal.fungible.placeholder.address")}
                                                         onChange={(e: any, v: string) => handleValidate(v)}
                                                         value={address}
                                                         error={validate?.state}
@@ -190,7 +206,7 @@ function FungibleAddModal(props: Add) {
                                             </Layouts.Col>
                                         </Layouts.Contents.InnerContent>
                                         <Layouts.Row gap={2} fix>
-                                            <Controls.Button onClick={handleClose}>Close</Controls.Button>
+                                            <Controls.Button onClick={handleClose}>{t("app.btn.close")}</Controls.Button>
                                         </Layouts.Row>
                                     </Layouts.Col>
                                 ),
@@ -207,7 +223,7 @@ function FungibleAddModal(props: Add) {
                                             <Layouts.Col>
                                                 <Layouts.Col gap={2} align={"center"}>
                                                     <Image
-                                                        src={`https://web3.coinmeca.net/${chain?.chainId}/${asset?.data?.address?.toLowerCase()}/logo.svg`}
+                                                        src={tokenLogo(activeChain?.chainId, asset?.data?.address) || ""}
                                                         width={0}
                                                         height={0}
                                                         alt={asset?.data?.symbol}
@@ -227,7 +243,7 @@ function FungibleAddModal(props: Add) {
                                                         <div style={{ padding: "2em", background: "rgba(var(--white),0.05)" }}>
                                                             <Layouts.Row gap={1}>
                                                                 <Elements.Text opacity={0.3} fit>
-                                                                    Balance
+                                                                    {t("asset.balance")}
                                                                 </Elements.Text>
                                                                 <Layouts.Row gap={1} align={"right"} style={{ maxWidth: "100%" }} fix>
                                                                     <Elements.Text align={"right"} fix>
@@ -250,9 +266,9 @@ function FungibleAddModal(props: Add) {
                                             </Layouts.Col>
                                         )}
                                         <Layouts.Row gap={2} fix>
-                                            <Controls.Button onClick={handleClose}>Cancel</Controls.Button>
+                                            <Controls.Button onClick={handleClose}>{t("app.btn.cancel")}</Controls.Button>
                                             <Controls.Button onClick={handleAddToken} type={"glass"}>
-                                                Add {asset?.data?.symbol}
+                                                {t("modal.fungible.btn.add", { symbol: asset?.data?.symbol || "" })}
                                             </Controls.Button>
                                         </Layouts.Row>
                                     </Layouts.Col>

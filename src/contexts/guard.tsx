@@ -1,9 +1,8 @@
-﻿"use client";
+"use client";
 
-import React, { createContext, useContext, useEffect, useLayoutEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
-import { usePathname, useRouter } from "next/navigation";
-import { Account } from "@coinmeca/wallet-sdk/types";
+import { usePathname } from "next/navigation";
 
 interface GuardContextProps {
     isInit: boolean;
@@ -22,70 +21,60 @@ export const useGuard = () => {
 
 export const GuardProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const path = usePathname();
-    const { provider } = useCoinmecaWalletProvider();
+    const { provider, account } = useCoinmecaWalletProvider();
 
-    const [isInit, setIsInit] = useState<boolean>(false);
-    const [isAccess, setIsAccess] = useState<boolean>(false);
-    const [isLoad, setIsLoad] = useState<boolean>(false);
+    const [accessOverride, setAccessOverride] = useState<boolean>();
 
-    const [check, setCheck] = useState<any>();
-    const [target, setTarget] = useState<string>();
-
-    useEffect(() => {
-        const handleLock = () => setIsAccess(false);
-        provider?.on("lockTimeUpdated", handleLock);
-        return () => {
-            provider?.off("lockTimeUpdated", handleLock);
-        };
-    }, [provider]);
-
-    useLayoutEffect(() => {
-        if (provider) {
-            const handleCheck = (info?: Account) => {
-                const check = {
-                    init: provider?.isInitialized,
-                    access: !!info || !provider?.isLocked,
-                };
-
-                if (typeof check.init !== "undefined" && typeof check.access !== "undefined") {
-                    let target;
-
-                    if (!check.init) {
-                        if (path?.startsWith("/welcome")) setIsAccess(true);
-                        else target = "/welcome";
-                    } else {
-                        setIsInit(true);
-                        if (path?.startsWith("/proxy")) setIsAccess(true);
-                        else setIsAccess(check.access);
-
-                        // if (!check.access) {
-                        // const request = window.location.pathname;
-                        // const query = window.location.search;
-                        // if (!path.startsWith("/lock") && path !== "/lock?" && path !== "/lock?target=")
-                        //     target = `/lock?target=${encodeURIComponent(fullPath + queryString)}`;
-                        // } else setIsAccess(true);
-                    }
-
-                    if (target) setTarget(target);
-                    setCheck(check);
-                }
-            };
-
-            handleCheck();
-            provider?.on("unlock", handleCheck);
-            return () => {
-                provider?.off("unlock", handleCheck);
+    const state = useMemo(() => {
+        if (!provider) {
+            return {
+                isInit: false,
+                isAccess: false,
+                isLoad: false,
+                target: undefined as string | undefined,
             };
         }
-    }, [path, provider?.isInitialized, provider?.isLocked]);
+
+        const runtimeAccount = account || provider.account();
+        const runtimeAddress = runtimeAccount?.address || provider.address;
+        const isInit = !!provider.isInitialized || !!runtimeAddress;
+        const setupRoute = !!(path?.startsWith("/welcome") || path?.startsWith("/recover"));
+        const requestRoute = !!path?.startsWith("/request");
+        const proxyRoute = !!path?.startsWith("/proxy");
+        const lockRoute = !!path?.startsWith("/lock");
+        const bridgeRoute = requestRoute || proxyRoute || lockRoute;
+        const runtimeAccess = !!runtimeAccount || !provider.isLocked;
+        const target = !isInit && !setupRoute && !bridgeRoute ? "/welcome" : undefined;
+        const isAccess = isInit ? (proxyRoute ? true : runtimeAccess) : setupRoute || bridgeRoute;
+        const isLoad = !target || target === path;
+
+        return { isInit, isAccess, isLoad, target };
+    }, [account, path, provider, provider?.address, provider?.isInitialized, provider?.isLocked]);
+
+    useEffect(() => {
+        setAccessOverride(undefined);
+    }, [path, state.isInit, state.target, provider?.isLocked]);
 
     useLayoutEffect(() => {
-        if (target && target !== path) window.location.href = target;
-    }, [target]);
+        if (state.target && state.target !== path && typeof window !== "undefined") window.location.replace(state.target);
+    }, [path, state.target]);
 
-    useLayoutEffect(() => {
-        if ((target === path || !target) && !isLoad && check && Object.values(check).every((_) => typeof _ === "boolean")) setIsLoad(true);
-    }, [path, target, check]);
+    const setIsAccess: React.Dispatch<React.SetStateAction<boolean>> = (value) => {
+        setAccessOverride((previous) => {
+            const current = typeof previous === "boolean" ? previous : state.isAccess;
+            return typeof value === "function" ? value(current) : value;
+        });
+    };
 
-    return <GuardContext.Provider value={{ isInit, isAccess, isLoad, setIsAccess }}>{children}</GuardContext.Provider>;
+    return (
+        <GuardContext.Provider
+            value={{
+                isInit: state.isInit,
+                isAccess: typeof accessOverride === "boolean" ? accessOverride : state.isAccess,
+                isLoad: state.isLoad,
+                setIsAccess,
+            }}>
+            {children}
+        </GuardContext.Provider>
+    );
 };

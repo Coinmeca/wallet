@@ -7,6 +7,7 @@ import { CoinmecaWalletContextProvider, useCoinmecaWalletProvider } from "@coinm
 import { dehydrate, HydrationBoundary, QueryClientProvider } from "@tanstack/react-query";
 
 import { getQueryClient } from "api";
+import { useTranslate } from "hooks";
 
 export interface Add {
     onReset?: Function;
@@ -29,6 +30,8 @@ export default function Reset(props: Add) {
 }
 
 function ResetModal(props: Add) {
+    const { t } = useTranslate();
+
     const handleClose = (e: any) => {
         props?.onClose?.(e);
     };
@@ -39,12 +42,12 @@ function ResetModal(props: Add) {
 
     return (
         <Modal
-            title={"Reset Confirmation"}
-            message={"Setup the all configuration from the first. Are you sure?"}
+            title={t("modal.reset.title")}
+            message={t("modal.reset.message")}
             buttonArea={
                 <>
-                    <Controls.Button onClick={handleClose}>NO</Controls.Button>
-                    <Controls.Button onClick={handleReset}>YES</Controls.Button>
+                    <Controls.Button onClick={handleClose}>{t("app.btn.no")}</Controls.Button>
+                    <Controls.Button onClick={handleReset}>{t("app.btn.yes")}</Controls.Button>
                 </>
             }
             onClose={handleClose}

@@ -1,18 +1,20 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Contents, Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { format } from "@coinmeca/ui/lib/utils";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
+import { transactionRequest } from "@coinmeca/wallet-sdk/utils";
 import { Account } from "@coinmeca/wallet-sdk/types";
 import { useQueries } from "@tanstack/react-query";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 
-import { useMessageHandler, useOSNotification } from "hooks";
+import { useRequestAllowance, useRequestApp, useRequestChain, useRequestFlow, useTranslate } from "hooks";
 import { GetMaxFeePerGas } from "api/onchain";
 import { query } from "api/onchain/query";
 import { sanitizeBigIntToHex, short } from "utils";
+import { RequestCloseNextActions, RequestInvalid } from "../common";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({
@@ -31,11 +33,12 @@ await window.ethereum.providerMap.get("CoinmecaWallet").request({
 */
 
 export interface Transaction {
-    from: string;
-    to: string;
-    value: string;
-    gas: string;
-    gasPrice: string;
+    from?: string;
+    to?: string;
+    chainId?: string;
+    value?: string;
+    gas?: string;
+    gasPrice?: string;
     data?: string;
     maxFeePerGas?: number;
     maxPriorityFeePerGas?: number;
@@ -45,50 +48,52 @@ const method = "eth_sendTransaction";
 const timeout = 5000;
 
 export default function EthSendTransaction() {
-    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const { provider } = useCoinmecaWalletProvider();
+    const { t } = useTranslate();
 
-    const { provider, chain, account } = useCoinmecaWalletProvider();
-    const { push } = useOSNotification();
-    const { getRequest, getRequestById, success, failure, next, count, setCurrent, close } = useMessageHandler();
-
-    const [load, setLoad] = useState(true);
-    const [id, setId] = useState("");
     const [txHash, setTxHash] = useState<string>("");
+    const resetState = useCallback(() => setTxHash(""), []);
+    const { load, request, count, level, setLevel, error, setError, resolve, reject, handleClose, handleNext, scheduleClose, settledRef } = useRequestFlow({
+        method,
+        onReset: resetState,
+    });
 
-    const [level, setLevel] = useState(0);
-    const [error, setError] = useState<any>();
-
-    const { app, auth, params, tx, signer } = useMemo(() => {
+    const { app, tx, signer } = useMemo(() => {
         let tx: Transaction | undefined;
         let signer: Account | undefined;
 
-        const { app, auth, params } = getRequestById(id);
+        const { app, params } = request;
 
-        if (params?.chainId) provider?.changeChain(params.chainId);
-
-        tx = params;
-        signer = provider?.account(tx?.from || account?.address);
+        tx = transactionRequest(params);
+        const address = tx?.from || provider?.address;
+        signer = provider?.account(address);
 
         return {
             app,
-            auth,
-            params,
             tx,
             signer,
         };
-    }, [id]);
+    }, [provider, request]);
+    const signerAddress = tx?.from || provider?.address;
+    const { auth, authError } = useRequestAllowance(provider, app, signerAddress, !!tx);
+
+    const { info, title, origin } = useRequestApp(app, t("reqeust.app.unknown"));
+    const txHashShort = short(txHash) || "";
+    const txToShort = short(tx?.to) || "";
+    const signerLabel = typeof signer?.index === "number" ? `${signer.index + 1}` : "?";
+    const { activeChain, requestedChainId, requestChain } = useRequestChain(provider, tx?.chainId);
 
     const [{ data: nonce }, { data: gasPrice, isLoading: isGasPriceLoading }, { data: estimateGas, isLoading: isEstimateGasLoading }] = useQueries({
         queries: [
-            query.nonce(chain?.rpcUrls?.[0], signer?.address),
-            query.gasPrice(chain?.rpcUrls?.[0]),
-            query.estimateGas(chain?.rpcUrls?.[0], sanitizeBigIntToHex(tx)),
+            query.nonce(requestChain?.rpcUrls?.[0], signer?.address),
+            query.gasPrice(requestChain?.rpcUrls?.[0]),
+            query.estimateGas(requestChain?.rpcUrls?.[0], sanitizeBigIntToHex(tx)),
         ],
     });
 
     const {
         data: { maxPriorityFeePerGas, maxFeePerGas },
-    } = GetMaxFeePerGas(chain?.rpcUrls?.[0]);
+    } = GetMaxFeePerGas(requestChain?.rpcUrls?.[0]);
 
     const gasFee = useMemo(
         () => ({
@@ -98,83 +103,65 @@ export default function EthSendTransaction() {
         [gasPrice, estimateGas],
     );
 
-    const handleClose = () => {
-        if (level < 2) failure(id, "User rejected the request");
-        close(id);
-    };
-
     const handleSign = async () => {
         setLevel(1);
-
         const EIP1559 = {
             maxFeePerGas: BigInt(maxFeePerGas?.raw || 0),
             maxPriorityFeePerGas: BigInt(maxPriorityFeePerGas?.raw || 0),
         };
 
-        await provider
-            ?.send(
-                {
-                    to: tx?.to,
-                    data: tx?.data,
-                    value: BigInt(tx?.value || 0),
-                    nonce: BigInt(nonce || 0),
-                    gasLimit: BigInt(estimateGas?.raw || 0),
-                    chainId: Number(params?.chainId || chain?.chainId),
-                    ...(Object.values(EIP1559).every((v) => !!v)
-                        ? EIP1559
-                        : {
-                              gasPrice: BigInt(gasPrice?.raw || 0),
-                          }),
-                } as any,
-                signer!,
-            )
+        const sendRequest = provider?.send(
+            {
+                to: tx?.to,
+                data: tx?.data,
+                value: BigInt(tx?.value || 0),
+                nonce: BigInt(nonce || 0),
+                gasLimit: BigInt(estimateGas?.raw || 0),
+                ...(typeof requestedChainId === "number" ? { chainId: requestedChainId } : {}),
+                ...(Object.values(EIP1559).every((v) => !!v)
+                    ? EIP1559
+                    : {
+                          gasPrice: BigInt(gasPrice?.raw || 0),
+                      }),
+            } as any,
+            signerAddress as any,
+            app,
+        );
+        if (!sendRequest) {
+            const error = "Transaction request could not be started.";
+            reject(error);
+            setError(error);
+            setLevel(3);
+            return;
+        }
+
+        await sendRequest
             .then(async (result) => {
+                if (settledRef.current) return;
                 if (!result) throw new Error("Transaction Submit Failed.");
 
-                success(id, result);
+                if (!resolve(result)) return;
                 setTxHash(result);
                 setLevel(2);
 
-                console.log("txhash", result);
-                push("TRACK_TRANSACTION", [result, chain?.rpcUrls?.[0]]);
-
-                await provider?.wait(result);
-                if (count <= 1) timeoutRef.current = setTimeout(handleClose, timeout);
+                await provider?.wait(result, {
+                    ...(signerAddress ? { address: signerAddress } : {}),
+                    ...(typeof requestedChainId === "number" ? { chainId: requestedChainId } : {}),
+                });
+                scheduleClose(handleClose, timeout);
             })
             .catch((error) => {
-                console.log(error);
-                failure(id, error?.message || error);
+                if (settledRef.current) return;
+                reject(error?.message || error);
                 setError(error);
                 setLevel(3);
             });
     };
 
-    useEffect(() => {
-        if (count && timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-            timeoutRef.current = null;
-        }
-    }, [count]);
-
-    useEffect(() => {
-        if (id && id !== "") {
-            setLoad(false);
-            setCurrent(id);
-            setError(undefined);
-            setLevel(0);
-            setTimeout(() => setLoad(true), 300);
-        }
-    }, [id]);
-
-    useLayoutEffect(() => {
-        const id = getRequest(method)?.id;
-        setId(id);
-    }, []);
-
     return (
         <AnimatePresence>
             {load &&
-                (auth && app && signer && tx ? (
+                (auth && app && tx ? (
                     <Layouts.Contents.SlideContainer
                         contents={[
                             {
@@ -202,16 +189,16 @@ export default function EthSendTransaction() {
                                                                         src={app?.logo || ""}
                                                                         width={0}
                                                                         height={0}
-                                                                        title={app?.name || ""}
-                                                                        alt={app?.name || ""}
+                                                                        title={title}
+                                                                        alt={title}
                                                                         style={{ width: "100%", height: "100%", borderRadius: "100%" }}
                                                                     />
                                                                     <Image
-                                                                        src={chain?.logo || ""}
+                                                                        src={requestChain?.logo || activeChain?.logo || ""}
                                                                         width={0}
                                                                         height={0}
-                                                                        title={chain?.chainName || ""}
-                                                                        alt={chain?.chainName || ""}
+                                                                        title={requestChain?.chainName || activeChain?.chainName || ""}
+                                                                        alt={requestChain?.chainName || activeChain?.chainName || ""}
                                                                         style={{
                                                                             position: "absolute",
                                                                             width: "2em",
@@ -225,14 +212,14 @@ export default function EthSendTransaction() {
                                                             </div>
                                                             <Layouts.Col gap={0} align={"center"} fill>
                                                                 <Elements.Text type={"desc"} weight={"bold"} height={0} align={"left"} opacity={0.6}>
-                                                                    Requested By
+                                                                    {t("request.label.requested.by")}
                                                                 </Elements.Text>
                                                                 <Layouts.Col gap={0}>
                                                                     <Elements.Text type={"h6"} height={0} align={"left"}>
-                                                                        {app?.name}
+                                                                        {title}
                                                                     </Elements.Text>
                                                                     <Elements.Text type={"strong"} height={0} align={"left"} opacity={0.6}>
-                                                                        {app?.url}
+                                                                        {info?.origin || app?.url}
                                                                     </Elements.Text>
                                                                 </Layouts.Col>
                                                             </Layouts.Col>
@@ -250,12 +237,7 @@ export default function EthSendTransaction() {
                                                                     borderRadius: "100%",
                                                                     background: "rgba(var(--white),.15)",
                                                                 }}>
-                                                                <Elements.Avatar
-                                                                    character={`${signer?.index + 1}`}
-                                                                    name={`${signer?.index + 1}`}
-                                                                    title={signer?.name}
-                                                                    hideName
-                                                                />
+                                                                <Elements.Avatar character={signerLabel} name={signerLabel} title={signer?.name} hideName />
                                                             </div>
                                                             <Layouts.Col gap={0} align={"center"}>
                                                                 <Elements.Text type={"h6"} height={0} align={"left"}>
@@ -292,7 +274,7 @@ export default function EthSendTransaction() {
                                                             </div>
                                                             <Layouts.Col gap={0} align={"center"}>
                                                                 <Elements.Text type={"h6"} height={0} align={"left"}>
-                                                                    To
+                                                                    {t("request.label.to")}
                                                                 </Elements.Text>
                                                                 <Elements.Text type={"strong"} height={0} align={"left"} opacity={0.6}>
                                                                     {short(tx?.to)}
@@ -317,7 +299,7 @@ export default function EthSendTransaction() {
                                                             <Layouts.Col gap={2} align={"left"}>
                                                                 <Layouts.Col gap={0.5}>
                                                                     <Elements.Text type={"desc"} weight={"bold"} opacity={0.6}>
-                                                                        Gas Price
+                                                                        {t("request.label.gas.price")}
                                                                     </Elements.Text>
                                                                     <Elements.Text>
                                                                         {isGasPriceLoading
@@ -331,7 +313,7 @@ export default function EthSendTransaction() {
                                                                 </Layouts.Col>
                                                                 <Layouts.Col gap={0.5}>
                                                                     <Elements.Text type={"desc"} weight={"bold"} opacity={0.6}>
-                                                                        Estimated Gas
+                                                                        {t("request.label.estimated.gas")}
                                                                         {/* // error: if 0, wrong tx */}
                                                                     </Elements.Text>
                                                                     <Elements.Text>
@@ -346,7 +328,7 @@ export default function EthSendTransaction() {
                                                                 </Layouts.Col>
                                                                 <Layouts.Col gap={0.5}>
                                                                     <Elements.Text type={"desc"} weight={"bold"} opacity={0.6}>
-                                                                        Total
+                                                                        {t("request.label.total")}
                                                                     </Elements.Text>
                                                                     <Layouts.Row gap={1} fix>
                                                                         <Elements.Text style={{ flex: "initial" }} fix>
@@ -359,7 +341,7 @@ export default function EthSendTransaction() {
                                                                                   })}
                                                                         </Elements.Text>
                                                                         <Elements.Text opacity={0.6} fit>
-                                                                            {chain?.nativeCurrency?.symbol}
+                                                                            {requestChain?.nativeCurrency?.symbol || activeChain?.nativeCurrency?.symbol}
                                                                         </Elements.Text>
                                                                     </Layouts.Row>
                                                                 </Layouts.Col>
@@ -372,10 +354,10 @@ export default function EthSendTransaction() {
                                         <Layouts.Col gap={4} align={"center"} style={{ padding: "4em", paddingTop: 0 }}>
                                             <Layouts.Row gap={2}>
                                                 <Controls.Button type={"glass"} onClick={handleClose}>
-                                                    Close
+                                                    {t("app.btn.close")}
                                                 </Controls.Button>
                                                 <Controls.Button type={"line"} onClick={handleSign}>
-                                                    Sign
+                                                    {t("app.btn.confirm")}
                                                 </Controls.Button>
                                             </Layouts.Row>
                                         </Layouts.Col>
@@ -409,13 +391,13 @@ export default function EthSendTransaction() {
                                                                 src={require("../../../assets/animation/success.gif")}
                                                                 width={0}
                                                                 height={0}
-                                                                alt={app.name || ""}
+                                                                alt={title}
                                                                 style={{ width: "12em", height: "12em" }}
                                                             />
                                                         </div>
                                                         <Layouts.Col gap={0} align={"center"}>
                                                             <Elements.Text type={"h6"} height={0}>
-                                                                {app?.name}
+                                                                {title}
                                                             </Elements.Text>
                                                             <Elements.Text type={"strong"} height={0} opacity={0.6}>
                                                                 {tx?.to}
@@ -427,38 +409,24 @@ export default function EthSendTransaction() {
                                             <Layouts.Col gap={0} align={"center"} style={{ flex: 1 }} fill>
                                                 <Layouts.Col align={"center"} style={{ padding: "4em" }}>
                                                     <Layouts.Col gap={4} align={"center"} fit>
-                                                        <Elements.Text type={"h3"}>Complete</Elements.Text>
-                                                        <Elements.Text size={1} weight={"bold"}>
-                                                            <Elements.Text opacity={0.6}>{short(txHash)}</Elements.Text>{" "}
-                                                            <Elements.Text opacity={0.6}>Selected chain was switched from</Elements.Text>{" "}
-                                                            <Elements.Text>{app?.name}</Elements.Text> <Elements.Text opacity={0.6}>to</Elements.Text>{" "}
-                                                            <Elements.Text>{` ${tx?.to}`}</Elements.Text>
-                                                            <Elements.Text opacity={0.6}>.</Elements.Text>
+                                                        <Elements.Text type={"h3"}>{t("request.state.complete")}</Elements.Text>
+                                                        <Elements.Text weight={"bold"} opacity={0.6}>
+                                                            {t("request.transaction.send.complete", {
+                                                                hash: txHashShort,
+                                                                to: txToShort,
+                                                                origin,
+                                                            })}
                                                         </Elements.Text>
                                                     </Layouts.Col>
                                                 </Layouts.Col>
                                                 <Layouts.Col gap={4} align={"center"} style={{ margin: 0 }} fit>
-                                                    <Layouts.Row gap={2}>
-                                                        <Controls.Button type={count ? undefined : "glass"} onClick={handleClose}>
-                                                            Close
-                                                        </Controls.Button>
-                                                        <AnimatePresence>
-                                                            {!!count && (
-                                                                <motion.div
-                                                                    initial={{ flex: 0, marginLeft: "-2em", maxWidth: 0 }}
-                                                                    animate={{ flex: 2, marginLeft: 0, maxWidth: "100vw" }}
-                                                                    exit={{ flex: 2, marginLeft: 0, maxWidth: "100vw" }}
-                                                                    transition={{ ease: "easeInOut", duration: 0.3 }}>
-                                                                    <Controls.Button
-                                                                        type={"glass"}
-                                                                        onClick={() => setId(next(id) || "")}
-                                                                        style={{ width: "100%" }}>
-                                                                        See Next Request
-                                                                    </Controls.Button>
-                                                                </motion.div>
-                                                            )}
-                                                        </AnimatePresence>
-                                                    </Layouts.Row>
+                                                    <RequestCloseNextActions
+                                                        count={count}
+                                                        onClose={handleClose}
+                                                        onNext={handleNext}
+                                                        closeLabel={t("app.btn.close")}
+                                                        nextLabel={t("request.btn.next")}
+                                                    />
                                                 </Layouts.Col>
                                             </Layouts.Col>
                                         </Layouts.Col>
@@ -497,7 +465,7 @@ export default function EthSendTransaction() {
                                                     </Layouts.Col>
                                                     <Layouts.Col gap={8} align={"center"} style={{ flex: 1 }} fill>
                                                         <Layouts.Col gap={4} align={"center"} fit>
-                                                            <Elements.Text type={"h3"}>Failure</Elements.Text>
+                                                            <Elements.Text type={"h3"}>{t("request.state.failure")}</Elements.Text>
                                                             <Elements.Text weight={"bold"} opacity={0.6}>
                                                                 {error?.message || error}
                                                             </Elements.Text>
@@ -508,7 +476,7 @@ export default function EthSendTransaction() {
                                             <Layouts.Col gap={4} align={"center"} style={{ padding: "4em", paddingTop: 0 }}>
                                                 <Layouts.Row gap={2}>
                                                     <Controls.Button type={"glass"} onClick={handleClose}>
-                                                        Close
+                                                        {t("app.btn.close")}
                                                     </Controls.Button>
                                                 </Layouts.Row>
                                             </Layouts.Col>
@@ -519,52 +487,12 @@ export default function EthSendTransaction() {
                         ]}
                     />
                 ) : (
-                    <Layouts.Contents.InnerContent scroll={false}>
-                        <Layouts.Col gap={2} align={"center"} fill>
-                            <Layouts.Contents.InnerContent padding={[4, 4, 0]}>
-                                <Layouts.Col fill>
-                                    <Layouts.Col align={"center"} style={{ flex: 1 }}>
-                                        <Layouts.Col gap={8} align={"center"} fit>
-                                            <div
-                                                style={{
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                    maxWidth: "max-content",
-                                                    maxHeight: "max-content",
-                                                    padding: "2em",
-                                                    borderRadius: "100%",
-                                                    background: "rgba(var(--white),.15)",
-                                                }}>
-                                                <Image
-                                                    width={0}
-                                                    height={0}
-                                                    src={require("../../../assets/animation/failure.gif")}
-                                                    alt={"Failure"}
-                                                    style={{ width: "8em", height: "8em" }}
-                                                />
-                                            </div>
-                                        </Layouts.Col>
-                                    </Layouts.Col>
-                                    <Layouts.Col gap={8} align={"center"} style={{ flex: 1 }} fill>
-                                        <Layouts.Col gap={4} align={"center"} fit>
-                                            <Elements.Text type={"h3"}>Invalid Request</Elements.Text>
-                                            <Elements.Text weight={"bold"} opacity={0.6}>
-                                                {"The given transaction information is something wrong. Couldn't found the information of requested chain."}
-                                            </Elements.Text>
-                                        </Layouts.Col>
-                                    </Layouts.Col>
-                                </Layouts.Col>
-                            </Layouts.Contents.InnerContent>
-                            <Layouts.Col gap={4} align={"center"} style={{ padding: "4em", paddingTop: 0 }}>
-                                <Layouts.Row gap={2}>
-                                    <Controls.Button type={"glass"} onClick={handleClose}>
-                                        Close
-                                    </Controls.Button>
-                                </Layouts.Row>
-                            </Layouts.Col>
-                        </Layouts.Col>
-                    </Layouts.Contents.InnerContent>
+                    <RequestInvalid
+                        title={t("request.invalid.title")}
+                        message={authError?.message || authError || error?.message || error || t("request.invalid.transaction.message")}
+                        onClose={handleClose}
+                        closeLabel={t("app.btn.close")}
+                    />
                 ))}
         </AnimatePresence>
     );

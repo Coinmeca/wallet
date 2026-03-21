@@ -3,17 +3,20 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
+import { parseChainId } from "@coinmeca/wallet-provider/chains";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { format, parseNumber } from "@coinmeca/ui/lib/utils";
 import { useQueries } from "@tanstack/react-query";
 
 import { query } from "api/onchain/query";
 import { GetMaxFeePerGas } from "api/onchain";
-import { sanitizeBigIntToHex, short } from "utils";
+import { sanitizeBigIntToHex, short, tokenLogo } from "utils";
 import { Asset, AssetType, zeroAddress } from "types";
 import { Stage } from "..";
 import { getQueryClient } from "api";
+import { useTranslate } from "hooks";
 import { Style } from "./Tx.styled";
+import { valid } from "utils";
 
 interface Tx extends Stage {
     asset?: Asset<any>;
@@ -33,7 +36,22 @@ export default function Tx(props: Tx) {
     const constrain = 200;
     const perspective = 200;
 
-    const { provider, chain, account } = useCoinmecaWalletProvider();
+    const { provider } = useCoinmecaWalletProvider();
+    const { t } = useTranslate();
+    const activeAddress = provider?.address;
+    const activeAccount = provider?.account(activeAddress);
+    const activeChainId = useMemo(() => {
+        const providerChainId = provider?.chainId;
+        return typeof providerChainId !== "undefined" && valid.chainId(providerChainId) ? parseChainId(providerChainId) : undefined;
+    }, [provider?.chainId]);
+    const activeChain = useMemo(
+        () =>
+            typeof activeChainId === "number"
+                ? provider?.chains?.find((item: any) => typeof item?.chainId !== "undefined" && parseChainId(item.chainId) === activeChainId)
+                : undefined,
+        [activeChainId, provider?.chains],
+    );
+    const accountAddress = short(activeAccount?.address) || "";
 
     const [txHash, setTxHash] = useState<string>();
     const [error, setError] = useState<any>();
@@ -44,7 +62,7 @@ export default function Tx(props: Tx) {
             (amount || asset?.tokenId) &&
             recipient &&
             recipient !== "" && {
-                from: account?.address,
+                from: activeAddress,
                 to: asset?.address,
                 data:
                     "0xa9059cbb" +
@@ -52,19 +70,19 @@ export default function Tx(props: Tx) {
                     (asset?.type === AssetType.ERC20 ? BigInt(amount) : BigInt(asset?.tokenId || 0)).toString(16).padStart(64, "0"),
             }
         );
-    }, [asset?.address, recipient]);
+    }, [activeAddress, amount, asset?.address, asset?.tokenId, asset?.type, recipient]);
 
     const [{ data: nonce }, { data: gasPrice, isLoading: isGasPriceLoading }, { data: estimateGas, isLoading: isEstimateGasLoading }] = useQueries({
         queries: [
-            query.nonce(chain?.rpcUrls?.[0], account?.address),
-            query.gasPrice(chain?.rpcUrls?.[0]),
-            query.estimateGas(chain?.rpcUrls?.[0], sanitizeBigIntToHex(tx)),
+            query.nonce(activeChain?.rpcUrls?.[0], activeAddress),
+            query.gasPrice(activeChain?.rpcUrls?.[0]),
+            query.estimateGas(activeChain?.rpcUrls?.[0], sanitizeBigIntToHex(tx)),
         ],
     });
 
     const {
         data: { maxPriorityFeePerGas, maxFeePerGas },
-    } = GetMaxFeePerGas(chain?.rpcUrls?.[0]);
+    } = GetMaxFeePerGas(activeChain?.rpcUrls?.[0]);
 
     const gasFee = useMemo(
         () => ({
@@ -77,9 +95,9 @@ export default function Tx(props: Tx) {
     const totalAmount = useMemo(
         () =>
             amount > gasFee.raw
-                ? { raw: BigInt(amount) - BigInt(gasFee.raw), format: (amount - gasFee.raw) * 10 ** (chain?.nativeCurrency?.decimals || 0) }
+                ? { raw: BigInt(amount) - BigInt(gasFee.raw), format: (amount - gasFee.raw) * 10 ** (activeChain?.nativeCurrency?.decimals || 0) }
                 : { raw: BigInt(0), format: 0 },
-        [amount, gasFee],
+        [activeChain?.nativeCurrency?.decimals, amount, gasFee],
     );
 
     const transforms = (x: number, y: number, el: HTMLElement): string => {
@@ -108,24 +126,33 @@ export default function Tx(props: Tx) {
     };
 
     const handleSend = async () => {
+        if (!activeAddress || !activeAccount) {
+            setError("No selected account.");
+            return;
+        }
+        if (typeof activeChainId !== "number") {
+            setError("No active chain.");
+            return;
+        }
+
         await provider
             ?.send(
                 {
                     ...(asset?.address === zeroAddress
                         ? {
-                              from: account?.address,
+                              from: activeAddress,
                               to: recipient,
                               value: `0x${totalAmount.raw.toString(16).padStart(64, "0")}`,
                           }
                         : { ...tx }),
-                    chainId: Number(chain?.chainId),
+                    chainId: activeChainId,
                     nonce: BigInt(nonce || 0),
                     gasLimit: BigInt(estimateGas?.raw || 0),
                     gasPrice: BigInt(gasPrice?.raw || 0),
                     maxFeePerGas: BigInt(maxFeePerGas?.raw || 0),
                     maxPriorityFeePerGas: BigInt(maxPriorityFeePerGas?.raw || 0),
                 } as any,
-                account?.address!,
+                activeAddress,
             )
             .then((result) => {
                 switch (asset?.type) {
@@ -134,7 +161,7 @@ export default function Tx(props: Tx) {
                         break;
                     case AssetType.ERC721:
                         if (asset?.address && asset?.tokenId && provider?.exist(recipient)) {
-                            provider?.removeNonFungibleAsset(asset.address, asset.tokenId, account?.address);
+                            provider?.removeNonFungibleAsset(asset.address, asset.tokenId, activeAddress);
                             provider?.addNonFungibleAsset(asset.address, asset.tokenId, recipient);
                         }
                         break;
@@ -226,14 +253,14 @@ export default function Tx(props: Tx) {
                                                                         height={0}
                                                                         src={
                                                                             !!txHash || !!error
-                                                                                ? require(`../../../assets/animation/${
-                                                                                      !!txHash ? "success" : !!error ? "failure" : "loading"
-                                                                                  }.gif`)
-                                                                                : `https://web3.coinmeca.net/${
-                                                                                      chain?.chainId
-                                                                                  }/${asset?.address?.toLowerCase()}/logo.svg`
+                                                                                ? require(
+                                                                                      `../../../assets/animation/${
+                                                                                          !!txHash ? "success" : !!error ? "failure" : "loading"
+                                                                                      }.gif`,
+                                                                                  )
+                                                                                : tokenLogo(activeChain?.chainId, asset?.address)
                                                                         }
-                                                                        alt={asset?.symbol || "Unknown"}
+                                                                        alt={asset?.symbol || ""}
                                                                         style={{ width: "8em", height: "8em" }}
                                                                     />
                                                                 </div>
@@ -326,7 +353,7 @@ export default function Tx(props: Tx) {
                                                                                           })}
                                                                                 </Elements.Text>
                                                                                 <Elements.Text opacity={0.6} fit>
-                                                                                    {chain?.nativeCurrency?.symbol}
+                                                                                    {activeChain?.nativeCurrency?.symbol}
                                                                                 </Elements.Text>
                                                                             </Layouts.Row>
                                                                         </Layouts.Col>
@@ -341,13 +368,14 @@ export default function Tx(props: Tx) {
                                                     children: (
                                                         <Layouts.Col gap={0} align={"center"} style={{ height: "100%" }} fill>
                                                             <Layouts.Col gap={4} align={"center"} fit>
-                                                                <Elements.Text type={"h3"}>Complete</Elements.Text>
-                                                                <Elements.Text size={1} weight={"bold"}>
-                                                                    <Elements.Text opacity={0.6}>Complete to connect</Elements.Text>{" "}
-                                                                    <Elements.Text>{account?.name}</Elements.Text>{" "}
-                                                                    <Elements.Text opacity={0.6}>({short(account?.address)}) to</Elements.Text>{" "}
-                                                                    <Elements.Text>{asset?.symbol}</Elements.Text>{" "}
-                                                                    <Elements.Text opacity={0.6}>({asset?.name}).</Elements.Text>
+                                                                <Elements.Text type={"h3"}>{t("app.state.complete")}</Elements.Text>
+                                                                <Elements.Text weight={"bold"} opacity={0.6}>
+                                                                    {t("tx.complete.message", {
+                                                                        account: activeAccount?.name || "",
+                                                                        address: accountAddress,
+                                                                        symbol: asset?.symbol || "",
+                                                                        name: asset?.name || "",
+                                                                    })}
                                                                 </Elements.Text>
                                                             </Layouts.Col>
                                                         </Layouts.Col>
@@ -358,7 +386,7 @@ export default function Tx(props: Tx) {
                                                     children: (
                                                         <Layouts.Col gap={0} align={"center"} style={{ height: "100%" }} fill>
                                                             <Layouts.Col gap={4} align={"center"} fit>
-                                                                <Elements.Text type={"h3"}>Failure</Elements.Text>
+                                                                <Elements.Text type={"h3"}>{t("app.state.failure")}</Elements.Text>
                                                                 <Elements.Text weight={"bold"} opacity={0.6}>
                                                                     {error?.message || error}
                                                                 </Elements.Text>
@@ -383,10 +411,10 @@ export default function Tx(props: Tx) {
                                                 children: (
                                                     <Layouts.Row gap={2}>
                                                         <Controls.Button type={"glass"} onClick={handleBack}>
-                                                            Cancel
+                                                            {t("app.btn.cancel")}
                                                         </Controls.Button>
                                                         <Controls.Button type={"line"} onClick={handleSend}>
-                                                            Send
+                                                            {t("tx.detail.send")}
                                                         </Controls.Button>
                                                     </Layouts.Row>
                                                 ),
@@ -396,7 +424,7 @@ export default function Tx(props: Tx) {
                                                 children: (
                                                     <Layouts.Row gap={2}>
                                                         <Controls.Button type={"glass"} onClick={handleGoToMain}>
-                                                            Go to main
+                                                            {t("app.btn.go.main")}
                                                         </Controls.Button>
                                                     </Layouts.Row>
                                                 ),

@@ -1,40 +1,42 @@
 ﻿"use client";
 
-import CryptoJS from "crypto-js";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useEffect, useRef, useState } from "react";
 import { Stages } from "containers";
 import { useRouter } from "next/navigation";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import Image from "next/image";
+import { useTranslate } from "hooks";
 
 export default function Change() {
-    const hash = useRef("");
+    const pass = useRef("");
 
     const router = useRouter();
     const { provider } = useCoinmecaWalletProvider();
     const [stage, setStage] = useState({ name: "lock", level: 0 });
     const [error, setError] = useState<any>();
+    const { t } = useTranslate();
 
-    const handleUnlock = (code: string) => {
+    const handleUnlock = async (code: string) => {
         try {
-            hash.current = CryptoJS.SHA256(code).toString();
-            if (provider?.check(hash.current)) {
+            pass.current = code;
+            if (await provider?.check(code)) {
                 setStage({ name: "init", level: 0 });
                 return true;
-            } else false;
+            }
+            return false;
         } catch (e) {
-            hash.current = "";
+            pass.current = "";
             code = "";
             console.error(e);
             return false;
         }
     };
 
-    const handleConfirm = (code: string) => {
+    const handleConfirm = async (code: string) => {
         try {
-            provider?.change(hash.current, CryptoJS.SHA256(code).toString());
-            hash.current = "";
+            await provider?.change(pass.current, code);
+            pass.current = "";
             code = "";
             setStage({ name: "complete", level: 0 });
             return true;
@@ -47,13 +49,13 @@ export default function Change() {
     };
 
     const handleBack = () => {
-        hash.current = "";
+        pass.current = "";
         setStage({ name: "init", level: 0 });
     };
 
     useEffect(() => {
         return () => {
-            hash.current = "";
+            pass.current = "";
         };
     }, []);
 
@@ -102,9 +104,9 @@ export default function Change() {
                                         <Layouts.Col gap={8} align={"center"} style={{ flex: 1 }} fill>
                                             <Layouts.Col align={"center"} style={{ padding: "4em" }}>
                                                 <Layouts.Col gap={4} align={"center"} fit>
-                                                    <Elements.Text type={"h3"}>Failure</Elements.Text>
+                                                    <Elements.Text type={"h3"}>{t("app.state.failure")}</Elements.Text>
                                                     {error?.message && (
-                                                        <Elements.Text size={1} weight={"bold"}>
+                                                        <Elements.Text weight={"bold"} opacity={0.6}>
                                                             {error.message}
                                                         </Elements.Text>
                                                     )}
@@ -116,10 +118,10 @@ export default function Change() {
                                 <Layouts.Col gap={4} align={"center"} style={{ padding: "4em", paddingTop: 0 }}>
                                     <Layouts.Row gap={2}>
                                         <Controls.Button type={"glass"} onClick={() => handleBack()}>
-                                            Try again
+                                            {t("app.btn.try.again")}
                                         </Controls.Button>
                                         <Controls.Button type={"glass"} onClick={() => router.push("/")}>
-                                            Go to main
+                                            {t("app.btn.go.main")}
                                         </Controls.Button>
                                     </Layouts.Row>
                                 </Layouts.Col>
@@ -156,9 +158,9 @@ export default function Change() {
                                         <Layouts.Col gap={8} align={"center"} style={{ flex: 1 }} fill>
                                             <Layouts.Col align={"center"} style={{ padding: "4em" }}>
                                                 <Layouts.Col gap={4} align={"center"} fit>
-                                                    <Elements.Text type={"h3"}>Complete</Elements.Text>
+                                                    <Elements.Text type={"h3"}>{t("app.state.complete")}</Elements.Text>
                                                     <Elements.Text weight={"bold"} opacity={0.6}>
-                                                        The code successfully changed.
+                                                        {t("change.complete.desc")}
                                                     </Elements.Text>
                                                 </Layouts.Col>
                                             </Layouts.Col>
@@ -168,7 +170,7 @@ export default function Change() {
                                 <Layouts.Col gap={4} align={"center"} style={{ padding: "4em", paddingTop: 0 }}>
                                     <Layouts.Row gap={2}>
                                         <Controls.Button type={"glass"} onClick={() => router.push("/")}>
-                                            Go to main
+                                            {t("app.btn.go.main")}
                                         </Controls.Button>
                                     </Layouts.Row>
                                 </Layouts.Col>

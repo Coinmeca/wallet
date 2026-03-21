@@ -1,14 +1,17 @@
 ﻿"use client";
 
 import Image from "next/image";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { parseChainId } from "@coinmeca/wallet-provider/chains";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { Chain } from "@coinmeca/wallet-sdk/types";
+import { chainUrl, chainUrls, valid } from "@coinmeca/wallet-sdk/utils";
 import { AnimatePresence, motion } from "framer-motion";
 
-import { useMessageHandler } from "hooks";
+import { useRequestChain, useRequestFlow, useTranslate } from "hooks";
+import { chainLogo } from "utils";
+import { RequestCloseNextActions, RequestInvalid } from "../common";
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({method:"wallet_addEthereumChain", params:[{
             chainId: '0x13e31',
@@ -35,27 +38,50 @@ const method = "wallet_addEthereumChain";
 const timeout = 5000;
 
 export default function Page() {
-    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
     const { provider, chain } = useCoinmecaWalletProvider();
-    const { getRequest, getRequestById, success, failure, next, count, setCurrent, close } = useMessageHandler();
+    const { t } = useTranslate();
+    const { load, id, setId, request, next, count, level, setLevel, error, setError, resolve, reject, closeRequest, scheduleClose, settledRef } =
+        useRequestFlow({
+            method,
+        });
 
-    const [load, setLoad] = useState(true);
-    const [id, setId] = useState("");
     const [selectedChain, setSelectedChain] = useState<any>();
-    const [newChain, setNewChain] = useState<Chain>();
-
-    const [level, setLevel] = useState(0);
-    const [error, setError] = useState<any>();
+    const { activeChain } = useRequestChain(provider);
+    const isReady = load && !!id && request?.method === method;
+    const requestParams = request?.params;
+    const newChain = useMemo(() => {
+        if (!requestParams || typeof requestParams !== "object" || Array.isArray(requestParams)) return undefined;
+        const params = requestParams;
+        const { chainId, chainName, rpcUrls, nativeCurrency, blockExplorerUrls, iconUrls, logo } = params || {};
+        const parsedChainId = valid.chainId(chainId) ? parseChainId(chainId) : undefined;
+        const nextRpcUrls = Array.isArray(rpcUrls) ? chainUrls(rpcUrls, "rpc") || rpcUrls : rpcUrls;
+        const nextBlockExplorerUrls = Array.isArray(blockExplorerUrls) ? chainUrls(blockExplorerUrls, "explorer") || blockExplorerUrls : blockExplorerUrls;
+        const nextIconUrls = Array.isArray(iconUrls) ? chainUrls(iconUrls, "icon") || iconUrls : iconUrls;
+        const nextLogo = chainUrl(logo, "icon") || logo;
+        return {
+            ...params,
+            ...(typeof parsedChainId === "number" ? { chainId: parsedChainId } : {}),
+            ...(typeof chainName === "string" ? { chainName } : {}),
+            ...(nativeCurrency && typeof nativeCurrency === "object" ? { nativeCurrency } : {}),
+            ...(typeof nextRpcUrls !== "undefined" ? { rpcUrls: nextRpcUrls } : {}),
+            ...(typeof nextBlockExplorerUrls !== "undefined" ? { blockExplorerUrls: nextBlockExplorerUrls } : {}),
+            ...(typeof nextIconUrls !== "undefined" ? { iconUrls: nextIconUrls } : {}),
+            ...(typeof nextLogo !== "undefined" ? { logo: nextLogo } : {}),
+        } as Chain;
+    }, [requestParams]);
+    const currentChain = selectedChain || chain || activeChain;
+    const invalid = isReady && (!requestParams || typeof requestParams !== "object" || Array.isArray(requestParams));
+    const selectedChainName = currentChain?.chainName || currentChain?.chainId || "";
+    const newChainName = newChain?.chainName || "";
 
     const result = () => {
-        if (level === 0) failure(id, "User rejected the request");
-        else if (level === 1) success(id, true);
+        if (level === 0) reject("User rejected the request");
+        else if (level === 1) resolve(true);
     };
 
     const handleClose = () => {
         result();
-        close(id);
+        closeRequest();
     };
 
     const handleNext = () => {
@@ -64,78 +90,64 @@ export default function Page() {
     };
 
     const handleAddChain = async () => {
-        if (!newChain) return;
-        await provider
-            ?.addEthereumChain(newChain)
-            .then(() => setLevel(1))
+        const addRequest = provider?.addEthereumChain((requestParams || newChain) as any);
+        if (!addRequest) {
+            const error = "Chain registration request could not be started.";
+            reject(error);
+            setError(error);
+            setLevel(3);
+            return;
+        }
+
+        await addRequest
+            .then((result) => {
+                if (settledRef.current) return;
+                if (!result) throw new Error("Chain registration did not persist.");
+                setLevel(1);
+            })
             .catch((error) => {
-                console.log(error);
-                failure(id, error?.message || error);
+                if (settledRef.current) return;
+                reject(error?.message || error);
                 setError(error);
                 setLevel(3);
             });
     };
 
     const handleSwitchChain = async () => {
-        if (!newChain) return;
-        await provider
-            ?.switchEthereumChain(newChain?.chainId)
+        const switchRequest = provider?.switchEthereumChain((requestParams as any)?.chainId || newChain?.chainId);
+        if (!switchRequest) {
+            const error = "Chain switch request could not be started.";
+            reject(error);
+            setError(error);
+            setLevel(3);
+            return;
+        }
+
+        await switchRequest
             .then((result) => {
-                success(id, result);
+                if (settledRef.current) return;
+                if (!result) throw new Error("Chain switch did not persist.");
+                if (!resolve(true)) return;
                 setLevel(2);
-                if (count <= 1) timeoutRef.current = setTimeout(handleClose, timeout);
+                scheduleClose(handleClose, timeout);
             })
             .catch((error) => {
-                console.log(error);
-                failure(id, error?.message || error);
+                if (settledRef.current) return;
+                reject(error?.message || error);
                 setError(error);
                 setLevel(3);
             });
     };
 
     useEffect(() => {
-        if (count && timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-            timeoutRef.current = null;
-        }
-    }, [count]);
-
-    useEffect(() => {
-        if (id && id !== "") {
-            setLoad(false);
-            setCurrent(id);
-            setError(undefined);
-            setLevel(0);
-
-            setSelectedChain(chain);
-            const request = getRequestById(id);
-            if (request) {
-                const { params } = request;
-                const { chainId, chainName, rpcUrls, nativeCurrency } = params || {};
-                if (
-                    chainId &&
-                    chainName &&
-                    nativeCurrency &&
-                    nativeCurrency?.name &&
-                    nativeCurrency.symbol &&
-                    nativeCurrency.decimals &&
-                    rpcUrls &&
-                    rpcUrls.length > 0
-                )
-                    setNewChain({ ...params, chainId: parseChainId(chainId) } as Chain);
-            }
-            setTimeout(() => setLoad(true), 300);
-        }
-    }, [id]);
-
-    useLayoutEffect(() => {
-        const id = getRequest(method)?.id;
-        setId(id);
-    }, []);
+        if (!isReady || selectedChain || !(chain || activeChain)) return;
+        setSelectedChain(chain || activeChain);
+    }, [activeChain, chain, isReady, selectedChain]);
 
     return (
         <AnimatePresence>
             {load &&
+                isReady &&
                 (newChain ? (
                     <Layouts.Contents.SlideContainer
                         contents={[
@@ -162,7 +174,7 @@ export default function Page() {
                                                                 <Image
                                                                     width={0}
                                                                     height={0}
-                                                                    src={newChain?.logo || `https://web3.coinmeca.net/${newChain.chainId}/logo.svg`}
+                                                                    src={chainLogo(newChain?.chainId, newChain?.logo) || ""}
                                                                     alt={newChain?.chainName || ""}
                                                                     style={{ width: "8em", height: "8em", borderRadius: "100%" }}
                                                                 />
@@ -191,33 +203,35 @@ export default function Page() {
                                                                 <Layouts.Col gap={2} align={"left"}>
                                                                     <Layouts.Col gap={0.5}>
                                                                         <Elements.Text type={"desc"} weight={"bold"}>
-                                                                            <Elements.Text size={1}>Chain RPC URL</Elements.Text>
-                                                                            {newChain?.rpcUrls?.length > 0 && (
-                                                                                <>
-                                                                                    <Elements.Text size={1}>s</Elements.Text>{" "}
-                                                                                    <Elements.Text size={1} opacity={1}>
-                                                                                        +{newChain?.rpcUrls?.length}
-                                                                                    </Elements.Text>
-                                                                                </>
+                                                                            <Elements.Text size={1}>
+                                                                                {newChain?.rpcUrls?.length > 1
+                                                                                    ? t("request.label.chain.rpc.urls")
+                                                                                    : t("request.label.chain.rpc.url")}
+                                                                            </Elements.Text>
+                                                                            {newChain?.rpcUrls?.length > 1 && (
+                                                                                <Elements.Text size={1} opacity={1}>
+                                                                                    {" "}
+                                                                                    +{newChain?.rpcUrls?.length}
+                                                                                </Elements.Text>
                                                                             )}
                                                                         </Elements.Text>
                                                                         <Elements.Text>{newChain?.rpcUrls?.[0]}</Elements.Text>
                                                                     </Layouts.Col>
                                                                     <Layouts.Col gap={0.5}>
                                                                         <Elements.Text type={"desc"} weight={"bold"} opacity={0.6}>
-                                                                            Native Currency Name
+                                                                            {t("request.label.native.currency.name")}
                                                                         </Elements.Text>
                                                                         <Elements.Text>{newChain?.nativeCurrency?.name}</Elements.Text>
                                                                     </Layouts.Col>
                                                                     <Layouts.Col gap={0.5}>
                                                                         <Elements.Text type={"desc"} weight={"bold"} opacity={0.6}>
-                                                                            Native Currency Symbol
+                                                                            {t("request.label.native.currency.symbol")}
                                                                         </Elements.Text>
                                                                         <Elements.Text>{newChain?.nativeCurrency?.symbol}</Elements.Text>
                                                                     </Layouts.Col>
                                                                     <Layouts.Col gap={0.5}>
                                                                         <Elements.Text type={"desc"} weight={"bold"} opacity={0.6}>
-                                                                            Native Currency Decimals
+                                                                            {t("request.label.native.currency.decimals")}
                                                                         </Elements.Text>
                                                                         <Elements.Text>{newChain?.nativeCurrency?.decimals}</Elements.Text>
                                                                     </Layouts.Col>
@@ -229,9 +243,9 @@ export default function Page() {
                                             </Layouts.Contents.InnerContent>
                                             <Layouts.Col gap={4} align={"center"} style={{ padding: "4em", paddingTop: 0 }}>
                                                 <Layouts.Row gap={2}>
-                                                    <Controls.Button onClick={handleClose}>Cancel</Controls.Button>
+                                                    <Controls.Button onClick={handleClose}>{t("app.btn.cancel")}</Controls.Button>
                                                     <Controls.Button type={"line"} onClick={handleAddChain}>
-                                                        Approve
+                                                        {t("request.btn.approve")}
                                                     </Controls.Button>
                                                 </Layouts.Row>
                                             </Layouts.Col>
@@ -260,19 +274,19 @@ export default function Page() {
                                                                     background: "rgba(var(--white),.15)",
                                                                 }}>
                                                                 <Image
-                                                                    src={selectedChain?.logo || `https://web3.coinmeca.net/${selectedChain?.chainId}/logo.svg`}
+                                                                    src={chainLogo(currentChain?.chainId, currentChain?.logo) || ""}
                                                                     width={0}
                                                                     height={0}
-                                                                    alt={selectedChain?.chainName || ""}
+                                                                    alt={currentChain?.chainName || ""}
                                                                     style={{ width: "4em", height: "4em", borderRadius: "100%" }}
                                                                 />
                                                             </div>
                                                             <Layouts.Col gap={0} align={"center"} fill>
                                                                 <Elements.Text type={"h6"} height={0} align={"left"}>
-                                                                    {selectedChain?.chainName}
+                                                                    {currentChain?.chainName}
                                                                 </Elements.Text>
                                                                 <Elements.Text type={"strong"} height={0} align={"left"} opacity={0.6}>
-                                                                    {selectedChain?.chainId}
+                                                                    {currentChain?.chainId}
                                                                 </Elements.Text>
                                                             </Layouts.Col>
                                                         </Layouts.Row>
@@ -292,7 +306,7 @@ export default function Page() {
                                                                     background: "rgba(var(--white),.15)",
                                                                 }}>
                                                                 <Image
-                                                                    src={newChain?.logo || `https://web3.coinmeca.net/${newChain?.chainId}/logo.svg`}
+                                                                    src={chainLogo(newChain?.chainId, newChain?.logo) || ""}
                                                                     width={0}
                                                                     height={0}
                                                                     alt={newChain?.chainName || ""}
@@ -312,12 +326,13 @@ export default function Page() {
                                                 </Layouts.Col>
                                                 <Layouts.Col gap={8} align={"center"} style={{ flex: 1 }} fill>
                                                     <Layouts.Col gap={4} align={"center"} fit>
-                                                        <Elements.Text type={"h3"}>Switch</Elements.Text>
-                                                        <Elements.Text size={1} weight={"bold"}>
-                                                            <Elements.Text opacity={0.6}>This is will switch the chain from </Elements.Text>{" "}
-                                                            {/* <Elements.Text>{chain?.chainName}</Elements.Text> <Elements.Text opacity={0.6}>to</Elements.Text>{" "} */}
-                                                            <Elements.Text>{` ${newChain?.chainName}`}</Elements.Text>
-                                                            <Elements.Text opacity={0.6}>.</Elements.Text>
+                                                        <Elements.Text type={"h3"}>{t("request.state.switch")}</Elements.Text>
+                                                        <Elements.Text weight={"bold"} opacity={0.6}>
+                                                            {t("request.chain.add.prompt", {
+                                                                chain: newChainName,
+                                                                from: selectedChainName,
+                                                                to: newChainName,
+                                                            })}
                                                         </Elements.Text>
                                                     </Layouts.Col>
                                                 </Layouts.Col>
@@ -326,10 +341,10 @@ export default function Page() {
                                         <Layouts.Col gap={4} align={"center"} style={{ padding: "4em", paddingTop: 0 }}>
                                             <Layouts.Row gap={2}>
                                                 <Controls.Button type={count - 1 > 0 ? undefined : "glass"} onClick={handleClose}>
-                                                    Close
+                                                    {t("app.btn.close")}
                                                 </Controls.Button>
                                                 <Controls.Button type={"line"} onClick={handleSwitchChain}>
-                                                    Switch Chain
+                                                    {t("request.btn.chain.switch")}
                                                 </Controls.Button>
                                                 <AnimatePresence>
                                                     {count - 1 > 0 && (
@@ -339,7 +354,7 @@ export default function Page() {
                                                             exit={{ flex: 2, marginTop: 0, maxWidth: "max-content" }}
                                                             transition={{ ease: "easeInOut", duration: 0.3 }}>
                                                             <Controls.Button type={"glass"} onClick={handleNext} style={{ width: "100%" }}>
-                                                                See Next Request
+                                                                {t("request.btn.next")}
                                                             </Controls.Button>
                                                         </motion.div>
                                                     )}
@@ -390,13 +405,12 @@ export default function Page() {
                                                     <Layouts.Col gap={8} align={"center"} style={{ flex: 1 }} fill>
                                                         <Layouts.Col align={"center"} style={{ padding: "4em" }}>
                                                             <Layouts.Col gap={4} align={"center"} fit>
-                                                                <Elements.Text type={"h3"}>Complete</Elements.Text>
-                                                                <Elements.Text size={1} weight={"bold"}>
-                                                                    <Elements.Text opacity={0.6}>Selected chain was switched from</Elements.Text>{" "}
-                                                                    <Elements.Text>{selectedChain?.chainName}</Elements.Text>{" "}
-                                                                    <Elements.Text opacity={0.6}>to</Elements.Text>{" "}
-                                                                    <Elements.Text>{` ${newChain?.chainName}`}</Elements.Text>
-                                                                    <Elements.Text opacity={0.6}>.</Elements.Text>
+                                                                <Elements.Text type={"h3"}>{t("request.state.complete")}</Elements.Text>
+                                                                <Elements.Text weight={"bold"} opacity={0.6}>
+                                                                    {t("request.chain.switch.complete", {
+                                                                        from: selectedChainName,
+                                                                        to: newChainName,
+                                                                    })}
                                                                 </Elements.Text>
                                                             </Layouts.Col>
                                                         </Layouts.Col>
@@ -406,21 +420,15 @@ export default function Page() {
                                             <Layouts.Col gap={4} align={"center"} style={{ padding: "4em", paddingTop: 0 }}>
                                                 <Layouts.Row gap={2}>
                                                     <Controls.Button type={count ? undefined : "glass"} onClick={handleClose}>
-                                                        Close
+                                                        {t("app.btn.close")}
                                                     </Controls.Button>
-                                                    <AnimatePresence>
-                                                        {!!count && (
-                                                            <motion.div
-                                                                initial={{ flex: 0, marginLeft: "-2em", maxWidth: 0 }}
-                                                                animate={{ flex: 2, marginLeft: 0, maxWidth: "100vw" }}
-                                                                exit={{ flex: 2, marginLeft: 0, maxWidth: "100vw" }}
-                                                                transition={{ ease: "easeInOut", duration: 0.3 }}>
-                                                                <Controls.Button type={"glass"} onClick={() => setId(next(id) || "")} style={{ width: "100%" }}>
-                                                                    See Next Request
-                                                                </Controls.Button>
-                                                            </motion.div>
-                                                        )}
-                                                    </AnimatePresence>
+                                                    <RequestCloseNextActions
+                                                        count={count}
+                                                        onClose={handleClose}
+                                                        onNext={() => setId(next(id) || "")}
+                                                        closeLabel={t("app.btn.close")}
+                                                        nextLabel={t("request.btn.next")}
+                                                    />
                                                 </Layouts.Row>
                                             </Layouts.Col>
                                         </Layouts.Col>
@@ -468,7 +476,7 @@ export default function Page() {
                                                     <Layouts.Col gap={8} align={"center"} style={{ flex: 1 }} fill>
                                                         <Layouts.Col align={"center"} style={{ padding: "4em" }}>
                                                             <Layouts.Col gap={4} align={"center"} fit>
-                                                                <Elements.Text type={"h3"}>Failure</Elements.Text>
+                                                                <Elements.Text type={"h3"}>{t("request.state.failure")}</Elements.Text>
                                                                 <Elements.Text weight={"bold"} opacity={0.6}>
                                                                     {error?.message || error}
                                                                 </Elements.Text>
@@ -480,7 +488,7 @@ export default function Page() {
                                             <Layouts.Col gap={4} align={"center"} style={{ padding: "4em", paddingTop: 0 }}>
                                                 <Layouts.Row gap={2}>
                                                     <Controls.Button type={"glass"} onClick={handleClose}>
-                                                        Close
+                                                        {t("app.btn.close")}
                                                     </Controls.Button>
                                                 </Layouts.Row>
                                             </Layouts.Col>
@@ -490,52 +498,14 @@ export default function Page() {
                             },
                         ]}
                     />
-                ) : (
-                    <Layouts.Contents.InnerContent scroll={false}>
-                        <Layouts.Col align={"center"} style={{ padding: "4em" }} fill>
-                            <Layouts.Col gap={4} align={"center"} style={{ flex: 1 }} fill>
-                                <Layouts.Col gap={4} align={"center"} fill>
-                                    <Layouts.Col gap={8} align={"center"} fit>
-                                        <div
-                                            style={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                maxWidth: "max-content",
-                                                maxHeight: "max-content",
-                                                padding: "2em",
-                                                borderRadius: "100%",
-                                                background: "rgba(var(--white),.15)",
-                                            }}>
-                                            <Image
-                                                width={0}
-                                                height={0}
-                                                src={require("../../../assets/animation/failure.gif")}
-                                                alt={"Unknown"}
-                                                style={{ width: "8em", height: "8em" }}
-                                            />
-                                        </div>
-                                    </Layouts.Col>
-                                </Layouts.Col>
-                            </Layouts.Col>
-                            <Layouts.Col gap={0} align={"center"} style={{ flex: 1 }} fill>
-                                <Layouts.Col align={"center"} style={{ flex: 1 }} fill>
-                                    <Layouts.Col gap={4} align={"center"} fit>
-                                        <Elements.Text type={"h3"}>Invalid Request</Elements.Text>
-                                        <Elements.Text weight={"bold"} opacity={0.6}>
-                                            {"The given chain information is something wrong. Couldn't found the information of requested chain."}
-                                        </Elements.Text>
-                                    </Layouts.Col>
-                                </Layouts.Col>
-                                <Layouts.Row gap={2}>
-                                    <Controls.Button type={"glass"} onClick={handleClose}>
-                                        Close
-                                    </Controls.Button>
-                                </Layouts.Row>
-                            </Layouts.Col>
-                        </Layouts.Col>
-                    </Layouts.Contents.InnerContent>
-                ))}
+                ) : invalid ? (
+                    <RequestInvalid
+                        title={t("request.invalid.title")}
+                        message={error?.message || error || t("request.invalid.chain.message")}
+                        onClose={handleClose}
+                        closeLabel={t("app.btn.close")}
+                    />
+                ) : null)}
         </AnimatePresence>
     );
 }

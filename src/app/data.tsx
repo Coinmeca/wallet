@@ -14,20 +14,22 @@ import { Root } from "@coinmeca/ui/lib/style";
 import Coinmeca from "assets/coinmeca.svg";
 import { Modals, Sidebars } from "containers";
 import { PageLoader } from "hooks/usePageLoader";
-import { useGuard, useMessageHandler } from "hooks";
+import { useGuard, useMessageHandler, useTranslate } from "hooks";
 import { MessageProps } from "contexts/message";
-import { requestNameMap } from "utils";
+import { camelToTitleCase, chainLogo, debug, requestNameMap, requestRoute, site, valid } from "utils";
 
 export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader) {
     const router = useRouter();
     const path = usePathname();
+    const test = debug();
 
     const { windowSize } = useWindowSize();
     const { isAccess } = useGuard();
     const { isMobile } = useMobile();
     const { isInApp } = useTelegram();
+    const { languageCode, setLanguageCode, t } = useTranslate();
     const { provider, account, accounts, chain, apps } = useCoinmecaWalletProvider();
-    const { messages, count, current, failure, remove } = useMessageHandler();
+    const { messages, count, current, setCurrent, failure, remove } = useMessageHandler();
     const { toasts, addToast } = useNotification();
 
     const [isClient, setIsClient] = useState(false);
@@ -41,18 +43,21 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
 
     const isDesktop = isClient && windowSize.width > Root.Device.Desktop - 1;
     const responsive = isClient && windowSize.width <= Root.Device.Tablet;
+    const activeAccount = account;
+    const activeAddress = activeAccount?.address || provider?.address;
+    const activeChain = chain;
 
     const colorMap = responsive
         ? "var(--rainbow)"
         : provider?.isLocked || path?.startsWith("/request")
-        ? "red"
-        : path?.startsWith("/token")
-        ? "green"
-        : path?.startsWith("/nft")
-        ? "blue"
-        : path?.startsWith("/activity")
-        ? "orange"
-        : "var(--rainbow)";
+          ? "red"
+          : path?.startsWith("/token")
+            ? "green"
+            : path?.startsWith("/nft")
+              ? "blue"
+              : path?.startsWith("/activity")
+                ? "orange"
+                : "var(--rainbow)";
 
     const languages = [
         {
@@ -60,7 +65,11 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
             value: "English",
         },
         {
-            code: "sp",
+            code: "fr",
+            value: "Français",
+        },
+        {
+            code: "es",
             value: "Español",
         },
         {
@@ -80,6 +89,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
             code: "ko",
         },
     ];
+    const languageOption = languages.find((item) => item?.code === languageCode);
 
     useLayoutEffect(() => {
         setIsClient(true);
@@ -106,14 +116,14 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
             .writeText(account.address)
             .then(function () {
                 addToast({
-                    title: `Copy Address`,
-                    message: `The address of ${account.name} was copied.`,
+                    title: t("toast.wallet.address.copy"),
+                    message: t("toast.wallet.address.copy.success", { name: account.name }),
                 });
             })
             .catch(function (err) {
                 addToast({
-                    title: `Copy Address`,
-                    message: `Failed to copy the address of ${account.name}.`,
+                    title: t("toast.wallet.address.copy"),
+                    message: t("toast.wallet.address.copy.failure", { name: account.name }),
                 });
             });
     };
@@ -125,91 +135,200 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
     };
 
     const [openAppRevoke, closeAppRevoke] = usePortal((props: any) => <Modals.App.Revoke {...props} onClose={() => closeAppRevoke()} />);
-    const handleRevokeApp = (url?: string) => {
-        openAppRevoke({ url });
+    const handleRevokeApp = (app?: App) => {
+        openAppRevoke({ app });
+    };
+    const navigateSetting = (href: string, closeMenu = false) => {
+        if (closeMenu) {
+            setSideMenu("");
+            setSetting("");
+        }
+        router.push(href);
     };
 
     const applist = useCallback(
         (apps: Account[] = []) =>
-            apps.map((app: App) => ({
-                onClick: () => {},
-                style: { padding: "2.5em clamp(2em, 5%, 8em)" },
-                children: [
-                    [
+            apps.map((app: App) => {
+                const info = site(app?.url);
+                const title = app?.name || info?.host || info?.origin || t("app.sidebar.app.unknown");
+
+                return {
+                    onClick: () => {},
+                    style: { padding: "2.5em clamp(2em, 5%, 8em)" },
+                    children: [
                         [
-                            {
-                                style: { overflow: "hidden" },
-                                children: [
-                                    {
-                                        gap: 2,
-                                        children: [
-                                            {
-                                                fit: true,
-                                                children: <Image width={32} height={32} src={app?.logo || ""} alt={app?.name || ""} />,
-                                            },
-                                            {
-                                                gap: 0,
-                                                children: [
-                                                    <>
-                                                        <Elements.Text size={1.5} height={1.5} title={app?.name} fix>
-                                                            {app?.name}
-                                                        </Elements.Text>
-                                                    </>,
-                                                    <>
-                                                        <Elements.Text size={1.375} height={1.5} weight={"light"} opacity={0.6} title={app?.url} fix>
-                                                            {app?.url}
-                                                        </Elements.Text>
-                                                    </>,
-                                                ],
-                                            },
-                                        ],
-                                    },
-                                ],
-                            },
-                            {
-                                fit: true,
-                                children: [
-                                    {
-                                        gap: 0,
-                                        fit: true,
-                                        style: { pointerEvents: "initial", maxWitdth: "max-content" },
-                                        children: [
-                                            <>
-                                                <Controls.Dropdown
-                                                    type={"more"}
-                                                    options={[
-                                                        { icon: "identity", value: "Manage approvals" },
-                                                        { icon: "power", value: `Revoke ${app?.name}` },
-                                                    ]}
-                                                    onClickItem={(e: any, v: any, k: number) => {
-                                                        switch (k) {
-                                                            case 0:
-                                                                return handleApprovalManage(app);
-                                                            case 1:
-                                                                return handleRevokeApp(app?.url);
-                                                        }
-                                                    }}
-                                                    responsive={isMobile && responsive}
-                                                    chevron={false}
-                                                    fix
-                                                    fit
-                                                />
-                                            </>,
-                                        ],
-                                    },
-                                ],
-                            },
+                            [
+                                {
+                                    style: { overflow: "hidden" },
+                                    children: [
+                                        {
+                                            gap: 2,
+                                            children: [
+                                                {
+                                                    fit: true,
+                                                    children: <Image width={32} height={32} src={app?.logo || ""} alt={title} />,
+                                                },
+                                                {
+                                                    gap: 0,
+                                                    children: [
+                                                        <>
+                                                            <Elements.Text size={1.5} height={1.5} title={title} fix>
+                                                                {title}
+                                                            </Elements.Text>
+                                                        </>,
+                                                        <>
+                                                            <Elements.Text
+                                                                size={1.375}
+                                                                height={1.5}
+                                                                weight={"light"}
+                                                                opacity={0.6}
+                                                                title={info?.origin || app?.url}
+                                                                fix>
+                                                                {info?.origin || app?.url}
+                                                            </Elements.Text>
+                                                        </>,
+                                                    ],
+                                                },
+                                            ],
+                                        },
+                                    ],
+                                },
+                                {
+                                    fit: true,
+                                    children: [
+                                        {
+                                            gap: 0,
+                                            fit: true,
+                                            style: { pointerEvents: "initial", maxWitdth: "max-content" },
+                                            children: [
+                                                <>
+                                                    <Controls.Dropdown
+                                                        type={"more"}
+                                                        options={[
+                                                            { icon: "identity", value: t("app.sidebar.app.manage.approvals") },
+                                                            { icon: "power", value: t("app.sidebar.app.revoke", { title }) },
+                                                        ]}
+                                                        onClickItem={(e: any, v: any, k: number) => {
+                                                            switch (k) {
+                                                                case 0:
+                                                                    return handleApprovalManage(app);
+                                                                case 1:
+                                                                    return handleRevokeApp(app);
+                                                            }
+                                                        }}
+                                                        responsive={isMobile && responsive}
+                                                        chevron={false}
+                                                        fix
+                                                        fit
+                                                    />
+                                                </>,
+                                            ],
+                                        },
+                                    ],
+                                },
+                            ],
                         ],
                     ],
-                ],
-            })),
-        [apps, responsive],
+                };
+            }),
+        [isMobile, openApprovalManage, openAppRevoke, responsive, t],
+    );
+    const languageDropdown = (
+        <Controls.Dropdown
+            scale={Root.Device.Tablet >= windowSize.width ? 1.125 : undefined}
+            option={languageOption}
+            options={languages}
+            style={{ options: { background: `rgba(var(--black-abs), var(--o075))` } }}
+            onClickItem={(e: any, v: any) => setLanguageCode(v.code)}
+            responsive={isMobile}
+        />
+    );
+    const appSettingsContent = (
+        <Layouts.Contents.InnerContent scroll={false}>
+            <Layouts.Col gap={0} fill>
+                <Controls.Input
+                    placeholder={t("app.sidebar.app.search.placeholder")}
+                    onChange={(e: any, v: string) => setAppFilter(v)}
+                    left={{
+                        children: <Elements.Icon icon={"search"} style={{ marginRight: "0.5em", padding: "0.333em 0" }} />,
+                    }}
+                    style={{ padding: "1.5em clamp(0em, 3.75%, 6em)" }}
+                    clearable
+                />
+                <Layouts.List list={filter(apps, appFilter)} formatter={applist} />
+            </Layouts.Col>
+            <Layouts.Col gap={0} style={{ padding: "4em", paddingTop: "2em" }}>
+                <Layouts.Row>
+                    <Controls.Button type={"glass"} onClick={() => setSetting("")}>
+                        {t("app.btn.back")}
+                    </Controls.Button>
+                </Layouts.Row>
+            </Layouts.Col>
+        </Layouts.Contents.InnerContent>
+    );
+    const settingsButtons = (responsiveSetting: boolean) => (
+        <>
+            {responsiveSetting && languageDropdown}
+            {test && (
+                <Controls.Button align={"left"} scale={1.125} style={{ padding: "0.5em 1em" }} onClick={() => navigateSetting("/test", responsiveSetting)}>
+                    Test
+                </Controls.Button>
+            )}
+            <Controls.Button
+                align={"left"}
+                iconLeft={responsiveSetting ? "blockchain" : undefined}
+                scale={1.125}
+                style={{ padding: "0.5em 1em" }}
+                onClick={() => setSetting("apps")}>
+                {t("app.setting.connected.apps")}
+            </Controls.Button>
+            <Controls.Button
+                align={"left"}
+                iconLeft={responsiveSetting ? "sheild-star" : undefined}
+                scale={1.125}
+                style={{ padding: "0.5em 1em" }}
+                onClick={() => navigateSetting("/change", responsiveSetting)}>
+                {t("app.setting.change.passcode")}
+            </Controls.Button>
+            <Controls.Button
+                align={"left"}
+                iconLeft={responsiveSetting ? "download" : undefined}
+                scale={1.125}
+                style={{ padding: "0.5em 1em" }}
+                onClick={() => navigateSetting("/backup", responsiveSetting)}>
+                {t("app.setting.backup.wallet")}
+            </Controls.Button>
+        </>
+    );
+    const settingsHome = (responsiveSetting: boolean) => (
+        <Layouts.Col style={{ padding: "4em" }} reverse={responsiveSetting ? isInApp || isMobile : true} fill>
+            <Layouts.Col gap={6} reverse={responsiveSetting ? !isInApp && !isMobile : false}>
+                <Layouts.Col gap={6}>{settingsButtons(responsiveSetting)}</Layouts.Col>
+                <Controls.Button
+                    type={"line"}
+                    iconLeft={responsiveSetting ? "lock" : undefined}
+                    scale={1.125}
+                    style={{ padding: "0.5em 1em" }}
+                    onClick={() => provider?.lock()}>
+                    {t("app.setting.lock")}
+                </Controls.Button>
+            </Layouts.Col>
+        </Layouts.Col>
     );
 
     const [searchFilter, setSearchFilter] = useState<string>();
+    const queuedRequestCount = useMemo(() => (current ? count : Math.max(0, messages.length - 1)), [count, current, messages.length]);
+    const requestLabel = useCallback(
+        (method?: string) => {
+            const key = method ? requestNameMap?.[method as keyof typeof requestNameMap] : undefined;
+            const translated = key ? t(key) : undefined;
+            return (translated && translated !== key ? translated : camelToTitleCase(method) || method) || "";
+        },
+        [t],
+    );
     const search = () => (
         <Controls.Input
-            placeholder={sideMenu === "accounts" ? "Search account by name or address..." : "Search chain by id or name..."}
+            placeholder={sideMenu === "accounts" ? t("app.sidebar.account.search.placeholder") : t("app.sidebar.chain.search.placeholder")}
             value={searchFilter}
             onChange={(e: any, v: string) => setSearchFilter(v)}
             left={{ children: <Elements.Icon icon={"search"} style={{ marginRight: "0.5em", padding: "0.333em 0" }} /> }}
@@ -262,7 +381,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                   }
                 : false) ||
             !isLoad ||
-            !account,
+            !activeAccount,
         style: {
             children: {
                 children: {
@@ -278,25 +397,25 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
             },
         },
         menu:
-            !isRequest && isLoad && account
+            !isRequest && isLoad && activeAccount
                 ? {
                       active: sideMenu === "menu",
                       onClick: () => (sideMenu === "menu" ? handlesideMenu("") : handlesideMenu("menu")),
                       children: [
                           {
-                              name: "Token",
+                              name: t("app.menu.token"),
                               href: "/token",
                               active: path?.startsWith("/token"),
                               onClick: () => handlesideMenu(""),
                           },
                           {
-                              name: "NFT",
+                              name: t("app.menu.nft"),
                               href: "/nft",
                               active: path?.startsWith("/nft"),
                               onClick: () => handlesideMenu(""),
                           },
                           {
-                              name: "Activity",
+                              name: t("app.menu.activity"),
                               href: "/activity",
                               active: path?.startsWith("/activity"),
                               onClick: () => handlesideMenu(""),
@@ -304,8 +423,14 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                       ],
                   }
                 : undefined,
+        option:
+            isLoad && !responsive && !provider?.isLocked
+                ? {
+                      children: languageDropdown,
+                  }
+                : undefined,
         side:
-            isLoad && account && accounts?.length
+            isLoad && activeAccount && accounts?.length
                 ? {
                       width: side - (responsive ? 8 : 5),
                       active: true,
@@ -314,14 +439,14 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                           <>
                               <Layouts.Row fit />
                               <Layouts.Row gap={0} align={"right"}>
-                                  {count > 1 && (
+                                  {queuedRequestCount > 0 && (
                                       <Controls.Tab
                                           active={sideMenu === "requests"}
                                           onClick={() => setSideMenu(sideMenu === "requests" ? "" : "requests")}
                                           show={"tablet"}
                                           toggle
                                           fit>
-                                          <Elements.Icon scale={0.666} icon={"bell"} count={count} />
+                                          <Elements.Icon scale={0.666} icon={"bell"} count={queuedRequestCount} />
                                       </Controls.Tab>
                                   )}
                               </Layouts.Row>
@@ -329,7 +454,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                       ) : (
                           <>
                               <Layouts.Row fit>
-                                  {account?.address && (
+                                  {activeAddress && activeAccount && (
                                       <Layouts.Row gap={0} fit>
                                           <Controls.Tab
                                               active={isDesktop || sideMenu === "accounts"}
@@ -338,7 +463,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                               {sideMenu === "accounts" ? (
                                                   <Layouts.Row gap={0.5} align={"middle"}>
                                                       <Elements.Icon icon={"x"} scale={0.666} />
-                                                      <Elements.Text size={1}>Close Account List</Elements.Text>
+                                                      <Elements.Text size={1}>{t("app.sidebar.account.close")}</Elements.Text>
                                                   </Layouts.Row>
                                               ) : (
                                                   <Elements.Avatar
@@ -346,13 +471,17 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                                       size={2.5}
                                                       display={6}
                                                       ellipsis={" ... "}
-                                                      character={`${account?.index + 1}`}
-                                                      name={account?.address}
+                                                      character={`${activeAccount.index + 1}`}
+                                                      name={activeAddress}
                                                   />
                                               )}
                                           </Controls.Tab>
                                           {sideMenu !== "accounts" && (
-                                              <Controls.Button icon={"copy"} title={"Copy address"} onClick={() => handleCopyAddress(account)} />
+                                              <Controls.Button
+                                                  icon={"copy"}
+                                                  title={t("app.wallet.address.copy")}
+                                                  onClick={() => handleCopyAddress(activeAccount)}
+                                              />
                                           )}
                                       </Layouts.Row>
                                   )}
@@ -362,11 +491,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                       {sideMenu === "chains" ? (
                                           <Elements.Icon icon={"x"} scale={0.666} />
                                       ) : (
-                                          <Elements.Avatar
-                                              scale={0.666}
-                                              size={2.5}
-                                              img={chain?.logo || `https://web3.coinmeca.net/${chain?.chainId}/logo.svg`}
-                                          />
+                                          <Elements.Avatar scale={0.666} size={2.5} img={chainLogo(activeChain?.chainId, activeChain?.logo)} />
                                       )}
                                   </Controls.Tab>
                                   <Controls.Tab
@@ -390,12 +515,14 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                               active: sideMenu === "requests",
                               children: (
                                   <Layouts.Contents.InnerContent>
-                                      {count > 1 ? (
+                                      {queuedRequestCount > 0 ? (
                                           <Layouts.List
                                               list={messages}
                                               formatter={(messages: MessageProps[]) =>
                                                   messages?.length &&
                                                   messages?.map((m) => {
+                                                      const info = site(m?.request?.app?.url);
+                                                      const title = m?.request?.app?.name || info?.host || info?.origin;
                                                       const date = (format(m?.time, "date") as string).split(" ");
                                                       return {
                                                           onClick: current !== m?.id && (() => {}),
@@ -414,7 +541,8 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                                                       {
                                                                           style: { overflow: "hidden", ...(current === m?.id ? { opacity: 0.3 } : {}) },
                                                                           onClick: () => {
-                                                                              router.push(`/request/${m?.request?.method}`);
+                                                                              setCurrent(m?.id || "");
+                                                                              router.push(requestRoute(m?.request?.method) || "/");
                                                                               setSideMenu("");
                                                                           },
                                                                           children: [
@@ -425,15 +553,13 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                                                                           [
                                                                                               <>
                                                                                                   <Elements.Text fix>
-                                                                                                      {requestNameMap?.[
-                                                                                                          m?.request?.method as keyof typeof requestNameMap
-                                                                                                      ] || m?.request?.method}
+                                                                                                      {requestLabel(m?.request?.method)}
                                                                                                   </Elements.Text>
                                                                                               </>,
                                                                                           ],
                                                                                           [
                                                                                               [
-                                                                                                  ...(m?.request?.app?.name && m?.request?.app?.name !== ""
+                                                                                                  ...(title
                                                                                                       ? [
                                                                                                             {
                                                                                                                 gap: 0.5,
@@ -459,12 +585,26 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                                                                                                     },
                                                                                                                     <>
                                                                                                                         <Elements.Text
+                                                                                                                            size={1}
                                                                                                                             type={"desc"}
                                                                                                                             weight={"bold"}
                                                                                                                             fix>
-                                                                                                                            {m?.request?.app?.name}
+                                                                                                                            {title}
                                                                                                                         </Elements.Text>
                                                                                                                     </>,
+                                                                                                                    ...(info?.origin
+                                                                                                                        ? [
+                                                                                                                              <>
+                                                                                                                                  <Elements.Text
+                                                                                                                                      size={1.25}
+                                                                                                                                      weight={"normal"}
+                                                                                                                                      opacity={0.6}
+                                                                                                                                      fix>
+                                                                                                                                      {info.origin}
+                                                                                                                                  </Elements.Text>
+                                                                                                                              </>,
+                                                                                                                          ]
+                                                                                                                        : []),
                                                                                                                 ],
                                                                                                             },
                                                                                                         ]
@@ -537,7 +677,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                           />
                                       ) : (
                                           <Layouts.Col align={"center"} fill>
-                                              <Elements.Text type={"desc"}>There is no more requests.</Elements.Text>
+                                              <Elements.Text type={"desc"}>{t("app.sidebar.request.none")}</Elements.Text>
                                           </Layouts.Col>
                                       )}
                                   </Layouts.Contents.InnerContent>
@@ -545,99 +685,27 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                           },
                       ]
                     : responsive
-                    ? [
-                          ...sideContents,
-                          {
-                              active: sideMenu === "setting",
-                              children: (
-                                  <Layouts.Contents.SlideContainer
-                                      contents={[
-                                          {
-                                              active: setting === "",
-                                              children: (
-                                                  <Layouts.Col style={{ padding: "4em" }} reverse={isInApp || isMobile} fill>
-                                                      <Layouts.Col gap={6} reverse={!isInApp && !isMobile}>
-                                                          <Layouts.Col gap={6}>
-                                                              <Controls.Button
-                                                                  align={"left"}
-                                                                  scale={1.125}
-                                                                  style={{ padding: "0.5em 1em" }}
-                                                                  onClick={() => {
-                                                                      setSideMenu("");
-                                                                      router.push("/test");
-                                                                  }}>
-                                                                  Test
-                                                              </Controls.Button>
-                                                              <>
-                                                                  <Controls.Button
-                                                                      align={"left"}
-                                                                      iconLeft={"blockchain"}
-                                                                      scale={1.125}
-                                                                      style={{ padding: "0.5em 1em" }}
-                                                                      onClick={() => setSetting("apps")}>
-                                                                      Connected Apps
-                                                                  </Controls.Button>
-                                                                  <Controls.Button
-                                                                      align={"left"}
-                                                                      iconLeft={"sheild-star"}
-                                                                      scale={1.125}
-                                                                      style={{ padding: "0.5em 1em" }}
-                                                                      onClick={() => {
-                                                                          setSideMenu("");
-                                                                          router.push("/change");
-                                                                      }}>
-                                                                      Change Passcode
-                                                                  </Controls.Button>
-                                                              </>
-                                                          </Layouts.Col>
-                                                          <>
-                                                              <Controls.Button
-                                                                  type={"line"}
-                                                                  iconLeft={"lock"}
-                                                                  scale={1.125}
-                                                                  style={{ padding: "0.5em 1em" }}
-                                                                  onClick={() => provider?.lock()}>
-                                                                  Lock
-                                                              </Controls.Button>
-                                                          </>
-                                                      </Layouts.Col>
-                                                  </Layouts.Col>
-                                              ),
-                                          },
-                                          {
-                                              active: setting === "apps",
-                                              children: (
-                                                  <Layouts.Contents.InnerContent scroll={false}>
-                                                      <Layouts.Col gap={0} fill>
-                                                          <Controls.Input
-                                                              placeholder={"Search chain by id or name..."}
-                                                              onChange={(e: any, v: string) => setAppFilter(v)}
-                                                              left={{
-                                                                  children: (
-                                                                      <Elements.Icon icon={"search"} style={{ marginRight: "0.5em", padding: "0.333em 0" }} />
-                                                                  ),
-                                                              }}
-                                                              style={{ padding: "1.5em clamp(0em, 3.75%, 6em)" }}
-                                                              clearable
-                                                          />
-                                                          <Layouts.List list={filter(apps, appFilter)} formatter={applist} />
-                                                      </Layouts.Col>
-                                                      <Layouts.Col gap={0} style={{ padding: "4em", paddingTop: "2em" }}>
-                                                          <Layouts.Row>
-                                                              <Controls.Button type={"glass"} onClick={() => setSetting("")}>
-                                                                  Back
-                                                              </Controls.Button>
-                                                          </Layouts.Row>
-                                                      </Layouts.Col>
-                                                  </Layouts.Contents.InnerContent>
-                                              ),
-                                          },
-                                      ]}
-                                  />
-                              ),
-                          },
-                      ]
-                    : undefined
+                      ? [
+                            ...sideContents,
+                            {
+                                active: sideMenu === "setting",
+                                children: (
+                                    <Layouts.Contents.SlideContainer
+                                        contents={[
+                                            {
+                                                active: setting === "",
+                                                children: settingsHome(true),
+                                            },
+                                            {
+                                                active: setting === "apps",
+                                                children: appSettingsContent,
+                                            },
+                                        ]}
+                                    />
+                                ),
+                            },
+                        ]
+                      : undefined
                 : undefined,
     };
 
@@ -666,71 +734,11 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                                       contents={[
                                           {
                                               active: setting === "",
-                                              children: (
-                                                  <Layouts.Col style={{ padding: "4em" }} reverse fill>
-                                                      <Layouts.Col gap={6}>
-                                                          <Layouts.Col gap={6}>
-                                                              <Controls.Button
-                                                                  align={"left"}
-                                                                  scale={1.125}
-                                                                  style={{ padding: "0.5em 1em" }}
-                                                                  onClick={() => router.push("/test")}>
-                                                                  Test
-                                                              </Controls.Button>
-                                                              <Controls.Button
-                                                                  align={"left"}
-                                                                  scale={1.125}
-                                                                  style={{ padding: "0.5em 1em" }}
-                                                                  onClick={() => setSetting("apps")}>
-                                                                  Connected Apps
-                                                              </Controls.Button>
-                                                              <Controls.Button
-                                                                  scale={1.125}
-                                                                  align={"left"}
-                                                                  style={{ padding: "0.5em 1em" }}
-                                                                  onClick={() => router.push("/change")}>
-                                                                  Change Passcode
-                                                              </Controls.Button>
-                                                          </Layouts.Col>
-                                                          <Controls.Button
-                                                              align={"left"}
-                                                              type={"line"}
-                                                              scale={1.125}
-                                                              style={{ padding: "0.5em 1em" }}
-                                                              onClick={() => provider?.lock()}>
-                                                              Lock
-                                                          </Controls.Button>
-                                                      </Layouts.Col>
-                                                  </Layouts.Col>
-                                              ),
+                                              children: settingsHome(false),
                                           },
                                           {
                                               active: setting === "apps",
-                                              children: (
-                                                  <Layouts.Contents.InnerContent scroll={false}>
-                                                      <Layouts.Col gap={0} fill>
-                                                          <Controls.Input
-                                                              placeholder={"Search chain by id or name..."}
-                                                              onChange={(e: any, v: string) => setAppFilter(v)}
-                                                              left={{
-                                                                  children: (
-                                                                      <Elements.Icon icon={"search"} style={{ marginRight: "0.5em", padding: "0.333em 0" }} />
-                                                                  ),
-                                                              }}
-                                                              style={{ padding: "1.5em clamp(0em, 3.75%, 6em)" }}
-                                                              clearable
-                                                          />
-                                                          <Layouts.List list={filter(apps, appFilter)} formatter={applist} />
-                                                      </Layouts.Col>
-                                                      <Layouts.Col gap={0} style={{ padding: "4em", paddingTop: "2em" }}>
-                                                          <Layouts.Row>
-                                                              <Controls.Button type={"glass"} onClick={() => setSetting("")}>
-                                                                  Back
-                                                              </Controls.Button>
-                                                          </Layouts.Row>
-                                                      </Layouts.Col>
-                                                  </Layouts.Contents.InnerContent>
-                                              ),
+                                              children: appSettingsContent,
                                           },
                                       ]}
                                   />
@@ -784,7 +792,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                             <Controls.Button icon={"telegram"} title={"Telegram"} fit />
                         </>,
                         <>
-                            <Controls.Button icon={"book"} title={"Documents"} fit />
+                            <Controls.Button icon={"book"} title={t("app.footer.documents")} fit />
                         </>,
                         <>
                             <Controls.Button icon={"medium"} title={"Medium"} fit />
@@ -793,7 +801,7 @@ export default function Data({ isLoad, isRequest, isProxy, isMenu }: PageLoader)
                 },
                 [
                     <>
-                        <Controls.Button type={"line"}>Contact us</Controls.Button>
+                        <Controls.Button type={"line"}>{t("app.footer.contact")}</Controls.Button>
                     </>,
                 ],
             ],

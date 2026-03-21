@@ -4,38 +4,51 @@ import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { Stage } from "..";
 import { useRouter } from "next/navigation";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
-import { useMessageHandler } from "hooks";
+import { useMessageHandler, useTranslate } from "hooks";
 import { useNotification } from "@coinmeca/ui/hooks";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { requestRoute } from "utils";
 
 export default function Import({ stage, setStage }: Stage) {
     const router = useRouter();
-    const { provider } = useCoinmecaWalletProvider();
+    const { provider, account, accounts } = useCoinmecaWalletProvider();
     const { count, messages } = useMessageHandler();
     const { addToast } = useNotification();
+    const { t } = useTranslate();
 
     const [mount, setMount] = useState(false);
     const [error, setError] = useState<{ state?: boolean; message?: string }>();
     const [loading, setLoading] = useState(false);
     const [check, setCheck] = useState(false);
+    const nextRoute = useMemo(() => (count ? requestRoute(messages?.[0]?.request?.method) || "/" : "/"), [count, messages]);
+    const hasAccount = !!account || !!accounts?.length || !!provider?.account() || !!provider?.accounts()?.length;
 
-    const handleImportWallet = (seed: string) => {
+    useEffect(() => {
+        void router.prefetch(nextRoute);
+    }, [nextRoute, router]);
+
+    useEffect(() => {
+        if (!loading || !hasAccount) return;
+        router.replace(nextRoute);
+    }, [hasAccount, loading, nextRoute, router]);
+
+    const handleImportWallet = async (seed: string) => {
         seed = seed.startsWith("0x") ? seed.slice(2) : seed;
         let error: any = { state: false };
         if (!seed || seed.trim() === "") return setError(error);
-        if (seed.length < 64) error = { state: true, message: "The private seed is too short." };
-        if (seed.length > 64) error = { state: true, message: "The private seed is too long." };
-        if (!/^[0-9a-fA-F]{64}$/.test(seed)) error = { state: true, message: "The private seed must contain only alphabets and numbers." };
+        if (seed.length < 64) error = { state: true, message: t("import.error.seed.short") };
+        if (seed.length > 64) error = { state: true, message: t("import.error.seed.long") };
+        if (!/^[0-9a-fA-F]{64}$/.test(seed)) error = { state: true, message: t("import.error.seed.format") };
         if (error.state) setError(error);
         else {
             setLoading(true);
             try {
-                if (provider?.import(seed)) {
+                if (await provider?.import(seed)) {
                     setCheck(true);
-                    router.push(`/${count ? `request/${messages?.[0]?.request?.method}` : ""}`);
-                } else addToast({ title: "Import Account", message: "The account is already imported." });
+                    router.replace(nextRoute);
+                } else addToast({ title: t("import.account.title"), message: t("import.account.exists") });
             } catch (error) {
-                addToast({ title: "Import Account", message: "The provided information for importing a new account is invalid." });
+                addToast({ title: t("import.account.title"), message: t("import.account.invalid") });
             }
             setLoading(false);
         }
@@ -64,15 +77,15 @@ export default function Import({ stage, setStage }: Stage) {
                             <Layouts.Col gap={0} align={"center"} fill>
                                 <Layouts.Col align={"center"} style={{ padding: "4em" }} fill>
                                     <Layouts.Col gap={4} align={"center"} fit>
-                                        <Elements.Text type={"h3"}> Import </Elements.Text>
+                                        <Elements.Text type={"h3"}>{t("import.title")}</Elements.Text>
                                         <Elements.Text weight={"bold"} opacity={0.6} color={error?.state && "red"}>
-                                            {error?.state ? error.message : "Please enter a private seed of the wallet that be imported."}
+                                            {error?.state ? error.message : t("import.desc")}
                                         </Elements.Text>
                                     </Layouts.Col>
                                 </Layouts.Col>
                                 <Controls.Input
                                     type={"password"}
-                                    placeholder={"Please enter the private seed of the wallet to be imported here."}
+                                    placeholder={t("import.placeholder")}
                                     gap={2}
                                     left={{
                                         children: (
@@ -86,7 +99,7 @@ export default function Import({ stage, setStage }: Stage) {
                                     clearable
                                 />
                                 <Controls.Button style={{ margin: "4em", marginTop: "2em" }} onClick={() => setStage({ name: "create", level: 0 })}>
-                                    Cancel
+                                    {t("app.btn.cancel")}
                                 </Controls.Button>
                             </Layouts.Col>
                         </Layouts.Contents.InnerContent>

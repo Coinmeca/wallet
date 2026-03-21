@@ -181,6 +181,11 @@ export default function Header(props: Header) {
                             )}
                         </AnimatePresence>
                     </Layouts.Row>
+                    {props?.option?.children && (
+                        <Layouts.Row gap={0.5} data-active={props?.option?.active} style={props?.option?.style} fit>
+                            {props?.option?.children}
+                        </Layouts.Row>
+                    )}
                 </Layouts.Row>
                 {props?.side?.children && (
                     <Side $scale={scale} $width={side} data-active={props?.side?.active} style={props?.side?.style}>

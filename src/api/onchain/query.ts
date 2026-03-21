@@ -1,6 +1,6 @@
 ﻿import { queryOptions } from "@tanstack/react-query";
 import { fetcher } from "api";
-import { sanitizeBigIntToHex, valid } from "utils";
+import { sanitizeBigIntToHex, transactionRequest, valid } from "utils";
 
 export const query = {
     rpcUrls: () =>
@@ -19,7 +19,7 @@ export const query = {
 
     typeOf: (rpc?: string, address?: string) =>
         queryOptions({
-            queryKey: ["accountType", address],
+            queryKey: ["accountType", rpc, address],
             queryFn: async () => (await fetcher.rpc(rpc!, "eth_getCode", [address, "latest"]).then(data => data === "0x" ? "eoa" : "ca")),
             enabled: !!rpc && valid.address(address),
         }),
@@ -49,15 +49,18 @@ export const query = {
             enabled: !!rpc,
         }),
 
-    estimateGas: (rpc?: string, params?: any) =>
-        queryOptions({
-            queryKey: ["estimateGas", rpc, params],
-            queryFn: async () => await fetcher.rpc(rpc!, "eth_estimateGas", sanitizeBigIntToHex(Array.isArray(params) ? params : [params])).then(data => ({
-                raw: Number(data || 0),
-                format: data ? Number(data) / 1e9 : 0,
-            })),
-            enabled: !!rpc && valid.tx(params),
-        }),
+    estimateGas: (rpc?: string, params?: any) => {
+        const tx = Array.isArray(params) ? params.map((item) => transactionRequest(item)) : transactionRequest(params);
+        return queryOptions({
+            queryKey: ["estimateGas", rpc, tx],
+            queryFn: async () =>
+                await fetcher.rpc(rpc!, "eth_estimateGas", sanitizeBigIntToHex(Array.isArray(tx) ? tx : [tx])).then(data => ({
+                    raw: Number(data || 0),
+                    format: data ? Number(data) / 1e9 : 0,
+                })),
+            enabled: !!rpc && (Array.isArray(tx) ? tx.length > 0 && tx.every(Boolean) : valid.tx(tx)),
+        });
+    },
 
     lastBlock: (rpc?: string) =>
         queryOptions({
@@ -81,6 +84,6 @@ export const query = {
         queryOptions({
             queryKey: ["receipt", rpc, txHash],
             queryFn: async () => await fetcher.rpc(rpc!, "eth_getTransactionReceipt", [txHash]).then(data => data),
-            enabled: !!rpc && !!txHash,
+            enabled: !!rpc && !!txHash && valid.hash(txHash),
         }),
 };
