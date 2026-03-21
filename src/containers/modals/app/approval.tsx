@@ -6,7 +6,8 @@ import { Modal } from "@coinmeca/ui/containers";
 import { CoinmecaWalletContextProvider, useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { dehydrate, HydrationBoundary, QueryClientProvider } from "@tanstack/react-query";
 import { getQueryClient } from "api";
-import { short } from "utils";
+import { short, site, valid } from "utils";
+import { useTranslate } from "hooks";
 
 export interface Approval {
     onClose: Function;
@@ -29,7 +30,10 @@ export default function Approval(props: Approval) {
 
 const ApprovalManageModal = (props: any) => {
     const { provider } = useCoinmecaWalletProvider();
-    const [accounts, setAccounts] = useState(props?.app?.accounts || []);
+    const [accounts, setAccounts] = useState<string[]>((props?.app?.accounts || []).filter((item: any) => typeof item === "string"));
+    const info = site(props?.app?.url);
+    const { t } = useTranslate();
+    const title = props?.app?.name || info?.host || info?.origin || t("app.sidebar.app.unknown");
 
     const handleClose = (e: any) => {
         props?.onClose(e);
@@ -44,7 +48,11 @@ const ApprovalManageModal = (props: any) => {
     const accountList = useCallback(
         (accounts: string[]) =>
             accounts?.map((address: string, i: number) => {
-                const account = provider?.account(address);
+                const approvedAddress = typeof address === "string" ? address : "";
+                const runtimeAddress = valid.address(approvedAddress) ? approvedAddress : undefined;
+                const account = runtimeAddress ? provider?.account(runtimeAddress) : undefined;
+                const displayAddress = account?.address || runtimeAddress || approvedAddress;
+                const displayName = account?.name || short(displayAddress) || displayAddress;
                 return {
                     onClick: () => {},
                     style: { padding: "2.5em clamp(2em, 5%, 8em)" },
@@ -66,8 +74,8 @@ const ApprovalManageModal = (props: any) => {
                                                             size={2.5}
                                                             // display={6}
                                                             // ellipsis={" ... "}
-                                                            character={`${(account?.index || 0) + 1}`}
-                                                            name={account?.address}
+                                                            character={`${typeof account?.index === "number" ? account.index + 1 : i + 1}`}
+                                                            name={displayAddress}
                                                             stroke={0.2}
                                                             hideName
                                                         />
@@ -77,8 +85,8 @@ const ApprovalManageModal = (props: any) => {
                                                     gap: 0,
                                                     children: [
                                                         <>
-                                                            <Elements.Text size={1.5} height={1.5} title={account?.name} fix>
-                                                                {account?.name}
+                                                            <Elements.Text size={1.5} height={1.5} title={displayName} fix>
+                                                                {displayName}
                                                             </Elements.Text>
                                                         </>,
                                                         <>
@@ -87,9 +95,9 @@ const ApprovalManageModal = (props: any) => {
                                                                 height={1.5}
                                                                 weight={"light"}
                                                                 opacity={0.6}
-                                                                title={account?.address}
+                                                                title={displayAddress}
                                                                 fix>
-                                                                {short(account?.address)}
+                                                                {short(displayAddress)}
                                                             </Elements.Text>
                                                         </>,
                                                     ],
@@ -102,7 +110,7 @@ const ApprovalManageModal = (props: any) => {
                                                                 icon={"x"}
                                                                 onClick={() =>
                                                                     setAccounts((state: string[]) =>
-                                                                        state?.filter((a) => a?.toLowerCase() !== account?.address?.toLowerCase()),
+                                                                        state?.filter((a) => a?.toLowerCase() !== approvedAddress?.toLowerCase()),
                                                                     )
                                                                 }
                                                             />
@@ -118,21 +126,31 @@ const ApprovalManageModal = (props: any) => {
                     ],
                 };
             }),
-        [provider, accounts],
+        [provider],
     );
 
     return (
         <Modal
             {...props}
-            title={<Elements.Avatar scale={0.625} size={2.25} style={{ justifyContent: "center" }} img={props?.app?.logo} name={props?.app?.name} />}
-            message={accounts?.length ? "Accounts that have approved use of this app." : "No accounts that have approved use of this app."}
+            title={<Elements.Avatar scale={0.625} size={2.25} style={{ justifyContent: "center" }} img={props?.app?.logo} name={title} />}
+            message={
+                accounts?.length
+                    ? t("modal.app.approval.message.has.accounts", {
+                          title,
+                          origin: info?.origin || props?.app?.url || "",
+                      })
+                    : t("modal.app.approval.message.none", {
+                          title,
+                          origin: info?.origin || props?.app?.url || "",
+                      })
+            }
             onClose={handleClose}
             close>
             <Layouts.Col gap={2}>
                 <Layouts.Col style={{ minHeight: "2em" }}>{accounts?.length ? <Layouts.List list={accounts} formatter={accountList} /> : <></>}</Layouts.Col>
                 <Layouts.Row>
-                    <Controls.Button onClick={handleClose}>Cancel</Controls.Button>
-                    <Controls.Button onClick={handleSave}>Save</Controls.Button>
+                    <Controls.Button onClick={handleClose}>{t("app.btn.cancel")}</Controls.Button>
+                    <Controls.Button onClick={handleSave}>{t("app.btn.save")}</Controls.Button>
                 </Layouts.Row>
             </Layouts.Col>
         </Modal>

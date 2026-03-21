@@ -8,6 +8,7 @@ import { dehydrate, HydrationBoundary, QueryClientProvider } from "@tanstack/rea
 import { getQueryClient } from "api";
 import { parseNumber } from "@coinmeca/ui/lib/utils";
 import { Chain } from "@coinmeca/wallet-sdk/types";
+import { useTranslate } from "hooks";
 
 export interface Add {
     chain?: Chain;
@@ -31,6 +32,7 @@ export default function Add(props: Add) {
 
 const ChainAddModal = (props: any) => {
     const { provider } = useCoinmecaWalletProvider();
+    const { t } = useTranslate();
 
     const [error, setError] = useState<any>();
     const [chain, setChain] = useState<Chain & any>({
@@ -72,7 +74,10 @@ const ChainAddModal = (props: any) => {
                     rpcUrls[index] =
                         url && /^https?:\/\/|^wss?:\/\//.test(url)
                             ? { state: false }
-                            : { state: true, message: `RPC URL must start with 'http(s)' or 'wss'. Please enter a valid URL.` };
+                            : {
+                                  state: true,
+                                  message: t("modal.chain.validation.rpc.invalid"),
+                              };
 
                 return { ...state, rpcUrls };
             });
@@ -96,7 +101,10 @@ const ChainAddModal = (props: any) => {
                     blockExplorerUrls[index] =
                         url && /^https?:\/\/|^wss?:\/\//.test(url)
                             ? { state: false }
-                            : { state: true, message: `Explorer URL must start with 'http(s)' or 'wss'. Please enter a valid URL.` };
+                            : {
+                                  state: true,
+                                  message: t("modal.chain.validation.explorer.invalid"),
+                              };
 
                 return { ...state, blockExplorerUrls };
             });
@@ -120,41 +128,63 @@ const ChainAddModal = (props: any) => {
 
     const handleSave = (e: any) => {
         let error: any = {};
-        let c = chain;
+        const sourceRpcUrls = Array.isArray(chain?.rpcUrls) ? chain.rpcUrls : [];
+        const sourceExplorerUrls = Array.isArray(chain?.blockExplorerUrls) ? chain.blockExplorerUrls : [];
+        const c = {
+            ...chain,
+            chainName: chain?.chainName?.trim(),
+            rpcUrls: sourceRpcUrls.map((url: string) => (typeof url === "string" ? url.trim() : "")).filter((url: string) => !!url),
+            blockExplorerUrls: sourceExplorerUrls
+                .map((url: string) => (typeof url === "string" ? url.trim() : ""))
+                .filter((url: string) => !!url),
+            nativeCurrency: {
+                ...chain?.nativeCurrency,
+                name: chain?.nativeCurrency?.name?.trim(),
+                symbol: chain?.nativeCurrency?.symbol?.trim(),
+            },
+        };
 
         if (!c?.chainId || c?.chainId?.toString() === "" || isNaN(Number(c?.chainId)))
-            error.chainId = { state: true, message: "chain ID must be a valid number." };
-        if (!c?.chainName || !c?.chainName?.trim()) error.chainName = { state: true, message: "Please provide a valid chain name." };
-        if (!c?.rpcUrls?.length) error.rpcUrls = { general: { state: true, message: "At least one RPC URL is required." } };
+            error.chainId = { state: true, message: t("modal.chain.validation.id.invalid") };
+        if (!c?.chainName || !c?.chainName?.trim())
+            error.chainName = { state: true, message: t("modal.chain.validation.name.invalid") };
+        if (!c?.rpcUrls?.length)
+            error.rpcUrls = { general: { state: true, message: t("modal.chain.validation.rpc.required") } };
         else
-            c.rpcUrls.forEach((url: string, index: number) => {
-                if (!/^https?:\/\/|^wss?:\/\//.test(url))
+            sourceRpcUrls.forEach((url: string, index: number) => {
+                const normalizedUrl = typeof url === "string" ? url.trim() : "";
+                if (normalizedUrl && !/^https?:\/\/|^wss?:\/\//.test(normalizedUrl))
                     error.rpcUrls = {
                         ...error.rpcUrls,
-                        [index]: { state: true, message: `RPC URL must start with 'http(s)' or 'wss'.` },
+                        [index]: { state: true, message: t("modal.chain.validation.rpc.invalid.short") },
                     };
             });
-        if (c?.blockExplorerUrls?.length)
-            c?.blockExplorerUrls?.forEach((url: string, index: number) => {
-                if (c?.blockExplorerUrls?.length > 1 && url && url !== "") {
-                    if (!/^https?:\/\/|^wss?:\/\//.test(url))
-                        error.blockExplorerUrls = {
-                            ...error.blockExplorerUrls,
-                            [index]: { state: true, message: `Explorer URL must start with 'http(s)' or 'wss'.` },
-                        };
-                }
+        if (sourceExplorerUrls.length)
+            sourceExplorerUrls.forEach((url: string, index: number) => {
+                const normalizedUrl = typeof url === "string" ? url.trim() : "";
+                if (normalizedUrl && !/^https?:\/\/|^wss?:\/\//.test(normalizedUrl))
+                    error.blockExplorerUrls = {
+                        ...error.blockExplorerUrls,
+                        [index]: {
+                            state: true,
+                            message: t("modal.chain.validation.explorer.invalid.short"),
+                        },
+                    };
             });
         if (!c?.nativeCurrency?.name || c?.nativeCurrency?.name === "" || !c?.nativeCurrency?.name.trim())
-            error.name = { state: true, message: "Native currency name cannot be empty." };
+            error.name = { state: true, message: t("modal.chain.validation.currency.name.required") };
         if (!c?.nativeCurrency?.symbol || c?.nativeCurrency?.symbol === "" || !c?.nativeCurrency?.symbol.trim())
-            error.symbol = { state: true, message: "Native currency symbol cannot be empty." };
+            error.symbol = { state: true, message: t("modal.chain.validation.currency.symbol.required") };
         if (!c?.nativeCurrency?.decimals || c?.nativeCurrency?.decimals?.toString() === "" || isNaN(c.nativeCurrency.decimals))
-            error.decimals = { state: true, message: "Native currency decimals must be a valid number." };
+            error.decimals = {
+                state: true,
+                message: t("modal.chain.validation.currency.decimals.invalid"),
+            };
         setError(error);
 
         if (!Object.values(error).some((err: any) => err?.state || Object.values(err)?.some((err: any) => err?.state))) {
-            if (c?.blockExplorerUrls?.length === 1 && (!c?.blockExplorerUrls?.[0] || c?.blockExplorerUrls?.[0] === "")) delete c.blockExplorerUrls;
-            provider?.addEthereumChain(c!);
+            const nextChain = c.blockExplorerUrls?.length ? c : { ...c, blockExplorerUrls: undefined };
+            provider?.addEthereumChain(nextChain);
             props?.onClose(e);
         }
     };
@@ -162,19 +192,23 @@ const ChainAddModal = (props: any) => {
     return (
         <Modal
             {...props}
-            title={chain?.chainName?.length ? `Add ${chain?.chainName} Chain` : "Add New Chain"}
+            title={
+                chain?.chainName?.length
+                    ? t("modal.chain.add.title.withName", { chainName: chain?.chainName })
+                    : t("modal.chain.add.title")
+            }
             onClose={handleClose}
             buttonArea={
                 <Layouts.Row>
-                    <Controls.Button onClick={handleClose}>Close</Controls.Button>
-                    <Controls.Button onClick={handleSave}>Save</Controls.Button>
+                    <Controls.Button onClick={handleClose}>{t("app.btn.close")}</Controls.Button>
+                    <Controls.Button onClick={handleSave}>{t("app.btn.save")}</Controls.Button>
                 </Layouts.Row>
             }
             close>
             <Layouts.Col gap={2}>
                 <Layouts.Col gap={1}>
                     <Elements.Text type={"desc"} align={"left"}>
-                        Chain ID
+                        {t("modal.chain.field.id")}
                     </Elements.Text>
                     <Controls.Input
                         type={"number"}
@@ -186,7 +220,7 @@ const ChainAddModal = (props: any) => {
                 </Layouts.Col>
                 <Layouts.Col gap={1}>
                     <Elements.Text type={"desc"} align={"left"}>
-                        Chain Name
+                        {t("modal.chain.field.name")}
                     </Elements.Text>
                     <Controls.Input
                         error={error?.chainName?.state}
@@ -200,7 +234,9 @@ const ChainAddModal = (props: any) => {
                         <Layouts.Divider />
                         <Layouts.Col gap={1}>
                             <Elements.Text type={"desc"} align={"left"}>
-                                RPC URL{chain?.rpcUrls?.length > 1 && "s"}
+                                {chain?.rpcUrls?.length > 1
+                                    ? t("request.label.chain.rpc.urls")
+                                    : t("request.label.chain.rpc.url")}
                             </Elements.Text>
                             <Layouts.Col gap={2}>
                                 {chain?.rpcUrls?.map((url: string, i: number) => (
@@ -222,7 +258,7 @@ const ChainAddModal = (props: any) => {
                                                         else {
                                                             setError((error: any) => ({
                                                                 ...error,
-                                                                rpcUrls: [{ state: true, message: "At least one RPC URL is required." }],
+                                                                rpcUrls: [{ state: true, message: t("modal.chain.validation.rpc.required") }],
                                                             }));
                                                             return state;
                                                         }
@@ -238,14 +274,16 @@ const ChainAddModal = (props: any) => {
                         <Controls.Button
                             iconLeft={"plus-small-bold"}
                             onClick={() => setChain((state: any) => ({ ...state, rpcUrls: [...(state?.rpcUrls || []), ""] }))}>
-                            Add New RPC URL
+                            {t("modal.chain.action.rpc.add")}
                         </Controls.Button>
                     </>
                 )}
                 <Layouts.Divider />
                 <Layouts.Col gap={1}>
                     <Elements.Text type={"desc"} align={"left"}>
-                        Explorer URL{chain?.blockExplorerUrls?.length && chain?.blockExplorerUrls?.length > 1 && "s"}
+                        {chain?.blockExplorerUrls?.length && chain?.blockExplorerUrls?.length > 1
+                            ? t("modal.chain.field.explorer.urls")
+                            : t("modal.chain.field.explorer.url")}
                     </Elements.Text>
                     <Layouts.Col gap={2}>
                         {chain?.blockExplorerUrls?.map((url: string, i: number) => (
@@ -277,12 +315,12 @@ const ChainAddModal = (props: any) => {
                 <Controls.Button
                     iconLeft={"plus-small-bold"}
                     onClick={() => setChain((state: any) => ({ ...state, blockExplorerUrls: [...(state?.blockExplorerUrls || []), ""] }))}>
-                    Add New Explorer URL
+                    {t("modal.chain.action.explorer.add")}
                 </Controls.Button>
                 <Layouts.Divider />
                 <Layouts.Col gap={1}>
                     <Elements.Text type={"desc"} align={"left"}>
-                        Name
+                        {t("request.label.native.currency.name")}
                     </Elements.Text>
                     <Controls.Input
                         value={chain?.nativeCurrency?.name}
@@ -293,7 +331,7 @@ const ChainAddModal = (props: any) => {
                 </Layouts.Col>
                 <Layouts.Col gap={1}>
                     <Elements.Text type={"desc"} align={"left"}>
-                        Symbol
+                        {t("request.label.native.currency.symbol")}
                     </Elements.Text>
                     <Controls.Input
                         value={chain?.nativeCurrency?.symbol}
@@ -304,7 +342,7 @@ const ChainAddModal = (props: any) => {
                 </Layouts.Col>
                 <Layouts.Col gap={1}>
                     <Elements.Text type={"desc"} align={"left"}>
-                        Decimals
+                        {t("request.label.native.currency.decimals")}
                     </Elements.Text>
                     <Controls.Input
                         type={"number"}

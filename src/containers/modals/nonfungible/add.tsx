@@ -1,17 +1,20 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { Modal } from "@coinmeca/ui/containers";
+import { parseChainId } from "@coinmeca/wallet-provider/chains";
 import { CoinmecaWalletContextProvider, useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { dehydrate, HydrationBoundary, QueryClientProvider } from "@tanstack/react-query";
 
 import { getQueryClient } from "api";
 import { States } from "@coinmeca/ui/components/contents";
 import { GetErc721 } from "api/erc721";
+import { useTranslate } from "hooks";
 import { Validate } from "types";
 import { isNumber } from "@coinmeca/ui/lib/utils";
+import { valid } from "utils";
 
 export interface Add {
     standard?: any;
@@ -37,7 +40,20 @@ export default function Add(props: Add) {
 }
 
 function NonFungibleAddModal(props: Add) {
-    const { chain, provider, account } = useCoinmecaWalletProvider();
+    const { provider } = useCoinmecaWalletProvider();
+    const { t } = useTranslate();
+    const activeAddress = provider?.address;
+    const activeChainId = useMemo(() => {
+        const providerChainId = provider?.chainId;
+        return typeof providerChainId !== "undefined" && valid.chainId(providerChainId) ? parseChainId(providerChainId) : undefined;
+    }, [provider?.chainId]);
+    const activeChain = useMemo(
+        () =>
+            typeof activeChainId === "number"
+                ? provider?.chains?.find((item: any) => typeof item?.chainId !== "undefined" && parseChainId(item.chainId) === activeChainId)
+                : undefined,
+        [activeChainId, provider?.chains],
+    );
 
     const [validate, setValidate] = useState<{ address?: Validate; id?: Validate } | undefined>({ address: { state: false }, id: { state: false } });
 
@@ -48,7 +64,7 @@ function NonFungibleAddModal(props: Add) {
     const [process, setProcess] = useState<boolean | null>(null);
     const [error, setError] = useState<string>();
 
-    const [tokens, getToken] = GetErc721(chain?.rpcUrls?.[0], fetch?.address && fetch?.id ? { [fetch.address]: [fetch.id] } : undefined);
+    const [tokens, getToken] = GetErc721(activeChain?.rpcUrls?.[0], fetch?.address && fetch?.id ? { [fetch.address]: [fetch.id] } : undefined);
     const asset = getToken(token?.address, token?.id);
     const pattern = {
         address: /^[a-zA-Z0-9]+$/,
@@ -59,10 +75,10 @@ function NonFungibleAddModal(props: Add) {
         if (token?.address === a || asset?.isFetching) return;
         let check: Validate = { state: false };
         if (!!a && a !== "" && a !== "0" && a !== "0x") {
-            if (!a?.startsWith("0x")) check = { state: true, message: "The typed a form of a Token Contract is Invalid." };
-            else if (!pattern.address.test(a)) check = { state: true, message: "The unacceptable charater is used in a form." };
-            else if (a?.length < 42) check = { state: true, message: "The a is too short." };
-            else if (a?.length > 42) check = { state: true, message: "The a is too long." };
+            if (!a?.startsWith("0x")) check = { state: true, message: t("modal.nonfungible.error.address.invalid") };
+            else if (!pattern.address.test(a)) check = { state: true, message: t("modal.nonfungible.error.character.invalid") };
+            else if (a?.length < 42) check = { state: true, message: t("modal.nonfungible.error.address.short") };
+            else if (a?.length > 42) check = { state: true, message: t("modal.nonfungible.error.address.long") };
         }
         setValidate((state) => ({ ...state, address: check }));
         if (token?.address !== a) setToken((state) => ({ ...state, address: a === "" ? undefined : a }));
@@ -71,8 +87,8 @@ function NonFungibleAddModal(props: Add) {
     const handleValidateId = (id?: string) => {
         let check: Validate = { state: false };
         if (!!id && id !== "" && id !== "0" && id !== "0x") {
-            if (!pattern.number.test(id)) check = { state: true, message: "The unacceptable charater is used in a form." };
-            if (isNaN(Number(id))) check = { state: true, message: "The token ID is invalid format." };
+            if (!pattern.number.test(id)) check = { state: true, message: t("modal.nonfungible.error.character.invalid") };
+            if (isNaN(Number(id))) check = { state: true, message: t("modal.nonfungible.error.id.format") };
         }
         setValidate((state) => ({ ...state, id: check }));
         if (token?.id !== id) setToken((state) => ({ ...state, id: id === "" ? undefined : id }));
@@ -83,7 +99,7 @@ function NonFungibleAddModal(props: Add) {
             provider?.addNonFungibleAsset(asset?.data?.address!, asset?.data?.tokenId!);
             props?.onClose?.(e);
         } catch (error) {
-            console.log(error);
+            setError(error instanceof Error ? error.message : t("modal.nonfungible.error.add.failed"));
             setProcess(false);
         }
     };
@@ -111,7 +127,7 @@ function NonFungibleAddModal(props: Add) {
             v = {
                 address: {
                     state: true,
-                    message: "Token address is invalid.",
+                    message: t("modal.nonfungible.error.address.invalid"),
                 },
             };
 
@@ -120,7 +136,7 @@ function NonFungibleAddModal(props: Add) {
                 ...v,
                 id: {
                     state: true,
-                    message: "Token ID is invalid.",
+                    message: t("modal.nonfungible.error.id.invalid"),
                 },
             };
 
@@ -148,17 +164,17 @@ function NonFungibleAddModal(props: Add) {
             if (loading) {
                 if (asset?.isSuccess) {
                     if (asset?.data?.isInvalid) {
-                        setError("The provided address does not appear to be a valid NFT contract address. Please verify the address and try again.");
+                        setError(t("modal.nonfungible.error.contract.invalid"));
                         setProcess(false);
-                    } else if (asset?.data?.owner?.toLowerCase() !== account?.address?.toLowerCase()) {
-                        setError("This account does not own this NFT. Please ensure the owner's address of the token.");
+                    } else if (asset?.data?.owner?.toLowerCase() !== activeAddress?.toLowerCase()) {
+                        setError(t("modal.nonfungible.error.owner.invalid"));
                         setProcess(false);
                     } else {
                         setProcess(true);
                     }
                     setLoading(false);
                 } else if (asset?.isError) {
-                    setError("The data fetching is failed.");
+                    setError(t("modal.nonfungible.error.fetch.failed"));
                     setProcess(false);
                     setLoading(false);
                 }
@@ -168,7 +184,7 @@ function NonFungibleAddModal(props: Add) {
 
     return (
         <Modal
-            title={!asset ? "Add Token" : "Token Information"}
+            title={!asset ? t("modal.nonfungible.add.title") : t("modal.nonfungible.info.title")}
             content={
                 <Layouts.Col gap={2} fill>
                     <Layouts.Contents.SlideContainer
@@ -176,13 +192,13 @@ function NonFungibleAddModal(props: Add) {
                             {
                                 active: process === false,
                                 children: (
-                                    <States.Failure message={error || "Processing has failed."}>
+                                    <States.Failure message={error || t("modal.nonfungible.error.processing")}>
                                         <Controls.Button
                                             onClick={(e: any) => {
                                                 setToken({});
                                                 setProcess(null);
                                             }}>
-                                            Go Back
+                                            {t("app.btn.go.back")}
                                         </Controls.Button>
                                     </States.Failure>
                                 ),
@@ -192,16 +208,16 @@ function NonFungibleAddModal(props: Add) {
                                 children: (
                                     <Layouts.Col gap={2}>
                                         <Elements.Text height={2} opacity={0.6} align={"center"}>
-                                            Please enter the token address to be added.
+                                            {t("modal.nonfungible.desc")}
                                         </Elements.Text>
                                         <Layouts.Contents.InnerContent scroll>
                                             <Layouts.Col gap={2}>
                                                 <Layouts.Col gap={1}>
                                                     <Elements.Text type={"desc"} align={"left"}>
-                                                        Token Address
+                                                        {t("modal.nonfungible.field.address")}
                                                     </Elements.Text>
                                                     <Controls.Input
-                                                        placeholder={"0xA1z2b3Y4C5x6d7E8..."}
+                                                        placeholder={t("modal.nonfungible.placeholder.address")}
                                                         onChange={(e: any, v: string) => handleValidateAddress(v)}
                                                         value={token?.address}
                                                         error={validate?.address?.state}
@@ -233,10 +249,10 @@ function NonFungibleAddModal(props: Add) {
                                                 </Layouts.Col>
                                                 <Layouts.Col gap={1}>
                                                     <Elements.Text type={"desc"} align={"left"}>
-                                                        Token ID
+                                                        {t("modal.nonfungible.field.id")}
                                                     </Elements.Text>
                                                     <Controls.Input
-                                                        placeholder={"#"}
+                                                        placeholder={t("modal.nonfungible.placeholder.id")}
                                                         type={"number"}
                                                         align={"right"}
                                                         onChange={(e: any, v: string) => handleValidateId(v)}
@@ -271,15 +287,15 @@ function NonFungibleAddModal(props: Add) {
                                             </Layouts.Col>
                                         </Layouts.Contents.InnerContent>
                                         <Layouts.Row gap={2} fix>
-                                            <Controls.Button onClick={handleClose}>Close</Controls.Button>
+                                            <Controls.Button onClick={handleClose}>{t("app.btn.close")}</Controls.Button>
                                             <Controls.Button
                                                 onClick={() => {
                                                     if (check()) {
                                                         setLoading(true);
                                                         setFetch(token);
-                                                    } else setError("Token information is invalid.");
+                                                    } else setError(t("modal.nonfungible.error.info.invalid"));
                                                 }}>
-                                                Comfirm
+                                                {t("app.btn.confirm")}
                                             </Controls.Button>
                                         </Layouts.Row>
                                     </Layouts.Col>
@@ -287,7 +303,7 @@ function NonFungibleAddModal(props: Add) {
                             },
                             {
                                 active: loading,
-                                children: <States.Loading message={"Please wait until the processing is complete."} />,
+                                children: <States.Loading message={t("modal.nonfungible.loading")} />,
                             },
                             {
                                 active: !!process,
@@ -318,9 +334,9 @@ function NonFungibleAddModal(props: Add) {
                                             </Layouts.Col>
                                         )}
                                         <Layouts.Row gap={2} fix>
-                                            <Controls.Button onClick={handleClose}>Cancel</Controls.Button>
+                                            <Controls.Button onClick={handleClose}>{t("app.btn.cancel")}</Controls.Button>
                                             <Controls.Button onClick={handleAddToken} type={"glass"}>
-                                                Add {asset?.data?.symbol}
+                                                {t("modal.nonfungible.btn.add", { symbol: asset?.data?.symbol || "" })}
                                             </Controls.Button>
                                         </Layouts.Row>
                                     </Layouts.Col>

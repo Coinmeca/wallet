@@ -1,13 +1,16 @@
 ﻿"use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { Modal } from "@coinmeca/ui/containers";
 import { CoinmecaWalletContextProvider, useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { dehydrate, HydrationBoundary, QueryClientProvider } from "@tanstack/react-query";
 import { Chain } from "@coinmeca/wallet-sdk/types";
+import { parseChainId, valid } from "@coinmeca/wallet-sdk/utils";
 import { getQueryClient } from "api";
+import { useTranslate } from "hooks";
+import { chainLogo } from "utils";
 
 export interface Rpc {
     chain?: Chain;
@@ -31,8 +34,17 @@ export default function Rpc(props: Rpc) {
 
 const RpcChangeModal = (props: any) => {
     const { provider } = useCoinmecaWalletProvider();
-    const [urls, setUrls] = useState(props?.chain?.rpcUrls || []);
-    const [selected, setSelected] = useState(props?.chain?.rpcUrls?.[0]);
+    const { t } = useTranslate();
+    const targetChainId = typeof props?.chain?.chainId !== "undefined" && valid.chainId(props.chain.chainId) ? parseChainId(props.chain.chainId) : undefined;
+    const chain = useMemo(
+        () =>
+            typeof targetChainId === "number"
+                ? provider?.chains?.find((item: Chain) => typeof item?.chainId !== "undefined" && parseChainId(item.chainId) === targetChainId) || props?.chain
+                : props?.chain,
+        [provider?.chains, props?.chain, targetChainId],
+    );
+    const [urls, setUrls] = useState(chain?.rpcUrls || []);
+    const [selected, setSelected] = useState(chain?.rpcUrls?.[0]);
 
     const handleClose = (e: any) => {
         props?.onClose(e);
@@ -40,8 +52,8 @@ const RpcChangeModal = (props: any) => {
 
     const handleSave = (e: any) => {
         provider?.updateChain({
-            ...props?.chain,
-            rpcUrls: [selected, ...props?.chain?.rpcUrls?.filter((url: string) => url?.toLowerCase() !== selected?.toLowerCase())],
+            ...chain,
+            rpcUrls: [selected, ...(chain?.rpcUrls?.filter((url: string) => url?.toLowerCase() !== selected?.toLowerCase()) || [])],
         });
         props?.onClose(e);
     };
@@ -51,9 +63,9 @@ const RpcChangeModal = (props: any) => {
             {...props}
             title={
                 <Layouts.Row gap={1} align={"middle"} fix>
-                    <Elements.Avatar size={1.5} img={`https://web3.coinmeca.net/${props?.chain?.chainId}/logo.svg`} style={{ maxWidth: "max-content" }} />
+                    <Elements.Avatar size={1.5} img={chainLogo(chain?.chainId, chain?.logo)} style={{ maxWidth: "max-content" }} />
                     <Elements.Text size={1} align={"left"} fix>
-                        {props?.chain?.chainName}
+                        {chain?.chainName}
                     </Elements.Text>
                 </Layouts.Row>
             }
@@ -107,8 +119,8 @@ const RpcChangeModal = (props: any) => {
                     }
                 />
                 <Layouts.Row>
-                    <Controls.Button onClick={handleClose}>Cancel</Controls.Button>
-                    <Controls.Button onClick={handleSave}>Save</Controls.Button>
+                    <Controls.Button onClick={handleClose}>{t("app.btn.cancel")}</Controls.Button>
+                    <Controls.Button onClick={handleSave}>{t("app.btn.save")}</Controls.Button>
                 </Layouts.Row>
             </Layouts.Col>
         </Modal>

@@ -4,6 +4,33 @@ import React, { createContext, useContext, useLayoutEffect, useRef, useState } f
 import { DiscordSDK } from "@discord/embedded-app-sdk";
 import { usePathname } from "next/navigation";
 
+const schema = 1;
+const key = "coinmeca:wallet:discord:search";
+const legacy = "discordSearchParams";
+
+const readDiscordSearch = () => {
+    if (typeof window === "undefined" || !window.sessionStorage) return { search: "", legacy: false };
+
+    const value = sessionStorage.getItem(key);
+    if (value) {
+        try {
+            const data = JSON.parse(value);
+            if (data && typeof data === "object" && data.schema === schema && typeof data.search === "string") {
+                return { search: data.search, legacy: false };
+            }
+        } catch {}
+    }
+
+    const fallback = sessionStorage.getItem(legacy) || "";
+    return { search: fallback, legacy: fallback !== "" };
+};
+
+const writeDiscordSearch = (search: string) => {
+    if (typeof window === "undefined" || !window.sessionStorage) return;
+    sessionStorage.setItem(key, JSON.stringify({ schema, search }));
+    sessionStorage.setItem(legacy, search);
+};
+
 interface DiscordContextProps {
     isReady: boolean;
     isDiscord: boolean;
@@ -41,10 +68,12 @@ export const DiscordProvider: React.FC<{ children?: React.ReactNode }> = ({ chil
 
     useLayoutEffect(() => {
         const discord = typeof window !== "undefined" && (window.location.search.includes("frame_id") || window.location.hostname.endsWith("discordsays.com"));
+        const stored = readDiscordSearch();
 
         setIsDiscord(discord);
         if (!discord) return;
-        if (window.location.search && !sessionStorage.getItem("discordSearchParams")) sessionStorage.setItem("discordSearchParams", window.location.search);
+        if (stored.legacy && stored.search) writeDiscordSearch(stored.search);
+        if (window.location.search && !stored.search) writeDiscordSearch(window.location.search);
         setEnvironment(Object.fromEntries(new URLSearchParams(window.location.search).entries()));
 
         // const originalFetch = window.fetch;
@@ -141,7 +170,9 @@ export const DiscordProvider: React.FC<{ children?: React.ReactNode }> = ({ chil
         if (!discord) return;
 
         const current = new URLSearchParams(window.location.search);
-        const stored = new URLSearchParams(sessionStorage.getItem("discordSearchParams") || "");
+        const storedSearch = readDiscordSearch();
+        if (storedSearch.legacy && storedSearch.search) writeDiscordSearch(storedSearch.search);
+        const stored = new URLSearchParams(storedSearch.search);
 
         stored.forEach((value, key) => {
             if (!current.has(key)) current.set(key, value);
@@ -153,6 +184,7 @@ export const DiscordProvider: React.FC<{ children?: React.ReactNode }> = ({ chil
             const newUrl = window.location.pathname + newSearch + window.location.hash;
             window.history.replaceState(null, "", newUrl);
             search.current = newSearch;
+            writeDiscordSearch(newSearch);
         }
     }, [pathname, discord]);
 

@@ -1,5 +1,5 @@
-﻿import { Pages } from "containers";
+import { Activity } from "containers/pages";
 
 export default function Page() {
-    return <Pages.Activity />;
+    return <Activity />;
 }

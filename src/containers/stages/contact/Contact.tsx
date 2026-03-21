@@ -5,6 +5,7 @@ import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { Account } from "@coinmeca/wallet-sdk/types";
 import { useNotification } from "@coinmeca/ui/hooks";
+import { useTranslate } from "hooks";
 
 import { pattern, short } from "utils";
 import { Validate } from "types";
@@ -16,20 +17,22 @@ interface Contact extends Stage {
 }
 
 export default function Contact(props: Contact) {
-    const { account, accounts, contact } = useCoinmecaWalletProvider();
+    const { provider, accounts, contact } = useCoinmecaWalletProvider();
     const { addToast } = useNotification();
+    const { t } = useTranslate();
     const [tab, setTab] = useState("wallet");
 
     const [address, setAddress] = useState<string>();
     const [validate, setValidate] = useState<Validate>({ state: false });
+    const activeAddress = provider?.address;
 
     const validating = (a?: string): Validate => {
         let check: Validate = { state: false };
-        if (!a || a === "" || a === "0" || a === "0x") check = { state: true, message: "The typed a form of a Token Contract is Invalid." };
-        else if (!a?.startsWith("0x")) check = { state: true, message: "The typed a form of a Token Contract is Invalid." };
-        else if (!pattern.address.test(a)) check = { state: true, message: "The unacceptable charater is used in a form." };
-        else if (a?.length < 42) check = { state: true, message: "The a is too short." };
-        else if (a?.length > 42) check = { state: true, message: "The a is too long." };
+        if (!a || a === "" || a === "0" || a === "0x") check = { state: true, message: t("contact.error.address.invalid") };
+        else if (!a?.startsWith("0x")) check = { state: true, message: t("contact.error.address.invalid") };
+        else if (!pattern.address.test(a)) check = { state: true, message: t("contact.error.character.invalid") };
+        else if (a?.length < 42) check = { state: true, message: t("contact.error.address.short") };
+        else if (a?.length > 42) check = { state: true, message: t("contact.error.address.long") };
 
         setValidate(check);
         return check;
@@ -58,10 +61,10 @@ export default function Contact(props: Contact) {
                             <Layouts.Col gap={0} style={{ background: "rgba(var(--black),0.45)" }} fill>
                                 <Layouts.Row gap={0} align={"left"} style={{ padding: "0.5em clamp(1em, 2.5%, 4em)" }}>
                                     <Controls.Tab active={tab === "wallet"} onClick={() => setTab("wallet")} fit>
-                                        My Wallets
+                                        {t("contact.tab.wallets")}
                                     </Controls.Tab>
                                     <Controls.Tab active={tab === "recent"} onClick={() => setTab("recent")} fit>
-                                        Recent
+                                        {t("contact.tab.recent")}
                                     </Controls.Tab>
                                 </Layouts.Row>
                                 <Layouts.Divider strong />
@@ -71,7 +74,7 @@ export default function Contact(props: Contact) {
                                             active: tab === "wallet",
                                             children: (
                                                 <Layouts.List
-                                                    list={accounts?.filter((a) => a?.address?.toLowerCase() !== account?.address?.toLowerCase())}
+                                                    list={accounts?.filter((a) => a?.address?.toLowerCase() !== activeAddress?.toLowerCase())}
                                                     formatter={(accounts: Account[]) => {
                                                         return accounts?.map((a) => ({
                                                             style: { padding: "3em clamp(3em, 5%, 8em)" },
@@ -121,7 +124,7 @@ export default function Contact(props: Contact) {
                                             ),
                                         },
                                         {
-                                            active: tab === "recents",
+                                            active: tab === "recent",
                                             children: (
                                                 <Layouts.List
                                                     list={contact?.["recent"] || []}
@@ -170,7 +173,7 @@ export default function Contact(props: Contact) {
                                     ]}
                                 />
                                 <Controls.Input
-                                    placeholder={"Enter the recipient address directly..."}
+                                    placeholder={t("contact.input.placeholder")}
                                     gap={2}
                                     right={{
                                         children: (
@@ -179,7 +182,7 @@ export default function Contact(props: Contact) {
                                                 scale={1.125}
                                                 onClick={() => {
                                                     const { state, message } = validating(address);
-                                                    if (state) addToast({ title: "Invalid Address", message });
+                                                    if (state) addToast({ title: t("contact.invalid.title"), message });
                                                     else handleSelect(address);
                                                 }}
                                             />
@@ -192,7 +195,7 @@ export default function Contact(props: Contact) {
                                     // lock={!!address}
                                 />
                                 <Layouts.Row gap={2} style={{ padding: "2em" }}>
-                                    <Controls.Button onClick={handleBack}>Back</Controls.Button>
+                                    <Controls.Button onClick={handleBack}>{t("app.btn.back")}</Controls.Button>
                                 </Layouts.Row>
                             </Layouts.Col>
                         </Layouts.Contents.InnerContent>

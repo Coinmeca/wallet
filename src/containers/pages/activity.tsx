@@ -2,28 +2,73 @@
 
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { usePortal, useSort } from "@coinmeca/ui/hooks";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { parseChainId } from "@coinmeca/wallet-provider/chains";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
-import { useCallback, useEffect, useMemo } from "react";
+import { chainUrl } from "@coinmeca/wallet-sdk/utils";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { filter, format } from "@coinmeca/ui/lib/utils";
-import { Modals } from "containers";
 import { TransactionReceipt } from "@coinmeca/wallet-sdk/types";
-import { queryOptions, useQueries } from "@tanstack/react-query";
+import { queryOptions, useQueries, useQuery } from "@tanstack/react-query";
+import { Tx as Modals } from "containers/modals";
 import { query } from "api/onchain/query";
-import { getQueryClient } from "api";
+import { useTranslate } from "hooks";
+import { valid } from "utils";
 
 interface Activity {
     filter?: string;
 }
 
 export default function Activity(props: Activity) {
-    const client = getQueryClient();
-    const { account, chain, tx, provider } = useCoinmecaWalletProvider();
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+    const { tx, provider } = useCoinmecaWalletProvider();
     const { sorting, sortArrow, setSort } = useSort();
+    const { t } = useTranslate();
+    const latest = useRef<{
+        provider: typeof provider;
+        txlist: TransactionReceipt[];
+        address?: string;
+        chainId?: number;
+    }>({ provider, txlist: [] });
+    const openedDetail = useRef("");
+    const rawQueryHash = searchParams?.get("tx")?.trim().toLowerCase() || "";
+    const queryHash = useMemo(() => {
+        return valid.hash(rawQueryHash) ? rawQueryHash : "";
+    }, [rawQueryHash]);
+    const queryAddress = searchParams?.get("address")?.trim() || "";
+    const queryRpcUrl = useMemo(() => {
+        const value = chainUrl(searchParams?.get("rpcUrl"), "rpc");
+        if (!value) return;
+        try {
+            const protocol = new URL(value).protocol.toLowerCase();
+            return ["http:", "https:"].includes(protocol) ? value : undefined;
+        } catch {
+            return;
+        }
+    }, [searchParams]);
+    const queryChainId = useMemo(() => {
+        const value = searchParams?.get("chainId");
+        return value && valid.chainId(value) ? parseChainId(value) : undefined;
+    }, [searchParams]);
+    const activeAddress = provider?.address;
+    const activeChainId = useMemo(() => {
+        const providerChainId = provider?.chainId;
+        return typeof providerChainId !== "undefined" && valid.chainId(providerChainId) ? parseChainId(providerChainId) : undefined;
+    }, [provider?.chainId]);
+    const activeChain = useMemo(
+        () =>
+            typeof activeChainId === "number"
+                ? provider?.chains?.find((item: any) => typeof item?.chainId !== "undefined" && parseChainId(item.chainId) === activeChainId)
+                : undefined,
+        [activeChainId, provider?.chains],
+    );
 
     const categories = useQueries({
         queries:
             tx?.map((tx) => {
-                const q = query.typeOf(chain?.rpcUrls?.[0], !tx?.category ? tx?.to : undefined);
+                const q = query.typeOf(activeChain?.rpcUrls?.[0], !tx?.category ? tx?.to : undefined);
                 return queryOptions({
                     ...q,
                     queryKey: [...q?.queryKey, tx?.hash],
@@ -31,27 +76,40 @@ export default function Activity(props: Activity) {
             }) || [],
     });
 
-    const txs = useQueries({ queries: tx?.filter(({ status }) => status === "pending")?.map(({ hash }) => query.receipt(chain?.rpcUrls?.[0], hash)) || [] });
+    const txs = useQueries({
+        queries: tx?.filter(({ status }) => status === "pending")?.map(({ hash }) => query.receipt(activeChain?.rpcUrls?.[0], hash)) || [],
+    });
     const txlist = useMemo(
         (): TransactionReceipt[] =>
             tx
                 ?.map((tx, i) => {
+                    const txChainId =
+                        typeof tx?.chainId !== "undefined" && valid.chainId(tx.chainId)
+                            ? parseChainId(tx.chainId)
+                            : activeChainId;
                     const data = txs?.find(({ data }) => data?.transactionHash?.toLowerCase() === tx?.hash?.toLowerCase())?.data;
-                    if (!data) return tx;
+                    if (!data) return typeof txChainId === "number" && typeof tx?.chainId === "undefined" ? { ...tx, chainId: txChainId } : tx;
                     const blockNumber = data?.blockNumber ? Number(data?.blockNumber) : "-";
-                    const category = client?.getQueryData(["accountType", tx?.to, tx?.hash]);
+                    const category = categories?.[i]?.data;
                     const status = !!data?.status ? (data?.status === "0x1" ? "success" : "failure") : tx?.status;
                     const gasUsed = data?.gasUsed ? Number(data?.gasUsed) : "-";
                     const cumulativeGasUsed = data?.cumulativeGasUsed ? Number(data?.cumulativeGasUsed) : "-";
                     const effectiveGasPrice = data?.effectiveGasPrice ? Number(data?.effectiveGasPrice) : "-";
 
-                    console.log(data);
                     return {
                         no: tx?.no,
                         hash: tx?.hash,
+                        chainId: txChainId,
                         time: tx?.time,
                         to: data?.to,
-                        category: data?.contractAddress ? "deploy" : tx?.category ? tx?.category : category === "ca" ? "Contract Interaction" : tx?.category,
+                        category:
+                            data?.contractAddress
+                                ? "deploy"
+                                : tx?.category
+                                  ? tx?.category
+                                  : category === "ca"
+                                    ? t("activity.category.contract.interaction")
+                                    : tx?.category,
                         contractAddress: data?.contractAddress,
                         blockNumber,
                         gasUsed,
@@ -61,8 +119,60 @@ export default function Activity(props: Activity) {
                     };
                 })
                 ?.filter((tx) => tx) || [],
-        [tx, txs, categories],
+        [activeChainId, categories, tx, txs, t],
     );
+    const queryReceipt = useMemo(() => {
+        if (!queryHash) return;
+        const receipt = provider?.getReceipt(queryHash, {
+            address: queryAddress && valid.address(queryAddress) ? queryAddress : undefined,
+            chainId: queryChainId,
+        });
+        if (!receipt) return;
+        if (typeof receipt.chainId !== "undefined") return receipt;
+        const fallbackChainId = queryChainId || activeChainId;
+        return typeof fallbackChainId === "number" ? { ...receipt, chainId: fallbackChainId } : receipt;
+    }, [activeChainId, provider, queryAddress, queryChainId, queryHash]);
+    const queryReceiptChainId = useMemo(() => {
+        const value = queryReceipt?.chainId;
+        return typeof value !== "undefined" && valid.chainId(value) ? parseChainId(value) : queryChainId;
+    }, [queryChainId, queryReceipt?.chainId]);
+    const queryChain = useMemo(
+        () =>
+            typeof queryReceiptChainId === "number"
+                ? provider?.chains?.find((item: any) => typeof item?.chainId !== "undefined" && parseChainId(item.chainId) === queryReceiptChainId)
+                : undefined,
+        [provider?.chains, queryReceiptChainId],
+    );
+    const queryReceiptRemote = useQuery({
+        ...query.receipt(queryChain?.rpcUrls?.[0] || queryRpcUrl, queryHash),
+        enabled: !!queryHash && !!(queryChain?.rpcUrls?.[0] || queryRpcUrl),
+    });
+    const resolvedQueryReceipt = useMemo(() => {
+        if (!queryHash) return;
+        if (!queryReceipt && !queryReceiptRemote.data) return;
+        if (!queryReceiptRemote.data) return queryReceipt;
+
+        const remote = queryReceiptRemote.data;
+        const chainId = queryReceiptChainId;
+        const status = typeof remote?.status !== "undefined" ? (remote.status === "0x1" ? "success" : "failure") : queryReceipt?.status || "pending";
+
+        return {
+            ...queryReceipt,
+            hash: queryReceipt?.hash || queryHash,
+            chainId,
+            status,
+            time: queryReceipt?.time,
+            to: remote?.to || queryReceipt?.to,
+            from: remote?.from || queryReceipt?.from,
+            category: remote?.contractAddress ? "deploy" : queryReceipt?.category,
+            contractAddress: remote?.contractAddress || queryReceipt?.contractAddress,
+            blockNumber: remote?.blockNumber ? Number(remote.blockNumber) : queryReceipt?.blockNumber,
+            gasUsed: remote?.gasUsed ? Number(remote.gasUsed) : queryReceipt?.gasUsed,
+            cumulativeGasUsed: remote?.cumulativeGasUsed ? Number(remote.cumulativeGasUsed) : queryReceipt?.cumulativeGasUsed,
+            effectiveGasPrice: remote?.effectiveGasPrice ? Number(remote.effectiveGasPrice) : queryReceipt?.effectiveGasPrice,
+            no: queryReceipt?.no,
+        } as TransactionReceipt;
+    }, [queryHash, queryReceipt, queryReceiptChainId, queryReceiptRemote.data]);
 
     const sorts = {
         blockNumber: { key: "blockNumber", type: "number" },
@@ -90,19 +200,86 @@ export default function Activity(props: Activity) {
     );
 
     useEffect(() => {
+        latest.current = {
+            provider,
+            txlist,
+            address: activeAddress,
+            chainId: activeChainId,
+        };
+    }, [provider, txlist, activeAddress, activeChainId]);
+
+    useEffect(() => {
         return () => {
-            provider?.updateReceipts(txlist, { address: account?.address, chainId: chain?.chainId });
+            const current = latest.current;
+            current.provider?.updateReceipts(current.txlist, { address: current.address, chainId: current.chainId });
         };
     }, []);
 
-    const [openTxDetail, closeTxDetail] = usePortal((props: any) => <Modals.Tx.Detail {...props} onClose={closeTxDetail} />);
+    useEffect(() => {
+        if (!rawQueryHash || queryHash) return;
+        router.replace(pathname || "/activity");
+    }, [pathname, queryHash, rawQueryHash, router]);
+
+    useEffect(() => {
+        if (!provider || !queryReceiptRemote.data) return;
+        if (!queryAddress || !valid.address(queryAddress)) return;
+        if (typeof queryReceiptChainId !== "number") return;
+
+        provider.updateReceipt(
+            {
+                ...resolvedQueryReceipt,
+                hash: resolvedQueryReceipt?.hash || queryHash,
+                chainId: queryReceiptChainId,
+            } as TransactionReceipt,
+            { address: queryAddress, chainId: queryReceiptChainId },
+        );
+    }, [provider, queryAddress, queryHash, queryReceiptChainId, queryReceiptRemote.data, resolvedQueryReceipt]);
+
+    const [openTxDetail, closeTxDetail] = usePortal((props: any) => <Modals.Detail {...props} onClose={props?.onClose || closeTxDetail} />);
+    const openDetail = useCallback(
+        (tx?: TransactionReceipt, preserveQuery = false) => {
+            if (!tx?.hash) return;
+            openedDetail.current = `${tx.hash.toLowerCase()}:${tx.status || ""}:${tx.blockNumber || ""}`;
+            if (!preserveQuery) router.replace(`${pathname || "/activity"}?tx=${encodeURIComponent(tx.hash)}`);
+            openTxDetail({
+                tx,
+                onClose: () => {
+                    closeTxDetail();
+                    router.replace(pathname || "/activity");
+                },
+            });
+        },
+        [closeTxDetail, openTxDetail, pathname, router],
+    );
+
+    useEffect(() => {
+        if (!queryHash) {
+            openedDetail.current = "";
+            return;
+        }
+
+        const target = txlist.find((item) => item?.hash?.toLowerCase() === queryHash) || resolvedQueryReceipt;
+        const nextKey = target?.hash ? `${target.hash.toLowerCase()}:${target.status || ""}:${target.blockNumber || ""}` : "";
+        if (!target || openedDetail.current === nextKey) return;
+        openedDetail.current = nextKey;
+        openDetail(target, true);
+    }, [openDetail, queryHash, resolvedQueryReceipt, txlist]);
+
+    useEffect(() => {
+        if (!queryHash) return;
+        if (txlist.some((item) => item?.hash?.toLowerCase() === queryHash)) return;
+        if (resolvedQueryReceipt) return;
+        if (queryReceiptRemote.isFetching || !queryReceiptRemote.isFetched) return;
+        router.replace(pathname || "/activity");
+    }, [pathname, queryHash, queryReceiptRemote.isFetched, queryReceiptRemote.isFetching, resolvedQueryReceipt, router, txlist]);
+
     const formatter = useCallback(
         (txs?: TransactionReceipt[]) =>
             txs?.map((tx) => {
                 const date = (format(tx?.time, "date") as string).split(" ");
                 return {
                     style: { padding: "1.5em" },
-                    onClick: () => openTxDetail({ tx }),
+                    onClick: () => openDetail(tx),
                     children: [
                         [
                             {
@@ -131,7 +308,7 @@ export default function Activity(props: Activity) {
                                                                 <Elements.Text height={0} case={"capital"}>
                                                                     {tx?.category && tx?.category !== ""
                                                                         ? tx?.category
-                                                                        : `Transaction${tx?.no ? ` ${tx?.no}` : ""}`}
+                                                                        : t("activity.category.transaction", { no: tx?.no ? ` ${tx.no}` : "" })}
                                                                 </Elements.Text>
                                                             </>,
                                                             <>
@@ -183,7 +360,7 @@ export default function Activity(props: Activity) {
                     ],
                 };
             }),
-        [tx],
+        [color, openDetail, t],
     );
 
     return (
@@ -191,19 +368,19 @@ export default function Activity(props: Activity) {
             <Layouts.Row gap={1} fix style={{ overflow: "auto hidden" }}>
                 <Layouts.Row gap={0} fix>
                     <Controls.Tab iconLeft={sortArrow(sorts.blockNumber)} onClick={() => setSort(sorts.blockNumber)}>
-                        Block Number
+                        {t("activity.block.number")}
                     </Controls.Tab>
                     <Controls.Tab iconLeft={sortArrow(sorts.action)} onClick={() => setSort(sorts.action)}>
-                        Action
+                        {t("activity.action")}
                     </Controls.Tab>
                     <Controls.Tab iconLeft={sortArrow(sorts.status)} onClick={() => setSort(sorts.status)}>
-                        Status
+                        {t("activity.status")}
                     </Controls.Tab>
                     <Controls.Tab iconLeft={sortArrow(sorts.time)} onClick={() => setSort(sorts.time)}>
-                        Time
+                        {t("activity.time")}
                     </Controls.Tab>
                     <Controls.Tab iconLeft={sortArrow(sorts.gas)} onClick={() => setSort(sorts.gas)}>
-                        Gas Used
+                        {t("activity.gas.used")}
                     </Controls.Tab>
                 </Layouts.Row>
             </Layouts.Row>

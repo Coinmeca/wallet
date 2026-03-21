@@ -3,14 +3,16 @@
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useNotification, usePortal } from "@coinmeca/ui/hooks";
 import { filter, format } from "@coinmeca/ui/lib/utils";
+import { parseChainId } from "@coinmeca/wallet-provider/chains";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { Account } from "@coinmeca/wallet-sdk/types";
 import { useQueries } from "@tanstack/react-query";
 import { query } from "api/onchain/query";
-import { Modals } from "containers";
+import { Account as Modals } from "containers/modals";
+import { useTranslate } from "hooks";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
-import { short } from "utils";
+import { short, valid } from "utils";
 
 export default function Accounts({
     search,
@@ -27,17 +29,30 @@ export default function Accounts({
 }) {
     const path = usePathname();
     const isDisplay = useMemo(() => !path?.startsWith("/welcome") && !path?.startsWith("/create"), [path]);
+    const { t } = useTranslate();
 
-    const { provider, chain, account, accounts } = useCoinmecaWalletProvider();
+    const { provider, accounts } = useCoinmecaWalletProvider();
     const { addToast } = useNotification();
+    const activeAddress = provider?.address;
+    const activeChainId = useMemo(() => {
+        const providerChainId = provider?.chainId;
+        return typeof providerChainId !== "undefined" && valid.chainId(providerChainId) ? parseChainId(providerChainId) : undefined;
+    }, [provider?.chainId]);
+    const activeChain = useMemo(
+        () =>
+            typeof activeChainId === "number"
+                ? provider?.chains?.find((item: any) => typeof item?.chainId !== "undefined" && parseChainId(item.chainId) === activeChainId)
+                : undefined,
+        [activeChainId, provider?.chains],
+    );
 
     const [showDisabledAccount, setShowDisabledAccount] = useState<boolean>(false);
-    const [openAccountEditModal, closeAccountEditModal] = usePortal((props: any) => <Modals.Account.Edit {...props} onClose={closeAccountEditModal} />);
-    const [openShowPrivateKey, closeShowPrivateKey] = usePortal((props: any) => <Modals.Account.Show {...props} onClose={closeShowPrivateKey} />);
+    const [openAccountEditModal, closeAccountEditModal] = usePortal((props: any) => <Modals.Edit {...props} onClose={closeAccountEditModal} />);
+    const [openShowPrivateKey, closeShowPrivateKey] = usePortal((props: any) => <Modals.Show {...props} onClose={closeShowPrivateKey} />);
 
     const router = useRouter();
     const balance = useQueries({
-        queries: (accounts || [])?.map((a) => query.balance(chain?.rpcUrls?.[0], a?.address)),
+        queries: (accounts || [])?.map((a) => query.balance(activeChain?.rpcUrls?.[0], a?.address)),
     });
 
     const handleAccountChange = (account: Account) => {
@@ -50,15 +65,15 @@ export default function Accounts({
             .writeText(account.address)
             .then(function () {
                 addToast({
-                    title: `Copy address`,
-                    message: `The address of ${account.name} copied.`,
+                    title: t("app.wallet.address.copy"),
+                    message: t("app.wallet.address.copy.success", { name: account.name }),
                 });
                 // addToast(toast.alert.copy.success);
             })
             .catch(function (err) {
                 addToast({
-                    title: `Copy address`,
-                    message: `Failed to copy the address of ${account.name}.`,
+                    title: t("app.wallet.address.copy"),
+                    message: t("app.wallet.address.copy.failure", { name: account.name }),
                 });
                 // addToast(toast.alert.copy.failure);
             });
@@ -79,7 +94,7 @@ export default function Accounts({
     const accountlist = useCallback(
         (accounts: Account[] = []) =>
             (showDisabledAccount ? accounts : accounts.filter((a) => !a?.disable)).map((a: Account, i: number) => {
-                const selected = account?.address?.toLowerCase() === a?.address?.toLowerCase();
+                const selected = activeAddress?.toLowerCase() === a?.address?.toLowerCase();
                 return {
                     onClick: !selected && (() => {}),
                     style: {
@@ -153,8 +168,8 @@ export default function Accounts({
                                                                                 fit: true,
                                                                                 children: (
                                                                                     <>
-                                                                                        <Elements.Text opacity={0.3} fit>
-                                                                                            {chain?.nativeCurrency?.symbol}
+                                                                                    <Elements.Text opacity={0.3} fit>
+                                                                                            {activeChain?.nativeCurrency?.symbol}
                                                                                         </Elements.Text>
                                                                                     </>
                                                                                 ),
@@ -185,11 +200,11 @@ export default function Accounts({
                                                     <Controls.Dropdown
                                                         type={"more"}
                                                         options={[
-                                                            { icon: "key", value: "Show Private Key" },
-                                                            { icon: "write", value: "Edit Account Name" },
+                                                            { icon: "key", value: t("app.sidebar.account.private.key.show") },
+                                                            { icon: "write", value: t("app.sidebar.account.name.edit") },
                                                             a?.disable
-                                                                ? { icon: "show", value: `Enable ${a?.name}` }
-                                                                : { icon: "hide", value: `Disable ${a?.name}` },
+                                                                ? { icon: "show", value: t("app.sidebar.account.enable", { name: a?.name || "" }) }
+                                                                : { icon: "hide", value: t("app.sidebar.account.disable", { name: a?.name || "" }) },
                                                         ]}
                                                         onClickItem={(e: any, v: any, k: number) => {
                                                             switch (k) {
@@ -219,7 +234,7 @@ export default function Accounts({
                     ],
                 };
             }),
-        [account, accounts, balance, showDisabledAccount],
+        [activeAddress, activeChain?.nativeCurrency?.symbol, balance, showDisabledAccount],
     );
 
     return (
@@ -230,7 +245,9 @@ export default function Accounts({
                 <Layouts.Col style={{ padding: "4em", paddingTop: "0" }} fit>
                     {accounts?.filter((a) => a?.disable)?.length ? (
                         <Controls.Button iconLeft={showDisabledAccount ? "hide" : "show"} onClick={() => setShowDisabledAccount(!showDisabledAccount)}>
-                            {showDisabledAccount ? "Hide" : "Show"} disabled accounts
+                            {showDisabledAccount
+                                ? t("app.sidebar.account.disabled.hide")
+                                : t("app.sidebar.account.disabled.show")}
                         </Controls.Button>
                     ) : (
                         <></>
@@ -241,7 +258,7 @@ export default function Accounts({
                         onClick={() => {
                             router.push("/create");
                         }}>
-                        Create or Import wallet
+                        {t("app.sidebar.account.create.import")}
                     </Controls.Button>
                 </Layouts.Col>
             )}

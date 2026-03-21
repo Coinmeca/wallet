@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
+import { parseChainId } from "@coinmeca/wallet-provider/chains";
 import { CoinmecaWalletContextProvider, useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { dehydrate, HydrationBoundary, QueryClientProvider } from "@tanstack/react-query";
 
@@ -10,6 +11,9 @@ import { Attribute } from "types";
 import { short } from "utils";
 import Image from "next/image";
 import { useWindowSize } from "@coinmeca/ui/hooks";
+import { useTranslate } from "hooks";
+import { useMemo } from "react";
+import { valid } from "utils";
 
 export interface Info {
     [x: string | number | symbol]: any;
@@ -34,7 +38,19 @@ export default function Info(props: Info) {
 
 function NonFungibleInfoModal(props: Info) {
     const { windowSize } = useWindowSize();
-    const { chain } = useCoinmecaWalletProvider();
+    const { provider } = useCoinmecaWalletProvider();
+    const { t } = useTranslate();
+    const activeChainId = useMemo(() => {
+        const providerChainId = provider?.chainId;
+        return typeof providerChainId !== "undefined" && valid.chainId(providerChainId) ? parseChainId(providerChainId) : undefined;
+    }, [provider?.chainId]);
+    const activeChain = useMemo(
+        () =>
+            typeof activeChainId === "number"
+                ? provider?.chains?.find((item: any) => typeof item?.chainId !== "undefined" && parseChainId(item.chainId) === activeChainId)
+                : undefined,
+        [activeChainId, provider?.chains],
+    );
 
     const handleClose = (e?: any) => {
         props?.onClose(e);
@@ -56,29 +72,29 @@ function NonFungibleInfoModal(props: Info) {
                 <Layouts.Col gap={2}>
                     <Layouts.Row gap={1} fix>
                         <Elements.Text opacity={0.3} fit>
-                            Address
+                            {t("modal.nft.detail.address")}
                         </Elements.Text>
                         <Elements.Text
                             align={"right"}
                             title={data?.address}
-                            href={chain?.blockExplorerUrls?.length ? `${chain?.blockExplorerUrls}/address/${data?.address}` : undefined}>
+                            href={activeChain?.blockExplorerUrls?.length ? `${activeChain?.blockExplorerUrls}/address/${data?.address}` : undefined}>
                             {short(data?.address)}
                         </Elements.Text>
                     </Layouts.Row>
                     <Layouts.Divider />
                     <Layouts.Row gap={1} fix>
                         <Elements.Text opacity={0.3} fit>
-                            Token ID
+                            {t("modal.nft.detail.id")}
                         </Elements.Text>
                         <Elements.Text
                             align={"right"}
-                            href={chain?.blockExplorerUrls?.length ? `${chain?.blockExplorerUrls}/nft/${data?.address}/${data?.tokenId}` : undefined}>
+                            href={activeChain?.blockExplorerUrls?.length ? `${activeChain?.blockExplorerUrls}/nft/${data?.address}/${data?.tokenId}` : undefined}>
                             {data?.tokenId}
                         </Elements.Text>
                     </Layouts.Row>
                     <Layouts.Row gap={1}>
                         <Elements.Text opacity={0.3} fit>
-                            Token Name
+                            {t("modal.nft.detail.name")}
                         </Elements.Text>
                         <Layouts.Row gap={1} align={"right"} style={{ minWidth: "max-content" }} fix>
                             <Elements.Text align={"right"}>{uri?.name}</Elements.Text>
@@ -105,11 +121,11 @@ function NonFungibleInfoModal(props: Info) {
                                     </Elements.Text>
                                     <Elements.Text
                                         href={
-                                            chain?.blockExplorerUrls?.length &&
+                                            activeChain?.blockExplorerUrls?.length &&
                                             trait?.value &&
                                             trait?.value?.toString().startsWith("0x") &&
                                             trait?.value?.toString().length === 42
-                                                ? `${chain?.blockExplorerUrls}/address/${trait?.value}`
+                                                ? `${activeChain?.blockExplorerUrls}/address/${trait?.value}`
                                                 : undefined
                                         }>
                                         {trait?.value && trait?.value?.toString().startsWith("0x") && trait?.value?.toString().length === 42
@@ -126,7 +142,7 @@ function NonFungibleInfoModal(props: Info) {
     );
 
     return (
-        <Modal {...props} title={uri?.name || "Token Detail"} width={desktop ? 96 : undefined} onClose={handleClose} close>
+        <Modal {...props} title={uri?.name || t("modal.nft.detail.title")} width={desktop ? 96 : undefined} onClose={handleClose} close>
             <Layouts.Col gap={2} style={{ height: "100%" }}>
                 {desktop ? (
                     attributes && attributes?.length ? (
@@ -178,14 +194,14 @@ function NonFungibleInfoModal(props: Info) {
                     content
                 )}
                 <Layouts.Row gap={2} style={{ marginTop: "2em" }} fix>
-                    <Controls.Button onClick={handleClose}>Close</Controls.Button>
+                    <Controls.Button onClick={handleClose}>{t("app.btn.close")}</Controls.Button>
                     {props?.onTransfer && (
                         <Controls.Button
                             onClick={(e: any) => {
                                 props?.onTransfer?.(data);
                                 handleClose(e);
                             }}>
-                            Send
+                            {t("tx.detail.send")}
                         </Controls.Button>
                     )}
                 </Layouts.Row>

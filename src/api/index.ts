@@ -2,6 +2,13 @@ import { getQueryClient } from "./client";
 // import { prefetch } from "./prefetch";
 // import * as schema from "./schema";
 
+const URLS = {
+    PROXY: {
+        LANGUAGE: "/api/language",
+    },
+    LANGUAGE: process.env.LANG_URL,
+};
+
 const fetcher = {
     url: async (url: string, option?: RequestInit): Promise<Response | undefined> => {
         try {
@@ -55,4 +62,4 @@ const fetcher = {
     },
 };
 
-export { getQueryClient, fetcher };
+export { URLS, getQueryClient, fetcher };

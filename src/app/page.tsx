@@ -1,19 +1,21 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { useNotification, useWindowSize } from "@coinmeca/ui/hooks";
 import { Root } from "@coinmeca/ui/lib/style";
 import { format, parseNumber } from "@coinmeca/ui/lib/utils";
+import { parseChainId } from "@coinmeca/wallet-provider/chains";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { AnimatePresence } from "framer-motion";
 
 import { Stages } from "containers";
 import { Activity, Nft, Token } from "containers/pages";
 import { GetBalance } from "api/account";
-import { usePageLoader } from "hooks";
+import { usePageLoader, useTranslate } from "hooks";
 import { Asset, AssetType } from "types";
+import { valid } from "utils";
 
 export default function Main({ params }: any) {
     const path = usePathname();
@@ -21,8 +23,21 @@ export default function Main({ params }: any) {
 
     const { windowSize } = useWindowSize();
     const { isLoad } = usePageLoader();
-    const { provider, chain, account } = useCoinmecaWalletProvider();
-    const { data: balance, isLoading } = GetBalance(chain?.rpcUrls?.[0], account?.address);
+    const { t } = useTranslate();
+    const { provider } = useCoinmecaWalletProvider();
+    const activeAddress = provider?.address;
+    const activeChainId = useMemo(() => {
+        const providerChainId = provider?.chainId;
+        return typeof providerChainId !== "undefined" && valid.chainId(providerChainId) ? parseChainId(providerChainId) : undefined;
+    }, [provider?.chainId]);
+    const activeChain = useMemo(
+        () =>
+            typeof activeChainId === "number"
+                ? provider?.chains?.find((item: any) => typeof item?.chainId !== "undefined" && parseChainId(item.chainId) === activeChainId)
+                : undefined,
+        [activeChainId, provider?.chains],
+    );
+    const { data: balance, isLoading } = GetBalance(activeChain?.rpcUrls?.[0], activeAddress);
     const [searchFilter, setSearchFilter] = useState("");
 
     const [stage, setStage] = useState<{ name: string; level: number }>({ name: "", level: 0 });
@@ -30,6 +45,7 @@ export default function Main({ params }: any) {
     const [asset, setAsset] = useState<Asset<any>>();
     const [amount, setAmount] = useState<string | number>();
     const [recipient, setRecipient] = useState<string>();
+    const [isClient, setIsClient] = useState(false);
 
     const tab = useCallback((target: string) => path?.startsWith(`/${target}`), [path]);
     const responsive = useMemo(() => windowSize.width <= Root.Device.Tablet, [windowSize]);
@@ -39,7 +55,7 @@ export default function Main({ params }: any) {
     const handleSelect = (a: Asset<any>) => {
         switch (a?.type) {
             case AssetType.ERC20:
-                if (!a?.balance) return addToast({ title: a?.name, message: "Insufficient balance to send asset." });
+                if (!a?.balance) return addToast({ title: a?.name, message: t("toast.asset.send.balance.insufficient") });
             case AssetType.ERC721:
                 setAsset(a);
                 if (a?.type === AssetType?.ERC721)
@@ -78,9 +94,13 @@ export default function Main({ params }: any) {
         setStage({ name: "", level: 0 });
     };
 
+    useLayoutEffect(() => {
+        setIsClient(true);
+    }, []);
+
     useEffect(() => {
         handleCancel();
-    }, [path, provider, chain, account]);
+    }, [path, provider?.isLocked, activeAddress, activeChainId]);
 
     useEffect(() => {
         const input = (e: any) => {
@@ -149,7 +169,7 @@ export default function Main({ params }: any) {
                                                                                 fill>
                                                                                 <Layouts.Col gap={1}>
                                                                                     <Elements.Text type={"h6"} height={0}>
-                                                                                        Balance
+                                                                                        {t("asset.balance")}
                                                                                     </Elements.Text>
                                                                                     <Elements.Text type={"h3"} height={0}>
                                                                                         {isLoading
@@ -192,8 +212,8 @@ export default function Main({ params }: any) {
                                                                                                     windowSize.width >= Root.Device.Desktop
                                                                                                         ? [2, 8, 4]
                                                                                                         : windowSize.width >= Root.Device.Mobile
-                                                                                                        ? [2, 4, 4]
-                                                                                                        : [1, 2, 2]
+                                                                                                          ? [2, 4, 4]
+                                                                                                          : [1, 2, 2]
                                                                                                 }
                                                                                                 fit>
                                                                                                 <Layouts.Contents.InnerContent>
@@ -206,34 +226,97 @@ export default function Main({ params }: any) {
                                                                                                                     children: [
                                                                                                                         [
                                                                                                                             <>
-                                                                                                                                <Controls.Tab
-                                                                                                                                    active={
-                                                                                                                                        path === "/" ||
-                                                                                                                                        tab("token")
-                                                                                                                                    }
-                                                                                                                                    onClick={() =>
-                                                                                                                                        router.push("/token")
-                                                                                                                                    }>
-                                                                                                                                    Token
-                                                                                                                                </Controls.Tab>
+                                                                                                                                {(
+                                                                                                                                    isClient &&
+                                                                                                                                    windowSize.width >
+                                                                                                                                        Root.Device.Tablet
+                                                                                                                                        ? path === "/" ||
+                                                                                                                                          tab("token")
+                                                                                                                                        : true
+                                                                                                                                ) ? (
+                                                                                                                                    <Controls.Tab
+                                                                                                                                        active={
+                                                                                                                                            isClient &&
+                                                                                                                                            windowSize.width <=
+                                                                                                                                                Root.Device
+                                                                                                                                                    .Tablet &&
+                                                                                                                                            (path === "/" ||
+                                                                                                                                                tab("token"))
+                                                                                                                                        }
+                                                                                                                                        disabled={
+                                                                                                                                            isClient &&
+                                                                                                                                            windowSize.width >
+                                                                                                                                                Root.Device
+                                                                                                                                                    .Tablet
+                                                                                                                                        }
+                                                                                                                                        onClick={() =>
+                                                                                                                                            router.push(
+                                                                                                                                                "/token",
+                                                                                                                                            )
+                                                                                                                                        }>
+                                                                                                                                        {t("app.menu.token")}
+                                                                                                                                    </Controls.Tab>
+                                                                                                                                ) : undefined}
                                                                                                                             </>,
                                                                                                                             <>
-                                                                                                                                <Controls.Tab
-                                                                                                                                    active={tab("nft")}
-                                                                                                                                    onClick={() =>
-                                                                                                                                        router.push("/nft")
-                                                                                                                                    }>
-                                                                                                                                    NFT
-                                                                                                                                </Controls.Tab>
+                                                                                                                                {(
+                                                                                                                                    isClient &&
+                                                                                                                                    windowSize.width >
+                                                                                                                                        Root.Device.Tablet
+                                                                                                                                        ? tab("nft")
+                                                                                                                                        : true
+                                                                                                                                ) ? (
+                                                                                                                                    <Controls.Tab
+                                                                                                                                        active={
+                                                                                                                                            isClient &&
+                                                                                                                                            windowSize.width <=
+                                                                                                                                                Root.Device
+                                                                                                                                                    .Tablet &&
+                                                                                                                                            tab("nft")
+                                                                                                                                        }
+                                                                                                                                        disabled={
+                                                                                                                                            isClient &&
+                                                                                                                                            windowSize.width >
+                                                                                                                                                Root.Device
+                                                                                                                                                    .Tablet
+                                                                                                                                        }
+                                                                                                                                        onClick={() =>
+                                                                                                                                            router.push("/nft")
+                                                                                                                                        }>
+                                                                                                                                        {t("app.menu.nft")}
+                                                                                                                                    </Controls.Tab>
+                                                                                                                                ) : undefined}
                                                                                                                             </>,
                                                                                                                             <>
-                                                                                                                                <Controls.Tab
-                                                                                                                                    active={tab("activity")}
-                                                                                                                                    onClick={() =>
-                                                                                                                                        router.push("/activity")
-                                                                                                                                    }>
-                                                                                                                                    Activity
-                                                                                                                                </Controls.Tab>
+                                                                                                                                {(
+                                                                                                                                    isClient &&
+                                                                                                                                    windowSize.width >
+                                                                                                                                        Root.Device.Tablet
+                                                                                                                                        ? tab("activity")
+                                                                                                                                        : true
+                                                                                                                                ) ? (
+                                                                                                                                    <Controls.Tab
+                                                                                                                                        active={
+                                                                                                                                            isClient &&
+                                                                                                                                            windowSize.width <=
+                                                                                                                                                Root.Device
+                                                                                                                                                    .Tablet &&
+                                                                                                                                            tab("activity")
+                                                                                                                                        }
+                                                                                                                                        disabled={
+                                                                                                                                            isClient &&
+                                                                                                                                            windowSize.width >
+                                                                                                                                                Root.Device
+                                                                                                                                                    .Tablet
+                                                                                                                                        }
+                                                                                                                                        onClick={() =>
+                                                                                                                                            router.push(
+                                                                                                                                                "/activity",
+                                                                                                                                            )
+                                                                                                                                        }>
+                                                                                                                                        {t("app.menu.activity")}
+                                                                                                                                    </Controls.Tab>
+                                                                                                                                ) : undefined}
                                                                                                                             </>,
                                                                                                                         ],
                                                                                                                         [

@@ -3,12 +3,14 @@
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { usePortal, useSort } from "@coinmeca/ui/hooks";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { filter, format } from "@coinmeca/ui/lib/utils";
-import { Modals } from "containers";
 import { GetErc20 } from "api/erc20";
+import { Modals } from "containers";
+import { useTranslate } from "hooks";
 import { Asset, zeroAddress } from "types";
 import { GetBalance } from "api/account";
+import { tokenLogo } from "utils";
 
 interface Token {
     filter?: string;
@@ -18,7 +20,7 @@ interface Token {
 export default function Token(props: Token) {
     const { account, chain, tokens } = useCoinmecaWalletProvider();
     const { sorting, sortArrow, setSort } = useSort();
-
+    const { t } = useTranslate();
     const { data: balance } = GetBalance(chain?.rpcUrls?.[0], account?.address);
     const [fungibles] = GetErc20(chain?.rpcUrls?.[0], tokens?.fungibles, account?.address);
 
@@ -51,10 +53,7 @@ export default function Token(props: Token) {
                                                     fit: true,
                                                     children: (
                                                         <>
-                                                            <Elements.Avatar
-                                                                size={3.5}
-                                                                img={`https://web3.coinmeca.net/${chain?.chainId}/${t?.address}/logo.svg`}
-                                                            />
+                                                            <Elements.Avatar size={3.5} img={tokenLogo(chain?.chainId, t?.address)} />
                                                         </>
                                                     ),
                                                 },
@@ -121,7 +120,7 @@ export default function Token(props: Token) {
                                         ),
                                     },
                                     <>
-                                        <Elements.Text>Add a new token</Elements.Text>
+                                        <Elements.Text>{t("asset.token.add")}</Elements.Text>
                                     </>,
                                 ],
                             },
@@ -130,7 +129,18 @@ export default function Token(props: Token) {
                 },
             ];
         },
-        [tokens?.fungibles, fungibles],
+        [chain?.chainId, openFungibleAdd, props, t],
+    );
+
+    const list = useMemo(
+        () =>
+            sorting([
+                { ...(chain?.nativeCurrency || {}), balance, address: zeroAddress },
+                ...Object.values(fungibles)
+                    ?.map(({ data }) => data)
+                    .filter((item) => item),
+            ]),
+        [balance, chain?.nativeCurrency, fungibles, sorting],
     );
 
     return (
@@ -138,30 +148,18 @@ export default function Token(props: Token) {
             <Layouts.Row gap={1} fix style={{ overflow: "auto hidden" }}>
                 <Layouts.Row gap={0} fix>
                     <Controls.Tab iconLeft={sortArrow(sorts.name)} onClick={() => setSort(sorts.name)}>
-                        Symbol
+                        {t("asset.symbol")}
                     </Controls.Tab>
                     <Controls.Tab iconLeft={sortArrow(sorts.symbol)} onClick={() => setSort(sorts.symbol)}>
-                        Name
+                        {t("asset.name")}
                     </Controls.Tab>
                     <Controls.Tab iconLeft={sortArrow(sorts.balance)} onClick={() => setSort(sorts.balance)}>
-                        Balance
+                        {t("asset.balance")}
                     </Controls.Tab>
                 </Layouts.Row>
             </Layouts.Row>
             <Layouts.Divider />
-            <Layouts.List
-                list={filter(
-                    sorting([
-                        { ...chain?.nativeCurrency, balance, address: zeroAddress },
-                        ...Object.values(fungibles)
-                            ?.map(({ data }) => data)
-                            .filter((t) => t),
-                    ]),
-                    props?.filter,
-                )}
-                formatter={formatter}
-                fill
-            />
+            <Layouts.List list={filter(list, props?.filter)} formatter={formatter} fill />
         </Layouts.Contents.InnerContent>
     );
 }

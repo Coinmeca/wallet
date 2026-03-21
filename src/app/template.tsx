@@ -1,12 +1,12 @@
-﻿"use client";
+"use client";
 
 import { useMemo } from "react";
 import { Contents, Layouts } from "@coinmeca/ui/components";
 import { Frames } from "@coinmeca/ui/containers";
 import { AnimatePresence } from "framer-motion";
 
-import { useGuard, usePageLoader } from "hooks";
 import { Containers } from "index";
+import { useGuard, usePageLoader } from "hooks";
 import Data from "./data";
 import Lock from "./lock/page";
 import Main from "./page";
@@ -33,6 +33,6 @@ export default function RootTemplate({ children, params }: any) {
             </Frames.Frame>
         </>
     ) : (
-        <Contents.States.Loading style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", zIndex: 10000, background: "black" }} />
+        <Contents.States.Loading style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", zIndex: -10000, background: "black" }} />
     );
 }

@@ -1,6 +1,5 @@
 ﻿"use client";
 
-import CryptoJS from "crypto-js";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { Modal } from "@coinmeca/ui/containers";
 import { CoinmecaWalletContextProvider, useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
@@ -9,8 +8,7 @@ import { getQueryClient } from "api";
 import { Lock } from "containers/stages";
 import { useEffect, useRef, useState } from "react";
 import { GuardProvider } from "contexts/guard";
-import { encrypt } from "utils";
-import { Account } from "@coinmeca/wallet-sdk/types";
+import { useTranslate } from "hooks";
 import { Notification } from "@coinmeca/ui/contexts";
 import { useNotification, useWindowSize } from "@coinmeca/ui/hooks";
 import { AnimatePresence, motion } from "motion/react";
@@ -41,55 +39,61 @@ export default function Show(props: Show) {
 
 const AccountShowModal = (props: any) => {
     const key = useRef("");
-    const hash = useRef("");
+    const pass = useRef("");
 
     const { windowSize } = useWindowSize();
     const { provider } = useCoinmecaWalletProvider();
     const { addToast } = useNotification();
+    const { t } = useTranslate();
     const [unlock, setUnlock] = useState(false);
     const [show, setShow] = useState(false);
+    const currentAccount = props?.address ? provider?.account(props.address) || props : props;
+    const currentAddress = currentAccount?.address || props?.address;
+    const currentIndex = typeof currentAccount?.index === "number" ? currentAccount.index : props?.index;
+    const currentName = currentAccount?.name || props?.name || currentAddress || "";
 
     const handleClose = (e: any) => {
         props?.onClose(e);
     };
 
-    const handleUnlock = (code: string) => {
+    const handleUnlock = async (code: string) => {
         try {
-            hash.current = CryptoJS.SHA256(code).toString();
-            code = "";
-            if (provider?.unlock(hash.current)) {
-                key.current = provider?.getPrivateKey(
-                    encrypt(JSON.stringify({ hash: hash.current, index: props?.index, address: props?.address }), new Date(Math.floor(Date.now())).toString()),
-                );
-                hash.current = "";
+            pass.current = code;
+            if (await provider?.unlock(code)) {
+                const privateKey = provider ? await provider.getPrivateKey({ code: pass.current, index: currentIndex, address: currentAddress }) : undefined;
+                if (!privateKey) return false;
+                key.current = privateKey;
+                pass.current = "";
                 setUnlock(true);
+                return true;
             }
         } catch (e) {
             if (!!provider?.locked.remain) provider?.lock();
             console.error(e);
         }
+        return false;
     };
 
-    const handleCopy = async (account: Account) => {
+    const handleCopy = async () => {
         await navigator.clipboard
-            .writeText(account.address)
+            .writeText(key.current)
             .then(function () {
                 addToast({
-                    title: `Copy Private Key`,
-                    message: `The private key of ${props.name} was copied.`,
+                    title: t("modal.account.show.copy"),
+                    message: t("modal.account.show.copy.success", { name: currentName }),
                 });
             })
-            .catch(function (err) {
+            .catch(function () {
                 addToast({
-                    title: `Copy Address`,
-                    message: `Failed to copy the address of ${props.name}.`,
+                    title: t("modal.account.show.copy"),
+                    message: t("modal.account.show.copy.failure", { name: currentName }),
                 });
             });
     };
 
     useEffect(() => {
         return () => {
-            hash.current = "";
+            pass.current = "";
             key.current = "";
         };
     }, []);
@@ -105,7 +109,7 @@ const AccountShowModal = (props: any) => {
         <Modal
             {...props}
             width={{ max: 66 }}
-            title={"Show Private Key"}
+            title={t("modal.account.show.title")}
             style={{
                 "--black": "0,0,0",
                 "--white": "255,255,255",
@@ -148,7 +152,7 @@ const AccountShowModal = (props: any) => {
                                                                 <Layouts.Row gap={1} align={"middle"}>
                                                                     <Elements.Icon color={"orange"} icon={"exclamation-square"} change />
                                                                     <Elements.Text weight={"bold"} align={"left"} change>
-                                                                        Security Warning:
+                                                                        {t("modal.account.show.warning.title")}
                                                                     </Elements.Text>
                                                                 </Layouts.Row>
                                                                 <Elements.Text
@@ -160,30 +164,28 @@ const AccountShowModal = (props: any) => {
                                                                     change>
                                                                     <ol style={{ listStyleType: "square" }}>
                                                                         <li>
-                                                                            Keep this private key secure and confidential. Anyone with access to your private
-                                                                            key can control your account and funds.
+                                                                            {t("modal.account.show.warning.0")}
                                                                         </li>
-                                                                        <li>Never enter your private key into untrusted websites or applications.</li>
+                                                                        <li>{t("modal.account.show.warning.1")}</li>
                                                                         <li>
-                                                                            If you believe your private key has been compromised, transfer your funds to a new
-                                                                            account immediately.
+                                                                            {t("modal.account.show.warning.2")}
                                                                         </li>
-                                                                        <li>Do not store your private key in plain text or unprotected files.</li>
-                                                                        <li>Use a secure password manager or write it down and store it in a safe place.</li>
+                                                                        <li>{t("modal.account.show.warning.3")}</li>
+                                                                        <li>{t("modal.account.show.warning.4")}</li>
                                                                     </ol>
                                                                 </Elements.Text>
                                                             </Layouts.Col>
                                                         </Layouts.Box>
                                                     </Layouts.Col>
                                                     <Layouts.Col align={"left"} gap={1}>
-                                                        <Elements.Text type={"desc"}>Your Private Key:</Elements.Text>
+                                                        <Elements.Text type={"desc"}>{t("modal.account.show.label")}</Elements.Text>
                                                         <Layouts.Box padding={2} style={{ background: "rgba(var(--white), .05)" }} fit>
                                                             <Layouts.Col gap={1}>
                                                                 <Elements.Text align={"left"} weight={"light"} style={{ fontFamily: "monospace" }}>
                                                                     {show ? key.current : key.current?.replace(/./g, "•")}
                                                                 </Elements.Text>
                                                                 <Controls.Button iconLeft={show ? "hide" : "show"} onClick={() => setShow(!show)}>
-                                                                    {show ? "Hide" : "Show"}
+                                                                    {show ? t("app.btn.hide") : t("app.btn.show")}
                                                                 </Controls.Button>
                                                             </Layouts.Col>
                                                         </Layouts.Box>
@@ -197,7 +199,7 @@ const AccountShowModal = (props: any) => {
                         </Layouts.Col>
                     </Layouts.Contents.InnerContent>
                     <Layouts.Row gap={2}>
-                        <Controls.Button onClick={handleClose}>Close</Controls.Button>
+                        <Controls.Button onClick={handleClose}>{t("app.btn.close")}</Controls.Button>
                         <AnimatePresence>
                             {key.current && key.current !== "" && (
                                 <motion.div
@@ -206,7 +208,7 @@ const AccountShowModal = (props: any) => {
                                     exit={{ marginLeft: 0, maxWidth: "100vw" }}
                                     transition={{ ease: "easeInOut", duration: 0.3 }}>
                                     <Controls.Button iconLeft={"copy"} onClick={handleCopy} style={{ width: "100%" }}>
-                                        Copy
+                                        {t("modal.account.show.copy")}
                                     </Controls.Button>
                                 </motion.div>
                             )}

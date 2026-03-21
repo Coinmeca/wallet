@@ -5,7 +5,10 @@ import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { Parts } from "@coinmeca/ui/index";
 import { format, parseNumber } from "@coinmeca/ui/lib/utils";
 import { Asset } from "types";
+import { parseChainId } from "@coinmeca/wallet-provider/chains";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
+import { useTranslate } from "hooks";
+import { tokenLogo, valid } from "utils";
 
 interface Amount {
     active?: boolean;
@@ -27,7 +30,19 @@ export default function Amount(props: Amount) {
     const min = (props?.min && parseNumber(props?.min)) || 0;
     const max = typeof props?.max === "number" ? parseNumber(props?.max) : undefined;
 
-    const { chain } = useCoinmecaWalletProvider();
+    const { provider } = useCoinmecaWalletProvider();
+    const { t } = useTranslate();
+    const activeChainId = useMemo(() => {
+        const providerChainId = provider?.chainId;
+        return typeof providerChainId !== "undefined" && valid.chainId(providerChainId) ? parseChainId(providerChainId) : undefined;
+    }, [provider?.chainId]);
+    const activeChain = useMemo(
+        () =>
+            typeof activeChainId === "number"
+                ? provider?.chains?.find((item: any) => typeof item?.chainId !== "undefined" && parseChainId(item.chainId) === activeChainId)
+                : undefined,
+        [activeChainId, provider?.chains],
+    );
 
     const amount = useMemo(() => {
         if (props?.amount) {
@@ -102,10 +117,7 @@ export default function Amount(props: Amount) {
                                     fill>
                                     <Layouts.Col align={"center"} fit>
                                         <Layouts.Row gap={1} fit>
-                                            <Elements.Avatar
-                                                size={2}
-                                                img={`https://web3.coinmeca.net/${chain?.chainId}/${asset?.address?.toLowerCase()}/logo.svg`}
-                                            />
+                                            <Elements.Avatar size={2} img={tokenLogo(activeChain?.chainId, asset?.address)} />
                                             <Elements.Text type={"h6"}>{asset?.symbol}</Elements.Text>
                                         </Layouts.Row>
                                         <Layouts.Col gap={0} align={"center"}>
@@ -178,7 +190,7 @@ export default function Amount(props: Amount) {
                                             input={props?.active}
                                         />
                                         <Layouts.Row gap={2}>
-                                            <Controls.Button onClick={handleBack}>Back</Controls.Button>
+                                            <Controls.Button onClick={handleBack}>{t("app.btn.back")}</Controls.Button>
                                             <Layouts.Row
                                                 style={{
                                                     ...(condition
@@ -193,7 +205,7 @@ export default function Amount(props: Amount) {
                                                     transition: ".3s ease",
                                                 }}>
                                                 <Controls.Button type={"glass"} onClick={handleConfirm}>
-                                                    Confirm
+                                                    {t("app.btn.confirm")}
                                                 </Controls.Button>
                                             </Layouts.Row>
                                         </Layouts.Row>

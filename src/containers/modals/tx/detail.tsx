@@ -3,11 +3,13 @@
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { Modal } from "@coinmeca/ui/containers";
 import { format } from "@coinmeca/ui/lib/utils";
+import { parseChainId } from "@coinmeca/wallet-provider/chains";
 import { CoinmecaWalletContextProvider, useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { dehydrate, HydrationBoundary, QueryClientProvider } from "@tanstack/react-query";
 import { getQueryClient } from "api";
 import { useMemo } from "react";
-import { short } from "utils";
+import { short, valid } from "utils";
+import { useTranslate } from "hooks";
 
 export interface Detail {
     [x: string | number | symbol]: any;
@@ -29,9 +31,23 @@ export default function Detail(props: Detail) {
     );
 }
 const TxDetailModal = (props?: Detail) => {
-    const { chain } = useCoinmecaWalletProvider();
+    const { provider } = useCoinmecaWalletProvider();
+    const { t } = useTranslate();
     const tx = props?.tx;
     const date = (format(tx?.time, "date") as string).split(" ");
+    const txChainId = useMemo(() => {
+        if (typeof tx?.chainId !== "undefined" && valid.chainId(tx.chainId)) return parseChainId(tx.chainId);
+        const providerChainId = provider?.chainId;
+        return typeof providerChainId !== "undefined" && valid.chainId(providerChainId) ? parseChainId(providerChainId) : undefined;
+    }, [provider?.chainId, tx?.chainId]);
+    const chain = useMemo(
+        () =>
+            typeof txChainId === "number"
+                ? provider?.chains?.find((item: any) => typeof item?.chainId !== "undefined" && parseChainId(item.chainId) === txChainId)
+                : undefined,
+        [provider?.chains, txChainId],
+    );
+    const blockExplorerUrl = chain?.blockExplorerUrls?.[0];
 
     const handleClose = () => {
         props?.onClose();
@@ -54,7 +70,7 @@ const TxDetailModal = (props?: Detail) => {
 
     return (
         <Modal
-            title={"Transaction Detail"}
+            title={t("tx.detail")}
             content={
                 <Layouts.Col gap={2} style={{ height: "100%" }}>
                     <Layouts.Contents.InnerContent
@@ -83,12 +99,12 @@ const TxDetailModal = (props?: Detail) => {
                             <Layouts.Divider />
                             <Layouts.Row gap={1} fix>
                                 <Elements.Text opacity={0.3} fit>
-                                    Block Number
+                                    {t("activity.block.number")}
                                 </Elements.Text>
                                 <Layouts.Row align={"right"} fix>
                                     <Elements.Text
                                         align={"right"}
-                                        href={chain?.blockExplorerUrls?.length ? `${chain?.blockExplorerUrls}/block/${tx?.blockNumber}` : undefined}
+                                        href={blockExplorerUrl ? `${blockExplorerUrl}/block/${tx?.blockNumber}` : undefined}
                                         fit
                                         fix>
                                         #{tx?.blockNumber}
@@ -97,13 +113,13 @@ const TxDetailModal = (props?: Detail) => {
                             </Layouts.Row>
                             <Layouts.Row gap={1} fix>
                                 <Elements.Text opacity={0.3} fit>
-                                    Tx Hash
+                                    {t("modal.tx.detail.hash")}
                                 </Elements.Text>
                                 <Layouts.Row align={"right"} fix>
                                     <Elements.Text
                                         align={"right"}
                                         title={tx?.hash}
-                                        href={chain?.blockExplorerUrls?.length ? `${chain?.blockExplorerUrls}/tx/${tx?.hash}` : undefined}
+                                        href={blockExplorerUrl ? `${blockExplorerUrl}/tx/${tx?.hash}` : undefined}
                                         fit
                                         fix>
                                         {short(tx?.hash)}
@@ -112,14 +128,14 @@ const TxDetailModal = (props?: Detail) => {
                             </Layouts.Row>
                             <Layouts.Row gap={1} fix>
                                 <Elements.Text opacity={0.3} fit>
-                                    To
+                                    {t("modal.tx.detail.to")}
                                 </Elements.Text>
                                 <Elements.Text align={"right"}>{short(tx?.to)}</Elements.Text>
                             </Layouts.Row>
                             <Layouts.Divider />
                             <Layouts.Row gap={1}>
                                 <Elements.Text opacity={0.3} fit>
-                                    Gas Used
+                                    {t("activity.gas.used")}
                                 </Elements.Text>
                                 <Layouts.Row gap={1} align={"right"} style={{ minWidth: "max-content" }} fix>
                                     <Elements.Text align={"right"} fix>
@@ -132,11 +148,11 @@ const TxDetailModal = (props?: Detail) => {
                             </Layouts.Row>
                             <Layouts.Row gap={1}>
                                 <Elements.Text opacity={0.3} fit>
-                                    Cumulative Gas Used
+                                    {t("modal.tx.detail.cumulative.gas.used")}
                                 </Elements.Text>
                                 <Layouts.Row gap={1} align={"right"} style={{ minWidth: "max-content" }} fix>
                                     <Elements.Text align={"right"} fix>
-                                        {format(tx?.effectiveGasPrice, "currency", { unit: 9, limit: 12, fix: 3 })}
+                                        {format(tx?.cumulativeGasUsed, "currency", { unit: 9, limit: 12, fix: 3 })}
                                     </Elements.Text>
                                     {/* <Elements.Text opacity={0.3} align={"left"} style={{ maxWidth: "6em" }}>
                                         {chain?.nativeCurrency?.symbol}
@@ -145,7 +161,7 @@ const TxDetailModal = (props?: Detail) => {
                             </Layouts.Row>
                             <Layouts.Row gap={1}>
                                 <Elements.Text opacity={0.3} fit>
-                                    Effective Gas Price
+                                    {t("modal.tx.detail.effective.gas.price")}
                                 </Elements.Text>
                                 <Layouts.Row gap={1} align={"right"} style={{ minWidth: "max-content" }} fix>
                                     <Elements.Text align={"right"} fix>
@@ -159,7 +175,7 @@ const TxDetailModal = (props?: Detail) => {
                             <Layouts.Divider />
                             <Layouts.Row gap={1}>
                                 <Elements.Text opacity={0.3} fit>
-                                    Total Cost
+                                    {t("modal.tx.detail.total.cost")}
                                 </Elements.Text>
                                 <Layouts.Row gap={1} align={"right"} style={{ minWidth: "max-content" }} fix>
                                     <Elements.Text align={"right"} fix>
@@ -176,7 +192,7 @@ const TxDetailModal = (props?: Detail) => {
                         </Layouts.Col>
                     </Layouts.Contents.InnerContent>
                     <Layouts.Row gap={2} style={{ marginTop: "2em" }} fix>
-                        <Controls.Button onClick={handleClose}>Close</Controls.Button>
+                        <Controls.Button onClick={handleClose}>{t("app.btn.close")}</Controls.Button>
                     </Layouts.Row>
                 </Layouts.Col>
             }

@@ -1,4 +1,6 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+
+import { wallet } from "utils/wallet";
 
 // message of body
 // {
@@ -84,45 +86,95 @@ export interface TelegramResponse {
     reply_markup?: InlineKeyboardMarkup | ReplyKeyboardMarkup;
 }
 
+const json = (error: string, status: number) => NextResponse.json({ error }, { status });
+
+const bot = () => process.env.TELEGRAM_TOKEN;
+
+const chat = (value?: string | number | null) => {
+    if (typeof value === "number" && !isNaN(value)) return value;
+    if (typeof value === "string" && value.trim() !== "") {
+        const next = Number(value);
+        if (!isNaN(next)) return next;
+    }
+};
+
+const link = (value: any, req: NextRequest) => {
+    if (typeof value !== "string" || value.trim() === "") return wallet("/", req.url);
+
+    try {
+        return new URL(value).toString();
+    } catch {
+        return wallet("/", req.url);
+    }
+};
+
 const send = async (response: TelegramResponse) => {
-    const telegramApiUrl = `https://api.telegram.org/bot${process.env.TELEGRAM_TOKEN}/sendMessage`;
-    await fetch(telegramApiUrl, {
+    const token = bot();
+    if (!token || token === "") throw new Error("Telegram bot token is not configured.");
+
+    const telegramApiUrl = `https://api.telegram.org/bot${token}/sendMessage`;
+    const result = await fetch(telegramApiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(response),
     });
+
+    if (!result.ok) {
+        const text = await result.text().catch(() => "");
+        throw new Error(text || "Failed to send Telegram message.");
+    }
+};
+
+const secret = () => process.env.TELEGRAM_SECRET_TOKEN || process.env.TELEGRAM_WEBHOOK_SECRET;
+
+const token = (req: NextRequest) => {
+    const header = req.headers.get("x-telegram-bot-api-secret-token");
+    if (header && header !== "") return header;
+
+    const auth = req.headers.get("authorization");
+    if (auth && auth.toLowerCase().startsWith("bearer ")) return auth.slice(7).trim();
 };
 
 export async function POST(req: NextRequest) {
     try {
+        const value = secret();
+        if (!value || value === "") return json("Telegram route secret is not configured.", 503);
+        if (!bot()) return json("Telegram bot token is not configured.", 503);
+        if (token(req) !== value) return json("Unauthorized", 401);
+
         const body = await req.json();
         const { chatId, message, callback_query, request } = body;
 
         const { searchParams } = new URL(req.url);
-        const chat_id = searchParams.get("chat_id");
+        const chat_id = chat(chatId || searchParams.get("chat_id"));
 
         // Define a response template
         let response: TelegramResponse = {
-            chat_id: message?.chat?.id || callback_query?.message?.chat.id || chatId || chat_id,
+            chat_id: chat(message?.chat?.id || callback_query?.message?.chat?.id || chat_id)!,
             text: "",
         };
 
         if (request) {
-            if (typeof request !== "object" || !request?.app || request?.app === "" || !request?.id || request?.id === "") return;
+            if (!chat_id) return json("Bad Request: Missing chat_id for wallet handoff", 400);
+            if (typeof request !== "object" || !request?.id || request?.id === "") return json("Bad Request: Invalid wallet handoff request", 400);
             response.text = "Open Coinmeca Wallet";
+            response.chat_id = chat_id;
             response.reply_markup = {
                 keyboard: [
                     [
                         {
                             text: "Wallet",
                             web_app: {
-                                url: request?.url,
+                                url: link(request?.url, req),
                             },
                         },
                     ],
                 ],
                 resize_keyboard: true,
             };
+
+            await send(response);
+            return NextResponse.json({ message: "OK" });
         }
 
         if (callback_query && callback_query.data) {
@@ -149,27 +201,15 @@ export async function POST(req: NextRequest) {
                                 {
                                     text: "Wallet",
                                     web_app: {
-                                        url: "https://wallet.coinmeca.net",
+                                        url: wallet("/", req.url),
                                     },
                                 },
                             ],
                         ],
                         resize_keyboard: true,
                     };
-                } else if (command.startsWith("/create")) {
-                    const mnemonic = command.split(" ");
-                    const seed = chat_id + mnemonic[1];
-                    // const { address } = wallet(seed);
-
-                    response.text = `
-                        mnemonic: ${mnemonic.toString()},\n
-                        mnemonic length:${mnemonic.length},\n
-                        mnemonic isBlank:${mnemonic[1] ? mnemonic[1] === "" : "none"},\n
-                        mnemonic code length:${mnemonic[1] ? mnemonic[1].length : "none"},\n`;
                 } else if (command === "/help") {
-                    response.text = "Available commands: /start, /help, /info";
-                } else if (command === "/data") {
-                    response.text = JSON.stringify(message);
+                    response.text = "Available commands: /start, /wallet, /help, /test, /info";
                 } else if (command === "/test") {
                     response.text = "Click the button below to open the web app";
                     response.reply_markup = {
@@ -178,7 +218,7 @@ export async function POST(req: NextRequest) {
                                 {
                                     text: "Open Web App",
                                     web_app: {
-                                        url: "https://coinmeca.net",
+                                        url: wallet("/", req.url),
                                     },
                                 },
                             ],
@@ -195,7 +235,7 @@ export async function POST(req: NextRequest) {
                 response.text = `You said: ${command}`;
             }
         } else {
-            return NextResponse.json({ error: "Bad Request: No message or callback_query data found" }, { status: 400 });
+            return json("Bad Request: No message or callback_query data found", 400);
         }
 
         // Send response back to Telegram
@@ -209,35 +249,4 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
     return NextResponse.json({ message: "GET request not supported" }, { status: 405 });
-
-    const { searchParams } = new URL(req.url);
-    const chat_id = searchParams.get("chat_id");
-    const app = searchParams.get("request_app");
-    const id = searchParams.get("request_id");
-    const url = searchParams.get("request_url");
-
-    if (!app || !id) {
-        return NextResponse.json({ error: "Missing required request params" }, { status: 400 });
-    }
-
-    const response: TelegramResponse = {
-        chat_id: Number(chat_id),
-        text: "Open Coinmeca Wallet",
-        reply_markup: {
-            keyboard: [
-                [
-                    {
-                        text: "Wallet",
-                        web_app: {
-                            url: url || "https://wallet.coinmeca.net",
-                        },
-                    },
-                ],
-            ],
-            resize_keyboard: true,
-        },
-    };
-
-    await send(response);
-    return NextResponse.json({ message: "Simulated response", response });
 }

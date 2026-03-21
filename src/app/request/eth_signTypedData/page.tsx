@@ -1,86 +1,83 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { format } from "@coinmeca/ui/lib/utils";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
+import { typedDataRequest } from "@coinmeca/wallet-sdk/utils";
 import { Account, App } from "@coinmeca/wallet-sdk/types";
-import { valid } from "@coinmeca/wallet-sdk/utils";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 
-import { useMessageHandler } from "hooks";
-import { camelToTitleCase, short } from "utils";
+import { useRequestAllowance, useRequestApp, useRequestFlow, useTranslate } from "hooks";
+import { camelToTitleCase, short, valid } from "utils";
+import { RequestCloseNextActions, RequestInvalid } from "../common";
 
-const method = "eth_signTypedData";
 const timeout = 5000;
 
-export default function Page() {
-    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+interface TypedDataPageProps {
+    method?: string;
+    sign?: (provider: any, data: any, signer?: string, app?: App) => Promise<any>;
+}
 
-    const { provider, account } = useCoinmecaWalletProvider();
-    const { getRequest, getRequestById, success, failure, next, count, setCurrent, close } = useMessageHandler();
+export function TypedDataPage({ method = "eth_signTypedData", sign }: TypedDataPageProps) {
+    const { provider } = useCoinmecaWalletProvider();
+    const { t } = useTranslate();
+    const { load, request, count, level, setLevel, error, setError, resolve, reject, handleClose, handleNext, settledRef } = useRequestFlow({
+        method,
+    });
 
-    const [load, setLoad] = useState(true);
-    const [id, setId] = useState("");
-
-    const [level, setLevel] = useState(0);
-    const [error, setError] = useState<any>();
-
-    const { app, auth, data, signer } = useMemo(() => {
+    const { app, data, signer, address } = useMemo(() => {
         let data: any;
         let address: string | undefined;
 
-        let auth: boolean | undefined;
         let app: App | undefined;
         let signer: Account | undefined;
 
-        const request = getRequestById(id);
         if (request) {
             const { params, app: _app } = request;
             app = _app;
 
-            const _0 = valid.address(params?.[0]);
-            const _1 = valid.address(params?.[1]);
-
-            _0 ? ((data = params[1]), (address = params[0])) : _1 ? ((data = params[0]), (address = params[1])) : (data = params?.[0]);
-            address = address || account?.address;
-            data = typeof data === "string" && data?.startsWith('{"types":') ? JSON.parse(data) : data;
-            auth = app?.url ? provider?.allowance(app?.url, address) : false;
-            signer = provider?.account(address);
-
-            if (data && data !== "") {
-                data = typeof data === "string" ? JSON.parse(data) : data;
-                const chainId = Number(data?.domain?.chainId);
-                if (!isNaN(chainId)) provider?.switchEthereumChain(chainId);
-            }
+            const current = typedDataRequest(params);
+            data = current?.data;
+            address = current?.address || provider?.address;
+            signer = provider?.account(address || provider?.address);
         }
 
         return {
             app,
-            auth,
             data,
             signer,
+            address,
         };
-    }, [id]);
+    }, [provider, request]);
+    const { auth, authError } = useRequestAllowance(provider, app, address, !!data);
 
-    const handleClose = () => {
-        if (level < 2) failure(id, "User rejected the request");
-        close(id);
-    };
+    const { info, title, origin } = useRequestApp(app, t("reqeust.app.unknown"));
+    const signerName = signer?.name || "";
+    const signerAddress = short(signer?.address) || "";
 
     const handleSign = async () => {
         setLevel(1);
-        await provider
-            ?.signTypedData(data, signer?.address) // fixme: app.url?
+        const signRequest = sign ? sign(provider, data, address, app) : provider?.signTypedData(data, address, app);
+        if (!signRequest) {
+            const error = "Signing request could not be started.";
+            reject(error);
+            setError(error);
+            setLevel(2);
+            return;
+        }
+        await signRequest
             .then((result) => {
-                success(id, result);
+                if (settledRef.current) return;
+                if (!result) throw new Error("Typed data signature did not persist.");
+                if (!resolve(result)) return;
                 setLevel(1);
                 // if (count <= 1) timeoutRef.current = setTimeout(handleClose, timeout);
             })
             .catch((error) => {
-                console.log(error);
-                failure(id, "Failed to signning");
+                if (settledRef.current) return;
+                reject("Failed to sign.");
                 setError(error);
                 setLevel(2);
             });
@@ -159,7 +156,7 @@ export default function Page() {
                     }}
                     fit>
                     <Layouts.Col gap={2}>
-                        <Elements.Text type={"desc"}>Domain</Elements.Text>
+                        <Elements.Text type={"desc"}>{t("request.label.domain")}</Elements.Text>
                         <Layouts.Col gap={2}>
                             {Object.entries(typedData.domain).map(([key, value]) =>
                                 Array.isArray(value) || typeof value === "object" ? (
@@ -205,7 +202,7 @@ export default function Page() {
                     }}
                     fit>
                     <Layouts.Col gap={2}>
-                        <Elements.Text type={"desc"}>Message</Elements.Text>
+                        <Elements.Text type={"desc"}>{t("request.label.message")}</Elements.Text>
                         {Object.entries(typedData.message).map(([key, value]) =>
                             key === "contents" || Array.isArray(value) || typeof value === "object" ? (
                                 <Layouts.Col key={key} gap={2}>
@@ -241,32 +238,10 @@ export default function Page() {
         );
     };
 
-    useEffect(() => {
-        if (count && timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-            timeoutRef.current = null;
-        }
-    }, [count]);
-
-    useEffect(() => {
-        if (id && id !== "") {
-            setLoad(false);
-            setCurrent(id);
-            setError(undefined);
-            setLevel(0);
-            setTimeout(() => setLoad(true), 300);
-        }
-    }, [id]);
-
-    useLayoutEffect(() => {
-        const id = getRequest(method)?.id;
-        setId(id);
-    }, []);
-
     return (
         <AnimatePresence>
             {load &&
-                (typeof data === "object" && auth && signer ? (
+                (auth && app && typeof data === "object" && !!data ? (
                     <Layouts.Contents.SlideContainer
                         contents={[
                             {
@@ -297,14 +272,14 @@ export default function Page() {
                                                                             ? app?.logo || ""
                                                                             : require(`../../../assets/animation/${level === 1 ? "success" : "failure"}.gif`)
                                                                     }
-                                                                    alt={app?.name || "Unknown"}
+                                                                    alt={title}
                                                                     style={{ width: "8em", height: "8em" }}
                                                                 />
                                                             </div>
                                                             <Layouts.Col gap={1}>
-                                                                <Elements.Text type={"h6"}>{app?.name || ""}</Elements.Text>
+                                                                <Elements.Text type={"h6"}>{title}</Elements.Text>
                                                                 <Elements.Text type={"strong"} opacity={0.6}>
-                                                                    {app?.url}
+                                                                    {info?.origin || app?.url}
                                                                 </Elements.Text>
                                                             </Layouts.Col>
                                                         </Layouts.Col>
@@ -329,13 +304,13 @@ export default function Page() {
                                                                 children: (
                                                                     <Layouts.Col gap={0} align={"center"} style={{ height: "100%" }} fill>
                                                                         <Layouts.Col gap={4} align={"center"} fit>
-                                                                            <Elements.Text type={"h3"}>Complete</Elements.Text>
-                                                                            <Elements.Text size={1} weight={"bold"}>
-                                                                                <Elements.Text opacity={0.6}>Signed in requested message with</Elements.Text>{" "}
-                                                                                <Elements.Text>{`${signer?.name}(${short(signer?.address)})`}</Elements.Text>{" "}
-                                                                                <Elements.Text opacity={0.6}>in</Elements.Text>{" "}
-                                                                                <Elements.Text>{` ${app?.url}`}</Elements.Text>
-                                                                                <Elements.Text opacity={0.6}>.</Elements.Text>
+                                                                            <Elements.Text type={"h3"}>{t("request.state.complete")}</Elements.Text>
+                                                                            <Elements.Text weight={"bold"} opacity={0.6}>
+                                                                                {t("request.sign.typed.complete", {
+                                                                                    account: signerName,
+                                                                                    address: signerAddress,
+                                                                                    origin,
+                                                                                })}
                                                                             </Elements.Text>
                                                                         </Layouts.Col>
                                                                     </Layouts.Col>
@@ -346,7 +321,7 @@ export default function Page() {
                                                                 children: (
                                                                     <Layouts.Col gap={0} align={"center"} style={{ height: "100%" }} fill>
                                                                         <Layouts.Col gap={4} align={"center"} fit>
-                                                                            <Elements.Text type={"h3"}>Failure</Elements.Text>
+                                                                            <Elements.Text type={"h3"}>{t("request.state.failure")}</Elements.Text>
                                                                             <Elements.Text weight={"bold"} opacity={0.6}>
                                                                                 {error?.message || error}
                                                                             </Elements.Text>
@@ -367,10 +342,10 @@ export default function Page() {
                                                             children: (
                                                                 <Layouts.Row gap={2}>
                                                                     <Controls.Button type={"glass"} onClick={handleClose}>
-                                                                        Cancel
+                                                                        {t("app.btn.cancel")}
                                                                     </Controls.Button>
                                                                     <Controls.Button type={"line"} onClick={handleSign}>
-                                                                        Sign
+                                                                        {t("request.btn.sign")}
                                                                     </Controls.Button>
                                                                 </Layouts.Row>
                                                             ),
@@ -378,27 +353,13 @@ export default function Page() {
                                                         {
                                                             active: level > 0,
                                                             children: (
-                                                                <Layouts.Row gap={2}>
-                                                                    <Controls.Button type={count ? undefined : "glass"} onClick={handleClose}>
-                                                                        Close
-                                                                    </Controls.Button>
-                                                                    <AnimatePresence>
-                                                                        {!!count && (
-                                                                            <motion.div
-                                                                                initial={{ flex: 0, marginLeft: "-2em", maxWidth: 0 }}
-                                                                                animate={{ flex: 2, marginLeft: 0, maxWidth: "100vw" }}
-                                                                                exit={{ flex: 2, marginLeft: 0, maxWidth: "100vw" }}
-                                                                                transition={{ ease: "easeInOut", duration: 0.3 }}>
-                                                                                <Controls.Button
-                                                                                    type={"glass"}
-                                                                                    onClick={() => setId(next(id) || "")}
-                                                                                    style={{ width: "100%" }}>
-                                                                                    See Next Request
-                                                                                </Controls.Button>
-                                                                            </motion.div>
-                                                                        )}
-                                                                    </AnimatePresence>
-                                                                </Layouts.Row>
+                                                                <RequestCloseNextActions
+                                                                    count={count}
+                                                                    onClose={handleClose}
+                                                                    onNext={handleNext}
+                                                                    closeLabel={t("app.btn.close")}
+                                                                    nextLabel={t("request.btn.next")}
+                                                                />
                                                             ),
                                                         },
                                                     ]}
@@ -411,53 +372,17 @@ export default function Page() {
                         ]}
                     />
                 ) : (
-                    <Layouts.Contents.InnerContent scroll={false}>
-                        <Layouts.Col gap={2} align={"center"} fill>
-                            <Layouts.Contents.InnerContent padding={[4, 4, 0]}>
-                                <Layouts.Col fill>
-                                    <Layouts.Col align={"center"} style={{ flex: 1 }}>
-                                        <Layouts.Col gap={8} align={"center"} fit>
-                                            <div
-                                                style={{
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                    maxWidth: "max-content",
-                                                    maxHeight: "max-content",
-                                                    padding: "2em",
-                                                    borderRadius: "100%",
-                                                    background: "rgba(var(--white),.15)",
-                                                }}>
-                                                <Image
-                                                    width={0}
-                                                    height={0}
-                                                    src={require("../../../assets/animation/failure.gif")}
-                                                    alt={"Unknown"}
-                                                    style={{ width: "8em", height: "8em" }}
-                                                />
-                                            </div>
-                                        </Layouts.Col>
-                                    </Layouts.Col>
-                                    <Layouts.Col gap={8} align={"center"} style={{ flex: 1 }} fill>
-                                        <Layouts.Col gap={4} align={"center"} fit>
-                                            <Elements.Text type={"h3"}>Invalid Request</Elements.Text>
-                                            <Elements.Text weight={"bold"} opacity={0.6}>
-                                                {"The given app information is something wrong. Couldn't found the information of requested app."}
-                                            </Elements.Text>
-                                        </Layouts.Col>
-                                    </Layouts.Col>
-                                </Layouts.Col>
-                            </Layouts.Contents.InnerContent>
-                            <Layouts.Col gap={4} align={"center"} style={{ padding: "4em", paddingTop: 0 }}>
-                                <Layouts.Row gap={2}>
-                                    <Controls.Button type={"glass"} onClick={handleClose}>
-                                        Close
-                                    </Controls.Button>
-                                </Layouts.Row>
-                            </Layouts.Col>
-                        </Layouts.Col>
-                    </Layouts.Contents.InnerContent>
+                    <RequestInvalid
+                        title={t("request.invalid.title")}
+                        message={authError?.message || authError || error?.message || error || t("request.invalid.app.message")}
+                        onClose={handleClose}
+                        closeLabel={t("app.btn.close")}
+                    />
                 ))}
         </AnimatePresence>
     );
+}
+
+export default function Page() {
+    return <TypedDataPage />;
 }

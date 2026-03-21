@@ -1,15 +1,16 @@
-﻿"use client";
+"use client";
 
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { Parts } from "@coinmeca/ui/index";
 import { useState, useEffect } from "react";
 import { usePortal } from "@coinmeca/ui/hooks";
-import { Modals } from "containers";
+import { Reset } from "containers/modals";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import NumberFlow, { NumberFlowGroup } from "@number-flow/react";
 import { AnimatePresence } from "motion/react";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { useTranslate } from "hooks";
 
 const Countdown = ({ seconds, style }: { seconds: number; style?: object }) => {
     const hh = Math.floor(seconds / 3600);
@@ -39,50 +40,79 @@ const Countdown = ({ seconds, style }: { seconds: number; style?: object }) => {
     );
 };
 
-export default function Lock(props?: { onUnlock?: Function; isModal?: boolean }) {
+export default function Lock(props?: {
+    onUnlock?: (code: string) => boolean | string | undefined | Promise<boolean | string | undefined>;
+    isModal?: boolean;
+    allowReset?: boolean;
+}) {
     const width = 64;
     const length = 6;
 
-    const path = usePathname();
+    const router = useRouter();
     const { provider } = useCoinmecaWalletProvider();
+    const locked = provider?.locked;
+    const remain = locked?.remain || 0;
+    const isLockedOut = remain > 0;
 
     const [code, setCode] = useState<string>("");
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState({ state: false, message: "" });
+    const { t } = useTranslate();
 
-    const [openResetConfirm, closeResetConfirm] = usePortal(() => <Modals.Reset onReset={handleReset} onClose={closeResetConfirm} close />);
+    const [openResetConfirm, closeResetConfirm] = usePortal(() => <Reset onReset={handleReset} onClose={closeResetConfirm} close />);
 
     const handleNumberClick = async (code: string) => {
-        if (!!provider?.locked?.remain || code?.length > length) return;
+        if (loading || !!remain || code?.length > length) return;
 
         setCode(code);
         if (code?.length === length) {
-            if (!props?.onUnlock?.(code)) setError({ state: true, message: "The entered passcode was wrong." });
+            setLoading(true);
+            setError({ state: false, message: "" });
+
+            try {
+                const result = await props?.onUnlock?.(code);
+                if (result !== true) setError({ state: true, message: typeof result === "string" && result.trim() !== "" ? result : t("lock.error.wrong") });
+            } finally {
+                setLoading(false);
+            }
         } else setError({ state: false, message: "" });
     };
 
-    const handleReset = (e?: any) => {
-        provider?.reset();
-        window.location.href = "/welcome";
-        window.location.reload();
+    const handleReset = () => {
+        if (!props?.allowReset) {
+            closeResetConfirm();
+            return;
+        }
+        if (!provider?.locked?.remain) {
+            closeResetConfirm();
+            return;
+        }
+        provider.reset();
+        router.replace("/welcome");
         closeResetConfirm();
     };
 
     useEffect(() => {
-        if (provider && !!provider?.locked?.remain) {
+        if (provider && isLockedOut) {
+            setError({ state: true, message: t("lock.error.locked") });
+
             const interval = setInterval(() => {
-                if (!!provider?.locked?.remain) setError({ state: true, message: `Locked out. Please try it later.` });
+                if (provider?.locked?.remain) setError({ state: true, message: t("lock.error.locked") });
                 else {
                     setError({ state: false, message: "" });
                     setCode("");
                 }
             }, 1000);
+
             return () => {
                 clearInterval(interval);
-                setError({ state: false, message: "" });
-                setCode("");
+                if (!provider?.locked?.remain) {
+                    setError({ state: false, message: "" });
+                    setCode("");
+                }
             };
         }
-    }, [provider, code]);
+    }, [isLockedOut, provider, t]);
 
     return (
         <Layouts.Contents.SlideContainer
@@ -94,7 +124,7 @@ export default function Lock(props?: { onUnlock?: Function; isModal?: boolean })
                     style: {
                         transition: ".3s ease",
                         ...(props?.isModal && { minHeight: "max-content" }),
-                        ...(!!provider?.locked?.remain && { minHeight: "100%" }),
+                        ...(isLockedOut && { minHeight: "100%" }),
                     },
                     children: (
                         <Layouts.Contents.InnerContent scroll={false}>
@@ -102,13 +132,13 @@ export default function Lock(props?: { onUnlock?: Function; isModal?: boolean })
                                 <Layouts.Col
                                     gap={4}
                                     align={"center"}
-                                    style={{ minHeight: 0, transition: ".3s ease", ...(!!provider?.locked?.remain && { minHeight: "100%" }) }}
+                                    style={{ minHeight: 0, transition: ".3s ease", ...(isLockedOut && { minHeight: "100%" }) }}
                                     fit>
                                     <AnimatePresence>
                                         <Layouts.Col align={"center"} fit>
                                             <Layouts.Col gap={4}>
                                                 <AnimatePresence>
-                                                    {!!provider?.locked?.remain ? (
+                                                    {isLockedOut ? (
                                                         <Layouts.Col key={"locked-image"} gap={32} align={"center"} fit>
                                                             <Image
                                                                 width={0}
@@ -116,28 +146,24 @@ export default function Lock(props?: { onUnlock?: Function; isModal?: boolean })
                                                                 alt={""}
                                                                 src={require("../../../assets/animation/lock.gif")}
                                                                 style={{
-                                                                    opacity: 0,
-                                                                    maxHeight: 0,
+                                                                    opacity: 1,
+                                                                    maxHeight: "16em",
                                                                     width: "16em",
                                                                     height: "16em",
                                                                     transition: ".3s ease",
-                                                                    ...(!!provider?.locked?.remain && {
-                                                                        opacity: 1,
-                                                                        maxHeight: "16em",
-                                                                    }),
                                                                 }}
                                                             />
                                                             <Layouts.Col>
                                                                 <Elements.Text weight={"bold"} size={2}>
-                                                                    LOCKED
+                                                                    {t("lock.title.locked")}
                                                                 </Elements.Text>
-                                                                <Countdown seconds={provider?.locked?.remain || 0} />
+                                                                <Countdown seconds={remain} />
                                                             </Layouts.Col>
                                                         </Layouts.Col>
                                                     ) : (
                                                         <Layouts.Col key={"unlock-passcode"}>
                                                             <Elements.Text weight={"bold"} size={2}>
-                                                                PASSCODE
+                                                                {t("lock.title")}
                                                             </Elements.Text>
                                                             <Elements.Passcode
                                                                 width={width}
@@ -170,10 +196,17 @@ export default function Lock(props?: { onUnlock?: Function; isModal?: boolean })
                                                             </Elements.Text>
                                                         </Layouts.Col>
                                                     )}
+                                                    {loading && (
+                                                        <Layouts.Col gap={2} align={"center"} key={"loading-message"}>
+                                                            <Elements.Text weight={"bold"} opacity={0.6}>
+                                                                {t("lock.loading")}
+                                                            </Elements.Text>
+                                                        </Layouts.Col>
+                                                    )}
                                                 </AnimatePresence>
                                             </Layouts.Col>
                                         </Layouts.Col>
-                                        {!!provider?.locked?.remain && (
+                                        {isLockedOut && props?.allowReset && (
                                             <Layouts.Col
                                                 align={"center"}
                                                 style={{
@@ -187,8 +220,8 @@ export default function Lock(props?: { onUnlock?: Function; isModal?: boolean })
                                                         maxHeight: "100em",
                                                     }),
                                                 }}>
-                                                <Controls.Button onClick={openResetConfirm} fit={!!!provider?.locked?.remain}>
-                                                    Reset Passcode
+                                                <Controls.Button onClick={openResetConfirm} fit={false}>
+                                                    {t("lock.btn.reset")}
                                                 </Controls.Button>
                                             </Layouts.Col>
                                         )}
@@ -207,11 +240,11 @@ export default function Lock(props?: { onUnlock?: Function; isModal?: boolean })
                             vertical
                             contents={[
                                 {
-                                    active: !!provider?.locked?.remain,
+                                    active: isLockedOut,
                                     children: <></>,
                                 },
                                 {
-                                    active: !!!provider?.locked?.remain,
+                                    active: !isLockedOut,
                                     children: (
                                         <Layouts.Contents.InnerContent scroll={false}>
                                             <Layouts.Col
@@ -220,13 +253,13 @@ export default function Lock(props?: { onUnlock?: Function; isModal?: boolean })
                                                     transition: ".3s ease",
                                                     background: `rgba(var(--black),.45)`,
                                                     ...(!props?.isModal && { padding: "2em" }),
-                                                    ...(!!provider?.locked?.remain && { opacity: 0.6, cursor: "default", pointerEvents: "none" }),
+                                                    ...(isLockedOut && { opacity: 0.6, cursor: "default", pointerEvents: "none" }),
                                                 }}
                                                 fill>
                                                 <Layouts.Col
                                                     style={{
                                                         transition: ".3s ease",
-                                                        ...(!!provider?.locked?.remain && { opacity: 0.6, cursor: "default", pointerEvents: "none" }),
+                                                        ...(isLockedOut && { opacity: 0.6, cursor: "default", pointerEvents: "none" }),
                                                     }}
                                                     fill>
                                                     <Parts.Numberpad

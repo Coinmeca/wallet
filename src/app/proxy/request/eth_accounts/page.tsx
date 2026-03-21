@@ -1,11 +1,10 @@
-﻿"use client";
+"use client";
 
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { Contents } from "@coinmeca/ui/components";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 
-import { useMessageHandler } from "hooks";
-import { MessageProps } from "contexts/message";
+import { MessageProps, useMessageHandler } from "contexts/message";
 
 /*
 await window.ethereum.providerMap.get("CoinmecaWallet").request({method: 'eth_accounts'})
@@ -20,11 +19,11 @@ export default function Page() {
 
     useLayoutEffect(() => {
         if (!request?.id) setRequest(getRequest(method));
-    }, [messages]);
+    }, [getRequest, messages, request?.id]);
 
     useLayoutEffect(() => {
         if (provider && request?.id) success(request.id, provider?.accounts(request?.request?.app?.url) || []);
-    }, [provider, request]);
+    }, [provider, request, success]);
 
-    return <Contents.States.Loading style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", zIndex: 10000, background: "black" }} />;
+    return <Contents.States.Loading style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", zIndex: -10000, background: "black" }} />;
 }

@@ -1,10 +1,12 @@
 ﻿"use client";
 
-import { Controls } from "@coinmeca/ui/components";
+import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { Modal } from "@coinmeca/ui/containers";
 import { CoinmecaWalletContextProvider, useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
 import { dehydrate, HydrationBoundary, QueryClientProvider } from "@tanstack/react-query";
 import { getQueryClient } from "api";
+import { site } from "utils";
+import { useTranslate } from "hooks";
 
 export interface Revoke {
     onClose: Function;
@@ -26,24 +28,32 @@ export default function Revoke(props: Revoke) {
 }
 const AppRevokeModal = (props?: any) => {
     const { provider } = useCoinmecaWalletProvider();
+    const info = site(props?.app?.url);
+    const { t } = useTranslate();
+    const title = props?.app?.name || info?.host || info?.origin || t("app.sidebar.app.unknown");
 
     const handleClose = () => {
         props?.onClose();
     };
 
     const handleRevokeApp = () => {
-        !!props?.url && props?.url !== "" && provider?.revokeApp(props.url);
+        !!props?.app?.url && props?.app?.url !== "" && provider?.revokeApp(props?.app?.url);
         handleClose();
     };
 
     return (
         <Modal
-            title={"Revoke App"}
-            message={"Revoke approvals of all accounts for this app. Are you sure?"}
+            title={t("modal.app.revoke.title")}
+            message={
+                <Layouts.Col gap={0.5}>
+                    <Elements.Text>{t("modal.app.revoke.message", { title })}</Elements.Text>
+                    <Elements.Text opacity={0.6}>{info?.origin || props?.app?.url}</Elements.Text>
+                </Layouts.Col>
+            }
             buttonArea={
                 <>
-                    <Controls.Button onClick={handleClose}>NO</Controls.Button>
-                    <Controls.Button onClick={handleRevokeApp}>YES</Controls.Button>
+                    <Controls.Button onClick={handleClose}>{t("app.btn.no")}</Controls.Button>
+                    <Controls.Button onClick={handleRevokeApp}>{t("app.btn.yes")}</Controls.Button>
                 </>
             }
             onClose={handleClose}

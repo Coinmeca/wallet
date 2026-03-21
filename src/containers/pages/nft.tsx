@@ -2,15 +2,18 @@
 
 import { Controls, Elements, Layouts } from "@coinmeca/ui/components";
 import { usePortal, useSort } from "@coinmeca/ui/hooks";
+import { parseChainId } from "@coinmeca/wallet-provider/chains";
 import { useCoinmecaWalletProvider } from "@coinmeca/wallet-provider/provider";
-import { Modals } from "containers";
 import { GetErc721 } from "api/erc721";
 import Image from "next/image";
 import { filter } from "@coinmeca/ui/lib/utils";
 import { Asset } from "types";
 import styled from "styled-components";
 import { Root } from "@coinmeca/ui/lib/style";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
+import { NonFungible as Modals } from "containers/modals";
+import { useTranslate } from "hooks";
+import { valid } from "utils";
 
 interface Nft {
     filter?: string;
@@ -81,15 +84,27 @@ const AddNewButton = styled.div<{ $only?: boolean }>`
 `;
 
 export default function Nft(props: Nft) {
-    const { chain, tokens } = useCoinmecaWalletProvider();
+    const { provider, tokens } = useCoinmecaWalletProvider();
     const { sorting, sortArrow, setSort } = useSort();
+    const { t } = useTranslate();
+    const activeChainId = useMemo(() => {
+        const providerChainId = provider?.chainId;
+        return typeof providerChainId !== "undefined" && valid.chainId(providerChainId) ? parseChainId(providerChainId) : undefined;
+    }, [provider?.chainId]);
+    const activeChain = useMemo(
+        () =>
+            typeof activeChainId === "number"
+                ? provider?.chains?.find((item: any) => typeof item?.chainId !== "undefined" && parseChainId(item.chainId) === activeChainId)
+                : undefined,
+        [activeChainId, provider?.chains],
+    );
 
-    const [nonFungibles] = GetErc721(chain?.rpcUrls?.[0], tokens?.nonFungibles ? Object.values(tokens?.nonFungibles) : []);
+    const [nonFungibles] = GetErc721(activeChain?.rpcUrls?.[0], tokens?.nonFungibles ? Object.values(tokens?.nonFungibles) : []);
     const nftlist = Object.values(nonFungibles)?.flatMap((v) => Object.values(v));
 
-    const [openNonFungibleAdd, closeNonFungibleAdd] = usePortal(() => <Modals.NonFungible.Add onClose={closeNonFungibleAdd} />);
+    const [openNonFungibleAdd, closeNonFungibleAdd] = usePortal(() => <Modals.Add onClose={closeNonFungibleAdd} />);
     const [openNonFungibleInfo, closeNonFungibleInfo] = usePortal((info: any) => (
-        <Modals.NonFungible.Info {...info} onTransfer={handleTransfer} onClose={closeNonFungibleInfo} />
+        <Modals.Info {...info} onTransfer={handleTransfer} onClose={closeNonFungibleInfo} />
     ));
 
     const sorts = {
@@ -109,13 +124,13 @@ export default function Nft(props: Nft) {
             <Layouts.Row gap={1} fix style={{ overflow: "auto hidden" }}>
                 <Layouts.Row gap={0} fix>
                     <Controls.Tab iconLeft={sortArrow(sorts.name)} onClick={() => setSort(sorts.name)}>
-                        Name
+                        {t("asset.name")}
                     </Controls.Tab>
                     <Controls.Tab iconLeft={sortArrow(sorts.address)} onClick={() => setSort(sorts.address)}>
-                        Address
+                        {t("asset.address")}
                     </Controls.Tab>
                     <Controls.Tab iconLeft={sortArrow(sorts.id)} onClick={() => setSort(sorts.id)}>
-                        Token ID
+                        {t("asset.token.id")}
                     </Controls.Tab>
                 </Layouts.Row>
             </Layouts.Row>
@@ -142,7 +157,7 @@ export default function Nft(props: Nft) {
                                     width={0}
                                     height={0}
                                     src={nft?.isLoading ? require("../../assets/animation/loading.gif") : nft?.data?.image}
-                                    alt={nft?.data?.uri || "Unknown"}
+                                    alt={nft?.data?.uri?.name || ""}
                                     style={{
                                         width: "100%",
                                         height: "100%",
@@ -171,7 +186,7 @@ export default function Nft(props: Nft) {
                                         style={{ padding: "0.5em", borderRadius: "100%", border: "0.1em solid rgb(var(--white))" }}
                                     />
                                     <Layouts.Row gap={1} align={"center"}>
-                                        <Elements.Text>Add a new token</Elements.Text>
+                                        <Elements.Text>{t("asset.token.add")}</Elements.Text>
                                     </Layouts.Row>
                                 </Layouts.Col>
                             </Layouts.Col>
