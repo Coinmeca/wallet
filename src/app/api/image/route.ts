@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
         if (!type.toLowerCase().startsWith("image/")) return json("Blocked content type", 415);
 
         const image = await data(response);
-        return new NextResponse(Buffer.from(image), {
+        return new NextResponse(new Uint8Array(image), {
             status: response.status,
             headers: {
                 "Cache-Control": "no-store",
